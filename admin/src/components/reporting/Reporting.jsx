@@ -199,35 +199,39 @@ const Reporting = () => {
     servicesPageViews:   0,
     topViewedPackages:   [],
   });
-  const [bookingCountStats, setBookingCountStats] = useState({
-    recentBookingCounts: [],
-    totalBookingCounts:  0,
-  });
+  // ── Active bookings — sourced directly from the Booking model ──────────
+  // recentActiveBookings mirrors exactly what the admin sees in the Bookings
+  // table (isArchive !== 'Yes'), so the count is always the ground truth.
+  const [recentActiveBookings, setRecentActiveBookings] = useState([]);
   const [pvLoading, setPvLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res  = await fetch('/api/page-views/stats');
-        const json = await res.json();
-        if (json.status === 'ok') {
-          const d = json.data;
+        const [pvRes, bookRes] = await Promise.all([
+          fetch('/api/page-views/stats'),
+          fetch('/api/bookings/active'),
+        ]);
+        const [pvJson, bookJson] = await Promise.all([pvRes.json(), bookRes.json()]);
+
+        if (pvJson.status === 'ok') {
+          const d = pvJson.data;
           setPageViewStats({
-            recentViews:         d.recentViews         || [],
-            totalViews:          d.totalViews          || 0,
-            packagesPageViews:   d.packagesPageViews   || 0,
-            bookingPageViews:    d.bookingPageViews     || 0,
-            flightsPageViews:    d.flightsPageViews     || 0,
-            servicesPageViews:   d.servicesPageViews   || 0,
-            topViewedPackages:   d.topViewedPackages   || [],
-          });
-          setBookingCountStats({
-            recentBookingCounts: d.recentBookingCounts || [],
-            totalBookingCounts:  d.totalBookingCounts  || 0,
+            recentViews:       d.recentViews      || [],
+            totalViews:        d.totalViews        || 0,
+            packagesPageViews: d.packagesPageViews || 0,
+            bookingPageViews:  d.bookingPageViews  || 0,
+            flightsPageViews:  d.flightsPageViews  || 0,
+            servicesPageViews: d.servicesPageViews || 0,
+            topViewedPackages: d.topViewedPackages || [],
           });
         }
+
+        if (bookJson.success) {
+          setRecentActiveBookings(bookJson.bookings || []);
+        }
       } catch (err) {
-        console.error('Failed to fetch page view stats:', err);
+        console.error('Failed to fetch reporting stats:', err);
       } finally {
         setPvLoading(false);
       }
@@ -286,21 +290,19 @@ const Reporting = () => {
     };
   }, [analyticsDateWindow, pageViewStats.recentViews]);
 
-  // ── Filtered booking counts (mirrors RevenueAnalytics exactly) ──────────
-  // Numerator = non-archived bookings within the same date window.
-  // The API already strips isArchive="Yes" from recentBookingCounts,
-  // so we only need to apply the same analyticsDateWindow filter here.
+  // Filtered booking counts — sourced from actual Booking records.
+  // recentActiveBookings comes from /api/bookings/active (isArchive !== 'Yes'),
+  // so this always matches exactly what the admin sees in the Bookings table.
   const filteredBookingCounts = useMemo(() => {
-    const allCounts = bookingCountStats.recentBookingCounts || [];
     const { start, end } = analyticsDateWindow;
 
-    const filtered = allCounts.filter(c => {
-      const d = new Date(c.createdAt);
+    const filtered = recentActiveBookings.filter(b => {
+      const d = new Date(b.createdAt);
       return d >= start && d <= end;
     });
 
     return { totalConfirmedBookings: filtered.length };
-  }, [bookingCountStats.recentBookingCounts, analyticsDateWindow]);
+  }, [recentActiveBookings, analyticsDateWindow]);
 
   // ── View-to-Book rate ─────────────────────────────────────────────────────
   const viewToBookRate = useMemo(() => {

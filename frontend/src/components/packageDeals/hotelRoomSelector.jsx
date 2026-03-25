@@ -222,6 +222,18 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
                 </>
               )}
             </div>
+
+            <div className="hrs-side-grid">
+              {safeImages.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt={`Hotel view ${idx + 1}`}
+                  className={`hrs-side-thumb ${idx === activeImgIndex ? 'hrs-active' : ''}`}
+                  onClick={() => setActiveImgIndex(idx)}
+                />
+              ))}
+            </div>
           </div>
 
           {/* LUXURY INFO SECTION */}
@@ -307,23 +319,11 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   const getCategoryHotelTotal = (roomType, group) => {
     return getPerNightRate(roomType) * durationNights * getRoomsNeeded(group);
   };
-
-  // ✅ Auto-select Standard (merged Budget+Standard) on initial load
   useEffect(() => {
     if (roomTypes && roomTypes.length > 0 && !hasAutoSelectedRef.current) {
-      const standardRoom = roomTypes.find(room => 
-        room.type?.toLowerCase().includes('standard') ||
-        room.type?.toLowerCase().includes('budget')
-      );
-      
-      const firstRoom = standardRoom || roomTypes[0];
-      
-      if (!selectedRoomType || selectedRoomType !== firstRoom) {
-        onRoomTypeChange(firstRoom);
-        hasAutoSelectedRef.current = true;
-      }
+      hasAutoSelectedRef.current = true;
     }
-  }, [roomTypes, selectedRoomType, onRoomTypeChange]);
+  }, [roomTypes]);
 
   const getHotelImages = (hotel) => {
     if (hotel.hotelImages && hotel.hotelImages.length > 0) {
@@ -390,7 +390,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
     });
   };
 
-  // Handle category selection
+  // ✅ Handle category selection — triggered only on double-click
   const handleCategorySelect = (roomType, firstHotel) => {
     onRoomTypeChange(firstHotel);
   };
@@ -422,7 +422,15 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
           const group = groupedRoomTypes[roomType];
           const min = group.minPrice === Infinity ? 0 : group.minPrice;
           const max = group.maxPrice === -Infinity ? 0 : group.maxPrice;
-          const isSelected = selectedRoomType?.type === roomType;
+
+          // ✅ FIX: Normalize selected room type to handle Budget→Standard merging.
+          // When parent sets selectedRoomType to a BUDGET room, it should still
+          // highlight the "Standard" (Budget Accommodations) card correctly.
+          const normalizedSelectedType = selectedRoomType?.type?.toLowerCase().includes('budget')
+            ? 'Standard'
+            : selectedRoomType?.type;
+          const isSelected = normalizedSelectedType === roomType;
+
           const categoryName = getCategoryDisplayName(roomType);
 
           return (
@@ -463,6 +471,8 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
                   <strong>Note:</strong> These are sample hotels that may be included in this package. 
                   The actual hotel will be confirmed upon booking based on availability.
                 </div>
+
+
                 
                 {/* VIEW DETAILS BUTTON */}
                 <button

@@ -81,7 +81,7 @@ const Dashboard = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminData");
     toast.error("Security Alert: Your session has expired due to inactivity. Please log in again.", "Session Expired");
-    navigate("/admin");
+    navigate("/");
   }, [navigate, toast]);
 
   useEffect(() => {

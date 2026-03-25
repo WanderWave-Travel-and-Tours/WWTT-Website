@@ -630,8 +630,40 @@
   }
 }
 /* ========================================================================================
-   🔥 NEW STYLES FOR GROUPED ROOM TYPES
+   🔔 HIGHLIGHT ANIMATION FOR ACCOMMODATION HEADER
    ======================================================================================== */
+
+@keyframes hrsPulseHighlight {
+  0%   { box-shadow: 0 0 0 0 rgba(252, 156, 27, 0.5); background-color: #fff7ed; }
+  50%  { box-shadow: 0 0 0 8px rgba(252, 156, 27, 0); background-color: #ffedd5; }
+  100% { box-shadow: 0 0 0 0 rgba(252, 156, 27, 0); background-color: #fff7ed; }
+}
+
+.hrs-header {
+  background-color: #fff7ed;
+  border: 2px solid #fc9c1b;
+  border-radius: 12px;
+  padding: 14px 16px;
+  animation: hrsPulseHighlight 1.8s ease-in-out 2;
+  position: relative;
+}
+
+.hrs-header::before {
+  content: '👇';
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  animation: hrsBounce 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes hrsBounce {
+  from { transform: translateX(-50%) translateY(0); }
+  to   { transform: translateX(-50%) translateY(-5px); }
+}
+
+
 
 .hrs-hotel-count {
   font-size: 0.75rem;
