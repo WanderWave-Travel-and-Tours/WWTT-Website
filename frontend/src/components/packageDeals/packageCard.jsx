@@ -488,13 +488,15 @@ function PackageCard({
                 {/* Strikethrough original — only when timer is active (not expired) */}
                 {timerReady && !timerExpired && (
                   <span style={{
-                    fontSize: '0.72rem',
-                    color: '#94a3b8',
+                    fontSize: '0.92rem',
+                    color: '#64748b',
                     textDecoration: 'line-through',
-                    fontWeight: '500',
+                    textDecorationColor: '#ef4444',
+                    textDecorationThickness: '1.5px',
+                    fontWeight: '700',
                     display: 'block',
                     lineHeight: 1,
-                    marginBottom: '1px',
+                    marginBottom: '2px',
                   }}>
                     {currencySymbol}{formatPrice(convertedSoloOriginal)}
                   </span>
@@ -523,13 +525,15 @@ function PackageCard({
                 {/* Strikethrough original — only when timer is active */}
                 {timerReady && !timerExpired && (
                   <span style={{
-                    fontSize: '0.72rem',
-                    color: '#94a3b8',
+                    fontSize: '0.92rem',
+                    color: '#64748b',
                     textDecoration: 'line-through',
-                    fontWeight: '500',
+                    textDecorationColor: '#ef4444',
+                    textDecorationThickness: '1.5px',
+                    fontWeight: '700',
                     display: 'block',
                     lineHeight: 1,
-                    marginBottom: '1px',
+                    marginBottom: '2px',
                   }}>
                     {currencySymbol}{formatPrice(convertedMultiOriginal)}
                   </span>
@@ -552,13 +556,15 @@ function PackageCard({
                 {/* Strikethrough original — only when timer is active */}
                 {timerReady && !timerExpired && discountPct > 0 && (
                   <span style={{
-                    fontSize: '0.72rem',
-                    color: '#94a3b8',
+                    fontSize: '0.92rem',
+                    color: '#64748b',
                     textDecoration: 'line-through',
-                    fontWeight: '500',
+                    textDecorationColor: '#ef4444',
+                    textDecorationThickness: '1.5px',
+                    fontWeight: '700',
                     display: 'block',
                     lineHeight: 1,
-                    marginBottom: '1px',
+                    marginBottom: '2px',
                   }}>
                     {currencySymbol}{formatPrice(originalPrice)}
                   </span>
