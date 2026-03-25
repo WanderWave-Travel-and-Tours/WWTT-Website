@@ -380,9 +380,12 @@
 
 /* Strikethrough original price shown during active timer/discount */
 .price-original {
-  font-size: 0.78rem;
-  color: #9ca3af;
+  font-size: 0.92rem;
+  color: #64748b;
   text-decoration: line-through;
+  text-decoration-color: #ef4444;
+  text-decoration-thickness: 1.5px;
+  font-weight: 700;
   margin-top: 1px;
   white-space: nowrap;
 }

@@ -286,11 +286,21 @@ const Reporting = () => {
     };
   }, [analyticsDateWindow, pageViewStats.recentViews]);
 
-  // ── Filtered booking counts ───────────────────────────────────────────────
+  // ── Filtered booking counts (mirrors RevenueAnalytics exactly) ──────────
+  // Numerator = non-archived bookings within the same date window.
+  // The API already strips isArchive="Yes" from recentBookingCounts,
+  // so we only need to apply the same analyticsDateWindow filter here.
   const filteredBookingCounts = useMemo(() => {
     const allCounts = bookingCountStats.recentBookingCounts || [];
-    return { totalConfirmedBookings: allCounts.length };
-  }, [bookingCountStats.recentBookingCounts]);
+    const { start, end } = analyticsDateWindow;
+
+    const filtered = allCounts.filter(c => {
+      const d = new Date(c.createdAt);
+      return d >= start && d <= end;
+    });
+
+    return { totalConfirmedBookings: filtered.length };
+  }, [bookingCountStats.recentBookingCounts, analyticsDateWindow]);
 
   // ── View-to-Book rate ─────────────────────────────────────────────────────
   const viewToBookRate = useMemo(() => {
@@ -344,7 +354,7 @@ const Reporting = () => {
       image:    STAT_IMAGES.pageToBooking,
       sub:      pvLoading
         ? 'Loading…'
-        : `${filteredBookingCounts.totalConfirmedBookings} booked / ${filteredPageViewStats.bookingPageViews} booking views`,
+        : `${filteredBookingCounts.totalConfirmedBookings} Booked out of ${filteredPageViewStats.bookingPageViews} Booking Page Views`,
     },
   ];
 

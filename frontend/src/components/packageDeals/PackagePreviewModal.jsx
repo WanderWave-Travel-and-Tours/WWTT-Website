@@ -278,12 +278,22 @@ const HOTEL_KW = [
                 );
 
  // ✅ SMART HOTEL DETECTION
+// Hotel stays active unless ALL hotel-related inclusions are explicitly unchecked.
+// Checking unchecked items too — if ANY hotel inclusion exists but is unchecked, hotel = false.
+// If no hotel inclusion exists in customizer at all, default to true (package has hotel by default).
 const hotelActive = hasCustomizer 
-  ? activeInclusions.some(inc => 
-      HOTEL_KW.some(kw => inc.includes(kw)) ||
-      /\d+d\d+n.*(accommodation|accomodation)/i.test(inc) ||
-      /accommodation/i.test(inc)
-    )
+  ? (() => {
+      const allHotelInclusions = customizationData.inclusions.filter(inc => {
+        const name = (inc.name || '').toLowerCase().trim();
+        return HOTEL_KW.some(kw => name.includes(kw)) ||
+               /\d+d\d+n.*(accommodation|accomodation)/i.test(name) ||
+               /accommodation/i.test(name);
+      });
+      // If no hotel-specific inclusions exist in customizer, default active
+      if (allHotelInclusions.length === 0) return true;
+      // Hotel is active only if at least one hotel inclusion is checked
+      return allHotelInclusions.some(inc => inc.isChecked);
+    })()
   : true;
 
                 // Guide logic

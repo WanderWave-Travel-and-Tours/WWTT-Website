@@ -422,12 +422,21 @@ const BookingLeftColumn = ({
     );
 
     // ✅ SMART HOTEL DETECTION - Handles "5D4N Accommodation", "4D3N Accom", etc.
+    // Hotel stays active unless ALL hotel-related inclusions are explicitly unchecked.
+    // If no hotel inclusion exists in customizer at all, default to true (package has hotel by default).
     const hasHotel = hasCustomizer 
-      ? activeInclusions.some(inc => 
-          HOTEL_KW.some(kw => inc.includes(kw)) ||
-          /\d+d\d+n.*(accommodation|accomodation)/i.test(inc) ||
-          /accommodation/i.test(inc)
-        )
+      ? hotelUpgradeCost > 0 || (() => {
+          const allHotelInclusions = customizationData.inclusions.filter(inc => {
+            const name = (inc.name || '').toLowerCase().trim();
+            return HOTEL_KW.some(kw => name.includes(kw)) ||
+                   /\d+d\d+n.*(accommodation|accomodation)/i.test(name) ||
+                   /accommodation/i.test(name);
+          });
+          // If no hotel-specific inclusions exist in customizer, default active
+          if (allHotelInclusions.length === 0) return true;
+          // Hotel is active only if at least one hotel inclusion is checked
+          return allHotelInclusions.some(inc => inc.isChecked);
+        })()
       : true;
 
     const pkgNameLower = (pkg.name || '').toLowerCase();
