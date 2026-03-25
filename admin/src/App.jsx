@@ -142,7 +142,7 @@ axios.interceptors.response.use(
       isRedirecting = true;
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
-      window.location.href = '/admin';
+      window.location.href = '/admin/';
     }
     return Promise.reject(error);
   }
@@ -325,7 +325,7 @@ const UnauthorizedAccess = () => {
 
         {/* Button */}
         <button
-          onClick={() => navigate('/admin', { replace: true })}
+          onClick={() => navigate('/', { replace: true })}
           style={{
             padding: '16px 40px',
             fontSize: '18px',
@@ -469,14 +469,11 @@ const ProtectedRoute = ({ children }) => {
 // ============================================================
 function App() {
   return (
-    <BrowserRouter basename="/">
+    <BrowserRouter basename="/admin">
       <ToastProvider>
         <Routes>
-          {/* ✅ PUBLIC ROUTE - LOGIN ONLY */}
-          <Route path="/admin" element={<Login />} />
-
-          {/* ✅ ROOT REDIRECT */}
-          <Route path="/" element={<Navigate to="/admin" replace />} />
+          {/* ✅ PUBLIC ROUTE - LOGIN ONLY (basename="/admin" so path="/" = /admin/) */}
+          <Route path="/" element={<Login />} />
 
           {/* ✅ PROTECTED ROUTES - ALL REQUIRE AUTHENTICATION */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

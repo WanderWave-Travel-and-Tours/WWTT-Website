@@ -115,28 +115,23 @@ router.get('/stats', async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
     ]);
 
-    // ── Booking count totals (exclude archived bookings) ────────────
-    // Get IDs of all archived bookings so we can filter them out
-    const archivedBookingIds = await Booking.distinct('_id', { isArchive: 'Yes' });
+    // ── Booking totals — sourced directly from the Booking model ────
+    // We no longer use the BookingCount collection here because it can
+    // hold stale / null-bookingId records that inflate the count.
+    // Ground truth is the actual Booking documents (isArchive !== 'Yes').
+    const activeBookingFilter = { isArchive: { $ne: 'Yes' } };
 
-    const totalBookingCounts = await BookingCount.countDocuments({
-      bookingId: { $nin: archivedBookingIds },
-    });
+    const totalBookingCounts = await Booking.countDocuments(activeBookingFilter);
 
-    // ── Top booked packages (exclude archived) ───────────────────────
-    const topBookedPackages = await BookingCount.aggregate([
-      {
-        $match: {
-          packageName: { $ne: null },
-          bookingId: { $nin: archivedBookingIds },
-        },
-      },
+    // ── Top booked packages (from actual Booking records) ────────────
+    const topBookedPackages = await Booking.aggregate([
+      { $match: { ...activeBookingFilter, packageName: { $ne: null } } },
       {
         $group: {
           _id: '$packageName',
           bookingCounts: { $sum: 1 },
-          packageId:    { $first: '$packageId' },
-          totalRevenue: { $sum: '$totalAmount' },
+          packageId:     { $first: '$packageId' },
+          totalRevenue:  { $sum: '$totalAmount' },
         },
       },
       { $sort: { bookingCounts: -1 } },
@@ -152,13 +147,13 @@ router.get('/stats', async (req, res) => {
       },
     ]);
 
-    // ── Recent 5000 booking counts (exclude archived) ────────────────
-    const recentBookingCounts = await BookingCount.find({
-      bookingId: { $nin: archivedBookingIds },
-    })
+    // ── Recent 5000 bookings for frontend date-range filtering ───────
+    // Field names kept identical to the old BookingCount shape so
+    // Reporting.jsx needs zero changes.
+    const recentBookingCounts = await Booking.find(activeBookingFilter)
       .sort({ createdAt: -1 })
       .limit(5000)
-      .select('packageName packageId paxCount paymentType totalAmount createdAt bookingId')
+      .select('packageName packageId pax paymentType totalAmount createdAt')
       .lean();
 
     return res.status(200).json({

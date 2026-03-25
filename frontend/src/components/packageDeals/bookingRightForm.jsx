@@ -367,7 +367,7 @@ if (savedState.formData.appliedPromo) {
         setCurrentMonth(new Date(data.currentMonth));
         sessionStorage.removeItem('pendingBookingData');
         
-        toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`);
+        toast.success(`Flight Added! ${data.selectedFlight.airline.name}`);
         
         setTimeout(() => {
           setPassengerStep(1);
@@ -749,11 +749,11 @@ const handleApplyPromo = async () => {
 
         if (hasUsageLimit && remainingUses < currentPax) {
           toast.warning(
-            `⚠️ Promo "${promo.code}" applied with limited coverage: ${remainingUses} of ${currentPax} pax.`
+            `Promo "${promo.code}" applied with limited coverage: ${remainingUses} of ${currentPax} pax.`
           );
         } else {
           toast.success(
-            `✅ Promo "${promo.code}" applied to ${currentPax} pax.`
+            `Promo "${promo.code}" applied to ${currentPax} pax.`
           );
         }
       } else {
@@ -786,12 +786,7 @@ const handleApplyPromo = async () => {
   };
 
   const handleQuantity = (type, delta) => {
-    // ✅ Per-type minimum pax:
-    //   - Solo:        locked separately (not rendered with +/-)
-    //   - Min-2:       minimum 2 (base price covers 2 pax; extra pax = price/2)
-    //   - Solo/Joiners: minimum 1 (free range, solo default)
-    //   - Normal:      minimum 1
-    // ✅ Promo applied: minimum is always 4 (promo codes require min 4 pax)
+    
     const minPaxCount = appliedPromo ? Math.max(4, isMinTwoPkg ? 2 : 1) : (isMinTwoPkg ? 2 : 1);
     setQuantities(prev => {
       const newVal = Math.max(minPaxCount, Math.min(20, (prev[type] || minPaxCount) + delta));
@@ -818,7 +813,19 @@ const handleApplyPromo = async () => {
 
   const handleRoomTypeChange = (roomType) => {
     setSelectedRoomType(roomType);
-    toast.success(`Selected: ${roomType.type} at ${roomType.hotelName}`);
+    // ✅ FIX: Show user-friendly category name in toast.
+    // Budget rooms are merged into the "Standard" display group ("Budget Accommodations"),
+    // so normalize the raw type before displaying.
+    const rawType = roomType.type || '';
+    const displayName =
+      rawType.toLowerCase().includes('budget') || rawType.toLowerCase().includes('standard')
+        ? 'Budget Accommodations'
+        : rawType.toLowerCase().includes('4')
+        ? 'Mid Range Hotels'
+        : rawType.toLowerCase().includes('5')
+        ? 'Premium Hotels'
+        : rawType;
+    toast.success(`${displayName} selected!`);
   };
 
   // ✅ Step 1: Show package preview before booking
@@ -1159,7 +1166,7 @@ const handleNextPassenger = async (e) => {
           paymentType: paymentType || 'full',
           totalAmount: finalTotalAmount || 0,
         }),
-      }).catch(err => console.warn('⚠️ BookingCount record failed (non-fatal):', err));
+      }).catch(err => console.warn('BookingCount record failed (non-fatal):', err));
       // ─────────────────────────────────────────────────────────────
 
       toast.success('Booking saved! Preparing payment link...');

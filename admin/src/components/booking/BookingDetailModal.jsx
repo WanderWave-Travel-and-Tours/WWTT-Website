@@ -37,7 +37,7 @@ export const BookingDetailModal = ({
         const fetchDocs = async () => {
             setIsLoadingDocs(true);
             try {
-                const res = await fetch(`http://localhost:5000/api/documents/inquiry/${selectedBooking.mongoId}`);
+                const res = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${selectedBooking.mongoId}`);
                 const data = await res.json();
                 if (data.success) {
                     setSubmittedDocs(data.documents || []);
