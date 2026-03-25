@@ -39,7 +39,8 @@ import {
   Activity,
   DollarSign,
   UserCog,
-  MessageSquare
+  MessageSquare,
+  BarChart2
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -299,6 +300,17 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 isActive={location.pathname === '/dashboard'}
                 onClick={() => navigate('/dashboard')}
             />
+
+            {/* ✅ NEW: Reporting Section */}
+            <MenuItem 
+                path="/reporting" 
+                icon={BarChart2} 
+                label="Reporting" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/reporting'}
+                onClick={() => navigate('/reporting')}
+            />
+
             <MenuItem 
                 path="/booking" 
                 icon={Calendar} 

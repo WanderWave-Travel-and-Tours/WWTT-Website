@@ -11,6 +11,7 @@ import './packageBooking.css';
 function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) {
   const [customizationData, setCustomizationData] = useState(null);
   const [paxCount, setPaxCount] = useState(1); // ✅ Lifted pax state — synced from BookingRightForm via onPaxChange
+  const [selectedFlight, setSelectedFlight] = useState(null); // ✅ Lifted flight state — synced from BookingRightForm
   
   // ============================================
   // TIMER & OFFER STATES (LIFTED FROM CHILD)
@@ -152,9 +153,11 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
     const packageId = pkg._id || pkg.id;
 
     const timerKey = `timer_${packageId}_${userIpAddress}`;
-    const storedTimer = localStorage.getItem(timerKey);
+    const lastResetKey = `lastReset_${packageId}_${userIpAddress}`;
     const sessionModalKey = `seenModal_${packageId}_${userIpAddress}`;
     const hasSeenModal = sessionStorage.getItem(sessionModalKey);
+    const today = new Date().toDateString();
+    const lastReset = localStorage.getItem(lastResetKey);
 
     // Function to handle the start of the sequence
     const startSequence = () => {
@@ -179,9 +182,27 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
       }
     };
 
-    // ✅ FIX: Define lastResetKey here so it can be used in both branches
-    const lastResetKey = `lastReset_${packageId}_${userIpAddress}`;
-    const today = new Date().toDateString();
+    // ✅ FIX: Run daily reset check FIRST before reading storedTimer.
+    // This prevents a stale timerKey from a previous day from immediately
+    // triggering timerExpired=true before the daily reset interval fires.
+    if (lastReset !== today) {
+      localStorage.removeItem(timerKey);
+      localStorage.setItem(lastResetKey, today);
+      sessionStorage.removeItem(sessionModalKey);
+      const startTime = Date.now();
+      localStorage.setItem(timerKey, JSON.stringify({ startTime }));
+      if (isMounted.current) {
+        setTimeRemaining(900000);
+        setTimerExpired(false);
+        setShowAnimation(true);
+        setShowOfferModal(false);
+        setHasOfferClosed(false);
+        startSequence();
+      }
+      return; // ✅ Already initialized fresh — skip storedTimer processing below
+    }
+
+    const storedTimer = localStorage.getItem(timerKey);
 
     // Calculate Time
     if (storedTimer) {
@@ -206,7 +227,7 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
       // Start new timer for new user/day
       const startTime = Date.now();
       localStorage.setItem(timerKey, JSON.stringify({ startTime }));
-      // ✅ FIX: Always stamp today so the daily-reset check never fires prematurely
+      // ✅ Always stamp today so the daily-reset check never fires prematurely
       //    on the same day the timer was first created.
       localStorage.setItem(lastResetKey, today);
       if (isMounted.current) {
@@ -282,6 +303,9 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
       }
     };
 
+    // ✅ Call immediately on mount so stale date is caught within the same tick,
+    // not up to 60 seconds later.
+    checkDailyReset();
     const dailyCheck = setInterval(checkDailyReset, 60000); // Check every minute
     return () => clearInterval(dailyCheck);
   }, [userIpAddress, pkg._id, pkg.id]);
@@ -460,6 +484,7 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
               timerExpired={timerExpired}
               onGoBack={onGoBack}
               paxCount={paxCount}
+              selectedFlight={selectedFlight}
             />
           </div>
 
@@ -473,6 +498,7 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
               effectivePackageTotal={effectivePackageTotal}
               timerExpired={timerExpired}
               onPaxChange={setPaxCount}
+              onFlightChange={setSelectedFlight}
             />
           </div>
         </div>

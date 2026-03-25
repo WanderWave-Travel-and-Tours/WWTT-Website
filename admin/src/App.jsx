@@ -12,6 +12,9 @@ import Archive from './components/archive/Archive.jsx';
 import ActivityLogs from './components/activitylogs/ActivityLogs.jsx';
 import FeedbackManagement from './components/FeedbackManagement/FeedbackManagement.jsx';
 
+// ✅ NEW: Reporting Page
+import Reporting from './components/reporting/Reporting.jsx';
+
 // Admin Management
 import ViewAdmins from './components/admins/ViewAdmin.jsx';
 import AddAdmin from './components/admins/AddAdmin.jsx';
@@ -85,6 +88,7 @@ import EditService from './components/viewservice/EditService.jsx';
 // ============================================================
 const VALID_PROTECTED_ROUTES = [
   '/dashboard',
+  '/reporting',       // ✅ NEW
   '/booking',
   '/archive',
   '/activity-logs',
@@ -476,6 +480,7 @@ function App() {
 
           {/* ✅ PROTECTED ROUTES - ALL REQUIRE AUTHENTICATION */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
           <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
           <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
           <Route path="/activity-logs" element={<ProtectedRoute><ActivityLogs /></ProtectedRoute>} />

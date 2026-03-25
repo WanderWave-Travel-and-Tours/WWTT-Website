@@ -254,9 +254,19 @@
   color: #64748b;
   flex: 1;
   min-width: 64px;
+  transition: all 0.2s ease;
+}
+.ppm-icon-chip--active {
+  background: #fff7ed;
+  border-color: #f97316;
+  color: #f97316;
 }
 .ppm-icon {
   color: #94a3b8;
+  transition: color 0.2s ease;
+}
+.ppm-icon--active {
+  color: #f97316;
 }
 
 /* Description */

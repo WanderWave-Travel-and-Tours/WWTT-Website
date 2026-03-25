@@ -178,7 +178,8 @@ const BookingLeftColumn = ({
   timerExpired = false,
   onGoBack,         // ✅ ADDED: receive onGoBack from PackageBooking → PackageDeals
   paxCount = 1,     // ✅ Lifted from right form — price multiplies directly per pax
-  hotelUpgradeCost = 0  // ✅ Hotel accommodation total passed from parent (nights × rate × rooms)
+  hotelUpgradeCost = 0,  // ✅ Hotel accommodation total passed from parent (nights × rate × rooms)
+  selectedFlight = null, // ✅ Flight selection from BookingRightForm — highlights Flights icon
 }) => {
   // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
@@ -400,10 +401,57 @@ const BookingLeftColumn = ({
         </div>
 
         <div className="blc-icons-row">
-          {[Plane, Hotel, Bus, Utensils, Camera, Briefcase].map((Icon, i) => (
-            <Icon key={i} size={22} className="blc-icon" />
-          ))}
-        </div>
+  {(() => {
+    const FLIGHT_KW   = ['airfare', 'air fare', 'flight', 'airline', 'air ticket', 'plane ticket', 'rt airfare', 'rt flight'];
+    const HOTEL_KW    = ['hotel', 'accommodation', 'accomodation', 'lodging', 'room', 'stay', 'night'];
+    const TRANSFER_KW = ['roundtrip', 'round trip', 'round-trip', 'rt transfer', 'rt transport', 'transfer', 'roadtrip', 'road trip', 'rt pudo', 'pudo'];
+    const MEALS_KW    = ['meal', 'meals', 'breakfast', 'lunch', 'dinner', 'buffet', 'food', 'dining', 'snack'];
+    const TOURS_KW    = ['tour', 'island hopping', 'island-hopping', 'activity', 'activities', 'snorkeling', 'diving', 'trekking', 'kayaking', 'surfing', 'chocolate hills', 'whale shark', 'swimming'];
+    const NO_GUIDE_KW = ['no guide', 'no tour guide', 'without guide', 'w/o guide', 'no-guide'];
+
+    const hasCustomizer = !!customizationData?.inclusions;
+
+    const activeInclusions = hasCustomizer
+      ? customizationData.inclusions
+          .filter(inc => inc.isChecked)
+          .map(inc => (inc.name || '').toLowerCase().trim())
+      : (pkg.inclusions || []).map(s => s.toLowerCase().trim());
+
+    const hasKw = (kws) => activeInclusions.some(inc => 
+      kws.some(kw => inc.includes(kw))
+    );
+
+    // ✅ SMART HOTEL DETECTION - Handles "5D4N Accommodation", "4D3N Accom", etc.
+    const hasHotel = hasCustomizer 
+      ? activeInclusions.some(inc => 
+          HOTEL_KW.some(kw => inc.includes(kw)) ||
+          /\d+d\d+n.*(accommodation|accomodation)/i.test(inc) ||
+          /accommodation/i.test(inc)
+        )
+      : true;
+
+    const pkgNameLower = (pkg.name || '').toLowerCase();
+    const hasNoGuide = NO_GUIDE_KW.some(kw => pkgNameLower.includes(kw))
+      || activeInclusions.some(inc => NO_GUIDE_KW.some(kw => inc.includes(kw)));
+
+    const ICONS = [
+      { Icon: Plane,     label: 'Flights',  active: !!selectedFlight || hasKw(FLIGHT_KW)  },
+      { Icon: Hotel,     label: 'Hotel',    active: hasHotel },   // ← Smart detection
+      { Icon: Bus,       label: 'Transfer', active: hasKw(TRANSFER_KW)                     },
+      { Icon: Utensils,  label: 'Meals',    active: hasKw(MEALS_KW)                        },
+      { Icon: Camera,    label: 'Tours',    active: hasKw(TOURS_KW)                        },
+      { Icon: Briefcase, label: 'Guide',    active: !hasNoGuide                            },
+    ];
+
+    return ICONS.map(({ Icon, label, active }) => (
+      <Icon
+        key={label}
+        size={22}
+        className={active ? 'blc-icon blc-icon--active' : 'blc-icon'}
+      />
+    ));
+  })()}
+</div>
       </div>
 
       {isCustomizableDestination && (

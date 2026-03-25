@@ -24,6 +24,9 @@ const PackagePreviewModal = ({
   appliedPromo = null,
   paxCount = null,
   timerExpired: timerExpiredProp = null,
+  // ✅ Icon highlight props passed from BookingRightForm
+  customizationData = null,
+  selectedFlight = null,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedDay, setExpandedDay] = useState(null);
@@ -49,7 +52,6 @@ const PackagePreviewModal = ({
 
   useEffect(() => {
     if (!userIpAddress || (!pkg?._id && !pkg?.id)) return;
-    // ✅ FIX: Use same key format as packageBooking.jsx (pkg._id || pkg.id)
     const packageId = pkg._id || pkg.id;
     const checkTimer = () => {
       const timerKey = `timer_${packageId}_${userIpAddress}`;
@@ -63,7 +65,6 @@ const PackagePreviewModal = ({
           setTimerExpiredLocal(false);
         }
       } else {
-        // No timer yet = package not yet visited = discount still available
         setTimerExpiredLocal(false);
       }
     };
@@ -98,15 +99,12 @@ const PackagePreviewModal = ({
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice = (p) => currency === 'PHP' ? p : (p / exchangeRate) * 1.30;
 
-  // ✅ Use computed prices from BookingRightForm if available (reflects pax, hotel, promos, timer)
-  // Fall back to simple per-pkg calculation only if props not provided
   const basePrice = pkg.price || 0;
   const markupPrice = Math.round(basePrice * 1.10);
 
   let displayPrice, originalPrice, discountPct, discountAmount;
 
   if (computedFinalPackageTotal !== null) {
-    // ✅ PRIMARY: use exact values passed from BookingRightForm
     displayPrice = computedFinalPackageTotal;
     originalPrice = (computedOriginalPrice && computedOriginalPrice > computedFinalPackageTotal)
       ? computedOriginalPrice
@@ -118,7 +116,6 @@ const PackagePreviewModal = ({
           ? Math.round(((computedOriginalPrice - computedFinalPackageTotal) / computedOriginalPrice) * 100)
           : 0);
   } else {
-    // Fallback: simple single-pax calculation
     displayPrice = timerExpired ? markupPrice : basePrice;
     originalPrice = timerExpired ? null : markupPrice;
     discountPct = !timerExpired
@@ -127,8 +124,8 @@ const PackagePreviewModal = ({
     discountAmount = 0;
   }
 
-  const convertedDisplay = displayPrice;    // already converted by parent
-  const convertedOriginal = originalPrice;  // already converted by parent
+  const convertedDisplay = displayPrice;
+  const convertedOriginal = originalPrice;
 
   const formatPrice = (p) => p.toLocaleString(undefined, {
     minimumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -242,22 +239,79 @@ const PackagePreviewModal = ({
           {activeTab === 'overview' && (
             <div className="ppm-tab-content">
 
-              {/* Icons row */}
-              <div className="ppm-icons-row">
-                {[
-                  { Icon: Plane,     label: 'Flights' },
-                  { Icon: Hotel,     label: 'Hotel' },
-                  { Icon: Bus,       label: 'Transfer' },
-                  { Icon: Utensils,  label: 'Meals' },
-                  { Icon: Camera,    label: 'Tours' },
-                  { Icon: Briefcase, label: 'Guide' },
-                ].map(({ Icon, label }) => (
-                  <div key={label} className="ppm-icon-chip">
-                    <Icon size={20} className="ppm-icon" />
-                    <span>{label}</span>
+              {/* ✅ FIXED Icons row - Hotel now correctly turns OFF when unchecked in customizer */}
+              {(() => {
+                const FLIGHT_KW   = ['airfare', 'air fare', 'flight', 'airline', 'air ticket', 'plane ticket', 'rt airfare', 'rt flight'];
+const HOTEL_KW = [
+  'hotel', 
+  'accommodation', 
+  'accomodation', 
+  'lodging', 
+  'room', 
+  'stay', 
+  'night',
+  '5d4n accommodation',
+  '4d3n accommodation',
+  '3d2n accommodation',
+  '6d5n accommodation',
+  '7d6n accommodation',
+  '8d7n accommodation',
+  '9d8n accommodation',
+  '10d9n accommodation',
+  '5d4n accomodation',
+  '4d3n accomodation',
+];                const TRANSFER_KW = ['roundtrip', 'round trip', 'round-trip', 'rt transfer', 'rt transport', 'transfer', 'roadtrip', 'road trip', 'rt pudo', 'pudo'];
+                const MEALS_KW    = ['meal', 'meals', 'breakfast', 'lunch', 'dinner', 'buffet', 'food', 'dining', 'snack'];
+                const TOURS_KW    = ['tour', 'island hopping', 'island-hopping', 'activity', 'activities', 'snorkeling', 'diving', 'trekking', 'kayaking', 'surfing', 'chocolate hills', 'whale shark', 'swimming'];
+
+                const hasCustomizer = !!customizationData?.inclusions;
+
+                // Use only CHECKED inclusions from customizer, otherwise use default package inclusions
+                const activeInclusions = hasCustomizer
+                  ? customizationData.inclusions
+                      .filter(inc => inc.isChecked)
+                      .map(inc => (inc.name || '').toLowerCase().trim())
+                  : (pkg.inclusions || []).map(s => s.toLowerCase().trim());
+
+                const hasKw = (kws) => activeInclusions.some(inc => 
+                  kws.some(kw => inc.includes(kw.toLowerCase()))
+                );
+
+ // ✅ SMART HOTEL DETECTION
+const hotelActive = hasCustomizer 
+  ? activeInclusions.some(inc => 
+      HOTEL_KW.some(kw => inc.includes(kw)) ||
+      /\d+d\d+n.*(accommodation|accomodation)/i.test(inc) ||
+      /accommodation/i.test(inc)
+    )
+  : true;
+
+                // Guide logic
+                const NO_GUIDE_KW = ['no guide', 'no tour guide', 'without guide', 'w/o guide', 'no-guide'];
+                const pkgNameLower = (pkg.name || '').toLowerCase();
+                const hasNoGuide = NO_GUIDE_KW.some(kw => pkgNameLower.includes(kw))
+                  || activeInclusions.some(inc => NO_GUIDE_KW.some(kw => inc.includes(kw)));
+
+                const ICONS = [
+                  { Icon: Plane,     label: 'Flights',  active: !!selectedFlight || hasKw(FLIGHT_KW)  },
+                  { Icon: Hotel,     label: 'Hotel',    active: hotelActive                            },
+                  { Icon: Bus,       label: 'Transfer', active: hasKw(TRANSFER_KW)                     },
+                  { Icon: Utensils,  label: 'Meals',    active: hasKw(MEALS_KW)                        },
+                  { Icon: Camera,    label: 'Tours',    active: hasKw(TOURS_KW)                        },
+                  { Icon: Briefcase, label: 'Guide',    active: !hasNoGuide                            },
+                ];
+
+                return (
+                  <div className="ppm-icons-row">
+                    {ICONS.map(({ Icon, label, active }) => (
+                      <div key={label} className={`ppm-icon-chip${active ? ' ppm-icon-chip--active' : ''}`}>
+                        <Icon size={20} className={active ? 'ppm-icon ppm-icon--active' : 'ppm-icon'} />
+                        <span>{label}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
 
               {/* Description */}
               {pkg.description && (
