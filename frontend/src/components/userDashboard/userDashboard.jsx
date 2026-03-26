@@ -318,37 +318,54 @@ const UserDashboardInner = ({ user, onLogout }) => {
     };
 
     const submitDocuments = async () => {
-        if (!selectedInquiry) {
-            toast.warning('Please select an inquiry first.', 'No Inquiry Selected');
-            return;
-        }
-        const allFiles = Object.values(uploadedFiles).flat();
-        if (allFiles.length === 0) {
-            toast.warning('Please upload at least one document before submitting.', 'No Documents');
-            return;
-        }
+    if (!selectedInquiry?._id) {
+        toast.error('Please select an application first.');
+        return;
+    }
 
-        const formData = new FormData();
-        formData.append('inquiryId', selectedInquiry._id);
-        formData.append('userId', user._id);
-        allFiles.forEach((fileObj) => {
-            formData.append(`documents`, fileObj.file);
-            formData.append(`sections`, fileObj.section);
+    const allFiles = Object.values(uploadedFiles).flat();
+    if (allFiles.length === 0) {
+        toast.error('No documents to upload.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('inquiryId', selectedInquiry._id);
+    formData.append('userId', String(user?._id || user?.id));  // ← siguraduhin na string
+
+    allFiles.forEach((fileObj) => {
+        formData.append('documents', fileObj.file);
+        formData.append('sections', fileObj.section || 'General Documents');
+    });
+
+    try {
+        setIsUploading(true);
+        setUploadProgress(0);
+
+        const response = await fetch('https://wanderwaveph.onrender.com/api/documents/upload', {
+            method: 'POST',
+            body: formData,
+            // NO Content-Type header!
         });
 
-        try {
-            await fetch('https://wanderwaveph.onrender.com/api/documents/upload', { method: 'POST', body: formData });
-            toast.success('Your documents have been submitted successfully.', 'Documents Submitted');
-            setUploadedFiles({});
-            
-            // NEW: Refresh uploaded documents after submission
-            await fetchUploadedDocuments(selectedInquiry._id);
-            await fetchUserData(); 
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.error('Failed to submit documents. Please try again.', 'Upload Failed');
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Upload failed');
         }
-    };
+
+        toast.success('Documents submitted successfully!', 'Success');
+        setUploadedFiles({}); 
+        await fetchUploadedDocuments(selectedInquiry._id);   // refresh
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        toast.error(error.message || 'Failed to upload documents. Please try again.');
+    } finally {
+        setIsUploading(false);
+        setUploadProgress(0);
+    }
+};
 
     const handleNavigateBackToDashboard = () => {
         setCurrentView('applications');

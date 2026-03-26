@@ -2,126 +2,71 @@ const Document = require('../models/document');
 const { cloudinary } = require('../config/cloudinary');
 
 // ✅ UPLOAD DOCUMENTS FUNCTION
+// ✅ FIXED uploadDocuments function
 const uploadDocuments = async (req, res) => {
   try {
-    console.log('🔥 ===== UPLOAD REQUEST START =====');
+    console.log('🔥 UPLOAD REQUEST START');
     console.log('📋 Body:', req.body);
-    console.log('📁 Files:', req.files ? req.files.length : 0);
-    
+    console.log('📁 Files received:', req.files ? req.files.length : 0);
+    console.log('=== UPLOAD REQUEST ===');
+console.log('inquiryId:', req.body.inquiryId);
+console.log('userId:', req.body.userId);
+console.log('Files received:', req.files?.length || 0);
+
+
     if (req.files && req.files.length > 0) {
-      req.files.forEach((file, idx) => {
-        console.log(`File ${idx + 1}:`, {
+      req.files.forEach((file, i) => {
+        console.log(`File ${i + 1}:`, {
           originalname: file.originalname,
+          fieldname: file.fieldname,
           filename: file.filename,
+          public_id: file.public_id,        // ← This is the correct one
           path: file.path,
-          size: file.size,
-          mimetype: file.mimetype,
-          // ✅ ADD THIS: Check if public_id exists
-          public_id: file.public_id
+          size: file.size
         });
       });
     }
 
     const { inquiryId, userId } = req.body;
 
-    if (!inquiryId) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Inquiry ID is required',
-        received: { inquiryId, userId }
-      });
-    }
+    if (!inquiryId) return res.status(400).json({ success: false, message: 'inquiryId is required' });
+    if (!userId || userId === 'undefined') return res.status(400).json({ success: false, message: 'userId is required' });
+    if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: 'No files uploaded' });
 
-    if (!userId || userId === 'undefined') {
-      return res.status(400).json({ 
-        success: false,
-        message: 'User ID is required',
-        received: { inquiryId, userId }
-      });
-    }
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'No files uploaded' 
-      });
-    }
-
-    let sections = [];
-    if (req.body.sections) {
-      sections = Array.isArray(req.body.sections) ? req.body.sections : [req.body.sections];
-    }
+    const sections = Array.isArray(req.body.sections) ? req.body.sections : [req.body.sections || 'General Documents'];
 
     const documents = [];
-    const errors = [];
 
     for (let i = 0; i < req.files.length; i++) {
-      try {
-        const file = req.files[i];
-        const section = sections[i] || 'General Documents';
+      const file = req.files[i];
+      const section = sections[i] || 'General Documents';
 
-        console.log(`\n💾 Saving file ${i + 1}/${req.files.length}:`);
-        console.log('   Original name:', file.originalname);
-        console.log('   Cloudinary path:', file.path);
-        console.log('   Cloudinary filename:', file.filename);
-        console.log('   Cloudinary public_id:', file.public_id); // ✅ Check this
-
-        if (!file.path || !file.filename) {
-          throw new Error(`File ${file.originalname} was not uploaded to Cloudinary`);
-        }
-
-        // ✅ FIX: Use the correct public_id from Cloudinary
-        const document = await Document.create({
-          inquiryId,
-          userId,
-          fileName: file.filename,
-          originalName: file.originalname,
-          fileUrl: file.path,
-          filePublicId: file.filename, // This might be wrong
-          fileSize: file.size,
-          fileType: file.mimetype,
-          section: section,
-          uploadDate: new Date()
-        });
-
-        documents.push(document);
-        console.log(`   ✅ Saved to database with ID: ${document._id}`);
-
-      } catch (fileError) {
-        console.error(`   ❌ Error processing file ${i + 1}:`, fileError);
-        errors.push({
-          file: req.files[i]?.originalname || 'unknown',
-          error: fileError.message
-        });
-      }
-    }
-
-    console.log('\n📊 Upload Summary:');
-    console.log(`   Success: ${documents.length}/${req.files.length}`);
-    console.log(`   Errors: ${errors.length}`);
-
-    if (documents.length === 0) {
-      return res.status(500).json({
-        success: false,
-        message: 'All uploads failed',
-        errors: errors
+      const document = await Document.create({
+        inquiryId,
+        userId,
+        fileName: file.filename,
+        originalName: file.originalname,
+        fileUrl: file.path,                    // Cloudinary secure_url
+        filePublicId: file.public_id || file.filename,   // ← THIS WAS THE BUG
+        fileSize: file.size,
+        fileType: file.mimetype,
+        section: section,
+        uploadDate: new Date()
       });
+
+      documents.push(document);
+      console.log(`✅ Document saved → ID: ${document._id}`);
     }
 
     res.status(201).json({
       success: true,
       message: `${documents.length} document(s) uploaded successfully`,
-      documents: documents,
-      errors: errors.length > 0 ? errors : undefined
+      documents
     });
 
   } catch (error) {
     console.error('❌ FATAL UPLOAD ERROR:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message || 'Failed to upload documents',
-      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
