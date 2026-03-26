@@ -34,6 +34,10 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
     if (!booking) return null;
 
+    // Booking is locked (read-only) when cancelled or confirmed/paid
+    const LOCKED_STATUSES = ['cancelled', 'confirmed', 'fully_paid', 'partial_paid'];
+    const isLocked = LOCKED_STATUSES.includes(booking.bookingStatus?.toLowerCase());
+
     // ✅ FIXED: Extract destination from all available sources.
     // Priority: populated packageId.destination → parse from packageName pattern → fallback
     const QUALIFIER_ONLY_PATTERN = /^(solo\s*\/?\s*joiners?|solo|joiners?|min\.?\s*of\s*\d+\s*pax|private|group)$/i;
@@ -498,7 +502,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 <div key={passenger.passengerNumber} className="bd-passenger-card">
                                     <div className="bd-pcard-strip"></div>
 
-                                    {editingPassenger === passenger.passengerNumber ? (
+                                    {!isLocked && editingPassenger === passenger.passengerNumber ? (
                                         /* ── EDIT FORM ── */
                                         <div className="bd-passenger-edit-form">
                                             <div className="bd-form-header">
@@ -687,16 +691,18 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                                         {passenger.firstName} {passenger.lastName}
                                                     </h4>
                                                 </div>
-                                                <button 
-                                                    className="bd-edit-btn"
-                                                    onClick={() => handleEditPassenger(passenger)}
-                                                >
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                                    </svg>
-                                                    Edit
-                                                </button>
+                                                {!isLocked && (
+                                                    <button 
+                                                        className="bd-edit-btn"
+                                                        onClick={() => handleEditPassenger(passenger)}
+                                                    >
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                        </svg>
+                                                        Edit
+                                                    </button>
+                                                )}
                                             </div>
 
                                             <div className="bd-passenger-details">
@@ -781,11 +787,33 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
             {/* Package Inclusions Section — handled by BookingCustomizer below */}
 
-            {/* Customize Your Booking - Inline Component */}
-            <BookingCustomizer 
-                booking={booking}
-                onUpdate={handleCustomizerUpdate}
-            />
+            {/* Customize Your Booking - only shown for pending bookings */}
+            {!isLocked ? (
+                <BookingCustomizer 
+                    booking={booking}
+                    onUpdate={handleCustomizerUpdate}
+                />
+            ) : (
+                /* Read-only inclusions summary for confirmed/cancelled bookings */
+                booking.customizedInclusions && booking.customizedInclusions.length > 0 && (
+                    <div className="bd-card bd-inclusions-summary-card">
+                        <h3 className="bd-card-title">Package Inclusions</h3>
+                        <div className="bd-inclusions-summary-list">
+                            {booking.customizedInclusions
+                                .filter(inc => inc.isChecked !== false)
+                                .map((inc, idx) => (
+                                    <div key={inc.id || idx} className="bd-inclusion-summary-item">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#10b981', flexShrink: 0, marginTop: 2 }}>
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                        <span>{inc.name}</span>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </div>
+                )
+            )}
 
             {/* Additional Message */}
             {booking.message && (

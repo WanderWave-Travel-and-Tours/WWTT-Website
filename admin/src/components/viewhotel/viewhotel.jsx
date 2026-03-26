@@ -7,6 +7,7 @@ import HotelFilters from './HotelFilters';
 import HotelsTable from './HotelsTable';
 import { useToast } from '../toast/ToastManager';
 import './viewhotel.css'; // ✅ Imported updated CSS
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'https://wanderwaveph.onrender.com';
 
@@ -56,6 +57,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 const ViewHotels = () => {
   const toast = useToast();
+  const navigate = useNavigate();   // ← Add this
   
   // ✅ STATE: Matches Standard Logic
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -178,7 +180,7 @@ const ViewHotels = () => {
   };
 
   const handleEdit = (hotelId) => {
-    window.location.href = `/edit-hotel/${hotelId}`;
+    navigate(`/edit-hotel/${hotelId}`);   // ← Correct way (relative to basename)
   };
 
   const handleViewDetails = (hotel) => {
@@ -248,7 +250,7 @@ const ViewHotels = () => {
                 Managing {filteredHotels.length} properties • {activeHotelsCount} active • {featuredHotelsCount} featured
               </p>
             </div>
-            <button className="vh-btn-add" onClick={() => window.location.href='/add-hotel'}>
+            <button className="vh-btn-add" onClick={() => navigate('/add-hotel')}>
               <Plus size={18} strokeWidth={3} />
               ADD NEW HOTEL
             </button>
