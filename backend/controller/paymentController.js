@@ -112,72 +112,37 @@ const createInquiryCheckoutSession = async (req, res) => {
 };
 
 // ✅ UPDATED: Changed from Payment Link to Checkout Session
+// ✅ FINAL VERSION - NO BOOKING CREATION UNTIL PAYMENT IS RECEIVED
 const createBookingPaymentIntent = async (req, res) => {
   try {
     console.log('=======================================');
-    console.log('BOOKING PAYMENT CHECKOUT SESSION START');
+    console.log('BOOKING PAYMENT - CHECKOUT SESSION START (NO BOOKING CREATION YET)');
     console.log('=======================================');
-    console.log('Request Body:', req.body);
+    console.log('Full Booking Data Received:', req.body);
 
-    const { bookingId, paymentType, paymentAmount, method } = req.body;
+    const bookingData = req.body;   // ← Lahat ng data mula frontend
 
-    if (!bookingId) {
-      console.error('Missing bookingId in request body');
+    // Basic validation
+    if (!bookingData.packageName || !bookingData.totalAmount || !bookingData.fullName || !bookingData.email) {
+      console.error('Missing required booking data');
       return res.status(400).json({
         success: false,
-        message: 'Missing required field: bookingId'
+        message: 'Missing required fields: packageName, totalAmount, fullName, email'
       });
     }
 
-    console.log('BookingId received:', bookingId);
-    console.log('Payment Type:', paymentType || 'full');
-    console.log('Payment Amount:', paymentAmount);
-    console.log('Payment Method:', method);
-
-    console.log('Searching for booking in database...');
-    const booking = await Booking.findById(bookingId);
-    
-    if (!booking) {
-      console.error('Booking not found in database');
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found',
-        searchedId: bookingId
-      });
-    }
-
-    console.log('Booking found:', {
-      id: booking._id,
-      packageName: booking.packageName,
-      totalAmount: booking.totalAmount,
-      status: booking.status
-    });
-
-    const amountToPay = paymentAmount || booking.totalAmount;
+    const amountToPay = bookingData.initialPaymentAmount || bookingData.totalAmount;
     const amountInCentavos = Math.round(amountToPay * 100);
-    
-    const isPartial = paymentType === 'partial';
-    const paymentDescription = isPartial 
-      ? `Initial Payment (${paymentType === 'partial' && booking.includesAirfare ? '85%' : '50%'})`
-      : 'Full Payment';
+
+    const isPartial = bookingData.paymentType === 'partial';
+    const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
 
     console.log('Payment Details:', {
-      paymentType: paymentType || 'full',
+      paymentType: bookingData.paymentType || 'full',
       amountToPay: amountToPay,
       amountInCentavos: amountInCentavos,
-      totalAmount: booking.totalAmount,
-      description: paymentDescription
+      isPartial: isPartial
     });
-
-    // ✅ Determine which payment methods to enable based on user selection
-    let paymentMethods = ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'];
-    
-    // If user selected specific method, prioritize it (optional - you can keep all methods available)
-    if (method) {
-      console.log('User selected payment method:', method);
-    }
-
-    console.log('Creating Checkout Session...');
 
     const checkoutOptions = {
       method: 'POST',
@@ -194,29 +159,28 @@ const createBookingPaymentIntent = async (req, res) => {
               {
                 currency: 'PHP',
                 amount: amountInCentavos,
-                description: `${booking.packageName} - ${paymentDescription}`,
-                name: booking.packageName,
+                description: `${bookingData.packageName} - ${paymentDescription}`,
+                name: bookingData.packageName,
                 quantity: 1
               }
             ],
-            payment_method_types: paymentMethods,
-            reference_number: bookingId,
+            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'],
+            reference_number: `WW-${Date.now()}`,
             send_email_receipt: true,
             show_description: true,
-            description: `${paymentDescription} for ${booking.fullName}`,
-            // ✅ IMPORTANT: Use booking_id (with underscore) to match existing success page
-            success_url: `${FRONTEND_URL}/payment-success?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
+            description: `${paymentDescription} for ${bookingData.fullName}`,
+            success_url: `${FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${FRONTEND_URL}/packages`,
             metadata: {
-              booking_id: bookingId,
-              customer_name: booking.fullName,
-              customer_email: booking.email,
-              package: booking.packageName,
-              total_amount: booking.totalAmount,
-              payment_amount: amountToPay,
-              payment_type: paymentType || 'full',
+              // ← LAHAT NG DATA DITO PARA SA WEBHOOK
+              rawBookingData: JSON.stringify(bookingData),
+              payment_type: bookingData.paymentType || 'full',
               is_initial_payment: true,
-              includes_airfare: booking.includesAirfare || false
+              customer_name: bookingData.fullName,
+              customer_email: bookingData.email,
+              package_name: bookingData.packageName,
+              total_amount: bookingData.totalAmount,
+              includes_airfare: bookingData.includesAirfare || false
             }
           }
         }
@@ -225,54 +189,33 @@ const createBookingPaymentIntent = async (req, res) => {
 
     const response = await axios.request(checkoutOptions);
     const checkoutSession = response.data.data;
-    
-    console.log('PayMongo Checkout Session Created:', {
-      sessionId: checkoutSession.id,
-      checkoutUrl: checkoutSession.attributes.checkout_url,
-      referenceNumber: checkoutSession.attributes.reference_number
-    });
 
-    // ✅ Update booking with checkout session details
-    booking.checkoutSessionId = checkoutSession.id;
-    booking.referenceNumber = checkoutSession.attributes.reference_number;
-    booking.paymentType = paymentType || 'full';
-    booking.initialPaymentAmount = amountToPay;
-    
-    if (isPartial) {
-      booking.remainingBalance = booking.totalAmount - amountToPay;
-    }
-    
-    await booking.save();
+    console.log('✅ PayMongo Checkout Session Created Successfully');
+    console.log('Session ID:', checkoutSession.id);
+    console.log('Checkout URL:', checkoutSession.attributes.checkout_url);
 
-    console.log('Booking updated with checkout session details');
     console.log('=======================================');
-    console.log('CHECKOUT SESSION CREATED SUCCESSFULLY');
+    console.log('CHECKOUT SESSION CREATED SUCCESSFULLY (Booking will be created in webhook)');
     console.log('=======================================');
 
     return res.json({
       success: true,
       checkoutUrl: checkoutSession.attributes.checkout_url,
       checkoutSessionId: checkoutSession.id,
-      referenceNumber: checkoutSession.attributes.reference_number,
-      bookingId: bookingId,
-      paymentType: paymentType || 'full',
-      paymentAmount: amountToPay,
-      message: 'Checkout session created successfully'
+      message: 'Checkout session created - booking will be created only after successful payment'
     });
 
   } catch (error) {
     console.error('=======================================');
     console.error('BOOKING CHECKOUT SESSION ERROR');
     console.error('=======================================');
-    console.error('Error Type:', error.name);
     console.error('Error Message:', error.message);
     
     if (error.response) {
-      console.error('PayMongo API Error:');
-      console.error('Status:', error.response.status);
-      console.error('Data:', JSON.stringify(error.response.data, null, 2));
+      console.error('PayMongo API Error Status:', error.response.status);
+      console.error('PayMongo Error Data:', JSON.stringify(error.response.data, null, 2));
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Failed to create checkout session',

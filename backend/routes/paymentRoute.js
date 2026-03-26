@@ -24,64 +24,46 @@ router.post('/webhook', async (req, res) => {
     console.log('=======================================');
 
     // ✅ Handle Checkout Session Payment Success
-    if (event.attributes.type === 'checkout_session.payment.paid') {
-      const session = event.attributes.data;
-      const metadata = session.attributes.payments?.[0]?.attributes?.metadata || session.attributes.metadata;
-      const referenceNumber = session.attributes.reference_number;
-      
-      console.log('Checkout Session Payment Paid');
-      console.log('Reference Number:', referenceNumber);
-      console.log('Metadata:', metadata);
+    // ✅ NEW WEBHOOK - CREATE BOOKING ONLY AFTER SUCCESSFUL PAYMENT
+if (event.attributes.type === 'checkout_session.payment.paid') {
+  const session = event.attributes.data;
+  const metadata = session.attributes.metadata || {};
 
-      // Check if this is a booking payment
-      const booking = await Booking.findById(referenceNumber);
-      
-      if (booking) {
-        console.log('Booking found for checkout session');
-        
-        const paymentType = metadata?.payment_type || 'full';
-        const isInitialPayment = metadata?.is_initial_payment === true || metadata?.is_initial_payment === 'true';
+  let rawBookingData;
+  try {
+    rawBookingData = metadata.rawBookingData ? JSON.parse(metadata.rawBookingData) : null;
+  } catch (e) {
+    console.error('Failed to parse rawBookingData from webhook');
+    return res.json({ received: true });
+  }
 
-        if (paymentType === 'partial' && isInitialPayment) {
-          // Partial payment - mark as confirmed but not fully paid
-          booking.status = 'confirmed';
-          booking.initialPaymentPaid = true;
-          booking.initialPaymentPaidAt = new Date();
-        } else {
-          // Full payment
-          booking.status = 'confirmed';
-          booking.fullyPaid = true;
-          booking.fullyPaidAt = new Date();
-        }
+  if (!rawBookingData) {
+    console.error('No rawBookingData found in metadata');
+    return res.json({ received: true });
+  }
 
-        booking.paidAt = new Date();
-        booking.updatedAt = new Date();
-        
-        await booking.save();
-        
-        console.log('Booking updated successfully via webhook');
-        return res.json({ received: true, bookingConfirmed: true });
-      }
+  // ←←← DITO NA GAGAWA NG BOOKING RECORD ←←←
+  const newBooking = new Booking({
+    ...rawBookingData,
+    checkoutSessionId: session.id,
+    referenceNumber: session.attributes.reference_number || `WW-${Date.now()}`,
+    initialPaymentPaid: true,
+    initialPaymentPaidAt: new Date(),
+    paidAt: new Date(),
+    status: rawBookingData.paymentType === 'full' ? 'confirmed' : 'partial_paid',
+  });
 
-      // Check if this is an inquiry payment
-      const inquiry = await Inquiry.findById(referenceNumber);
-      
-      if (inquiry) {
-        console.log('Inquiry found for checkout session');
-        
-        inquiry.status = 'PAID';
-        inquiry.paymentConfirmedAt = new Date();
-        inquiry.updatedAt = new Date();
-        
-        await inquiry.save();
-        
-        console.log('Inquiry updated successfully via webhook');
-        return res.json({ received: true, inquiryPaid: true });
-      }
+  await newBooking.save();
 
-      console.log('No booking or inquiry found for reference:', referenceNumber);
-      return res.json({ received: true, notFound: true });
-    }
+  console.log(`✅ BOOKING CREATED FROM PAYMENT SUCCESS! ID: ${newBooking._id}`);
+
+  // Optional: Update promo count
+  if (newBooking.promoId) {
+    await require('../models/promo').findByIdAndUpdate(newBooking.promoId, { $inc: { usedCount: 1 } });
+  }
+
+  return res.json({ received: true, bookingCreated: true, bookingId: newBooking._id });
+}
 
     // ✅ Handle Payment Link Payment Success (for balance payments)
     if (event.attributes.type === 'link.payment.paid') {
