@@ -34,9 +34,10 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
     if (!booking) return null;
 
-    // Booking is locked (read-only) when cancelled or confirmed/paid
-    const LOCKED_STATUSES = ['cancelled', 'confirmed', 'fully_paid', 'partial_paid'];
-    const isLocked = LOCKED_STATUSES.includes(booking.bookingStatus?.toLowerCase());
+    // booking.status is uppercased by userDashboard formatter (e.g. 'CANCELLED', 'CONFIRMED')
+    // Also handle lowercase variants from raw API responses as a safety net
+    const _status = (booking.status || booking.bookingStatus || '').toUpperCase();
+    const isLocked = ['CANCELLED', 'CONFIRMED', 'FULLY_PAID', 'PARTIAL_PAID'].includes(_status);
 
     // ✅ FIXED: Extract destination from all available sources.
     // Priority: populated packageId.destination → parse from packageName pattern → fallback
@@ -787,15 +788,14 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
             {/* Package Inclusions Section — handled by BookingCustomizer below */}
 
-            {/* Customize Your Booking - only shown for pending bookings */}
+            {/* Customize Your Booking - hidden when booking is locked (cancelled/confirmed) */}
             {!isLocked ? (
                 <BookingCustomizer 
                     booking={booking}
                     onUpdate={handleCustomizerUpdate}
                 />
             ) : (
-                /* Read-only inclusions summary for confirmed/cancelled bookings */
-                booking.customizedInclusions && booking.customizedInclusions.length > 0 && (
+                booking.customizedInclusions?.filter(inc => inc.isChecked !== false).length > 0 && (
                     <div className="bd-card bd-inclusions-summary-card">
                         <h3 className="bd-card-title">Package Inclusions</h3>
                         <div className="bd-inclusions-summary-list">

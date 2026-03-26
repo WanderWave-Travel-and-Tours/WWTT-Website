@@ -1956,7 +1956,8 @@ const handleNextPassenger = async (e) => {
         exchangeRate={exchangeRate}                   
         currencySymbol={currencySymbol}              
           convertPrice={convertPrice}
-
+        selectedRoomType={selectedRoomType}
+        customizationData={customizationData}
       />
 
       <AppointmentModal

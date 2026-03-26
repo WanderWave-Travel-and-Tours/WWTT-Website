@@ -49,6 +49,11 @@ const ApplicationDetails = ({
     // Check if this is a booking-type inquiry
     const isBooking = inquiry.inquiryType === 'BOOKING' || inquiry.inquiryType === 'FLIGHT_BOOKING';
 
+    // Booking is locked (read-only) when cancelled or confirmed/paid
+    // inquiry.status is uppercased by userDashboard formatter
+    const _inquiryStatus = (inquiry.status || '').toUpperCase();
+    const isLocked = ['CANCELLED', 'CONFIRMED', 'FULLY_PAID', 'PARTIAL_PAID'].includes(_inquiryStatus);
+
     // ── Smart Display Title ─────────────────────────────────────────────
     // Build a rich title for bookings: Duration · Destination · PackageName
     // If packageName is already a full title (e.g. "3D2N TAIPEI (min of 2 pax)"),
@@ -365,26 +370,30 @@ const ApplicationDetails = ({
             )}
 
             {/* Show uploaded documents */}
-            <div className="ad-uploaded-docs-wrapper">
-                <UploadedDocumentsView 
-                    documents={uploadedDocuments}
-                    isLoading={isLoadingDocuments}
-                />
-            </div>
+            {!isLocked && (
+                <div className="ad-uploaded-docs-wrapper">
+                    <UploadedDocumentsView 
+                        documents={uploadedDocuments}
+                        isLoading={isLoadingDocuments}
+                    />
+                </div>
+            )}
 
             {/* Upload new documents section */}
-            <div className="ad-upload-section-wrapper">
-                <DocumentsSection 
-                    visaDetails={visaDetails}
-                    uploadedFiles={uploadedFiles}
-                    handleFileSelect={handleFileSelect}
-                    handleDrop={handleDrop}
-                    removeFile={removeFile}
-                    submitDocuments={submitDocuments}
-                    isUploading={isUploading}
-                    uploadProgress={uploadProgress}
-                />
-            </div>
+            {!isLocked && (
+                <div className="ad-upload-section-wrapper">
+                    <DocumentsSection 
+                        visaDetails={visaDetails}
+                        uploadedFiles={uploadedFiles}
+                        handleFileSelect={handleFileSelect}
+                        handleDrop={handleDrop}
+                        removeFile={removeFile}
+                        submitDocuments={submitDocuments}
+                        isUploading={isUploading}
+                        uploadProgress={uploadProgress}
+                    />
+                </div>
+            )}
         </div>
     );
 };

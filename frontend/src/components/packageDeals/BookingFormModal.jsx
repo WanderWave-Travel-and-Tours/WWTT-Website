@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
@@ -301,10 +302,14 @@ const BookingFormModal = ({
   // ✅ NEW: Currency props
   currency = 'PHP',
   exchangeRate = 58,
-  currencySymbol = '₱'
+  currencySymbol = '₱',
+  // ✅ FIX: Added missing props referenced in handleConfirmBooking
+  selectedRoomType = null,
+  customizationData = null,
 }) => {
   const toast = useToast();
-  
+  // ✅ ADD THIS LINE
+const [localLoading, setLocalLoading] = useState(false);
   // ============================================
   // CONFIRMATION MODAL STATE
   // ============================================
@@ -383,39 +388,72 @@ const BookingFormModal = ({
   // ============================================
   // CONFIRM BOOKING ACTION
   // ============================================
-  const handleConfirmBooking = () => {
-    setShowConfirmModal(false);
-    if (pendingSubmit) {
-      handleNextPassenger(pendingSubmit);
-      // Show booking completed modal after confirming
-      setShowBookingCompletedModal(true);
+  // ============================================
+// CONFIRM BOOKING ACTION - NEW PAYMENT FLOW
+// ============================================
+// ============================================
+// CONFIRM BOOKING ACTION - NEW PAYMENT FLOW
+// ============================================
+const handleConfirmBooking = async () => {
+  setShowConfirmModal(false);
+  
+  if (!pendingSubmit) return;
 
-      // ============================================================
-      // BOOKING COUNT TRACKER — fires once when booking is confirmed
-      // Records the actual conversion from page view to confirmed book
-      // ============================================================
-      const trackBookingCount = async () => {
-        try {
-          await fetch('https://wanderwaveph.onrender.com/api/page-views/booking-count', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              packageId:   pkg?.id   || pkg?._id  || null,
-              packageName: pkg?.name || pkg?.title || null,
-              paxCount:    totalPassengers || 1,
-              paymentType: paymentType || 'unknown',
-              totalAmount: finalAmount || 0,
-            }),
-          });
-        } catch (err) {
-          // Silent fail — never block UX for analytics
-          console.warn('⚠️ Booking count tracking failed:', err);
-        }
-      };
-      trackBookingCount();
+  setLocalLoading(true);   // ← Ito ang ginagamit natin ngayon
+
+  try {
+    // ============================================
+    // COLLECT ALL BOOKING DATA
+    // ============================================
+    const fullBookingData = {
+      packageName: pkg.name || pkg.title,
+      packageId: pkg._id || pkg.id,
+      fullName: passengers[0]?.firstName + " " + (passengers[0]?.lastName || ''),
+      email: passengers[0]?.email,
+      totalAmount: finalAmount,
+      initialPaymentAmount: paymentType === 'full' ? finalAmount : partialAmount,
+      paymentType: paymentType,
+      startDate: selectedDate,
+      endDate: getCalculatedDates().end.toISOString().split('T')[0],
+      duration: pkg.duration,
+      pax: { adult: totalPassengers, children: 0, infants: 0 },
+      passengers: passengers,
+      selectedFlight: selectedFlight,
+      selectedRoomType: selectedRoomType,
+      includesAirfare: bookingWithAirfare,
+      appliedPromo: appliedPromo,
+      customizationData: customizationData,
+      currency: currency,
+      timerExpiredAtBooking: false   // baguhin mo kung may timer prop
+    };
+
+    // ============================================
+    // CALL PAYMENT ENDPOINT
+    // ============================================
+    const API_BASE = import.meta.env.VITE_API_URL || 'https://wanderwaveph.onrender.com';
+    const response = await axios.post(
+      `${API_BASE}/api/payment/create-intent`,
+      fullBookingData
+    );
+
+    if (response.data.success && response.data.checkoutUrl) {
+      toast.success('Redirecting to secure payment page...');
+      window.location.href = response.data.checkoutUrl;
+      onClose();                    // close modal
+    } else {
+      throw new Error('No checkout URL returned from server');
     }
-    setPendingSubmit(null);
-  };
+
+  } catch (error) {
+    console.error('Payment creation error:', error);
+    toast.error(
+      error.response?.data?.message || 
+      'Failed to start payment. Please try again.'
+    );
+  } finally {
+    setLocalLoading(false);
+  }
+};
 
   // ============================================
   // CANCEL CONFIRMATION
@@ -855,17 +893,15 @@ const BookingFormModal = ({
               )}
               
               <button 
-                type="submit" 
-                disabled={loading}
-                className="bfm-submit-btn"
-                style={{
-                  flex: passengerStep === 1 ? '1' : '2'
-                }}
-              >
-                {loading ? 'PROCESSING...' : 
-                 passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 
-                 `NEXT: PASSENGER ${passengerStep + 1}`}
-              </button>
+  type="submit" 
+  disabled={localLoading || loading}
+  className="bfm-submit-btn"
+  style={{ flex: passengerStep === 1 ? '1' : '2' }}
+>
+  {localLoading ? 'PROCESSING PAYMENT...' : 
+   passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 
+   `NEXT: PASSENGER ${passengerStep + 1}`}
+</button>
             </div>
 
           </form>
