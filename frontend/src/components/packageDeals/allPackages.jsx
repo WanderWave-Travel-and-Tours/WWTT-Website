@@ -73,8 +73,11 @@ function AllPackages({
     setPriceError('');
   }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations]);
 
+  // ✅ Hidden packages — excluded from public listing
+  const HIDDEN_PACKAGE_IDS = ['69c4c9cceda858d7049a460c'];
+
   // Sort packages based on sortOrder
-  const sortedPackages = [...packages].sort((a, b) => {
+  const sortedPackages = [...packages].filter(pkg => !HIDDEN_PACKAGE_IDS.includes(pkg._id || pkg.id)).sort((a, b) => {
     if (sortOrder === 'price-asc') return (a.price || 0) - (b.price || 0);
     if (sortOrder === 'price-desc') return (b.price || 0) - (a.price || 0);
     return 0;

@@ -430,11 +430,13 @@ const handleConfirmBooking = async () => {
     // ============================================
     // CALL PAYMENT ENDPOINT
     // ============================================
-    const API_BASE = import.meta.env.VITE_API_URL || 'https://wanderwaveph.onrender.com';
-    const response = await axios.post(
-      `${API_BASE}/api/payment/create-intent`,
-      fullBookingData
-    );
+    const API_BASE = import.meta.env.VITE_API_URL
+      || (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
+    const baseUrl = API_BASE.replace(/\/+$/, '');
+    const paymentUrl = baseUrl.endsWith('/api')
+      ? `${baseUrl}/payment/create-intent`
+      : `${baseUrl}/api/payment/create-intent`;
+    const response = await axios.post(paymentUrl, fullBookingData);
 
     if (response.data.success && response.data.checkoutUrl) {
       toast.success('Redirecting to secure payment page...');

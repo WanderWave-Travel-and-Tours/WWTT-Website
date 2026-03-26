@@ -601,15 +601,29 @@ const frontendBuildPath = path.join(__dirname, '../client/build');
 if (fs.existsSync(frontendBuildPath)) {
   app.use(express.static(frontendBuildPath));
 
-  app.get('*', (req, res) => {
+  app.all('/{*path}', (req, res) => {
     if (req.originalUrl.startsWith('/api')) {
-      return res.status(404).json({ success: false, message: 'API endpoint not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: `API endpoint not found: ${req.method} ${req.originalUrl}` 
+      });
     }
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
   });
 
   console.log(`✅ Serving React frontend from: ${frontendBuildPath}`);
 } else {
+  // No frontend build — still guard API routes from returning HTML
+  app.all('/{*path}', (req, res) => {
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(404).json({ 
+        success: false, 
+        message: `API endpoint not found: ${req.method} ${req.originalUrl}` 
+      });
+    }
+    res.status(404).json({ success: false, message: 'Not found' });
+  });
+
   console.warn(`⚠️ Frontend build folder not found at: ${frontendBuildPath}`);
   console.warn(`   Run 'npm run build' in your React app folder and ensure the path is correct.`);
 }
