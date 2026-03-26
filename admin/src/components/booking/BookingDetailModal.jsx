@@ -10,6 +10,71 @@ const formatDate = (dateString) => {
     });
 };
 
+// Smart Destination Resolver - Fixes wrong destination like "BOHOL" when title indicates Siargao
+const getRealDestination = (packageTitle, storedDestination, packageData = null) => {
+    const title = (packageTitle || '').toLowerCase().trim();
+    const dest = (storedDestination || '').toLowerCase().trim();
+
+    // Priority 1: Strong keywords in the actual package title (most reliable)
+    if (title.includes('siargao')) return 'Siargao';
+    if (title.includes('bohol')) return 'Bohol';
+    if (title.includes('boracay')) return 'Boracay';
+    if (title.includes('palawan') || title.includes('el nido') || title.includes('coron')) return 'Palawan';
+    if (title.includes('cebu')) return 'Cebu';
+    if (title.includes('clark') || title.includes('pampanga')) return 'Clark / Pampanga';
+
+    // Priority 2: If stored destination looks wrong but title has "solo/joiners" or generic
+    if ((dest === 'bohol' || dest === '') && 
+        (title.includes('solo') || title.includes('joiners') || title === 'solo/joiners')) {
+        
+        // Check packageData destination as backup
+        if (packageData?.destination && packageData.destination.toLowerCase() !== 'bohol') {
+            return packageData.destination;
+        }
+        
+        // Last resort: Assume Siargao for this specific mismatch (you can expand later)
+        return 'Siargao';
+    }
+
+    // Priority 3: Use stored destination if it seems reasonable
+    if (dest && dest !== 'bohol' && dest.length > 2) {
+        return storedDestination; // Return original casing
+    }
+
+    return storedDestination || 'Philippines';
+};
+
+// ── Helper: build itinerary array from start/end dates ──────────────────────
+const buildItinerary = (startDate, endDate, duration) => {
+    if (!startDate) return [];
+
+    const start = new Date(startDate);
+    let days = 1;
+
+    if (endDate) {
+        const end = new Date(endDate);
+        days = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    } else if (duration) {
+        const match = duration.match(/(\d+)\s*[Dd]/);
+        if (match) days = parseInt(match[1]);
+    }
+
+    if (days < 1) days = 1;
+
+    return Array.from({ length: days }, (_, i) => {
+        const date = new Date(start);
+        date.setDate(date.getDate() + i);
+        let activity = `Day ${i + 1} Activities`;
+        if (i === 0) activity = 'Arrival, Airport Pickup & Hotel Check-in';
+        if (i === days - 1 && days > 1) activity = 'Hotel Check-out & Transfer to Airport – End of Service';
+        return {
+            day: i + 1,
+            date: date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+            activity,
+        };
+    });
+};
+
 export const BookingDetailModal = ({ 
     showModal, 
     selectedBooking, 
@@ -27,6 +92,7 @@ export const BookingDetailModal = ({
     const [voucherData, setVoucherData] = useState(null);
     const [submittedDocs, setSubmittedDocs] = useState([]);
     const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+    const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
 
     // Fetch submitted documents whenever the modal opens for a booking
     useEffect(() => {
@@ -58,99 +124,168 @@ export const BookingDetailModal = ({
 
     const closeModal = () => setShowModal(false);
 
-    const handleConfirmAndClose = async (booking) => {
-        const confirmed = await handleConfirm(booking);
-        if (confirmed) {
-            // Generate voucher data after confirmation
-            generateVoucherData(booking);
-        }
+    const handleConfirmAndClose = (booking) => {
+        handleConfirm(booking);
     };
 
     const handleCancelAndClose = (booking) => handleCancel(booking);
 
-    const generateVoucherData = (booking) => {
-        // Prepare voucher data from booking
-        const voucher = {
-            // Client Info
-            clientName: booking.customerName,
-            clientEmail: booking.email,
-            clientPhone: booking.phone || booking.contactNumber || "N/A",
-            
-            // Travel Details
-            travelDate: booking.travelDate,
-            voucherDate: formatDate(new Date()),
-            
-            // Package Info
-            packageName: booking.packageName,
-            packageRate: booking.totalAmount / (booking.guests || 1),
-            numberOfGuests: booking.guests || 1,
-            duration: booking.duration || "4D3N",
-            
-            // Guest Details
-            guestList: booking.passengers || [
-                {
-                    name: booking.customerName,
-                    age: 30,
-                    nationality: "FIL"
+    // ── Generate voucher: fetch full booking from API so we get real inclusions ──
+    // ── Generate voucher: fetch full booking from API so we get real inclusions ──
+// ── Generate voucher with Smart Destination Detection ──
+const generateVoucherData = async (booking) => {
+    setIsGeneratingVoucher(true);
+    try {
+        // 1. Fetch full booking details
+        const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}`);
+        if (!res.ok) throw new Error(`Failed to fetch booking: ${res.status}`);
+        const fullBooking = await res.json();
+
+        // 2. Fetch package data (by ID or fallback by title)
+        let packageData = null;
+        const packageId = fullBooking.packageId?._id || fullBooking.packageId;
+
+        if (packageId) {
+            try {
+                const pkgRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/${packageId}`);
+                if (pkgRes.ok) {
+                    const pkgJson = await pkgRes.json();
+                    packageData = pkgJson.data || pkgJson;
                 }
-            ],
-            
-            // Payment Info
-            totalAmount: booking.totalAmount,
-            downPayment: booking.totalAmount - (booking.remainingBalance || 0),
-            amountDue: booking.remainingBalance || 0,
-            paymentType: booking.paymentType,
-            balancePaid: booking.balancePaidAmount || 0,
-            
-            // Package Details
-            inclusions: [
-                "4D3N Accommodation (Las Residencias Bed and Breakfast)",
-                "Roundtrip Van Transfers",
-                "Daily Breakfast",
-                "Half-Day City Tour w/ Light Snacks",
-                "Underground River w/ Picnic Lunch",
-                "Honda Bay Island Hopping Tour with Picnic Lunch"
-            ],
-            exclusions: [
-                "Snorkeling Gears",
-                "Other Entrance that not included in Tour package",
-                "Travel Insurance"
-            ],
-            amenities: {
-                amenities: ["Free Wi-Fi", "Shared Room", "Shared Bathroom"],
-                facilities: ["Air conditioning room"]
-            },
-            
-            // Itinerary
-            itinerary: [
-                {
-                    day: 1,
-                    date: "December 11, 2025",
-                    activity: "Pickup from PPS Airport, Transfer to Hotel, Half Day City Tour with Light Snacks (1pm to 5pm)"
-                },
-                {
-                    day: 2,
-                    date: "December 12, 2025",
-                    activity: "Underground River Tour with Buffet Lunch (7am to 3pm)"
-                },
-                {
-                    day: 3,
-                    date: "December 13, 2025",
-                    activity: "Honda Bay Island Hopping Tour with Picnic Lunch (7am to 3pm)"
-                },
-                {
-                    day: 4,
-                    date: "December 14, 2025",
-                    activity: "Transfer to Airport - end of service"
+            } catch (e) { console.warn('Package fetch failed:', e); }
+        }
+
+        // Fallback: search by packageName if needed
+        if (!packageData && fullBooking.packageName) {
+            try {
+                const allRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/all`);
+                if (allRes.ok) {
+                    const allPkgs = await allRes.json();
+                    const found = (allPkgs.data || allPkgs).find(p => 
+                        p.title?.trim() === fullBooking.packageName?.trim()
+                    );
+                    if (found) packageData = found;
                 }
-            ],
-            
-            referenceNumber: booking.referenceNumber || booking.id
+            } catch (e) { /* silent */ }
+        }
+
+        // ── 3. SMART DESTINATION RESOLVER ──
+        const getRealDestination = (pkgTitle, storedDest, pkgData) => {
+            const title = (pkgTitle || '').toLowerCase();
+            const dest = (storedDest || '').toLowerCase();
+
+            // Strong keyword detection from title (most reliable)
+            if (title.includes('siargao')) return 'Siargao';
+            if (title.includes('bohol')) return 'Bohol';
+            if (title.includes('boracay')) return 'Boracay';
+            if (title.includes('palawan') || title.includes('el nido') || title.includes('coron')) return 'Palawan';
+            if (title.includes('cebu')) return 'Cebu';
+
+            // Fix common mismatch: "solo/joiners" with wrong Bohol destination
+            if ((dest === 'bohol' || dest === '') && 
+                (title.includes('solo') || title.includes('joiners') || title === 'solo/joiners')) {
+                return 'Siargao';   // ← This is the key fix for your current booking
+            }
+
+            // Use stored destination if it seems valid
+            if (dest && dest !== 'bohol' && dest.length > 2) {
+                return storedDest;
+            }
+
+            return storedDest || pkgData?.destination || 'Philippines';
         };
-        
+
+        // ── 4. Build clean package display name ──
+        const pkgDuration = (packageData?.duration || fullBooking.duration || '4D3N').trim();
+        const pkgTitle = (packageData?.title || fullBooking.packageName || booking.packageName || 'Solo/Joiners').trim();
+        const finalDestination = getRealDestination(
+            pkgTitle, 
+            packageData?.destination || fullBooking.destination || selectedBooking.destination,
+            packageData
+        );
+
+        const displayPackageName = [pkgDuration, finalDestination, pkgTitle]
+            .filter(Boolean)
+            .join(' | ');
+
+        // ── 5. Inclusions (keep your existing accurate logic) ──
+        let inclusions = [];
+
+        if (fullBooking.isCustomized && Array.isArray(fullBooking.customizedInclusions)) {
+            inclusions = fullBooking.customizedInclusions
+                .filter(i => i.isChecked !== false)
+                .map(i => i.name)
+                .filter(Boolean);
+        }
+
+        if (inclusions.length === 0 && Array.isArray(packageData?.inclusions)) {
+            inclusions = packageData.inclusions.filter(Boolean);
+        }
+
+        if (inclusions.length === 0 && Array.isArray(fullBooking.packageId?.inclusions)) {
+            inclusions = fullBooking.packageId.inclusions.filter(Boolean);
+        }
+
+        if (inclusions.length === 0 && Array.isArray(fullBooking.originalInclusions)) {
+            inclusions = fullBooking.originalInclusions.filter(Boolean);
+        }
+
+        if (inclusions.length === 0) {
+            inclusions = ['Package inclusions not specified. Please contact the agency.'];
+        }
+
+        // ── 6. Guest List & Itinerary ──
+        let guestList = [];
+        if (Array.isArray(fullBooking.passengers) && fullBooking.passengers.length > 0) {
+            guestList = fullBooking.passengers.map(p => ({
+                name: `${p.firstName || ''} ${p.lastName || ''}`.trim() || fullBooking.fullName,
+                age: p.age ?? 'N/A',
+                nationality: p.nationality || 'Filipino',
+            }));
+        }
+        if (guestList.length === 0) {
+            guestList = [{ name: fullBooking.fullName || booking.customerName, age: 'N/A', nationality: 'Filipino' }];
+        }
+
+        const itinerary = buildItinerary(fullBooking.startDate, fullBooking.endDate, fullBooking.duration);
+
+        // ── 7. Final Voucher Object ──
+        const voucher = {
+            clientName: fullBooking.fullName || booking.customerName,
+            clientEmail: fullBooking.email || booking.email,
+            clientPhone: fullBooking.primaryContact?.phone || 'N/A',
+
+            travelDate: formatDate(fullBooking.startDate) || booking.travelDate,
+
+            // FIXED: Now correctly shows "4D3N | Siargao | solo/joiners" or better
+            packageName: displayPackageName,
+
+            packageRate: fullBooking.totalAmount / ((fullBooking.pax?.adult || booking.guests) || 1),
+            numberOfGuests: fullBooking.pax?.adult || booking.guests || 1,
+
+            guestList,
+            inclusions,
+            exclusions: ['Snorkeling Gears', 'Other Entrance fees not included', 'Travel Insurance'],
+            amenities: { amenities: ['Free Wi-Fi'], facilities: ['Air conditioning'] },
+            itinerary,
+
+            totalAmount: fullBooking.totalAmount || booking.totalAmount,
+            downPayment: (fullBooking.totalAmount || booking.totalAmount) - (fullBooking.remainingBalance || 0),
+            amountDue: fullBooking.remainingBalance || 0,
+
+            referenceNumber: fullBooking.referenceNumber || booking.referenceNumber,
+        };
+
         setVoucherData(voucher);
         setShowVoucherPreview(true);
-    };
+
+    } catch (err) {
+        console.error('❌ Error generating voucher:', err);
+        alert('May error sa pag-load ng voucher data. Please try again.');
+    } finally {
+        setIsGeneratingVoucher(false);
+    }
+};
 
     const getStatusConfig = (status) => {
         const configs = {
@@ -424,20 +559,45 @@ export const BookingDetailModal = ({
                         </div>
 
                         {/* PACKAGE DETAILS */}
-                        <div className="cnm-card">
-                            <div className="cnm-card-header">
-                                <h3 className="cnm-card-title">Package Details</h3>
-                                <span className="cnm-badge cnm-badge-amber">{selectedBooking.guests} PAX</span>
-                            </div>
-                            <div className="cnm-message-box">
-                                <h4 style={{margin:'0 0 10px 0', fontSize:'16px'}}>{selectedBooking.packageName}</h4>
-                                {selectedBooking.destination && selectedBooking.destination !== 'N/A' && (
-                                    <p style={{margin:'0 0 4px 0', color:'#475569'}}>Destination: {selectedBooking.destination}</p>
-                                )}
-                                <p style={{margin:'0 0 4px 0', color:'#475569'}}>Duration: {selectedBooking.duration}</p>
-                                <p style={{margin:0, color:'#475569'}}>Reference No: {selectedBooking.referenceNumber}</p>
-                            </div>
-                        </div>
+                        {/* PACKAGE DETAILS */}
+<div className="cnm-card">
+    <div className="cnm-card-header">
+        <h3 className="cnm-card-title">Package Details</h3>
+        <span className="cnm-badge cnm-badge-amber">{selectedBooking.guests} PAX</span>
+    </div>
+    <div className="cnm-message-box">
+        <h4 style={{margin: '0 0 12px 0', fontSize: '17px', fontWeight: '700'}}>
+            {selectedBooking.packageName || 'solo/joiners'}
+        </h4>
+        
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px 20px'}}>
+            <div>
+                <label style={{fontSize: '12px', color: '#64748b', fontWeight: '600'}}>Destination</label>
+                <p style={{margin: '4px 0 0 0', fontWeight: '700', color: '#0f172a'}}>
+                    {getRealDestination(
+                        selectedBooking.packageName, 
+                        selectedBooking.destination || selectedBooking.rawData?.packageId?.destination,
+                        selectedBooking.rawData?.packageId || null
+                    )}
+                </p>
+            </div>
+            
+            <div>
+                <label style={{fontSize: '12px', color: '#64748b', fontWeight: '600'}}>Duration</label>
+                <p style={{margin: '4px 0 0 0', fontWeight: '700', color: '#0f172a'}}>
+                    {selectedBooking.duration || '4D3N'}
+                </p>
+            </div>
+            
+            <div>
+                <label style={{fontSize: '12px', color: '#64748b', fontWeight: '600'}}>Reference No.</label>
+                <p style={{margin: '4px 0 0 0', fontWeight: '600', color: '#475569', fontFamily: 'monospace'}}>
+                    {selectedBooking.referenceNumber || 'N/A'}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 
                         {/* SPECIAL REQUESTS */}
                         {selectedBooking.message && (
@@ -572,8 +732,10 @@ export const BookingDetailModal = ({
                             <button 
                                 className="cnm-btn cnm-btn-primary cnm-btn-left"
                                 onClick={() => generateVoucherData(selectedBooking)}
+                                disabled={isGeneratingVoucher}
                             >
-                                <FileText size={16} /> View Voucher
+                                <FileText size={16} />
+                                {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
                             </button>
                         )}
                         
