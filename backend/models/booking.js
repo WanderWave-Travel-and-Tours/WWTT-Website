@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
- 
+
 const passengerSchema = new mongoose.Schema({
   passengerNumber: { type: Number, required: true },
   firstName: { type: String, required: true },
@@ -11,14 +11,14 @@ const passengerSchema = new mongoose.Schema({
   gender: { type: String, required: true },
   address: { type: String, required: true },
   nationality: { type: String, required: true },
-  
+
   idDocument: {
     filename: String,
     originalName: String,
     path: String,
     size: Number
   },
-  
+
   passportDocument: {
     filename: String,
     originalName: String,
@@ -57,10 +57,13 @@ const bookingSchema = new mongoose.Schema({
   packageName: { type: String, required: true },
 
   packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'packages' },
-  sellerPrice: { type: Number, required: true },
-  markup: { type: Number, required: true },
-  price: { type: Number, required: true }, 
-timerExpiredAtBooking: { type: Boolean, default: false },
+
+  // ✅ Ginawang optional na para hindi mag-error sa webhook
+  sellerPrice: { type: Number, default: 0 },
+  markup: { type: Number, default: 0 },
+  price: { type: Number, default: 0 },
+
+  timerExpiredAtBooking: { type: Boolean, default: false },
   priceType: { 
     type: String, 
     enum: ['discounted', 'markup'],
@@ -68,6 +71,7 @@ timerExpiredAtBooking: { type: Boolean, default: false },
   },
   originalPackagePrice: { type: Number },
   appliedMarkup: { type: Number, default: 0 },
+
   startDate: { type: String, required: true },   
   endDate:   { type: String, required: true },  
   duration:  { type: String, required: true },  
@@ -78,11 +82,15 @@ timerExpiredAtBooking: { type: Boolean, default: false },
     infants: { type: Number, default: 0 },
   },
 
-  selectedRoomType: { type: String },
+  // ✅ Hotel Room - Mixed type (pwede complex object)
+  selectedRoomType: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   hotelName: { type: String },
   numberOfRooms: { type: Number },
 
-  packageTotal: { type: Number },
+  packageTotal: { type: Number, default: 0 },
 
   isCustomized: { type: Boolean, default: false },
   customizedInclusions: [customInclusionSchema],
@@ -113,8 +121,8 @@ timerExpiredAtBooking: { type: Boolean, default: false },
   remainingBalance: { type: Number, default: 0 },
   balancePaidAmount: { type: Number, default: 0 },
   balancePaidAt: { type: Date },
-  
-  // ✅ EXISTING Payment Link fields (keep for backward compatibility and balance payments)
+
+  // Payment fields
   initialPaymentId: { type: String },
   balancePaymentId: { type: String },
   initialPaymentLinkId: { type: String },
@@ -122,7 +130,6 @@ timerExpiredAtBooking: { type: Boolean, default: false },
   paymentId: { type: String },
   paymentLinkId: { type: String },
 
-  // ✅ NEW: Checkout Session fields (for initial payments)
   checkoutSessionId: { type: String },
   initialPaymentPaid: { type: Boolean, default: false },
   initialPaymentPaidAt: { type: Date },
@@ -133,10 +140,14 @@ timerExpiredAtBooking: { type: Boolean, default: false },
   email:    { type: String, required: true },
   message:  { type: String },
 
-  passengers: { type: [passengerSchema], required: true, validate: {
-    validator: v => Array.isArray(v) && v.length > 0,
-    message: 'A booking must contain at least one passenger.'
-  }},
+  passengers: { 
+    type: [passengerSchema], 
+    required: true, 
+    validate: {
+      validator: v => Array.isArray(v) && v.length > 0,
+      message: 'A booking must contain at least one passenger.'
+    }
+  },
 
   status: {
     type: String,
@@ -144,7 +155,7 @@ timerExpiredAtBooking: { type: Boolean, default: false },
     default: 'pending'
   },
 
-  referenceNumber:  { type: String },
+  referenceNumber: { type: String },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date },
@@ -156,9 +167,14 @@ timerExpiredAtBooking: { type: Boolean, default: false },
   promoCode: { type: String, default: null },
   promoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Promo', default: null },
   discountAmount: { type: Number, default: 0 },
-  finalPackageTotal: { type: Number, required: true },
 
-  // Walk-in appointment fields
+  // ✅ Ginawang optional na (default sa totalAmount)
+  finalPackageTotal: { 
+    type: Number, 
+    default: function() { return this.totalAmount || 0; } 
+  },
+
+  // Walk-in fields
   isWalkin: { type: Boolean, default: false },
   appointmentDate: { type: String },
   appointmentTime: { type: String }
@@ -176,16 +192,13 @@ bookingSchema.virtual('computedRemainingBalance').get(function() {
   return 0;
 });
 
-// ✅ UPDATED: Enhanced isFullyPaid to check checkout session payments too
 bookingSchema.methods.isFullyPaid = function() {
   if (this.paymentType === 'full') {
-    // Check both old status and new checkout session payment flag
     return this.status === 'confirmed' 
       || this.status === 'fully_paid' 
       || this.initialPaymentPaid === true;
   }
   
-  // For partial payments, check both old and new tracking
   const totalPaid = this.initialPaymentAmount + this.balancePaidAmount;
   const paidViaCheckout = this.initialPaymentPaid && this.balancePaymentPaid;
   
@@ -205,16 +218,14 @@ bookingSchema.methods.getPaymentStatusDescription = function() {
   }
   
   if ((this.initialPaymentAmount > 0 || this.initialPaymentPaid) && this.balancePaidAmount === 0) {
-    return `Partial Paid (₱${this.remainingBalance.toLocaleString()} remaining)`;
+    return `Partial Paid (₱${this.remainingBalance?.toLocaleString() || 0} remaining)`;
   }
   
   return 'Pending Payment';
 };
 
 bookingSchema.methods.getCustomizationSummary = function() {
-  if (!this.isCustomized) {
-    return null;
-  }
+  if (!this.isCustomized) return null;
 
   const checkedInclusions = this.customizedInclusions.filter(inc => inc.isChecked);
   const addedInclusions = checkedInclusions.filter(inc => !inc.isOriginal);

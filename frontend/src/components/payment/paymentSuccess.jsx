@@ -14,6 +14,31 @@ const PaymentSuccess = () => {
 
   useEffect(() => {
     // ✅ RESTORE USER SESSION FROM LOCALSTORAGE
+// Pagkatapos ng confetti at user session restore
+const sessionId = searchParams.get('session_id');
+
+if (sessionId) {
+  // Verify the session and try to get booking
+  verifyPaymentSession(sessionId);
+}
+
+const verifyPaymentSession = async (sessionId) => {
+  try {
+    const res = await fetch(`https://wanderwaveph.onrender.com/api/payment/verify-session/${sessionId}`);
+    const data = await res.json();
+
+    if (data.success && data.session) {
+      // Try to find booking by checkoutSessionId
+      const bookingRes = await fetch(`https://wanderwaveph.onrender.com/api/bookings?checkoutSessionId=${sessionId}`);
+      // ... handle response at i-set ang details
+    }
+  } catch (err) {
+    console.error('Session verification failed', err);
+  } finally {
+    setLoading(false);
+  }
+};
+
     const storedUser = localStorage.getItem('wanderwave_user');
     if (storedUser) {
       try {

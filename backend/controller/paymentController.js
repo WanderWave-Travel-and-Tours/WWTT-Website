@@ -144,6 +144,50 @@ const createBookingPaymentIntent = async (req, res) => {
       isPartial: isPartial
     });
 
+    // ✅ CLEAN BOOKING DATA PARA SA WEBHOOK - FIX FOR VALIDATION ERROR
+    const cleanBookingData = {
+      packageName: bookingData.packageName,
+      packageId: bookingData.packageId,
+      fullName: bookingData.fullName,
+      email: bookingData.email,
+      totalAmount: bookingData.totalAmount,
+      initialPaymentAmount: bookingData.initialPaymentAmount || bookingData.totalAmount,
+      paymentType: bookingData.paymentType || 'full',
+      startDate: bookingData.startDate,
+      endDate: bookingData.endDate,
+      duration: bookingData.duration,
+      pax: bookingData.pax,
+      passengers: bookingData.passengers || [],
+      includesAirfare: bookingData.includesAirfare || false,
+      selectedFlight: bookingData.selectedFlight || null,
+
+      // Hotel / Room Handling
+      selectedRoomType: bookingData.selectedRoomType || null,
+
+      // Customization
+      isCustomized: bookingData.isCustomized || false,
+      customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
+      customizedInclusions: bookingData.customizedInclusions || [],
+
+      // Required fields na madalas kulang sa schema
+      price: bookingData.price || bookingData.totalAmount || 0,
+      markup: bookingData.markup || 0,
+      sellerPrice: bookingData.sellerPrice || bookingData.basePrice || 0,
+      finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount || 0,
+      packageTotal: bookingData.packageTotal || bookingData.totalAmount || 0,
+
+      // Extra safety fields
+      timerExpiredAtBooking: bookingData.timerExpiredAtBooking || false,
+      promoId: bookingData.promoId || null,
+    };
+
+    console.log('🧹 Cleaned bookingData for webhook metadata:', {
+      hasSelectedRoomType: !!cleanBookingData.selectedRoomType,
+      finalPackageTotal: cleanBookingData.finalPackageTotal,
+      price: cleanBookingData.price,
+      selectedRoomTypeType: typeof cleanBookingData.selectedRoomType
+    });
+
     const checkoutOptions = {
       method: 'POST',
       url: `${PAYMONGO_API}/checkout_sessions`,
@@ -172,8 +216,8 @@ const createBookingPaymentIntent = async (req, res) => {
             success_url: `${FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${FRONTEND_URL}/packages`,
             metadata: {
-              // ← LAHAT NG DATA DITO PARA SA WEBHOOK
-              rawBookingData: JSON.stringify(bookingData),
+              // ← CLEAN DATA NA GAMITIN PARA SA WEBHOOK
+              rawBookingData: JSON.stringify(cleanBookingData),
               payment_type: bookingData.paymentType || 'full',
               is_initial_payment: true,
               customer_name: bookingData.fullName,
@@ -348,6 +392,6 @@ const createBalancePaymentLink = async (req, res) => {
 
 module.exports = { 
     createInquiryCheckoutSession, 
-    createBookingPaymentIntent,  // ✅ Updated export name
+    createBookingPaymentIntent,  
     createBalancePaymentLink 
 };

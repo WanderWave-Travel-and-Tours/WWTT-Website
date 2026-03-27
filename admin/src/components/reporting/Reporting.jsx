@@ -26,6 +26,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { exportReportingToPDF } from './utils/reportingPdfExport';
 import './Reporting.css';
 
 // ─── CHART DATA (social media — replace with real API when ready) ──────────────
@@ -373,6 +374,48 @@ const Reporting = () => {
     return source.slice(-count);
   };
 
+  // ── Period label (for PDF header & badge) ────────────────────────────────
+  const periodLabel = useMemo(() => {
+    if (activePeriod === 'daily') {
+      const d = new Date(selectedDailyDate + 'T00:00:00');
+      return 'Daily: ' + d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    if (activePeriod === 'weekly') {
+      const now   = new Date();
+      const start = new Date(now); start.setDate(start.getDate() - 6);
+      const fmt   = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `Weekly: ${fmt(start)} – ${fmt(now)}`;
+    }
+    if (activePeriod === 'monthly') {
+      const [year, month] = selectedMonth.split('-');
+      const d = new Date(year, month - 1, 1);
+      return 'Monthly: ' + d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+    if (activePeriod === 'trend') {
+      return 'Trend: Last 6 Months';
+    }
+    if (activePeriod === 'custom' && customDates.start && customDates.end) {
+      const fmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `Custom: ${fmt(customDates.start)} – ${fmt(customDates.end)}`;
+    }
+    return 'All Time';
+  }, [activePeriod, selectedDailyDate, selectedMonth, customDates]);
+
+  // ── PDF Export ────────────────────────────────────────────────────────────
+  const handleExportPDF = () => {
+    exportReportingToPDF({
+      quickStats,
+      platformSummary:      PLATFORM_SUMMARY,
+      chartData:            getChartData(),
+      activeChart,
+      filteredPageViewStats,
+      filteredBookingCounts,
+      viewToBookRate,
+      activePeriod,
+      periodLabel,
+    });
+  };
+
   return (
     <div className="rp-layout">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
@@ -391,7 +434,11 @@ const Reporting = () => {
               All Platforms
               <ChevronDown size={15} />
             </button>
-            <button className="rp-icon-btn" title="Download report">
+            <button
+              className="rp-icon-btn"
+              title={`Download ${periodLabel} report`}
+              onClick={handleExportPDF}
+            >
               <Download size={18} />
             </button>
           </div>
@@ -632,8 +679,8 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
+                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="Facebook" fill="#1877F2" radius={[6, 6, 0, 0]} maxBarSize={48} />
               </BarChart>
@@ -652,8 +699,8 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
+                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="Instagram" fill="#E1306C" radius={[6, 6, 0, 0]} maxBarSize={48} />
               </BarChart>
@@ -672,8 +719,8 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
+                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="TikTok" fill="#010101" radius={[6, 6, 0, 0]} maxBarSize={48} />
               </BarChart>
@@ -692,10 +739,10 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
+                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '12px' }} />
+                <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '12px', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
                 <Bar dataKey="Facebook"  fill="#1877F2" radius={[4, 4, 0, 0]} maxBarSize={32} />
                 <Bar dataKey="Instagram" fill="#E1306C" radius={[4, 4, 0, 0]} maxBarSize={32} />
                 <Bar dataKey="TikTok"    fill="#010101" radius={[4, 4, 0, 0]} maxBarSize={32} />
