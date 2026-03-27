@@ -124,7 +124,13 @@ export const BookingDetailModal = ({
 
     const closeModal = () => setShowModal(false);
 
+    const hasDocuments = submittedDocs.length > 0;
+
     const handleConfirmAndClose = (booking) => {
+        if (!hasDocuments) {
+            alert('Cannot confirm booking. The client has not submitted any required documents yet.');
+            return;
+        }
         handleConfirm(booking);
     };
 
@@ -742,13 +748,46 @@ const generateVoucherData = async (booking) => {
                         {/* ✅ Walk-in bookings are auto-confirmed, no confirm button needed */}
                         {status === 'PENDING' && !isWalkin && (
                             <>
-                                <button 
-                                    className="cnm-btn cnm-btn-success"
-                                    onClick={() => handleConfirmAndClose(selectedBooking)}
-                                    disabled={actionLoading}
+                                <div style={{ position: 'relative', display: 'inline-block' }}
+                                    title={!hasDocuments ? 'Cannot confirm: No documents submitted yet.' : ''}
                                 >
-                                    <CheckIcon size={16} /> Confirm Booking
-                                </button>
+                                    <button 
+                                        className="cnm-btn cnm-btn-success"
+                                        onClick={() => handleConfirmAndClose(selectedBooking)}
+                                        disabled={actionLoading || !hasDocuments}
+                                        style={!hasDocuments ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : {}}
+                                    >
+                                        <CheckIcon size={16} /> Confirm Booking
+                                    </button>
+                                    {!hasDocuments && !isLoadingDocs && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: 'calc(100% + 8px)',
+                                            left: '50%',
+                                            transform: 'translateX(-50%)',
+                                            background: '#1e293b',
+                                            color: '#fff',
+                                            fontSize: '12px',
+                                            padding: '6px 10px',
+                                            borderRadius: '6px',
+                                            whiteSpace: 'nowrap',
+                                            pointerEvents: 'none',
+                                            zIndex: 9999,
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                        }}>
+                                            ⚠️ No documents submitted yet
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                borderWidth: '5px',
+                                                borderStyle: 'solid',
+                                                borderColor: '#1e293b transparent transparent transparent',
+                                            }} />
+                                        </div>
+                                    )}
+                                </div>
                                 <button 
                                     className="cnm-btn cnm-btn-danger cnm-btn-outline"
                                     onClick={() => handleCancelAndClose(selectedBooking)}

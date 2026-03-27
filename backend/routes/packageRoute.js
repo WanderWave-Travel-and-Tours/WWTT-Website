@@ -191,6 +191,26 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
 
+
+
+
+// ✅ SAFE ITINERARY - Huwag burahin kung walang valid itinerary na sinend
+if (itinerary && itinerary !== '' && itinerary !== '[]') {
+    try {
+        const parsed = JSON.parse(itinerary);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            updateData.itinerary = parsed;
+            console.log(`Itinerary updated with ${parsed.length} days`);
+        } else {
+            console.log("Received empty itinerary - skipping to protect existing data");
+        }
+    } catch (e) {
+        console.error("Invalid itinerary JSON from frontend");
+    }
+} else {
+    console.log("No itinerary in request - keeping existing itinerary (safe mode)");
+}
+        
         // ✅ Handle pax and minPax based on tourType
         if (tourType === 'private' && pax) {
             updateData.pax = parseInt(pax);

@@ -8,6 +8,15 @@ const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/packages';
 const EditPackage = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    // ✅ DISABLE AUTO-DRAFT para maiwasan ang QuotaExceededError
+// ✅ PERMANENT DRAFT PROTECTION - Inalis ang auto-draft para sa Edit Package
+useEffect(() => {
+    if (packageId) {
+        const draftKey = `draft_edit-package-${packageId}`;
+        localStorage.removeItem(draftKey);
+        console.log(`🧹 Auto-draft cleared for package ${packageId}`);
+    }
+}, [packageId]);
     const packageId = location.state?.packageId;
 
     const [title, setTitle] = useState('');
@@ -71,23 +80,60 @@ const EditPackage = () => {
     }, [packageId, navigate]);
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        const processedInclusions = inclusions.filter(i => i.trim().length > 0);
-        const cleanedItinerary = itinerary.filter(d => d.activities.some(a => a.trim() !== '')).map(d => ({ day: d.day, title: d.title.replace(/^Day \d+:?/, '').trim(), activities: d.activities.filter(a => a.trim() !== '') }));
-        const formData = new FormData();
-        formData.append('title', title); formData.append('destination', destination);
-        formData.append('price', price); formData.append('duration', duration);
-        formData.append('category', category); formData.append('inclusions', JSON.stringify(processedInclusions));
-        formData.append('itinerary', JSON.stringify(cleanedItinerary));
-        if (file) formData.append('image', file); else formData.append('existingImage', existingImage);
-        try {
-            const res = await fetch(`${API_BASE_URL}/edit/${packageId}`, { method: 'PUT', body: formData });
-            const data = await res.json();
-            if (data.status === 'ok') { alert('✅ Package Updated!'); navigate('/view-packages'); }
-            else alert('❌ Error: ' + data.error);
-        } catch (err) { console.error(err); alert('❌ Server error'); }
-    };
+    e.preventDefault();
 
+    const processedInclusions = inclusions.filter(i => i.trim().length > 0);
+
+    // Final safe itinerary
+    const finalItinerary = Array.isArray(itinerary) && itinerary.length > 0 
+        ? itinerary.map((day) => ({
+            day: day.day,
+            title: day.title || `Day ${day.day}`,
+            activities: Array.isArray(day.activities) 
+                ? day.activities.filter(a => a && typeof a === "string" && a.trim() !== "")
+                : []
+          }))
+        : [];
+
+    console.group("🔒 SAFE ITINERARY FINAL SUBMIT");
+    console.log("Days sent:", finalItinerary.length);
+    console.groupEnd();
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('destination', destination);
+    formData.append('price', price);
+    formData.append('duration', duration);
+    formData.append('category', category);
+    formData.append('inclusions', JSON.stringify(processedInclusions));
+    formData.append('itinerary', JSON.stringify(finalItinerary));
+
+    if (file) {
+        formData.append('image', file);
+    } else {
+        formData.append('existingImage', existingImage);
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/edit/${packageId}`, { 
+            method: 'PUT', 
+            body: formData 
+        });
+
+        const data = await res.json();
+
+        if (data.status === 'ok') {
+            localStorage.removeItem(`draft_edit-package-${packageId}`);
+            alert('✅ Package Updated Successfully!');
+            navigate('/view-packages');
+        } else {
+            alert('❌ Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Submit error:', err);
+        alert('❌ Server error');
+    }
+};
     if (loading) return <div className="edit-page"><Sidebar /><main className="edit-main"><div className="edit-loading">Loading...</div></main></div>;
     if (error) return <div className="edit-page"><Sidebar /><main className="edit-main"><div className="edit-error">{error}</div></main></div>;
 
