@@ -362,7 +362,6 @@ const Reporting = () => {
   ];
 
   const toggleSidebar = () => setIsCollapsed(prev => !prev);
-  const sidebarWidth  = isCollapsed ? 88 : 280;
 
   const getChartData = () => {
     const count  = activePeriod === 'daily'   ? 3
@@ -420,22 +419,23 @@ const Reporting = () => {
     <div className="rp-layout">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main className="rp-main" style={{ marginLeft: sidebarWidth }}>
+      <main className={`rp-main ${isCollapsed ? 'rp-main--collapsed' : ''}`}>
+        <div className="rp-container">
 
         {/* ── PAGE HEADER ── */}
         <div className="rp-page-header">
-          <div className="rp-page-header-left">
+          <div className="rp-page-title-block">
             <h1 className="rp-page-title">SOCIAL MEDIA REPORTING</h1>
             <p className="rp-page-subtitle">Facebook · Instagram · TikTok performance overview</p>
           </div>
           <div className="rp-page-header-right">
-            <button className="rp-all-sections-btn">
+            <button className="rp-btn">
               <BarChart2 size={16} />
               All Platforms
               <ChevronDown size={15} />
             </button>
             <button
-              className="rp-icon-btn"
+              className="rp-btn-icon"
               title={`Download ${periodLabel} report`}
               onClick={handleExportPDF}
             >
@@ -446,7 +446,6 @@ const Reporting = () => {
 
         {/* ── QUICK STATS ── */}
         <section className="rp-section">
-          <h2 className="rp-section-title">Quick Stats <span className="rp-badge">This Month</span></h2>
           <div className="rp-stats-grid">
             {quickStats.map((stat) => {
               const Icon = stat.icon;
@@ -679,8 +678,8 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="Facebook" fill="#1877F2" radius={[6, 6, 0, 0]} maxBarSize={48} />
               </BarChart>
@@ -699,8 +698,8 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="Instagram" fill="#E1306C" radius={[6, 6, 0, 0]} maxBarSize={48} />
               </BarChart>
@@ -719,8 +718,8 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="TikTok" fill="#010101" radius={[6, 6, 0, 0]} maxBarSize={48} />
               </BarChart>
@@ -739,10 +738,10 @@ const Reporting = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '12px', fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
+                <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '12px', fontFamily: 'Plus Jakarta Sans, sans-serif' }} />
                 <Bar dataKey="Facebook"  fill="#1877F2" radius={[4, 4, 0, 0]} maxBarSize={32} />
                 <Bar dataKey="Instagram" fill="#E1306C" radius={[4, 4, 0, 0]} maxBarSize={32} />
                 <Bar dataKey="TikTok"    fill="#010101" radius={[4, 4, 0, 0]} maxBarSize={32} />
@@ -751,6 +750,7 @@ const Reporting = () => {
           </div>
 
         </section>
+        </div>{/* end rp-container */}
       </main>
     </div>
   );
