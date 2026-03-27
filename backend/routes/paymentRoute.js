@@ -14,107 +14,54 @@ router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutS
 router.post('/create-intent', paymentController.createBookingPaymentIntent); // ✅ Updated to use checkout session
 router.post('/create-balance-intent', paymentController.createBalancePaymentLink);
 
-// ✅ UPDATED WEBHOOK - Handle both checkout sessions and payment links
 router.post('/webhook', async (req, res) => {
-  try {
-    const event = req.body.data;
-    console.log('=======================================');
-    console.log('WEBHOOK RECEIVED');
-    console.log('Event Type:', event.attributes.type);
-    console.log('=======================================');
+  // AGAD na mag-reply para hindi mag-timeout
+  res.status(200).json({ received: true });
 
-    // ✅ Handle Checkout Session Payment Success
-    // ✅ NEW WEBHOOK - CREATE BOOKING ONLY AFTER SUCCESSFUL PAYMENT
-if (event.attributes.type === 'checkout_session.payment.paid') {
-  const session = event.attributes.data;
-  const metadata = session.attributes.metadata || {};
-
-  let rawBookingData;
-  try {
-    rawBookingData = metadata.rawBookingData ? JSON.parse(metadata.rawBookingData) : null;
-  } catch (e) {
-    console.error('Failed to parse rawBookingData from webhook');
-    return res.json({ received: true });
-  }
-
-  if (!rawBookingData) {
-    console.error('No rawBookingData found in metadata');
-    return res.json({ received: true });
-  }
-
-  // ←←← DITO NA GAGAWA NG BOOKING RECORD ←←←
-  const newBooking = new Booking({
-    ...rawBookingData,
-    checkoutSessionId: session.id,
-    referenceNumber: session.attributes.reference_number || `WW-${Date.now()}`,
-    initialPaymentPaid: true,
-    initialPaymentPaidAt: new Date(),
-    paidAt: new Date(),
-    status: rawBookingData.paymentType === 'full' ? 'confirmed' : 'partial_paid',
+  // Background processing
+  processWebhookInBackground(req.body).catch(err => {
+    console.error('Webhook background error:', err);
   });
-
-  await newBooking.save();
-
-  console.log(`✅ BOOKING CREATED FROM PAYMENT SUCCESS! ID: ${newBooking._id}`);
-
-  // Optional: Update promo count
-  if (newBooking.promoId) {
-    await require('../models/promo').findByIdAndUpdate(newBooking.promoId, { $inc: { usedCount: 1 } });
-  }
-
-  return res.json({ received: true, bookingCreated: true, bookingId: newBooking._id });
-}
-
-    // ✅ Handle Payment Link Payment Success (for balance payments)
-    if (event.attributes.type === 'link.payment.paid') {
-      const payment = event.attributes.data;
-      const metadata = payment.attributes.data.attributes.metadata;
-      const bookingId = metadata.booking_id;
-
-      console.log('Payment Link Payment Paid');
-      console.log('Booking ID:', bookingId);
-      console.log('Is Balance Payment:', metadata.is_balance_payment);
-
-      const booking = await Booking.findById(bookingId);
-
-      if (!booking) {
-        console.error('Booking not found for payment link');
-        return res.status(404).json({ received: true, error: 'Booking not found' });
-      }
-
-      if (metadata.is_balance_payment === true || metadata.is_balance_payment === 'true') {
-        // This is a balance payment
-        booking.status = 'confirmed';
-        booking.balancePaymentPaid = true;
-        booking.balancePaymentPaidAt = new Date();
-        booking.fullyPaid = true;
-        booking.fullyPaidAt = new Date();
-      } else {
-        // Regular payment link (if any)
-        booking.status = 'confirmed';
-        booking.paidAt = new Date();
-      }
-
-      booking.updatedAt = new Date();
-      await booking.save();
-
-      console.log('Balance payment confirmed via webhook');
-      return res.json({ received: true, balancePaymentConfirmed: true });
-    }
-
-    // ✅ Other event types
-    console.log('Unhandled event type:', event.attributes.type);
-    res.json({ received: true });
-
-  } catch (error) {
-    console.error('=======================================');
-    console.error('WEBHOOK ERROR');
-    console.error('=======================================');
-    console.error('Error:', error.message);
-    console.error('Stack:', error.stack);
-    res.status(500).json({ received: true, error: 'Webhook processing failed' });
-  }
 });
+
+const processWebhookInBackground = async (body) => {
+  try {
+    const eventType = body?.data?.attributes?.type;
+    console.log('🔔 Webhook Background Processing:', eventType);
+
+    if (eventType === 'checkout_session.payment.paid') {
+      const session = body.data.attributes.data;
+      const metadata = session.attributes.metadata || {};
+
+      let rawBookingData = null;
+      try {
+        if (metadata.rawBookingData) {
+          rawBookingData = JSON.parse(metadata.rawBookingData);
+        }
+      } catch (e) {
+        console.error('Failed to parse rawBookingData', e);
+        return;
+      }
+
+      if (!rawBookingData) return;
+
+      const newBooking = new Booking({
+        ...rawBookingData,
+        checkoutSessionId: session.id,
+        referenceNumber: session.attributes.reference_number || `WW-${Date.now()}`,
+        initialPaymentPaid: true,
+        initialPaymentPaidAt: new Date(),
+        paidAt: new Date(),
+        status: rawBookingData.paymentType === 'full' ? 'confirmed' : 'partial_paid',
+      });
+
+      await newBooking.save();
+      console.log(`✅ BOOKING CREATED FROM WEBHOOK! ID: ${newBooking._id}`);
+    }
+  } catch (error) {
+    console.error('Webhook processing failed:', error);
+  }
+};
 
 // ✅ Verify checkout session
 router.get('/verify-session/:sessionId', async (req, res) => {
