@@ -118,16 +118,25 @@ const createBookingPaymentIntent = async (req, res) => {
     console.log('=======================================');
     console.log('BOOKING PAYMENT - CHECKOUT SESSION START (NO BOOKING CREATION YET)');
     console.log('=======================================');
-    console.log('Full Booking Data Received:', req.body);
+    console.log('Full Booking Data Received:', JSON.stringify(req.body, null, 2));   // ← Detailed log
 
-    const bookingData = req.body;   // ← Lahat ng data mula frontend
+    const bookingData = req.body;
+console.log('🔍 FULL REQUEST BODY RECEIVED:', JSON.stringify(bookingData, null, 2));
+console.log('🔑 Keys received:', Object.keys(bookingData));
+    // ✅ IMPROVED VALIDATION - Mas malinaw kung ano ang kulang
+    const missingFields = [];
+    if (!bookingData.packageName) missingFields.push('packageName');
+    if (!bookingData.totalAmount && bookingData.totalAmount !== 0) missingFields.push('totalAmount');
+    if (!bookingData.fullName) missingFields.push('fullName');
+    if (!bookingData.email) missingFields.push('email');
 
-    // Basic validation
-    if (!bookingData.packageName || !bookingData.totalAmount || !bookingData.fullName || !bookingData.email) {
-      console.error('Missing required booking data');
+    if (missingFields.length > 0) {
+      console.error('❌ Missing required fields:', missingFields);
+      console.error('🔑 Keys actually received:', Object.keys(bookingData));
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: packageName, totalAmount, fullName, email'
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        receivedKeys: Object.keys(bookingData)
       });
     }
 
@@ -144,7 +153,7 @@ const createBookingPaymentIntent = async (req, res) => {
       isPartial: isPartial
     });
 
-    // ✅ CLEAN BOOKING DATA PARA SA WEBHOOK - FIX FOR VALIDATION ERROR
+    // ✅ CLEAN BOOKING DATA PARA SA WEBHOOK (pinanatili ko ang dati mong version)
     const cleanBookingData = {
       packageName: bookingData.packageName,
       packageId: bookingData.packageId,
@@ -160,23 +169,15 @@ const createBookingPaymentIntent = async (req, res) => {
       passengers: bookingData.passengers || [],
       includesAirfare: bookingData.includesAirfare || false,
       selectedFlight: bookingData.selectedFlight || null,
-
-      // Hotel / Room Handling
       selectedRoomType: bookingData.selectedRoomType || null,
-
-      // Customization
       isCustomized: bookingData.isCustomized || false,
       customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
       customizedInclusions: bookingData.customizedInclusions || [],
-
-      // Required fields na madalas kulang sa schema
       price: bookingData.price || bookingData.totalAmount || 0,
       markup: bookingData.markup || 0,
       sellerPrice: bookingData.sellerPrice || bookingData.basePrice || 0,
       finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount || 0,
       packageTotal: bookingData.packageTotal || bookingData.totalAmount || 0,
-
-      // Extra safety fields
       timerExpiredAtBooking: bookingData.timerExpiredAtBooking || false,
       promoId: bookingData.promoId || null,
     };
@@ -184,8 +185,7 @@ const createBookingPaymentIntent = async (req, res) => {
     console.log('🧹 Cleaned bookingData for webhook metadata:', {
       hasSelectedRoomType: !!cleanBookingData.selectedRoomType,
       finalPackageTotal: cleanBookingData.finalPackageTotal,
-      price: cleanBookingData.price,
-      selectedRoomTypeType: typeof cleanBookingData.selectedRoomType
+      price: cleanBookingData.price
     });
 
     const checkoutOptions = {
@@ -216,7 +216,6 @@ const createBookingPaymentIntent = async (req, res) => {
             success_url: `${FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${FRONTEND_URL}/packages`,
             metadata: {
-              // ← CLEAN DATA NA GAMITIN PARA SA WEBHOOK
               rawBookingData: JSON.stringify(cleanBookingData),
               payment_type: bookingData.paymentType || 'full',
               is_initial_payment: true,
@@ -237,10 +236,6 @@ const createBookingPaymentIntent = async (req, res) => {
     console.log('✅ PayMongo Checkout Session Created Successfully');
     console.log('Session ID:', checkoutSession.id);
     console.log('Checkout URL:', checkoutSession.attributes.checkout_url);
-
-    console.log('=======================================');
-    console.log('CHECKOUT SESSION CREATED SUCCESSFULLY (Booking will be created in webhook)');
-    console.log('=======================================');
 
     return res.json({
       success: true,
@@ -268,7 +263,7 @@ const createBookingPaymentIntent = async (req, res) => {
   }
 };
 
-// ✅ Keep Payment Link option for balance payments
+// ✅ Keep Payment Link option for balance payments (hindi ko ginalaw)
 const createBalancePaymentLink = async (req, res) => {
   try {
     console.log('=======================================');
