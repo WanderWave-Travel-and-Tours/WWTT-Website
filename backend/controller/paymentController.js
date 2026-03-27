@@ -113,17 +113,18 @@ const createInquiryCheckoutSession = async (req, res) => {
 
 // ✅ UPDATED: Changed from Payment Link to Checkout Session
 // ✅ FINAL VERSION - NO BOOKING CREATION UNTIL PAYMENT IS RECEIVED
+// ✅ UPDATED createBookingPaymentIntent - Flexible Validation + Detailed Logging
 const createBookingPaymentIntent = async (req, res) => {
   try {
     console.log('=======================================');
-    console.log('BOOKING PAYMENT - CHECKOUT SESSION START (NO BOOKING CREATION YET)');
+    console.log('BOOKING PAYMENT - CHECKOUT SESSION START');
+    console.log('Full Booking Data Received:', JSON.stringify(req.body, null, 2));
+    console.log('Keys Received:', Object.keys(req.body));
     console.log('=======================================');
-    console.log('Full Booking Data Received:', JSON.stringify(req.body, null, 2));   // ← Detailed log
 
     const bookingData = req.body;
-console.log('🔍 FULL REQUEST BODY RECEIVED:', JSON.stringify(bookingData, null, 2));
-console.log('🔑 Keys received:', Object.keys(bookingData));
-    // ✅ IMPROVED VALIDATION - Mas malinaw kung ano ang kulang
+
+    // ✅ Mas flexible na validation (hindi na strict sa bookingId)
     const missingFields = [];
     if (!bookingData.packageName) missingFields.push('packageName');
     if (!bookingData.totalAmount && bookingData.totalAmount !== 0) missingFields.push('totalAmount');
@@ -132,11 +133,11 @@ console.log('🔑 Keys received:', Object.keys(bookingData));
 
     if (missingFields.length > 0) {
       console.error('❌ Missing required fields:', missingFields);
-      console.error('🔑 Keys actually received:', Object.keys(bookingData));
       return res.status(400).json({
         success: false,
         message: `Missing required fields: ${missingFields.join(', ')}`,
-        receivedKeys: Object.keys(bookingData)
+        receivedKeys: Object.keys(bookingData),
+        note: 'bookingId is not required for new bookings'
       });
     }
 
@@ -146,14 +147,7 @@ console.log('🔑 Keys received:', Object.keys(bookingData));
     const isPartial = bookingData.paymentType === 'partial';
     const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
 
-    console.log('Payment Details:', {
-      paymentType: bookingData.paymentType || 'full',
-      amountToPay: amountToPay,
-      amountInCentavos: amountInCentavos,
-      isPartial: isPartial
-    });
-
-    // ✅ CLEAN BOOKING DATA PARA SA WEBHOOK (pinanatili ko ang dati mong version)
+    // Clean data for webhook
     const cleanBookingData = {
       packageName: bookingData.packageName,
       packageId: bookingData.packageId,
@@ -175,18 +169,14 @@ console.log('🔑 Keys received:', Object.keys(bookingData));
       customizedInclusions: bookingData.customizedInclusions || [],
       price: bookingData.price || bookingData.totalAmount || 0,
       markup: bookingData.markup || 0,
-      sellerPrice: bookingData.sellerPrice || bookingData.basePrice || 0,
+      sellerPrice: bookingData.sellerPrice || 0,
       finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount || 0,
       packageTotal: bookingData.packageTotal || bookingData.totalAmount || 0,
       timerExpiredAtBooking: bookingData.timerExpiredAtBooking || false,
       promoId: bookingData.promoId || null,
     };
 
-    console.log('🧹 Cleaned bookingData for webhook metadata:', {
-      hasSelectedRoomType: !!cleanBookingData.selectedRoomType,
-      finalPackageTotal: cleanBookingData.finalPackageTotal,
-      price: cleanBookingData.price
-    });
+    console.log('🧹 Cleaned bookingData ready for webhook');
 
     const checkoutOptions = {
       method: 'POST',
@@ -234,8 +224,6 @@ console.log('🔑 Keys received:', Object.keys(bookingData));
     const checkoutSession = response.data.data;
 
     console.log('✅ PayMongo Checkout Session Created Successfully');
-    console.log('Session ID:', checkoutSession.id);
-    console.log('Checkout URL:', checkoutSession.attributes.checkout_url);
 
     return res.json({
       success: true,
@@ -247,14 +235,10 @@ console.log('🔑 Keys received:', Object.keys(bookingData));
   } catch (error) {
     console.error('=======================================');
     console.error('BOOKING CHECKOUT SESSION ERROR');
-    console.error('=======================================');
     console.error('Error Message:', error.message);
-    
     if (error.response) {
-      console.error('PayMongo API Error Status:', error.response.status);
       console.error('PayMongo Error Data:', JSON.stringify(error.response.data, null, 2));
     }
-
     res.status(500).json({
       success: false,
       message: 'Failed to create checkout session',

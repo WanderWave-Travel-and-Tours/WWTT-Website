@@ -10,6 +10,38 @@ const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
 // ✅ Routes
+
+// ✅ TEMPORARY TEST ENDPOINT - Para ma-test ang create-intent nang mabilis
+router.post('/test-create-intent', async (req, res) => {
+  console.log('🧪 TEST CREATE INTENT CALLED');
+  console.log('Full Body:', JSON.stringify(req.body, null, 2));
+  console.log('Keys:', Object.keys(req.body));
+
+  // Same logic as createBookingPaymentIntent but with more logs
+  const bookingData = req.body;
+
+  const missing = [];
+  if (!bookingData.packageName) missing.push('packageName');
+  if (!bookingData.totalAmount) missing.push('totalAmount');
+  if (!bookingData.fullName) missing.push('fullName');
+  if (!bookingData.email) missing.push('email');
+
+  if (missing.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: `Missing fields: ${missing.join(', ')}`,
+      received: Object.keys(bookingData)
+    });
+  }
+
+  res.json({
+    success: true,
+    message: "Test passed - data is complete",
+    data: bookingData
+  });
+});
+
+
 router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutSession);
 router.post('/create-intent', paymentController.createBookingPaymentIntent); // ✅ Updated to use checkout session
 router.post('/create-balance-intent', paymentController.createBalancePaymentLink);
