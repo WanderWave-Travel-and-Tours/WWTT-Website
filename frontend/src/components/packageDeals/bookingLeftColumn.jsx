@@ -125,6 +125,17 @@ const RubberStamp = ({ text }) => {
   const cx = size / 2;
   const cy = size / 2;
 
+  // ✅ Dynamic font size — shrinks for long lines so text never overflows the circle.
+  // The usable chord width at mid-radius is roughly (R - 6) * 2 = 64px.
+  // Each character in Arial Black is ~0.65× the font size wide (approx).
+  // Max font we allow is 10, min is 6.
+  const longestLine = line2
+    ? (line1.length >= line2.length ? line1 : line2)
+    : line1;
+  const maxUsableWidth = (R - 8) * 2; // ~60px usable inside circle
+  const charWidthRatio = 0.65;
+  const computedFontSize = Math.min(10, Math.max(6, Math.floor(maxUsableWidth / (longestLine.length * charWidthRatio))));
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -139,31 +150,31 @@ const RubberStamp = ({ text }) => {
       <circle cx={cx} cy={cy} r={R} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeDasharray="4 2"/>
       {/* Inner solid border */}
       <circle cx={cx} cy={cy} r={R - 5} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
-      {/* Text — 1 or 2 lines, always centered */}
+      {/* Text — 1 or 2 lines, always centered, font scales down for long titles */}
       {line2 ? (
         <>
           <text
             x={cx} y={cy - 7}
             textAnchor="middle" dominantBaseline="central"
-            fill="#ffffff" fontSize="10" fontWeight="900"
+            fill="#ffffff" fontSize={computedFontSize} fontWeight="900"
             fontFamily="'Arial Black', Arial, sans-serif"
-            letterSpacing="1"
+            letterSpacing="0.5"
           >{line1}</text>
           <text
             x={cx} y={cy + 8}
             textAnchor="middle" dominantBaseline="central"
-            fill="#ffffff" fontSize="10" fontWeight="900"
+            fill="#ffffff" fontSize={computedFontSize} fontWeight="900"
             fontFamily="'Arial Black', Arial, sans-serif"
-            letterSpacing="1"
+            letterSpacing="0.5"
           >{line2}</text>
         </>
       ) : (
         <text
           x={cx} y={cy}
           textAnchor="middle" dominantBaseline="central"
-          fill="#ffffff" fontSize="10" fontWeight="900"
+          fill="#ffffff" fontSize={computedFontSize} fontWeight="900"
           fontFamily="'Arial Black', Arial, sans-serif"
-          letterSpacing="1"
+          letterSpacing="0.5"
         >{line1}</text>
       )}
     </svg>

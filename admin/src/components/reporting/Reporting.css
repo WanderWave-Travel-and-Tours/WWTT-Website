@@ -265,80 +265,251 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 /* ========================================
-   PLATFORM SUMMARY CARDS
+   PLATFORM SUMMARY — LIGHT MODE PREMIUM
    ======================================== */
 
-.rp-platform-grid {
+.rp-ps-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 20px;
 }
 
-/* Mirrors dashboard card style */
-.rp-platform-card {
+/* Card shell */
+.rp-ps-card {
+  position: relative;
   background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  padding: 20px 24px;
+  border-radius: 18px;
+  border: 1px solid #e8edf3;
+  overflow: hidden;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  transition: box-shadow 0.2s;
+  gap: 0;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0,0,0,0.04);
 }
-.rp-platform-card:hover {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+.rp-ps-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0,0,0,0.04);
 }
 
-.rp-platform-header {
+/* Colored gradient banner at top of card */
+.rp-ps-orb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 96px;
+  border-radius: 0;
+  filter: none;
+  opacity: 1;
+  pointer-events: none;
+  background: var(--pc);
+  /* override inline background with platform gradient via pseudo */
+}
+
+/* The actual gradient header area — built via a wrapper div in JSX */
+.rp-ps-header-band {
+  position: relative;
+  height: 90px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* wave / noise overlay on the band */
+.rp-ps-header-band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Top row — sits inside the band */
+.rp-ps-top {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-left: 4px solid;
-  padding-left: 12px;
+  justify-content: space-between;
+  padding: 20px 22px 0;
 }
 
-.rp-platform-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+.rp-ps-identity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.rp-ps-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.rp-platform-name {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
+.rp-ps-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.18);
 }
 
-.rp-platform-metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 8px;
+.rp-ps-sub {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 600;
+  margin-top: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
-.rp-metric {
+/* ── Engagement ring ── */
+.rp-ps-ring-wrap {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+}
+
+.rp-ps-ring-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.rp-ps-ring-inner {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
 }
 
-.rp-metric-label {
-  font-size: 11px;
-  color: #94a3b8;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.rp-metric-value {
-  font-size: 17px;
-  font-weight: 700;
-  color: #0f172a;
+.rp-ps-ring-value {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
   letter-spacing: -0.3px;
+}
+
+.rp-ps-ring-label {
+  font-size: 7.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 1px;
+}
+
+/* White card body below the band */
+.rp-ps-body {
+  padding: 20px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Divider */
+.rp-ps-divider {
+  height: 1px;
+  border-radius: 1px;
+  opacity: 1;
+  background: #f0f3f8 !important;
+}
+
+/* ── Stats row ── */
+.rp-ps-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.rp-ps-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 14px 0 0;
+}
+
+.rp-ps-stat:last-child {
+  padding-right: 0;
+}
+
+.rp-ps-stat-sep {
+  width: 1px;
+  background: #edf1f7;
+  margin: 0 14px 0 0;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.rp-ps-stat-icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.85;
+}
+
+.rp-ps-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.rp-ps-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
+}
+
+/* Mini progress bar */
+.rp-ps-bar {
+  height: 3px;
+  background: #f0f3f8;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.rp-ps-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: width 0.6s ease;
+}
+
+/* ── Sparkline bars at the bottom ── */
+.rp-ps-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 30px;
+  padding: 0 22px 14px;
+  margin-top: -4px;
+}
+
+.rp-ps-spark-bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+
+.rp-ps-card:hover .rp-ps-spark-bar {
+  opacity: 0.85;
 }
 
 /* ========================================
@@ -376,6 +547,9 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .rp-chart-tab:hover {
   background: #f1f5f9;
@@ -630,6 +804,127 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 /* ========================================
+   KEY METRICS CARD (redesigned)
+   ======================================== */
+
+.rp-key-metrics-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rp-key-metrics-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rp-key-metrics-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.rp-key-metrics-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+}
+
+/* 4-column tile grid */
+.rp-key-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.rp-km-tile {
+  position: relative;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+
+.rp-km-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* Highlighted tile (Eng. Rate) */
+.rp-km-tile--highlight {
+  background: var(--tile-bg, #f0f0f0);
+  border-color: transparent;
+}
+
+/* Top row: icon + label */
+.rp-km-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rp-km-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rp-km-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+/* Large value */
+.rp-km-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.8px;
+  line-height: 1;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.rp-km-value--rate {
+  font-size: 28px;
+}
+
+/* Thin bottom accent bar */
+.rp-km-accent-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 0 0 12px 12px;
+  opacity: 0.6;
+}
+
+/* ========================================
    RESPONSIVE BREAKPOINTS
    ======================================== */
 
@@ -654,6 +949,10 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   .rp-platform-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .rp-ps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* Tablet Portrait */
@@ -666,6 +965,13 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   .rp-chart-controls {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/* Key metrics responsive */
+@media (max-width: 900px) {
+  .rp-key-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -692,6 +998,10 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   }
 
   .rp-platform-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rp-ps-grid {
     grid-template-columns: 1fr;
   }
 
@@ -743,6 +1053,15 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
   .rp-container {
     gap: 18px;
+  }
+
+  .rp-key-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .rp-km-value {
+    font-size: 22px;
   }
 }
 
