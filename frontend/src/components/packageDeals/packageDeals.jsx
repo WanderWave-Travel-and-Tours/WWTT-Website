@@ -433,7 +433,7 @@ function PackageDealsContent() {
     const fetchPackages = async () => {
       try {
         console.log('📦 Fetching packages...');
-        const response = await fetch('https://wanderwaveph.onrender.com/api/packages/all'); 
+        const response = await fetch('https://wanderwaveph.onrender.com/api/packages/with-tours'); 
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -523,6 +523,10 @@ function PackageDealsContent() {
               featured: index === 0, 
               description: pkg.title,
               includes: pkg.inclusions || [],
+              // ✅ Tour availability — populated by /with-tours endpoint
+              hasTours: pkg.hasTours || false,
+              tourCount: pkg.tourCount || 0,
+              matchedTours: pkg.matchedTours || [],
             };
           });
           console.log(`✅ Fetched ${formattedPackages.length} packages`);
@@ -608,6 +612,9 @@ function PackageDealsContent() {
     filteredPackages = filteredPackages.filter(pkg => pkg.discount && pkg.discount > 0);
     filteredPackages.sort((a, b) => b.discount - a.discount);
   } 
+  else if (scopeFilter === 'with-tours') {
+    filteredPackages = filteredPackages.filter(pkg => pkg.hasTours === true);
+  }
   else if (scopeFilter !== 'all') {
     filteredPackages = filteredPackages.filter(pkg => pkg.scope === scopeFilter);
   }
@@ -747,6 +754,7 @@ function PackageDealsContent() {
   let headerTitle = 'All Packages';
   if (scopeFilter === 'favorites') headerTitle = 'My Favorites';
   else if (scopeFilter === 'best-deals') headerTitle = 'Best Deals';
+  else if (scopeFilter === 'with-tours') headerTitle = 'Packages with Tours';
   else if (selectedFilter !== 'all') headerTitle = currentCategoryName;
 
   return (

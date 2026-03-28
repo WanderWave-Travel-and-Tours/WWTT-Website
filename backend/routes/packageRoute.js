@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Package = require('../models/package');
+const Tour = require('../models/tour');
 const ActivityLog = require('../models/ActivityLog');
 const multer = require('multer');
 const path = require('path');
@@ -383,7 +384,65 @@ router.get('/init-archive', async (req, res) => {
     }
 });
 
-// 7. FETCH SINGLE PACKAGE (Generic ID routes should be last)
+// 7. FETCH ALL ACTIVE PACKAGES ENRICHED WITH TOUR AVAILABILITY
+// Analyzes each package's destination against the Tour collection
+// Returns packages with hasTours: true/false and matchedTours metadata
+router.get('/with-tours', async (req, res) => {
+    try {
+        // Fetch all active packages
+        const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
+
+        // Fetch all non-archived tours (only need destination field for matching)
+        const tours = await Tour.find({ isArchive: 'No' }, { destination: 1, title: 1, tourType: 1, price: 1 });
+
+        // Build a map: normalized destination → [tour docs]
+        const toursByDestination = {};
+        for (const tour of tours) {
+            const key = tour.destination.trim().toLowerCase();
+            if (!toursByDestination[key]) {
+                toursByDestination[key] = [];
+            }
+            toursByDestination[key].push(tour);
+        }
+
+        // Enrich each package
+        const enriched = packages.map((pkg) => {
+            const pkgDestKey = (pkg.destination || '').trim().toLowerCase();
+
+            // Exact match first, then partial match
+            let matchedTours = toursByDestination[pkgDestKey] || [];
+
+            if (matchedTours.length === 0) {
+                // Partial match: destination contains or is contained by tour destination
+                matchedTours = tours.filter((t) => {
+                    const tKey = t.destination.trim().toLowerCase();
+                    return tKey.includes(pkgDestKey) || pkgDestKey.includes(tKey);
+                });
+            }
+
+            return {
+                ...pkg.toObject(),
+                hasTours: matchedTours.length > 0,
+                tourCount: matchedTours.length,
+                matchedTours: matchedTours.map((t) => ({
+                    _id: t._id,
+                    title: t.title,
+                    tourType: t.tourType,
+                    price: t.price,
+                    destination: t.destination
+                }))
+            };
+        });
+
+        console.log(`✅ /with-tours — ${enriched.length} packages, ${enriched.filter(p => p.hasTours).length} have matching tours`);
+        res.status(200).json({ status: 'ok', data: enriched });
+    } catch (error) {
+        console.error('❌ Error in /with-tours:', error);
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// 8. FETCH SINGLE PACKAGE (Generic ID routes should be last)
 router.get('/:id', async (req, res) => {
     try {
         const pkg = await Package.findById(req.params.id);

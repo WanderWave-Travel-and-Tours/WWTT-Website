@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
 import CurrencyModal from './CurrencyModal';
 import PromoSection from './promoSection';
-import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, LogIn, ArrowUpNarrowWide, ArrowDownNarrowWide } from 'lucide-react';
+import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, LogIn, ArrowUpNarrowWide, ArrowDownNarrowWide, Map } from 'lucide-react';
 import './allPackages.css';
 
 function AllPackages({
@@ -370,6 +370,13 @@ function AllPackages({
             >
               <Globe size={16} />
               <span>International</span>
+            </button>
+            <button
+              className={`packages-scope-filter-btn ${scopeFilter === 'with-tours' ? 'active' : ''}`}
+              onClick={() => onScopeChange('with-tours')}
+            >
+              <Map size={16} />
+              <span>With Tours</span>
             </button>
 
             {/* Divider separating scope filters from sort filters */}

@@ -77,12 +77,14 @@
   top: 24px; left: 14%; width: 72%;
   z-index: 4; opacity: 1; pointer-events: none;
   transform: translateX(-78%) translateY(8px) scale(0.88);
+  clip-path: inset(0 0 0 0 round 20px);
 }
 .promo-slide--next {
   position: absolute;
   top: 24px; left: 14%; width: 72%;
   z-index: 4; opacity: 1; pointer-events: none;
   transform: translateX(78%) translateY(8px) scale(0.88);
+  clip-path: inset(0 0 0 0 round 20px);
 }
 
 /* Peek card visual */
@@ -93,6 +95,8 @@
   filter: brightness(0.38);
   border-color: transparent !important;
   box-shadow: none !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
 }
 
 /* ── VOUCHER CARD ── */
@@ -115,12 +119,16 @@
   flex: 1;
   width: 100%;
   height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
 }
 .card-face--front {
   display: flex;
   flex: 1;
   min-width: 0;
   position: relative;
+  border-radius: 20px;
+  overflow: hidden;
 }
 .card-face--back {
   display: none;
@@ -132,8 +140,9 @@
   width: 290px;
   position: relative;
   overflow: hidden;
-  border-radius: 20px 0 0 20px;
+  border-radius: 0;
   background-color: #001b3e;
+  flex-shrink: 0;
 }
 
 .destination-bg-image {
@@ -169,6 +178,8 @@
   flex-direction: column;
   gap: 10px;
   justify-content: center;
+  border-radius: 0;
+  overflow: hidden;
 }
 
 /* Decorative dot pattern */
@@ -389,13 +400,15 @@
 .coming-soon-card {
   background: linear-gradient(135deg, #001020 0%, #002050 100%) !important;
   border: 1px solid rgba(255,140,0,0.2) !important;
+  overflow: hidden !important;
 }
 .coming-soon-image-side {
   flex: 0 0 290px; width: 290px;
   position: relative; overflow: hidden;
-  border-radius: 20px 0 0 20px;
+  border-radius: 0;
   background: linear-gradient(135deg, #000d1f 0%, #001b3e 50%, #002a5c 100%);
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .coming-soon-image-side::before {
   content: ''; position: absolute; inset: 0;
@@ -919,26 +932,32 @@
 .promo-slide--enter-left  { animation: enterFromLeft  0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 .promo-slide--exit-left {
   position: absolute; top: 24px; left: 14%; width: 72%; z-index: 6; pointer-events: none;
+  clip-path: inset(0 0 0 0 round 20px);
   animation: exitToLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .promo-slide--exit-right {
   position: absolute; top: 24px; left: 14%; width: 72%; z-index: 6; pointer-events: none;
+  clip-path: inset(0 0 0 0 round 20px);
   animation: exitToRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .promo-slide--next-enter {
   position: absolute; top: 24px; left: 14%; width: 72%; z-index: 4; pointer-events: none;
+  clip-path: inset(0 0 0 0 round 20px);
   animation: enterRightPeek 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .promo-slide--prev-enter {
   position: absolute; top: 24px; left: 14%; width: 72%; z-index: 4; pointer-events: none;
+  clip-path: inset(0 0 0 0 round 20px);
   animation: enterLeftPeek 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .promo-slide--prev-exit {
   position: absolute; top: 24px; left: 14%; width: 72%; z-index: 3; pointer-events: none;
+  clip-path: inset(0 0 0 0 round 20px);
   animation: exitPrevLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .promo-slide--next-exit {
   position: absolute; top: 24px; left: 14%; width: 72%; z-index: 3; pointer-events: none;
+  clip-path: inset(0 0 0 0 round 20px);
   animation: exitNextRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
