@@ -596,8 +596,7 @@ app.get('/api/admin/statistics', async (req, res) => {
   }
 });
 
-const frontendBuildPath = path.join(__dirname, '../client/build'); 
-
+const frontendBuildPath = path.join(__dirname, '../frontend/dist');
 if (fs.existsSync(frontendBuildPath)) {
   app.use(express.static(frontendBuildPath));
 
