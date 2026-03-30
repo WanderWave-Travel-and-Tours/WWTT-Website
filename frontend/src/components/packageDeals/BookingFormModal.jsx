@@ -394,21 +394,22 @@ const [localLoading, setLocalLoading] = useState(false);
 // ============================================
 // CONFIRM BOOKING ACTION - NEW PAYMENT FLOW
 // ============================================
-// ============================================
-// FIXED handleConfirmBooking - FINAL VERSION
-// ============================================
 const handleConfirmBooking = async () => {
   setShowConfirmModal(false);
+  
   if (!pendingSubmit) return;
 
-  setLocalLoading(true);
+  setLocalLoading(true);   // ← Ito ang ginagamit natin ngayon
 
   try {
-    const payload = {
+    // ============================================
+    // COLLECT ALL BOOKING DATA
+    // ============================================
+    const fullBookingData = {
       packageName: pkg.name || pkg.title,
       packageId: pkg._id || pkg.id,
-      fullName: `${passengers[0]?.firstName || ''} ${passengers[0]?.lastName || ''}`.trim(),
-      email: passengers[0]?.email || '',
+      fullName: passengers[0]?.firstName + " " + (passengers[0]?.lastName || ''),
+      email: passengers[0]?.email,
       totalAmount: finalAmount,
       initialPaymentAmount: paymentType === 'full' ? finalAmount : partialAmount,
       paymentType: paymentType,
@@ -416,92 +417,40 @@ const handleConfirmBooking = async () => {
       endDate: getCalculatedDates().end.toISOString().split('T')[0],
       duration: pkg.duration,
       pax: { adult: totalPassengers, children: 0, infants: 0 },
-      passengers: passengers.map(p => ({
-        passengerNumber: p.passengerNumber,
-        firstName: p.firstName || '',
-        lastName: p.lastName || '',
-        email: p.email || '',
-        phone: p.phone || '',
-        dateOfBirth: p.dateOfBirth || '',
-        age: p.age || '',
-        gender: p.gender || '',
-        address: p.address || '',
-        nationality: p.nationality || 'Filipino'
-      })),
-      selectedFlight: selectedFlight ? {
-        id: selectedFlight.id,
-        airline: selectedFlight.airline?.name || "",
-        price: selectedFlight.price?.amount || 0,
-        departure: selectedFlight.departure || {},
-        arrival: selectedFlight.arrival || {},
-        duration: selectedFlight.duration,
-        stops: selectedFlight.stops || 0
-      } : null,
-      selectedRoomType: selectedRoomType ? {
-        type: selectedRoomType.type,
-        hotelName: selectedRoomType.hotelName,
-        price: selectedRoomType.price || 0
-      } : null,
+      passengers: passengers,
+      selectedFlight: selectedFlight,
+      selectedRoomType: selectedRoomType,
       includesAirfare: bookingWithAirfare,
       appliedPromo: appliedPromo,
       customizationData: customizationData,
       currency: currency,
-      timerExpiredAtBooking: false
+      timerExpiredAtBooking: false   // baguhin mo kung may timer prop
     };
 
-    // ✅ IMPORTANT: Dapat ganito ang istraktura
-    const requestBody = {
-      bookingData: JSON.stringify(payload)
-    };
-
-    // Clean API URL
-    let API_BASE = import.meta.env.VITE_API_URL 
+    // ============================================
+    // CALL PAYMENT ENDPOINT
+    // ============================================
+    const API_BASE = import.meta.env.VITE_API_URL
       || (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
+    const baseUrl = API_BASE.replace(/\/+$/, '');
+    const paymentUrl = baseUrl.endsWith('/api')
+      ? `${baseUrl}/payment/create-intent`
+      : `${baseUrl}/api/payment/create-intent`;
+    const response = await axios.post(paymentUrl, fullBookingData);
 
-    API_BASE = API_BASE.replace(/\/+$/, '');
-    if (API_BASE.endsWith('/api')) API_BASE = API_BASE.slice(0, -4);
-
-    const baseUrl = API_BASE;
-
-    console.log('🌐 Using base URL:', baseUrl);
-    console.log('📤 1. Creating booking...');
-
-    // Create Booking
-    const bookingResponse = await axios.post(`${baseUrl}/api/bookings`, requestBody);
-
-    console.log('📥 Booking Response:', bookingResponse.data);
-
-    if (!bookingResponse.data?.success || !bookingResponse.data?.booking?._id) {
-      throw new Error(bookingResponse.data?.message || 'Failed to create booking');
-    }
-
-    const bookingId = bookingResponse.data.booking._id;
-    console.log('✅ Booking created | ID:', bookingId);
-
-    // Create Payment Intent
-    console.log('📤 2. Creating payment intent...');
-    const paymentResponse = await axios.post(`${baseUrl}/api/payment/create-intent`, {
-      bookingId: bookingId,
-      paymentType: paymentType,
-      paymentAmount: paymentType === 'full' ? finalAmount : partialAmount
-    });
-
-    if (paymentResponse.data?.success && paymentResponse.data?.checkoutUrl) {
+    if (response.data.success && response.data.checkoutUrl) {
       toast.success('Redirecting to secure payment page...');
-      window.location.href = paymentResponse.data.checkoutUrl;
-      onClose();
+      window.location.href = response.data.checkoutUrl;
+      onClose();                    // close modal
     } else {
-      throw new Error('No checkout URL received');
+      throw new Error('No checkout URL returned from server');
     }
 
   } catch (error) {
-    console.error('❌ Full Booking/Payment Error:', error);
-    console.error('Response Data:', error.response?.data);
-
+    console.error('Payment creation error:', error);
     toast.error(
       error.response?.data?.message || 
-      error.message || 
-      'Failed to process booking. Please try again.'
+      'Failed to start payment. Please try again.'
     );
   } finally {
     setLocalLoading(false);

@@ -246,42 +246,8 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
 // ============================================================================
 // 🐛 DEBUG: Log ALL incoming requests
 // ============================================================================
-// GLOBAL MIDDLEWARE - FINAL CLEAN VERSION
-// =============================================
-// GLOBAL MIDDLEWARE - FIXED VERSION (No bookingData parsing)
-// =============================================
-// =============================================
-// GLOBAL MIDDLEWARE - FINAL CLEAN VERSION
-// bookingData AY HINDI DAPAT I-PARSE DITO
-// =============================================
 app.use((req, res, next) => {
-  const size = req.headers['content-length'] 
-    ? `${(parseInt(req.headers['content-length']) / 1024).toFixed(1)} KB` 
-    : 'unknown';
-
-  console.log(`📨 ${new Date().toISOString()} | ${req.method} ${req.originalUrl} | Size: ${size} | Content-Type: ${req.headers['content-type'] || 'none'}`);
-
-  // SAFE FIELDS LANG — bookingData ay HINDI kasama
-  const parseFields = [
-    'passengers',
-    'flightDetails',
-    'passportDetails',
-    'requirements',
-    'pax',
-    'customizationData'
-  ];
-
-  parseFields.forEach(field => {
-    if (req.body?.[field] && typeof req.body[field] === 'string') {
-      try {
-        req.body[field] = JSON.parse(req.body[field]);
-        console.log(`✅ Parsed ${field}`);
-      } catch (e) {
-        console.error(`❌ Failed to parse ${field}`);
-      }
-    }
-  });
-
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   next();
 });
 
