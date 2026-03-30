@@ -361,7 +361,12 @@ router.post('/', upload.any(), async (req, res) => {
           error: error.message
         });
     }
-
+console.log('=== BOOKING ROUTE HIT ===');
+console.log('req.body keys:', Object.keys(req.body));
+console.log('bookingData type:', typeof req.body.bookingData);
+if (typeof req.body.bookingData === 'string') {
+  console.log('bookingData length:', req.body.bookingData.length);
+}
 // ✅ PRICE VALIDATION - Verify submitted price matches expected price
 if (bookingData.packageId) {
   try {
