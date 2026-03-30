@@ -396,31 +396,35 @@ const [localLoading, setLocalLoading] = useState(false);
 // ============================================
 const handleConfirmBooking = async () => {
   setShowConfirmModal(false);
-  
   if (!pendingSubmit) return;
 
-  setLocalLoading(true);   // ← Ito ang ginagamit natin ngayon
+  setLocalLoading(true);
 
   try {
+    const API_BASE = import.meta.env.VITE_API_URL || 'https://wanderwaveph.onrender.com';
+    const baseUrl = API_BASE.replace(/\/+$/, '');
+
     // ============================================
-    // COLLECT ALL BOOKING DATA - CLEANED VERSION
-    // (Heavy objects stripped to minimal fields to avoid
-    //  Render proxy 400 errors on large payloads)
+    // STEP 1 — BUILD MINIMAL BOOKING PAYLOAD
+    // bookingRoute POST expects multipart/form-data
+    // with the entire payload JSON-stringified inside
+    // a field named "bookingData".
     // ============================================
-    const fullBookingData = {
+    const bookingPayload = {
       packageName: pkg.name || pkg.title,
       packageId: pkg._id || pkg.id,
       fullName: passengers[0]?.firstName + " " + (passengers[0]?.lastName || ''),
       email: passengers[0]?.email,
       totalAmount: finalAmount,
       initialPaymentAmount: paymentType === 'full' ? finalAmount : partialAmount,
+      remainingBalance: paymentType === 'partial' ? (finalAmount - partialAmount) : 0,
       paymentType: paymentType,
       startDate: selectedDate,
       endDate: getCalculatedDates().end.toISOString().split('T')[0],
       duration: pkg.duration,
       pax: { adult: totalPassengers, children: 0, infants: 0 },
 
-      // ✅ Strip idFile and passportFile – handled separately via multer if needed
+      // Strip file blobs — files are handled by multer separately if needed
       passengers: passengers.map(p => ({
         passengerNumber: p.passengerNumber,
         firstName: p.firstName,
@@ -434,7 +438,7 @@ const handleConfirmBooking = async () => {
         nationality: p.nationality
       })),
 
-      // ✅ MINIMAL FLIGHT DATA ONLY (was the main 400-error culprit on Render)
+      // ✅ Minimal flight data only — avoids large payload 400 on Render
       selectedFlight: selectedFlight ? {
         id: selectedFlight.id,
         airline: selectedFlight.airline?.name || "Philippine Airlines",
@@ -455,7 +459,7 @@ const handleConfirmBooking = async () => {
         source: selectedFlight.source || "Google Flights"
       } : null,
 
-      // ✅ MINIMAL ROOM DATA ONLY
+      // ✅ Minimal room data only
       selectedRoomType: selectedRoomType ? {
         type: selectedRoomType.type,
         hotelName: selectedRoomType.hotelName,
@@ -470,29 +474,54 @@ const handleConfirmBooking = async () => {
       timerExpiredAtBooking: false
     };
 
-    // ============================================
-    // CALL PAYMENT ENDPOINT
-    // ============================================
-    const API_BASE = import.meta.env.VITE_API_URL
-      || (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
-    const baseUrl = API_BASE.replace(/\/+$/, '');
-    const paymentUrl = baseUrl.endsWith('/api')
-      ? `${baseUrl}/payment/create-intent`
-      : `${baseUrl}/api/payment/create-intent`;
-    const response = await axios.post(paymentUrl, fullBookingData);
+    // bookingRoute uses multer upload.any() — must send as FormData
+    // with the payload JSON-stringified inside the "bookingData" key
+    const formData = new FormData();
+    formData.append('bookingData', JSON.stringify(bookingPayload));
 
-    if (response.data.success && response.data.checkoutUrl) {
+    console.log('📤 Creating booking record...');
+    const bookingResponse = await axios.post(
+      `${baseUrl}/api/bookings`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+
+    if (!bookingResponse.data.success || !bookingResponse.data.bookingId) {
+      throw new Error(
+        bookingResponse.data.message || 'Failed to create booking record'
+      );
+    }
+
+    const bookingId = bookingResponse.data.bookingId;
+    console.log('✅ Booking created, ID:', bookingId);
+
+    // ============================================
+    // STEP 2 — CREATE PAYMENT INTENT
+    // Payment route only needs bookingId + amounts.
+    // ============================================
+    console.log('📤 Creating payment intent...');
+    const paymentResponse = await axios.post(
+      `${baseUrl}/api/payment/create-intent`,
+      {
+        bookingId:     bookingId,
+        paymentType:   paymentType,
+        paymentAmount: paymentType === 'full' ? finalAmount : partialAmount
+      }
+    );
+
+    if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
       toast.success('Redirecting to secure payment page...');
-      window.location.href = response.data.checkoutUrl;
-      onClose();                    // close modal
+      window.location.href = paymentResponse.data.checkoutUrl;
+      onClose();
     } else {
       throw new Error('No checkout URL returned from server');
     }
 
   } catch (error) {
-    console.error('Payment creation error:', error);
+    console.error('Booking/Payment error:', error);
     toast.error(
-      error.response?.data?.message || 
+      error.response?.data?.message ||
+      error.message ||
       'Failed to start payment. Please try again.'
     );
   } finally {
