@@ -9,37 +9,35 @@ require('dotenv').config();
 const app = express();
 app.use(cors()); 
 
-// === HIGH LIMITS – avoids Render proxy 400 on large booking payloads ===
-app.use(express.json({ limit: '200mb' }));
-app.use(express.urlencoded({ extended: true, limit: '200mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use((req, res, next) => {
-  const size = req.headers['content-length']
-    ? `${(parseInt(req.headers['content-length']) / 1024).toFixed(1)} KB`
-    : 'unknown';
-
-  console.log(`📨 ${new Date().toISOString()} | ${req.method} ${req.originalUrl} | Size: ${size} | Content-Type: ${req.headers['content-type'] || 'none'}`);
-
-  // Parse common stringified fields safely
-  const parseFields = [
-    'bookingData', 'passengers', 'flightDetails',
-    'selectedFlight', 'selectedRoomType', 'pax',
-    'customizationData', 'passportDetails', 'requirements'
-  ];
-
-  parseFields.forEach(field => {
-    if (req.body?.[field] && typeof req.body[field] === 'string') {
+  if (req.body && req.body.passengers) {
+    if (typeof req.body.passengers === 'string') {
       try {
-        req.body[field] = JSON.parse(req.body[field]);
-        console.log(`✅ Parsed ${field}`);
-      } catch (e) {
-        if (field === 'requirements') {
-          console.error(`❌ Failed to parse ${field}:`, e.message.substring(0, 100));
-        }
-      }
+        req.body.passengers = JSON.parse(req.body.passengers);
+      } catch (parseError) {}
     }
-  });
+    if (req.body.flightDetails && typeof req.body.flightDetails === 'string') {
+      try {
+        req.body.flightDetails = JSON.parse(req.body.flightDetails);
+      } catch (e) {}
+    }
+    if (req.body.passportDetails && typeof req.body.passportDetails === 'string') {
+      try {
+        req.body.passportDetails = JSON.parse(req.body.passportDetails);
+      } catch (e) {}
+    }
+  }
 
+  if (req.body && req.body.requirements && typeof req.body.requirements === 'string') {
+    try {
+      req.body.requirements = JSON.parse(req.body.requirements);
+    } catch (e) {
+      console.error('Failed to parse requirements in middleware:', e);
+    }
+  }
   next();
 });
 
@@ -245,7 +243,47 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
 
 
 
+// ============================================================================
+// 🐛 DEBUG: Log ALL incoming requests
+// ============================================================================
+// GLOBAL MIDDLEWARE - FINAL CLEAN VERSION
+// =============================================
+// GLOBAL MIDDLEWARE - FIXED VERSION (No bookingData parsing)
+// =============================================
+// =============================================
+// GLOBAL MIDDLEWARE - FINAL CLEAN VERSION
+// bookingData AY HINDI DAPAT I-PARSE DITO
+// =============================================
+app.use((req, res, next) => {
+  const size = req.headers['content-length'] 
+    ? `${(parseInt(req.headers['content-length']) / 1024).toFixed(1)} KB` 
+    : 'unknown';
 
+  console.log(`📨 ${new Date().toISOString()} | ${req.method} ${req.originalUrl} | Size: ${size} | Content-Type: ${req.headers['content-type'] || 'none'}`);
+
+  // SAFE FIELDS LANG — bookingData ay HINDI kasama
+  const parseFields = [
+    'passengers',
+    'flightDetails',
+    'passportDetails',
+    'requirements',
+    'pax',
+    'customizationData'
+  ];
+
+  parseFields.forEach(field => {
+    if (req.body?.[field] && typeof req.body[field] === 'string') {
+      try {
+        req.body[field] = JSON.parse(req.body[field]);
+        console.log(`✅ Parsed ${field}`);
+      } catch (e) {
+        console.error(`❌ Failed to parse ${field}`);
+      }
+    }
+  });
+
+  next();
+});
 
 // ============================================================================
 // ✅ BOOKING UPDATE ROUTE - MUST BE BEFORE app.use('/api/bookings')
@@ -365,19 +403,66 @@ app.use('/api/ip', ipRoutes);
 app.use('/api/page-views', pageViewRoutes);
 
 
-
 // ===================================================================
+// BOOKING ENDPOINTS
 // ===================================================================
-// BLOG ENDPOINTS
-// ===================================================================
-app.get('/api/blogs', async (req, res) => {
-  const blogs = await Blog.find();
-  res.json(blogs);
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const bookingData = req.body;
+    const package = await PackageModel.findOne({ title: bookingData.packageName });
+    
+    if (!package) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Package not found' 
+      });
+    }
+    
+    const totalPax = 
+      (bookingData.pax?.adult || 1) + 
+      (bookingData.pax?.children || 0) + 
+      (bookingData.pax?.infants || 0);
+    
+    const totalAmount = package.price * totalPax;
+    
+    console.log('📦 Creating booking with pricing:', {
+      packageName: package.title,
+      sellerPrice: package.sellerPrice,
+      markup: package.markup,
+      price: package.price,
+      totalPax,
+      totalAmount
+    });
+    
+    const newBooking = new Booking({
+      ...bookingData,
+      packageId: package._id,
+      sellerPrice: package.sellerPrice,
+      markup: package.markup,
+      price: package.price,
+      totalAmount: totalAmount
+    });
+    
+    await newBooking.save();
+    
+    console.log('✅ Booking created successfully with ID:', newBooking._id);
+    
+    res.status(201).json({ 
+      success: true,
+      message: 'Booking created successfully', 
+      booking: newBooking 
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creating booking:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error creating booking', 
+      error: error.message 
+    });
+  }
 });
 
-// ===================================================================
-// ADMIN BOOKING ENDPOINTS (get / confirm / cancel)
-// ===================================================================
 app.get('/api/admin/bookings', async (req, res) => {
   try {
     const bookings = await Booking.find()
@@ -489,6 +574,13 @@ app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
   }
 });
 
+// ===================================================================
+// BLOG ENDPOINTS
+// ===================================================================
+app.get('/api/blogs', async (req, res) => {
+  const blogs = await Blog.find();
+  res.json(blogs);
+});
 
 // ===================================================================
 // STATISTICS ENDPOINT
