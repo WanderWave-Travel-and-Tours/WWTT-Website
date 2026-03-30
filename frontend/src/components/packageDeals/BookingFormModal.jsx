@@ -403,7 +403,9 @@ const handleConfirmBooking = async () => {
 
   try {
     // ============================================
-    // COLLECT ALL BOOKING DATA
+    // COLLECT ALL BOOKING DATA - CLEANED VERSION
+    // (Heavy objects stripped to minimal fields to avoid
+    //  Render proxy 400 errors on large payloads)
     // ============================================
     const fullBookingData = {
       packageName: pkg.name || pkg.title,
@@ -417,14 +419,55 @@ const handleConfirmBooking = async () => {
       endDate: getCalculatedDates().end.toISOString().split('T')[0],
       duration: pkg.duration,
       pax: { adult: totalPassengers, children: 0, infants: 0 },
-      passengers: passengers,
-      selectedFlight: selectedFlight,
-      selectedRoomType: selectedRoomType,
+
+      // ✅ Strip idFile and passportFile – handled separately via multer if needed
+      passengers: passengers.map(p => ({
+        passengerNumber: p.passengerNumber,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        email: p.email,
+        phone: p.phone,
+        dateOfBirth: p.dateOfBirth,
+        age: p.age,
+        gender: p.gender,
+        address: p.address,
+        nationality: p.nationality
+      })),
+
+      // ✅ MINIMAL FLIGHT DATA ONLY (was the main 400-error culprit on Render)
+      selectedFlight: selectedFlight ? {
+        id: selectedFlight.id,
+        airline: selectedFlight.airline?.name || "Philippine Airlines",
+        price: {
+          amount: selectedFlight.price?.amount || 0,
+          perPerson: selectedFlight.price?.perPerson || 0
+        },
+        departure: {
+          iataCode: selectedFlight.departure?.iataCode,
+          time: selectedFlight.departure?.time
+        },
+        arrival: {
+          iataCode: selectedFlight.arrival?.iataCode,
+          time: selectedFlight.arrival?.time
+        },
+        duration: selectedFlight.duration,
+        stops: selectedFlight.stops || 0,
+        source: selectedFlight.source || "Google Flights"
+      } : null,
+
+      // ✅ MINIMAL ROOM DATA ONLY
+      selectedRoomType: selectedRoomType ? {
+        type: selectedRoomType.type,
+        hotelName: selectedRoomType.hotelName,
+        hotelId: selectedRoomType.hotelId,
+        price: selectedRoomType.price
+      } : null,
+
       includesAirfare: bookingWithAirfare,
       appliedPromo: appliedPromo,
       customizationData: customizationData,
       currency: currency,
-      timerExpiredAtBooking: false   // baguhin mo kung may timer prop
+      timerExpiredAtBooking: false
     };
 
     // ============================================
