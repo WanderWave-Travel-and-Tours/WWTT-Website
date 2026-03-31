@@ -116,20 +116,16 @@ const createInquiryCheckoutSession = async (req, res) => {
 };
 
 const createBookingPaymentIntent = async (req, res) => {
-  console.log('🚀 createBookingPaymentIntent - START (v2026-04-01-FIXED)');
-  console.log('Body keys received:', Object.keys(req.body));
+  console.log('🚀 createBookingPaymentIntent - START (v2026-04-01-FIXED-DUAL-FINAL)');
 
   const body = req.body;
 
   try {
     let booking;
 
-    // ====================== CASE 1: bookingRightForm nagpadala ng bookingId ======================
-    // Ang bookingRightForm.jsx ay gumagawa muna ng booking sa /api/bookings,
-    // tapos nagse-send ng bookingId + paymentType + paymentAmount dito.
+    // CASE 1: May bookingId (galing sa BookingRightForm)
     if (body.bookingId) {
-      console.log(`📦 bookingId received: ${body.bookingId} — i-lookup sa DB`);
-
+      console.log(`📦 Using existing bookingId: ${body.bookingId}`);
       booking = await Booking.findById(body.bookingId);
 
       if (!booking) {
@@ -139,25 +135,18 @@ const createBookingPaymentIntent = async (req, res) => {
         });
       }
 
-      // I-update ang paymentType at amounts kung ibinigay
-      if (body.paymentType) {
-        booking.paymentType = body.paymentType;
-      }
+      if (body.paymentType) booking.paymentType = body.paymentType;
       if (body.paymentAmount) {
         booking.initialPaymentAmount = body.paymentAmount;
         booking.remainingBalance = body.paymentType === 'partial'
           ? (booking.totalAmount - body.paymentAmount)
           : 0;
       }
-
       await booking.save();
-      console.log(`✅ EXISTING BOOKING FOUND - ID: ${booking._id}, Package: ${booking.packageName}`);
 
-    // ====================== CASE 2: BookingFormModal nagpadala ng full booking data ======================
-    // Ang BookingFormModal.jsx ay direktang nagse-send ng lahat ng booking fields dito.
-    // Gagawa tayo ng bagong booking record (pending) bago mag-PayMongo.
+    // CASE 2: Walang bookingId (galing sa BookingFormModal) ← ITO ANG MAHALAGA
     } else {
-      console.log('📋 No bookingId — gagawa ng bagong Booking record (pending)');
+      console.log('📋 No bookingId detected → Creating NEW booking from BookingFormModal data');
 
       if (!body.packageName || !body.email || !body.totalAmount) {
         return res.status(400).json({
@@ -178,10 +167,10 @@ const createBookingPaymentIntent = async (req, res) => {
       });
 
       await booking.save();
-      console.log(`✅ NEW BOOKING CREATED (PENDING) - ID: ${booking._id}`);
+      console.log(`✅ NEW BOOKING CREATED FROM MODAL - ID: ${booking._id}`);
     }
 
-    // ====================== PAYMONGO CHECKOUT SESSION ======================
+    // PayMongo Checkout
     const amountToPay = booking.initialPaymentAmount || booking.totalAmount;
     const isPartial = booking.paymentType === 'partial';
     const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
@@ -192,7 +181,7 @@ const createBookingPaymentIntent = async (req, res) => {
           line_items: [{
             name: booking.packageName,
             quantity: 1,
-            amount: Math.round(amountToPay * 100), // PayMongo uses cents
+            amount: Math.round(amountToPay * 100),
             currency: 'PHP'
           }],
           payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
@@ -218,13 +207,9 @@ const createBookingPaymentIntent = async (req, res) => {
       }
     );
 
-    const checkoutUrl = response.data.data.attributes.checkout_url;
-
-    console.log(`✅ PayMongo Checkout Session created — redirecting to payment`);
-
     res.json({
       success: true,
-      checkoutUrl: checkoutUrl,
+      checkoutUrl: response.data.data.attributes.checkout_url,
       bookingId: booking._id.toString()
     });
 
