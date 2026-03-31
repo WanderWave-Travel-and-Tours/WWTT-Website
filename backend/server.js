@@ -43,7 +43,7 @@ app.use((req, res, next) => {
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-mongoose.connect(process.env.MONGODB_URI) 
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI)
     .then(() => console.log("✅ DATABASE CONNECTED!"))
     .catch((err) => {
         console.error("❌ Database Connection Error:", err);
