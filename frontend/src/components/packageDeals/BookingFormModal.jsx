@@ -1,1066 +1,1701 @@
-import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
-import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useToast } from '../toast/ToastManager';
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-// Import the new CSS file
-import './BookingFormModal.css';
-import './PaymentOption.css'
-
-// ✅ CUSTOM DATE PICKER COMPONENT - WORKS ON ALL PLATFORMS
-const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(value || '');
-  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
-  const [viewYear, setViewYear] = useState(new Date().getFullYear());
-  const calendarRef = useRef(null);
-
-  // Parse the date string (YYYY-MM-DD format)
-  const parseDate = (dateStr) => {
-    if (!dateStr) return null;
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return { year, month: month - 1, day };
-  };
-
-  const currentDate = parseDate(selectedDate);
-
-  // Generate year options (100 years back from maxDate)
-  const maxYear = maxDate ? new Date(maxDate).getFullYear() : new Date().getFullYear();
-  const minYear = maxYear - 100;
-  const years = [];
-  for (let y = maxYear; y >= minYear; y--) {
-    years.push(y);
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const Booking = require('../models/booking');
+const User = require('../models/user');
+const Promo = require('../models/promo');
+const Package = require('../models/package');
+const ActivityLog = require('../models/ActivityLog');
+const { BookingCount } = require('../models/PageView');
+const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
+ 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = file.fieldname.includes('passport') 
+      ? './uploads/passports/' 
+      : './uploads/ids/';
+    
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
+});
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                     'July', 'August', 'September', 'October', 'November', 'December'];
+const fileFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    'image/jpeg', 'image/png', 'image/jpg', 'application/pdf',
+    'image/gif', 'image/webp', 'image/tiff' 
+  ];
   
-  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const isImage = file.mimetype.startsWith('image/');
 
-  // Get days in month
-  const getDaysInMonth = (month, year) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  // Get first day of month (0-6)
-  const getFirstDayOfMonth = (month, year) => {
-    return new Date(year, month, 1).getDay();
-  };
-
-  // Format date to YYYY-MM-DD
-  const formatDate = (year, month, day) => {
-    const m = String(month + 1).padStart(2, '0');
-    const d = String(day).padStart(2, '0');
-    return `${year}-${m}-${d}`;
-  };
-
-  // Format display date
-  const formatDisplayDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-  };
-
-  // Handle date selection
-  const handleDateClick = (day) => {
-    const newDate = formatDate(viewYear, viewMonth, day);
-    setSelectedDate(newDate);
-    onChange({ target: { value: newDate } });
-    setIsOpen(false);
-  };
-
-  // Navigate months
-  const previousMonth = () => {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear(viewYear - 1);
-    } else {
-      setViewMonth(viewMonth - 1);
-    }
-  };
-
-  const nextMonth = () => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear(viewYear + 1);
-    } else {
-      setViewMonth(viewMonth + 1);
-    }
-  };
-
-  // Handle month/year change
-  const handleMonthChange = (e) => {
-    setViewMonth(parseInt(e.target.value));
-  };
-
-  const handleYearChange = (e) => {
-    setViewYear(parseInt(e.target.value));
-  };
-
-  // Generate calendar days
-  const generateCalendar = () => {
-    const daysInMonth = getDaysInMonth(viewMonth, viewYear);
-    const firstDay = getFirstDayOfMonth(viewMonth, viewYear);
-    const days = [];
-
-    // Empty cells before first day
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="bfm-cal-day empty"></div>);
-    }
-
-    // Days of month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = formatDate(viewYear, viewMonth, day);
-      const isSelected = currentDate && 
-                        currentDate.year === viewYear && 
-                        currentDate.month === viewMonth && 
-                        currentDate.day === day;
-      
-      // Check if date is in the future (past maxDate)
-      const isDisabled = maxDate && new Date(dateStr) > new Date(maxDate);
-      
-      days.push(
-        <div
-          key={day}
-          className={`bfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-          onClick={() => !isDisabled && handleDateClick(day)}
-        >
-          {day}
-        </div>
-      );
-    }
-
-    return days;
-  };
-
-  // Close calendar when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
-  // Update view when value changes externally
-  useEffect(() => {
-    if (value && value !== selectedDate) {
-      setSelectedDate(value);
-      const parsed = parseDate(value);
-      if (parsed) {
-        setViewMonth(parsed.month);
-        setViewYear(parsed.year);
-      }
-    }
-  }, [value]);
-
-  return (
-    <div className="bfm-date-picker-wrapper" ref={calendarRef}>
-      <div 
-        className="bfm-calendar-trigger"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className={selectedDate ? 'bfm-date-value' : 'bfm-date-placeholder'}>
-          {selectedDate ? formatDisplayDate(selectedDate) : (placeholder || 'Select date')}
-        </span>
-        <CalendarIcon size={16} className="bfm-trigger-icon" />
-      </div>
-
-      {isOpen && (
-        <div className="bfm-custom-calendar">
-          <div className="bfm-calendar-header">
-            <button 
-              type="button"
-              className="bfm-cal-nav-btn" 
-              onClick={previousMonth}
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            <div className="bfm-calendar-selectors">
-              <select 
-                className="bfm-month-select"
-                value={viewMonth}
-                onChange={handleMonthChange}
-              >
-                {monthNames.map((month, idx) => (
-                  <option key={idx} value={idx}>{month}</option>
-                ))}
-              </select>
-
-              <select 
-                className="bfm-year-select"
-                value={viewYear}
-                onChange={handleYearChange}
-              >
-                {years.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-
-            <button 
-              type="button"
-              className="bfm-cal-nav-btn" 
-              onClick={nextMonth}
-              aria-label="Next month"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          <div className="bfm-calendar-weekdays">
-            {weekDays.map(day => (
-              <div key={day} className="bfm-cal-weekday">{day}</div>
-            ))}
-          </div>
-
-          <div className="bfm-calendar-days">
-            {generateCalendar()}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  if (allowedMimeTypes.includes(file.mimetype) || isImage) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPG, PNG, GIF, WEBP, and PDF are allowed.'), false);
+  }
 };
 
-// ✅ BOOKING COMPLETED NOTIFICATION MODAL (NO BUTTONS - AUTO CLOSE)
-const BookingCompletedModal = ({ isOpen, onClose, packageName }) => {
-  useEffect(() => {
-    if (isOpen) {
-      // Auto close and redirect after 3 seconds
-      const timer = setTimeout(() => {
-        onClose();
-      }, 3000);
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  }
+});
 
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="bfm-overlay" style={{ zIndex: 10001 }}>
-      <div className="bfm-modal-card" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <CheckCircle size={64} color="#22c55e" strokeWidth={2} />
-        </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
-          Booking Completed
-        </h2>
-        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
-          Your booking has been successfully confirmed!
-        </p>
-      </div>
-    </div>
-  );
+const generateTempPassword = () => {
+  const numbers = Math.floor(100000 + Math.random() * 900000);
+  const specialChars = '!@#$%^&*';
+  const randomSpecialChar = specialChars.charAt(Math.floor(Math.random() * specialChars.length));
+  return `Wander_${numbers}${randomSpecialChar}`;
 };
 
-const BookingFormModal = ({ 
-  isOpen, 
-  onClose, 
-  pkg, 
-  currentMonth, 
-  selectedDate, 
-  getCalculatedDates, 
-  monthNames, 
-  packageTotal,
-  appliedPromo,
-  discountAmount,
-  finalPackageTotal,
-  selectedFlight, 
-  airfareTotal, 
-  totalAmount, 
-  bookingWithAirfare, 
-  isInternationalFlight, 
-  requiresID,
-  requiresPassport,
-  passengerStep, 
-  totalPassengers, 
-  progressPercent, 
-  currentPassenger, 
-  passengers, 
-  handlePassengerChange, 
-  handleFileUpload, 
-  removeFile, 
-  handleNextPassenger, 
-  handleBackPassenger,
-  // NEW: Payment option props
-  paymentType,
-  setPaymentType,
-  partialAmount,
-  loading,
-  // ✅ NEW: Currency props
-  currency = 'PHP',
-  exchangeRate = 58,
-  currencySymbol = '₱',
-  // ✅ FIX: Added missing props referenced in handleConfirmBooking
-  selectedRoomType = null,
-  customizationData = null,
-}) => {
-  const toast = useToast();
-  const [localLoading, setLocalLoading] = useState(false);
+router.get('/user/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const bookings = await Booking.find({ email: email })
+      .populate('packageId')
+      .sort({ createdAt: -1 })
+      .lean();
 
-  // ============================================
-  // CONFIRMATION MODAL STATE
-  // ============================================
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState(null);
-  
-  // ============================================
-  // BOOKING COMPLETED NOTIFICATION MODAL STATE
-  // ============================================
-  const [showBookingCompletedModal, setShowBookingCompletedModal] = useState(false);
+    // ── Destination fallback (mirrors /active route) ──────────────────────
+    // For bookings where packageId is null or has no destination (e.g. the
+    // package existed at booking time but packageId wasn't stored, or was
+    // later deleted), we do a secondary lookup by packageName title so the
+    // frontend always has a destination to work with.
+    const missingNames = [...new Set(
+      bookings
+        .filter(b => !b.packageId?.destination && b.packageName)
+        .map(b => b.packageName)
+    )];
 
-  if (!isOpen) return null;
+    let fallbackMap = {};
+    if (missingNames.length > 0) {
+      const fallbackPkgs = await Package.find(
+        { title: { $in: missingNames } },
+        'title destination inclusions tourType minPax duration'
+      ).lean();
+      fallbackPkgs.forEach(p => { fallbackMap[p.title] = p; });
+    }
 
-  // ✅ Helper function for consistent number formatting
-  const formatCurrency = (amount) => {
-    return amount.toLocaleString(undefined, {
-      minimumFractionDigits: currency === 'USD' ? 2 : 0,
-      maximumFractionDigits: currency === 'USD' ? 2 : 0
+    // Attach destination + package data to each booking that needs it
+    const enriched = bookings.map(b => {
+      if (b.packageId?.destination) return b; // already populated — no change
+      const fallbackPkg = fallbackMap[b.packageName];
+      if (!fallbackPkg) return b;
+      return {
+        ...b,
+        // Inject a synthetic populated packageId so the frontend
+        // can read .packageId.destination without any special casing
+        packageId: {
+          _id:         fallbackPkg._id,
+          title:       fallbackPkg.title,
+          destination: fallbackPkg.destination,
+          inclusions:  fallbackPkg.inclusions || [],
+          tourType:    fallbackPkg.tourType,
+          minPax:      fallbackPkg.minPax,
+          duration:    fallbackPkg.duration,
+        },
+      };
     });
-  };
 
-  // ✅ Calculate age from date of birth
-  const calculateAge = (dateOfBirth) => {
-    if (!dateOfBirth) return '';
-    
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    // Adjust age if birthday hasn't occurred this year yet
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+    res.json({
+      success: true,
+      count: enriched.length,
+      data: enriched
+    });
+  } catch (error) {
+    console.error('❌ Error fetching user bookings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user bookings'
+    });
+  }
+});
+
+
+router.get('/stats/summary', async (req, res) => {
+  try {
+    const bookings = await Booking.find();
+
+    const stats = {
+      total: bookings.length,
+      confirmed: bookings.filter(b => b.status === 'confirmed').length,
+      pending: bookings.filter(b => b.status === 'pending').length,
+      cancelled: bookings.filter(b => b.status === 'cancelled').length,
+      withAirfare: bookings.filter(b => b.includesAirfare).length,
+      revenue: bookings
+        .filter(b => b.status === 'confirmed')
+        .reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    };
+
+    res.json({
+      success: true,
+      stats: stats
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch statistics'
+    });
+  }
+});
+
+router.get('/init-archive', async (req, res) => {
+    try {
+        const result = await Booking.updateMany(
+            { isArchive: { $exists: false } },
+            { $set: { isArchive: 'No' } }
+        );
+        res.status(200).json({ 
+            status: 'ok', 
+            message: `Success! ${result.modifiedCount} booking documents updated to isArchive: 'No'.` 
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
     }
-    
-    return age >= 0 ? age : '';
-  };
+});
 
-  // ✅ Handle date of birth change with auto age calculation
-  const handleDateOfBirthChange = (passengerIndex, dateValue) => {
-    // Update date of birth
-    handlePassengerChange(passengerIndex, 'dateOfBirth', dateValue);
-    
-    // Auto calculate and update age
-    const calculatedAge = calculateAge(dateValue);
-    if (calculatedAge !== '') {
-      handlePassengerChange(passengerIndex, 'age', calculatedAge.toString());
+
+
+router.get('/active', async (req, res) => {
+    try {
+        const bookings = await Booking.find({ isArchive: 'No' })
+            .populate('packageId', 'destination title')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // Collect packageNames that still have no destination (packageId was null/missing)
+        const missingNames = [...new Set(
+            bookings
+                .filter(b => !b.packageId?.destination && b.packageName)
+                .map(b => b.packageName)
+        )];
+
+        // Fallback: look up packages by title to fill in destination
+        let fallbackMap = {};
+        if (missingNames.length > 0) {
+            const fallbackPkgs = await Package.find(
+                { title: { $in: missingNames } },
+                'title destination'
+            ).lean();
+            fallbackPkgs.forEach(p => { fallbackMap[p.title] = p.destination; });
+        }
+
+        // Attach destination to each booking
+        const enriched = bookings.map(b => ({
+            ...b,
+            destination: b.packageId?.destination
+                || fallbackMap[b.packageName]
+                || null
+        }));
+
+        res.json({
+            success: true,
+            count: enriched.length,
+            bookings: enriched
+        });
+    } catch (error) {
+        console.error('Error fetching active bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch active bookings'
+        });
     }
-  };
+});
 
-  // Check if this is the last passenger (payment options should show)
-  const isLastPassenger = passengerStep === totalPassengers;
-  const finalAmount = selectedFlight ? totalAmount : finalPackageTotal;
-  
-  // Dynamic percentage based on airfare
-  const partialPercentage = selectedFlight ? 85 : 50;
-  const partialPercentageText = selectedFlight ? '85%' : '50%';
-
-  // ============================================
-  // HANDLE FORM SUBMISSION WITH CONFIRMATION
-  // ============================================
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    
-    // For last passenger, show confirmation modal
-    if (isLastPassenger) {
-      setPendingSubmit(e);
-      setShowConfirmModal(true);
-    } else {
-      // For non-last passengers, proceed directly
-      handleNextPassenger(e);
+router.get('/archived', async (req, res) => {
+    try {
+        const archived = await Booking.find({ isArchive: 'Yes' }).sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            count: archived.length,
+            bookings: archived
+        });
+    } catch (error) {
+        console.error('Error fetching archived bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch archived bookings'
+        });
     }
-  };
+});
 
-  // ============================================
-  // CONFIRM BOOKING ACTION - NEW FLOW
-  // 1. Create booking as PENDING (with files)
-  // 2. Create PayMongo checkout session
-  // 3. Redirect to payment
-  // ============================================
-  const handleConfirmBooking = async () => {
-    setShowConfirmModal(false);
-    if (!pendingSubmit) return;
+router.post('/:id/archive', async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ status: "error", message: "Booking not found" });
 
-    setLocalLoading(true);
+        const newStatus = booking.isArchive === 'Yes' ? 'No' : 'Yes';
+        booking.isArchive = newStatus;
+        await booking.save();
+
+        // ── Sync View-to-Book Rate ────────────────────────────────────
+        // Archiving → remove its BookingCount so the rate goes down
+        // Restoring → re-create it so the rate reflects reality again
+        try {
+            if (newStatus === 'Yes') {
+                // Delete the BookingCount tied to this booking
+                const deleted = await BookingCount.deleteOne({ bookingId: booking._id });
+                console.log(`📊 BookingCount removed on archive (deleted: ${deleted.deletedCount})`);
+            } else {
+                // Re-create the BookingCount on restore (avoid duplicates)
+                const exists = await BookingCount.findOne({ bookingId: booking._id });
+                if (!exists) {
+                    const totalPax = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
+                    await BookingCount.create({
+                        bookingId:   booking._id,
+                        packageId:   booking.packageId   || null,
+                        packageName: booking.packageName || null,
+                        paxCount:    totalPax || 1,
+                        paymentType: booking.paymentType || 'unknown',
+                        totalAmount: booking.totalAmount || 0,
+                    });
+                    console.log(`📊 BookingCount restored for booking: ${booking.packageName}`);
+                }
+            }
+        } catch (syncErr) {
+            // Non-fatal — archive still succeeds even if BookingCount sync fails
+            console.error('⚠️ BookingCount sync failed (non-fatal):', syncErr.message);
+        }
+        // ─────────────────────────────────────────────────────────────
+
+        // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
+        try {
+            const { userEmail, adminId } = req.body;
+            if (userEmail) {
+                await ActivityLog.create({
+                    action: newStatus === 'Yes' ? 'ARCHIVE' : 'UPDATE',
+                    module: 'Bookings',
+                    user: userEmail,
+                    userId: adminId || null,
+                    description: newStatus === 'Yes' 
+                        ? `Archived booking: ${booking.packageName} (${booking.fullName})`
+                        : `Restored booking: ${booking.packageName} (${booking.fullName})`,
+                    severity: newStatus === 'Yes' ? 'WARNING' : 'INFO',
+                    details: {
+                        recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                        recordId: booking._id.toString(),
+                        method: 'POST',
+                        archiveStatus: newStatus
+                    }
+                });
+                console.log('✅ Activity Log saved for Archive/Restore Booking');
+            }
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
+        res.json({ 
+            status: "ok", 
+            message: `Booking archive status updated to ${newStatus}`, 
+            isArchive: newStatus 
+        });
+    } catch (err) {
+        res.status(500).json({ status: "error", error: err.message });
+    }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('packageId')
+      .populate('promoId')
+      .populate({
+        path: 'customizedInclusions.sellerRateId',
+        model: 'SellerRate'
+      });
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // Add customization summary if customized
+    const response = booking.toObject();
+    if (booking.isCustomized) {
+      response.customizationSummary = booking.getCustomizationSummary();
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching booking:', error);
+    res.status(500).json({ 
+      message: 'Error fetching booking', 
+      error: error.message 
+    });
+  }
+});
+
+router.post('/', upload.any(), async (req, res) => {
+  try {
+    let bookingData;
+    
+    if (!req.body.bookingData) {
+      console.error('❌ No bookingData field found in request!');
+      return res.status(400).json({
+        success: false,
+        message: 'No booking data provided',
+        hint: 'The bookingData field is missing from the request'
+      });
+    }
 
     try {
-      // ✅ FULL BOOKING DATA WITH ALL REQUIRED FIELDS
-      const fullBookingData = {
-        packageName: pkg.name || pkg.title || pkg.packageName,
-        packageId: pkg._id || pkg.id,
-
-        // ✅ REQUIRED MONGOOSE FIELDS (were missing → caused 500)
-        sellerPrice: pkg.sellerPrice || 0,
-        markup: pkg.markup || 0,
-        price: finalPackageTotal,
-
-        fullName: passengers[0]?.firstName + " " + (passengers[0]?.lastName || ''),
-        email: passengers[0]?.email,
-
-        totalAmount: finalAmount,
-        finalPackageTotal: finalPackageTotal,
-        packageTotal: finalPackageTotal,
-
-        initialPaymentAmount: paymentType === 'full' ? finalAmount : partialAmount,
-        paymentType: paymentType,
-
-        startDate: selectedDate,
-        endDate: getCalculatedDates().end.toISOString().split('T')[0],
-        duration: pkg.duration,
-
-        pax: { adult: totalPassengers, children: 0, infants: 0 },
-
-        passengers: passengers.map((p, i) => ({
-          passengerNumber: p.passengerNumber || i + 1,
-          firstName: p.firstName,
-          lastName: p.lastName,
-          email: p.email,
-          phone: p.phone,
-          dateOfBirth: p.dateOfBirth,
-          age: parseInt(p.age) || 0,
-          gender: p.gender || '',
-          address: p.address || '',
-          nationality: p.nationality || 'Filipino',
-          // DO NOT send File objects in JSON
-        })),
-
-        // ✅ Flight / airfare fields
-        selectedFlight: selectedFlight || null,
-        includesAirfare: bookingWithAirfare || false,
-        airfareTotal: airfareTotal || 0,
-        flightDetails: selectedFlight ? {
-          airline: selectedFlight.airline?.name || selectedFlight.airline || '',
-          flightNumber: selectedFlight.flightNumber || '',
-          route: `${selectedFlight.departure?.iataCode || ''} → ${selectedFlight.arrival?.iataCode || ''}`,
-          departureTime: selectedFlight.departure?.at || selectedFlight.departureTime || '',
-          arrivalTime: selectedFlight.arrival?.at || selectedFlight.arrivalTime || '',
-          isInternational: isInternationalFlight || false,
-        } : null,
-
-        // ✅ Room / hotel fields
-        selectedRoomType: selectedRoomType?.type || selectedRoomType || null,
-        hotelName: selectedRoomType?.hotelName || null,
-
-        // ✅ Customization fields — mapped correctly from customizationData prop
-        isCustomized: !!customizationData,
-        customizedInclusions: customizationData
-          ? (customizationData.inclusions || []).map(inc => ({
-              id: inc.id,
-              name: inc.name,
-              price: inc.price || 0,
-              supplierRate: inc.supplierRate || null,
-              markup: inc.markup || null,
-              markupType: inc.markupType || null,
-              supplier: inc.supplier || null,
-              destination: inc.destination || null,
-              pax: inc.pax || null,
-              notes: inc.notes || null,
-              isOriginal: inc.isOriginal !== undefined ? inc.isOriginal : false,
-              isChecked: inc.isChecked !== undefined ? inc.isChecked : true,
-              source: inc.source || (inc.sellerRateId ? 'seller-rate' : 'package'),
-              sellerRateId: inc.sellerRateId || null,
-            }))
-          : [],
-        customizationAdditionalPrice: customizationData?.additionalPrice || customizationData?.customizationAdditionalPrice || 0,
-        originalInclusions: customizationData ? (pkg.inclusions || []) : [],
-
-        // ✅ Promo fields — extracted from appliedPromo object
-        promoCode: appliedPromo?.code || null,
-        promoId: appliedPromo?._id || appliedPromo?.id || null,
-        discountAmount: discountAmount || 0,
-
-        currency: currency,
-        timerExpiredAtBooking: false,
-        priceType: 'discounted',
-        appliedMarkup: 0,
-      };
-
-      // ✅ FormData for files + JSON
-      const formData = new FormData();
-      formData.append('bookingData', JSON.stringify(fullBookingData));
-
-      passengers.forEach((passenger, index) => {
-        if (passenger.idFile instanceof File) {
-          formData.append(`idFile_${index}`, passenger.idFile);
-        }
-        if (passenger.passportFile instanceof File) {
-          formData.append(`passportFile_${index}`, passenger.passportFile);
-        }
-      });
-
-      const API_BASE = import.meta.env.VITE_API_URL ||
-        (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
-      const baseUrl = API_BASE.replace(/\/+$/, '');
-
-      const bookingUrl = baseUrl.endsWith("/api") ? `${baseUrl}/bookings` : `${baseUrl}/api/bookings`;
-      const paymentUrl = baseUrl.endsWith("/api") ? `${baseUrl}/payment/create-intent` : `${baseUrl}/api/payment/create-intent`;
-      const pingUrl = baseUrl.endsWith("/api") ? baseUrl.replace(/\/api$/, '') : baseUrl;
-
-      // ✅ STEP 1: Wake up Render server (free tier sleeps after inactivity)
-      // Ping first so server is warm before the actual booking request
-      console.log('Waking up server...');
-      toast.info('Connecting to server, please wait...');
-      try {
-        await axios.get(pingUrl, { timeout: 25000 });
-      } catch (_) {
-        // Ignore — server may still be starting up, we proceed anyway
-      }
-
-      // ✅ STEP 2: CREATE BOOKING with long timeout + 1 retry on network/timeout errors
-      console.log('Creating booking as PENDING...');
-
-      const postBooking = () => axios.post(bookingUrl, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 90000, // 90s — enough for Render cold start
-      });
-
-      let bookingRes;
-      try {
-        bookingRes = await postBooking();
-      } catch (firstErr) {
-        const isRetryable =
-          firstErr.code === 'ECONNABORTED' ||
-          firstErr.message?.includes('timeout') ||
-          firstErr.message?.includes('Network Error');
-        if (isRetryable) {
-          console.warn('First attempt failed, retrying once...');
-          toast.info('Server is starting up, retrying...');
-          await new Promise(r => setTimeout(r, 4000));
-          bookingRes = await postBooking();
-        } else {
-          throw firstErr;
-        }
-      }
-
-      if (!bookingRes.data?.success) {
-        throw new Error(bookingRes.data?.message || 'Failed to create booking');
-      }
-
-      const bookingId = bookingRes.data.bookingId || bookingRes.data.data?._id;
-
-      if (!bookingId) {
-        throw new Error('Booking was created but no booking ID was returned. Please contact support.');
-      }
-
-      console.log('✅ Booking created (pending) → ID:', bookingId);
-
-      // ✅ STEP 3: CREATE PAYMENT CHECKOUT SESSION
-      const amountToPay = paymentType === 'full' ? finalAmount : partialAmount;
-      const paymentRes = await axios.post(paymentUrl, {
-        bookingId: bookingId,
-        paymentType: paymentType,
-        paymentAmount: amountToPay,
-      }, { timeout: 60000 });
-
-      if (paymentRes.data.success && paymentRes.data.checkoutUrl) {
-        toast.success('Redirecting to secure payment page...');
-        if (paymentRes.data.checkoutSessionId) {
-          sessionStorage.setItem('pendingCheckoutSessionId', paymentRes.data.checkoutSessionId);
-        }
-        onClose();
-        window.location.href = paymentRes.data.checkoutUrl;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
-
+        bookingData = JSON.parse(req.body.bookingData);
     } catch (error) {
-      console.error('Booking/Payment creation error:', error);
-      toast.error(error.response?.data?.message || error.message || 'Failed to create booking');
-    } finally {
-      setLocalLoading(false);
+        console.error('❌ Failed to parse bookingData:', error);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid booking data format',
+          error: error.message
+        });
     }
-  };
 
-  // ============================================
-  // CANCEL CONFIRMATION
-  // ============================================
-  const handleCancelConfirmation = () => {
-    setShowConfirmModal(false);
-    setPendingSubmit(null);
-  };
+// ✅ PRICE VALIDATION - Verify submitted price matches expected price
+if (bookingData.packageId) {
+  try {
+    const pkg = await Package.findById(bookingData.packageId);
+    
+    if (pkg) {
+      const basePrice = pkg.price;
+      const markupPrice = Math.round(basePrice * 1.10);
+      const submittedPrice = bookingData.price;
+      
+      console.log('🔍 ===== BACKEND PRICE VALIDATION =====');
+      console.log('Package Base Price:', basePrice);
+      console.log('Markup Price (10%):', markupPrice);
+      console.log('Submitted Price:', submittedPrice);
+      console.log('Timer Expired:', bookingData.timerExpiredAtBooking);
+      console.log('Price Type:', bookingData.priceType);
+      console.log('Is Customized:', bookingData.isCustomized);
+      console.log('====================================');
+      
+      // Validate that submitted price is reasonable
+      // Allow flexibility for customization and room upgrades
+      const isValidPrice = 
+        Math.abs(submittedPrice - basePrice) < 100 ||  // Close to base price
+        Math.abs(submittedPrice - markupPrice) < 100 || // Close to markup price
+        bookingData.isCustomized; // Allow any price if customized
+      
+      if (!isValidPrice) {
+        console.warn('⚠️ Price validation warning:', {
+          expected: `${basePrice} (discounted) or ${markupPrice} (markup)`,
+          received: submittedPrice,
+          difference: Math.abs(submittedPrice - basePrice)
+        });
+        // Note: We log a warning but don't fail the booking
+        // This allows room upgrades and customization to work
+      } else {
+        console.log('✅ Price validation passed');
+      }
+    }
+  } catch (priceValidationError) {
+    console.error('⚠️ Price validation error (non-fatal):', priceValidationError);
+    // Don't fail the booking due to validation error
+  }
+}
 
-  // ============================================
-  // CLOSE BOOKING COMPLETED MODAL & REDIRECT
-  // ============================================
-  const handleCloseBookingCompleted = () => {
-    setShowBookingCompletedModal(false);
-    // This is where the redirect or page change happens
-    onClose(); // Close the booking form modal
-  };
-
-  return (
-    <div className="bfm-overlay">
-      <div className="bfm-modal-card">
+    // Promo validation
+    if (bookingData.promoId) {
+      console.log('🎟️ Validating promo code...');
+      try {
+        const promo = await Promo.findById(bookingData.promoId);
         
-        {/* Updated Close Button with X Icon */}
-        <button 
-          className="bfm-close-btn" 
-          onClick={onClose}
-          aria-label="Close Modal"
-        >
-          <X size={20} strokeWidth={2.5} />
-        </button>
+        if (!promo) {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'Promo code not found'
+          });
+        }
+
+        if (!promo.isActive || promo.isArchive === 'Yes') {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'This promo code is no longer active'
+          });
+        }
+
+        const today = new Date();
+        if (today > new Date(promo.validUntil)) {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'This promo code has expired'
+          });
+        }
+
+        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'This promo code has reached its usage limit and is no longer available'
+          });
+        }
+
+        console.log(`✅ Promo code validated: ${promo.code} (${promo.usedCount}/${promo.usageLimit || '∞'} used)`);
+      } catch (promoError) {
+        console.error('❌ Promo validation error:', promoError);
+        req.files?.forEach(file => {
+          try { fs.unlinkSync(file.path); } catch (e) {}
+        });
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to validate promo code',
+          error: promoError.message
+        });
+      }
+    }
+
+    // ✅ HANDLE WALK-IN BOOKINGS (NO PASSENGER VALIDATION)
+    let passengers = [];
+    
+    if (bookingData.isWalkin) {
+      console.log('🏢 Processing walk-in booking - skipping passenger validation');
+      
+      // Create a placeholder passenger from primary contact
+      passengers = [{
+        passengerNumber: 1,
+        firstName: bookingData.fullName?.split(' ')[0] || 'Walk-in',
+        lastName: bookingData.fullName?.split(' ').slice(1).join(' ') || 'Customer',
+        email: bookingData.email || 'walkin@placeholder.com',
+        phone: bookingData.primaryContact?.phone || '0000000000',
+        dateOfBirth: '2000-01-01',
+        age: 0,
+        gender: 'Not Specified',
+        address: bookingData.primaryContact?.address || 'Walk-in',
+        nationality: 'Filipino'
+      }];
+      
+      console.log(`✅ Walk-in placeholder passenger created`);
+    } else {
+      // ✅ REGULAR BOOKING - COMPLETE PASSENGER PROCESSING LOGIC
+      const rawPassengers = bookingData.passengers || []; 
+      const totalExpectedPassengers = bookingData.pax?.adult || 1;
+
+      if (rawPassengers.length === 0) {
+          console.error(`❌ Embedded passenger array is empty for regular booking.`);
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'No passenger data provided. Regular bookings require complete passenger information.'
+          });
+      }
+
+      console.log(`📋 Processing ${rawPassengers.length} passengers for regular booking...`);
+
+      for (let index = 0; index < rawPassengers.length; index++) {
+        const passengerData = rawPassengers[index];
+          // Validate required fields for regular bookings
+          if (!passengerData.firstName || !passengerData.lastName || 
+              !passengerData.email || !passengerData.phone || 
+              !passengerData.dateOfBirth) {
+              req.files?.forEach(file => { try { fs.unlinkSync(file.path); } catch (e) {} });
+              return res.status(400).json({
+                success: false,
+                message: `Passenger ${index + 1} is missing required fields (firstName, lastName, email, phone, or dateOfBirth). Please complete all passenger details.`
+              });
+          }
+
+          // Build passenger object
+          const passenger = {
+              passengerNumber: passengerData.passengerNumber || index + 1,
+              firstName: passengerData.firstName,
+              lastName: passengerData.lastName,
+              email: passengerData.email,
+              phone: passengerData.phone,
+              dateOfBirth: passengerData.dateOfBirth,
+              age: parseInt(passengerData.age) || 0,
+              gender: passengerData.gender || '',
+              address: passengerData.address || '',
+              nationality: passengerData.nationality || 'Filipino'
+          };
+
+          // Handle file uploads
+          const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
+          const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
+
+          if (idFile) {
+            passenger.idDocument = {
+              filename: idFile.filename,
+              originalName: idFile.originalname,
+              path: idFile.path,
+              size: idFile.size
+            };
+            console.log(`  📄 ID uploaded for passenger ${index + 1}: ${idFile.originalname}`);
+          }
+
+          if (passportFile) {
+            passenger.passportDocument = {
+              filename: passportFile.filename,
+              originalName: passportFile.originalname,
+              path: passportFile.path,
+              size: passportFile.size
+            };
+            console.log(`  📄 Passport uploaded for passenger ${index + 1}: ${passportFile.originalname}`);
+          }
+
+          // ✅ ADD PASSENGER TO ARRAY
+          passengers.push(passenger);
+      }
+
+      // ✅ STRICT VALIDATION: Only for regular bookings (non-walk-in)
+      if (passengers.length !== totalExpectedPassengers) {
+          req.files?.forEach(file => {
+            try {
+              fs.unlinkSync(file.path);
+            } catch (e) {}
+          });
+          console.error(`❌ Invalid passenger count for regular booking: ${passengers.length} found, ${totalExpectedPassengers} expected`);
+          return res.status(400).json({
+            success: false,
+            message: `Invalid number of passengers. Expected ${totalExpectedPassengers}, received ${passengers.length}. Please ensure all passenger fields are complete.`,
+          });
+      }
+
+      console.log(`✅ Successfully processed ${passengers.length} passengers for regular booking`);
+    }
+
+    // Get primary contact
+    const primaryEmail = bookingData.email || bookingData.primaryContact?.email || passengers[0]?.email;
+    const primaryName = bookingData.fullName || bookingData.primaryContact?.fullName || 
+                       `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
+    
+    // User creation/lookup (skip for walk-in)
+    let existingUser = await User.findOne({ email: primaryEmail });
+    let isNewUser = false;
+    let tempPassword = null;
+
+    if (!bookingData.isWalkin) {
+      if (!existingUser) {
+        isNewUser = true;
+        tempPassword = generateTempPassword();
+        const baseUsername = primaryEmail.split('@')[0].toLowerCase();
+
+        try {
+          existingUser = await User.create({
+            fullName: primaryName,
+            email: primaryEmail,
+            username: `${baseUsername}${Date.now()}`,
+            password: tempPassword
+          });
+          
+          await sendNewUserToGHL(primaryEmail, primaryName, tempPassword, bookingData.packageName);
+          console.log('✅ Welcome email sent to new user');
+        } catch (e) {
+          console.error('❌ User/GHL Create Error:', e);
+        }
+      } else {
+        try {
+          await sendBookingConfirmationToGHL(
+            primaryEmail,
+            primaryName,
+            bookingData.packageName,
+            bookingData.totalAmount,
+            bookingData.startDate,
+            bookingData.endDate,
+            passengers.length
+          );
+          console.log('✅ Booking confirmation email sent');
+        } catch (e) {
+          console.error('❌ GHL Booking Email Error:', e);
+        }
+      }
+    }
+
+    // Parse flight details
+    let flightDetailsObject = bookingData.flightDetails;
+    if (flightDetailsObject && typeof flightDetailsObject === 'string') {
+        try {
+            flightDetailsObject = JSON.parse(flightDetailsObject);
+        } catch (e) {
+            console.error('Failed to parse flightDetails string:', e);
+            flightDetailsObject = null;
+        }
+    }
+
+    console.log('📊 Creating booking with:');
+    console.log('  - Primary Contact:', primaryName, primaryEmail);
+    console.log('  - Passengers:', passengers.length);
+    console.log('  - Walk-in:', bookingData.isWalkin || false);
+    console.log('  - Promo:', bookingData.promoCode || 'None');
+    console.log('  - Total Amount:', bookingData.totalAmount);
+
+    // ✅ SANITIZE CUSTOMIZED INCLUSIONS - Ensure all have required 'source' field
+    let sanitizedCustomizedInclusions = [];
+    if (bookingData.customizedInclusions && Array.isArray(bookingData.customizedInclusions)) {
+      sanitizedCustomizedInclusions = bookingData.customizedInclusions.map(inclusion => {
+        // Ensure source field exists
+        if (!inclusion.source) {
+          // Determine source based on available data
+          if (inclusion.sellerRateId || inclusion.supplier) {
+            inclusion.source = 'seller-rate';
+          } else {
+            inclusion.source = 'package';
+          }
+        }
         
-        {/* PREMIUM HEADER SECTION */}
-        <div className="bfm-modal-header">
-          <img 
-            src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" 
-            alt="Wanderwave Logo" 
-            className="bfm-modal-logo"
-          />
-          
-          <h2 className="bfm-modal-title">Your Adventure Awaits!</h2>
-          <p className="bfm-modal-subtitle">
-            Please complete your details below. We'll secure your spot for <strong>{pkg.name}</strong> instantly.
-          </p>
-           
-          {/* TRIP SUMMARY CARDS */}
-          <div className="bfm-trip-summary">
-            <div className="bfm-summary-item">
-              <span className="bfm-summary-label">Travel Dates</span>
-              <strong className="bfm-summary-value">
-                {monthNames[currentMonth.getMonth()]} {selectedDate} - {getCalculatedDates().end.getDate()}, {currentMonth.getFullYear()}
-              </strong>
-              <span className="bfm-summary-subtext">
-                ({parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1)} days trip)
-              </span>
-            </div>
-            
-            <div className="bfm-summary-item">
-              <span className="bfm-summary-label">Package Price</span>
-              <strong className="bfm-summary-value bfm-price">
-                {appliedPromo ? (
-                  <>
-                    <span style={{textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem', marginRight: '8px'}}>
-                      {currencySymbol}{formatCurrency(packageTotal)}
-                    </span>
-                    {currencySymbol}{formatCurrency(finalPackageTotal)}
-                  </>
-                ) : (
-                  `${currencySymbol}${formatCurrency(packageTotal)}`
-                )}
-              </strong>
-              {appliedPromo && (
-                <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
-                  {appliedPromo.code} applied (-{currencySymbol}{formatCurrency(discountAmount)})
-                </span>
-              )}
-            </div>
-            
-            {selectedFlight && (
-              <>
-                <div className="bfm-summary-item">
-                  <span className="bfm-summary-label">
-                    <Plane size={12} style={{display:'inline', marginRight:'4px'}}/>
-                    Airfare ({selectedFlight.airline.name})
-                  </span>
-                  <strong className="bfm-summary-value bfm-accent-color">
-                    {currencySymbol}{formatCurrency(airfareTotal)}
-                  </strong>
-                  <span className="bfm-summary-subtext">
-                    {selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}
-                  </span>
-                </div>
-                
-                <div className="bfm-summary-item bfm-grand-total">
-                  <span className="bfm-summary-label">Grand Total</span>
-                  <strong className="bfm-summary-value bfm-grand-total-value">
-                    {currencySymbol}{formatCurrency(totalAmount)}
-                  </strong>
-                </div>
-              </>
-            )}
-          </div>
+        // Ensure all required fields exist with defaults
+        return {
+          id: inclusion.id || `inc-${Date.now()}-${Math.random()}`,
+          name: inclusion.name || 'Unknown Inclusion',
+          price: inclusion.price || 0,
+          supplierRate: inclusion.supplierRate || null,
+          markup: inclusion.markup || null,
+          markupType: inclusion.markupType || null,
+          supplier: inclusion.supplier || null,
+          destination: inclusion.destination || null,
+          pax: inclusion.pax || null,
+          notes: inclusion.notes || null,
+          isOriginal: inclusion.isOriginal !== undefined ? inclusion.isOriginal : false,
+          isChecked: inclusion.isChecked !== undefined ? inclusion.isChecked : true,
+          source: inclusion.source, // Now guaranteed to exist
+          sellerRateId: inclusion.sellerRateId || null
+        };
+      });
+      
+      console.log(`✅ Sanitized ${sanitizedCustomizedInclusions.length} customized inclusions`);
+    }
 
-          {/* DOCUMENT REQUIREMENTS */}
-          {bookingWithAirfare && (
-            <div className={`bfm-doc-req-box ${isInternationalFlight ? '' : 'bfm-domestic'}`}>
-              <strong>Required Documents:</strong>
-              {isInternationalFlight ? ' Valid Passport for all passengers' : ' Valid ID for all passengers'}
-            </div>
-          )}
-        </div>
+    // ✅ Create booking with all fields
+    const newBooking = new Booking({
+      packageName: bookingData.packageName,
+      packageId: bookingData.packageId || null,
+      sellerPrice: bookingData.sellerPrice || 0,
+      markup: bookingData.markup || 0,
+      price: bookingData.price || bookingData.packageTotal || bookingData.totalAmount,
+      startDate: bookingData.startDate,
+      endDate: bookingData.endDate,
+      duration: bookingData.duration,
+      pax: bookingData.pax,
+      selectedRoomType: bookingData.selectedRoomType,
+      hotelName: bookingData.hotelName,
+      numberOfRooms: bookingData.numberOfRooms,
+      packageTotal: bookingData.packageTotal || bookingData.totalAmount,
+      timerExpiredAtBooking: bookingData.timerExpiredAtBooking || false,
+  priceType: bookingData.priceType || 'discounted',
+  originalPackagePrice: bookingData.originalPackagePrice || bookingData.price || 0,
+  appliedMarkup: bookingData.appliedMarkup || 0,
+      // Customization fields
+      isCustomized: bookingData.isCustomized || false,
+      customizedInclusions: sanitizedCustomizedInclusions, // ✅ FIXED: Use sanitized inclusions
+      customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
+      originalInclusions: bookingData.originalInclusions || [],
+      
+      includesAirfare: bookingData.includesAirfare || false,
+      flightDetails: flightDetailsObject, 
+      airfareTotal: bookingData.airfareTotal || 0,
+      totalAmount: bookingData.totalAmount,
 
-        {/* SCROLLABLE FORM CONTENT */}
-        <div className="bfm-form-wrapper">
-          
-          {/* PROGRESS SECTION */}
-          <div className="bfm-progress-section">
-            <div className="bfm-progress-header">
-              <span className="bfm-progress-label">
-                Passenger {passengerStep} of {totalPassengers}
-                {passengerStep === 1 && <span className="bfm-primary-badge">Primary</span>}
-              </span>
-              <span className="bfm-progress-percent">{progressPercent}% Complete</span>
-            </div>
-            <div className="bfm-progress-bar-container">
-              <div className="bfm-progress-bar-fill" style={{width: `${progressPercent}%`}} />
-            </div>
-          </div>
+      paymentType: bookingData.paymentType || 'full',
+      initialPaymentAmount: bookingData.initialPaymentAmount || bookingData.totalAmount,
+      remainingBalance: bookingData.remainingBalance || 0,
+      balancePaidAmount: 0,
 
-          <form className="bfm-form" onSubmit={handleFormSubmit}>
-            <div className="bfm-form-section-header">
-              <span className="bfm-passenger-badge">Passenger {passengerStep}</span>
-              {passengerStep === 1 && <span className="bfm-primary-contact-label">Primary Contact</span>}
-            </div>
+      fullName: primaryName,
+      email: primaryEmail,
+      message: bookingData.message || '',
+      passengers: passengers, // ✅ Now populated correctly (or placeholder for walk-in)
+      status: 'pending',
+      createdAt: new Date(),
+      promoCode: bookingData.promoCode || null,
+      promoId: bookingData.promoId || null,
+      discountAmount: bookingData.discountAmount || 0,
+      finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount,
+      
+      // Walk-in fields
+      isWalkin: bookingData.isWalkin || false,
+      appointmentDate: bookingData.appointmentDate || null,
+      appointmentTime: bookingData.appointmentTime || null
+    });
 
-            {/* FORM GRID - Responsive via CSS */}
-            <div className="bfm-form-grid">
-              
-              <div className="bfm-form-group">
-                <label>First Name <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="text" 
-                  value={currentPassenger.firstName}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'firstName', e.target.value)}
-                  placeholder="Juan"
-                />
-              </div>
+    console.log('💾 Saving booking to database...');
+    await newBooking.save();
 
-              <div className="bfm-form-group">
-                <label>Last Name <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="text"
-                  value={currentPassenger.lastName}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'lastName', e.target.value)}
-                  placeholder="Dela Cruz"
-                />
-              </div>
+    console.log(`💰 Booking saved successfully! ID: ${newBooking._id}`);
 
-              <div className="bfm-form-group">
-                <label>Email Address <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="email"
-                  value={currentPassenger.email}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'email', e.target.value)}
-                  placeholder="juan@example.com"
-                />
-              </div>
+    // Activity Log
+    try {
+        const userEmail = bookingData.userEmail || bookingData.adminEmail || 'System';
+        const adminId = bookingData.adminId || null;
 
-              <div className="bfm-form-group">
-                <label>Phone Number <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="tel"
-                  value={currentPassenger.phone}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'phone', e.target.value)}
-                  placeholder="0917 123 4567"
-                />
-              </div>
+        await ActivityLog.create({
+            action: 'CREATE',
+            module: 'Bookings',
+            user: userEmail,
+            userId: adminId,
+            description: `Created new ${bookingData.isWalkin ? 'walk-in ' : ''}booking: ${bookingData.packageName} for ${primaryName}`,
+            severity: 'SUCCESS',
+            details: {
+                recordTitle: `${bookingData.packageName} - ${primaryName}`,
+                recordId: newBooking._id.toString(),
+                method: 'POST',
+                totalAmount: bookingData.totalAmount,
+                passengers: passengers.length,
+                includesAirfare: bookingData.includesAirfare || false,
+                isWalkin: bookingData.isWalkin || false
+            }
+        });
+        console.log('✅ Activity Log saved');
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
 
-              {/* ✅ CUSTOM DATE PICKER - WITH AUTO AGE CALCULATION */}
-              <div className="bfm-form-group">
-                <label>Date of Birth <span className="bfm-required">*</span></label>
-                <CustomDatePicker
-                  value={currentPassenger.dateOfBirth}
-                  onChange={(e) => handleDateOfBirthChange(passengerStep - 1, e.target.value)}
-                  maxDate={new Date().toISOString().split('T')[0]}
-                  required
-                  placeholder="Select birth date"
-                />
-              </div>
+    // ✅ Return booking ID for payment processing
+    res.json({
+      success: true,
+      message: bookingData.isWalkin 
+        ? 'Walk-in appointment created successfully.' 
+        : 'Booking saved successfully. Proceed to payment link generation.',
+      isNewUser: isNewUser,
+      bookingId: newBooking._id,
+      data: newBooking,
+    });
 
-              <div className="bfm-form-group">
-                <label>Age <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="number"
-                  value={currentPassenger.age}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)}
-                  placeholder="Auto-calculated"
-                  min="0"
-                  max="120"
-                  readOnly
-                  style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
-                />
-              </div>
+  } catch (error) {
+    console.error('❌ ==========================================');
+    console.error('❌ BOOKING ERROR (500)');
+    console.error('❌ ==========================================');
+    console.error('Error:', error);
+    console.error('Stack:', error.stack);
+    
+    req.files?.forEach(file => {
+      try {
+        fs.unlinkSync(file.path);
+        console.log(`🧹 Deleted file: ${file.path}`);
+      } catch (e) {
+      }
+    });
 
-              <div className="bfm-form-group">
-                <label>Gender <span className="bfm-required">*</span></label>
-                <select
-                  required
-                  value={currentPassenger.gender}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'gender', e.target.value)}
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create booking',
+      error: error.message
+    });
+  }
+});
 
-              <div className="bfm-form-group">
-                <label>Nationality <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="text"
-                  value={currentPassenger.nationality}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'nationality', e.target.value)}
-                  placeholder="Filipino"
-                />
-              </div>
+router.get('/', async (req, res) => {
+  try {
+    const { 
+      status, 
+      email, 
+      referenceNumber, 
+      isArchive, 
+      isCustomized,
+      startDate,
+      endDate 
+    } = req.query;
 
-              <div className="bfm-form-group bfm-full-width">
-                <label>Complete Address <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="text"
-                  value={currentPassenger.address}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'address', e.target.value)}
-                  placeholder="123 Main St, Makati City, Metro Manila"
-                />
-              </div>
+    let filter = {};
 
-              {/* ID UPLOAD */}
-              {bookingWithAirfare && requiresID && (
-                <div className="bfm-form-group bfm-full-width">
-                  <label>
-                    Upload Valid ID <span className="bfm-required">*</span>
-                    <span className="bfm-upload-hint">
-                      (Driver's License, UMID, SSS, Postal ID, etc.)
-                    </span>
-                  </label>
-                  
-                  {currentPassenger.idFileName ? (
-                    <div className="bfm-file-uploaded">
-                      <div className="bfm-file-info">
-                        <CheckCircle size={18} color="#22c55e"/>
-                        <span className="bfm-file-name">{currentPassenger.idFileName}</span>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => removeFile(passengerStep - 1, 'id')}
-                        className="bfm-remove-file-btn"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="bfm-file-upload-box">
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)}
-                        id={`id-upload-${passengerStep}`}
-                        style={{display: 'none'}}
-                      />
-                      <label htmlFor={`id-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={28} color="#94a3b8"/>
-                        <span className="bfm-upload-text">Click to upload ID</span>
-                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
+    if (status) filter.status = status;
+    if (email) filter.email = { $regex: email, $options: 'i' };
+    if (referenceNumber) filter.referenceNumber = { $regex: referenceNumber, $options: 'i' };
+    if (isArchive) filter.isArchive = isArchive;
+    if (isCustomized !== undefined) filter.isCustomized = isCustomized === 'true';
+    
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
 
-              {/* PASSPORT UPLOAD */}
-              {bookingWithAirfare && requiresPassport && (
-                <div className="bfm-form-group bfm-full-width">
-                  <label>
-                    Upload Passport <span className="bfm-required">*</span>
-                    <span className="bfm-upload-hint">
-                      (Bio-data page with photo)
-                    </span>
-                  </label>
-                  
-                  {currentPassenger.passportFileName ? (
-                    <div className="bfm-file-uploaded">
-                      <div className="bfm-file-info">
-                        <CheckCircle size={18} color="#22c55e"/>
-                        <span className="bfm-file-name">{currentPassenger.passportFileName}</span>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => removeFile(passengerStep - 1, 'passport')}
-                        className="bfm-remove-file-btn"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="bfm-file-upload-box">
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)}
-                        id={`passport-upload-${passengerStep}`}
-                        style={{display: 'none'}}
-                      />
-                      <label htmlFor={`passport-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={28} color="#94a3b8"/>
-                        <span className="bfm-upload-text">Click to upload Passport</span>
-                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
+    const bookings = await Booking.find(filter)
+      .populate('packageId')
+      .populate('promoId')
+      .sort({ createdAt: -1 });
 
-            </div>
+    // Add customization summaries
+    const bookingsWithSummary = bookings.map(booking => {
+      const bookingObj = booking.toObject();
+      if (booking.isCustomized) {
+        bookingObj.customizationSummary = booking.getCustomizationSummary();
+      }
+      return bookingObj;
+    });
 
-            {/* ✅ PAYMENT OPTIONS - Show only on last passenger */}
-            {isLastPassenger && (
-              <div className="bfm-payment-section">
-                <div className="bfm-payment-header">
-                  <Wallet size={18} />
-                  <h3>Select Payment Option</h3>
-                </div>
-                
-                <div className="bfm-payment-options">
-                  {/* PAY IN FULL */}
-                  <div 
-                    className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
-                    onClick={() => setPaymentType('full')}
-                  >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <CreditCard size={16} />
-                        <span>Pay in Full</span>
-                        <span className="bfm-recommended-badge">Most Popular</span>
-                      </div>
-                    </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">
-                        {currencySymbol}{formatCurrency(finalAmount)}
-                      </div>
-                      <div className="bfm-payment-description">
-                        Complete payment now and secure your booking
-                      </div>
-                      <ul className="bfm-payment-benefits">
-                        <li>Instant confirmation</li>
-                        <li>No further payments needed</li>
-                        <li>Priority processing</li>
-                      </ul>
-                    </div>
-                  </div>
+    res.json(bookingsWithSummary);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ 
+      message: 'Error fetching bookings', 
+      error: error.message 
+    });
+  }
+});
 
-                  {/* PARTIAL PAYMENT */}
-                  <div 
-                    className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
-                    onClick={() => setPaymentType('partial')}
-                  >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <Wallet size={16} />
-                        <span>Partial Payment</span>
-                        <span className="bfm-flexible-badge">Flexible</span>
-                      </div>
-                    </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">
-                        {currencySymbol}{formatCurrency(partialAmount)}
-                        <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
-                      </div>
-                      <div className="bfm-payment-description">
-                        Pay {partialPercentageText} now, remaining balance before departure
-                      </div>
-                      <div className="bfm-payment-breakdown">
-                        <div className="bfm-breakdown-row">
-                          <span>Now ({partialPercentageText}):</span>
-                          <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
-                        </div>
-                        <div className="bfm-breakdown-row">
-                          <span>Later ({100 - partialPercentage}%):</span>
-                          <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+// ============================================
+// GET CUSTOMIZATION STATISTICS
+// ============================================
+router.get('/stats/customization', async (req, res) => {
+  try {
+    const totalBookings = await Booking.countDocuments({ isArchive: 'No' });
+    const customizedBookings = await Booking.countDocuments({ 
+      isCustomized: true, 
+      isArchive: 'No' 
+    });
 
-                {/* Payment Summary */}
-                <div className="bfm-payment-summary">
-                  <div className="bfm-summary-row">
-                    <span>Amount to pay now:</span>
-                    <strong className="bfm-amount-highlight">
-                      {currencySymbol}{formatCurrency(paymentType === 'full' ? finalAmount : partialAmount)}
-                    </strong>
-                  </div>
-                  {paymentType === 'partial' && (
-                    <div className="bfm-summary-row bfm-remaining">
-                      <span>Remaining balance:</span>
-                      <span>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+    const customizationRate = totalBookings > 0 
+      ? ((customizedBookings / totalBookings) * 100).toFixed(2) 
+      : 0;
 
-            {/* ACTION BUTTONS */}
-            <div className="bfm-actions">
-              {passengerStep > 1 && (
-                <button 
-                  type="button" 
-                  onClick={handleBackPassenger}
-                  className="bfm-back-btn"
-                >
-                  Back
-                </button>
-              )}
-              
-              <button 
-                type="submit" 
-                disabled={localLoading || loading}
-                className="bfm-submit-btn"
-                style={{ flex: passengerStep === 1 ? '1' : '2' }}
-              >
-                {localLoading ? 'PROCESSING PAYMENT...' : 
-                 passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 
-                 `NEXT: PASSENGER ${passengerStep + 1}`}
-              </button>
-            </div>
+    // Average additional price from customizations
+    const customizationRevenue = await Booking.aggregate([
+      { 
+        $match: { 
+          isCustomized: true, 
+          isArchive: 'No',
+          status: { $in: ['confirmed', 'fully_paid'] }
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$customizationAdditionalPrice' },
+          avgAdditionalPrice: { $avg: '$customizationAdditionalPrice' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
 
-          </form>
-        </div>
+    // Most popular added inclusions
+    const popularInclusions = await Booking.aggregate([
+      { $match: { isCustomized: true, isArchive: 'No' } },
+      { $unwind: '$customizedInclusions' },
+      { 
+        $match: { 
+          'customizedInclusions.isOriginal': false,
+          'customizedInclusions.isChecked': true
+        }
+      },
+      {
+        $group: {
+          _id: '$customizedInclusions.name',
+          count: { $sum: 1 },
+          totalRevenue: { $sum: '$customizedInclusions.price' }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
 
-      </div>
+    res.json({
+      success: true,
+      stats: {
+        totalBookings,
+        customizedBookings,
+        customizationRate: parseFloat(customizationRate),
+        revenue: customizationRevenue[0] || {
+          totalRevenue: 0,
+          avgAdditionalPrice: 0,
+          count: 0
+        },
+        popularInclusions
+      }
+    });
 
-      {/* ============================================
-          CONFIRMATION MODAL FOR BOOKING
-          ============================================ */}
-      <CustomConfirmModal
-        isOpen={showConfirmModal}
-        title="Confirm Your Booking"
-        message={`Are you sure you want to confirm this booking for ${pkg.name}? You will be redirected to the payment page.`}
-        onConfirm={handleConfirmBooking}
-        onCancel={handleCancelConfirmation}
-        type="primary"
-      />
+  } catch (error) {
+    console.error('Error fetching customization stats:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error fetching customization statistics',
+      error: error.message 
+    });
+  }
+});
 
-      {/* ============================================
-          BOOKING COMPLETED NOTIFICATION MODAL (NO BUTTONS)
-          ============================================ */}
-      <BookingCompletedModal
-        isOpen={showBookingCompletedModal}
-        onClose={handleCloseBookingCompleted}
-        packageName={pkg.name}
-      />
-    </div>
-  );
-};
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
 
-export default BookingFormModal;
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already cancelled'
+      });
+    }
+
+    booking.status = 'cancelled';
+    booking.cancelledAt = new Date();
+    await booking.save();
+
+    // 👇👇👇 ACTIVITY LOG START (CANCEL BOOKING) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Bookings',
+                user: userEmail,
+                userId: adminId || null,
+                description: `Cancelled booking: ${booking.packageName} (${booking.fullName})`,
+                severity: 'WARNING',
+                details: {
+                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                    recordId: booking._id.toString(),
+                    method: 'POST',
+                    previousStatus: 'pending/confirmed',
+                    newStatus: 'cancelled'
+                }
+            });
+            console.log('✅ Activity Log saved for Cancel Booking');
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
+    res.json({
+      success: true,
+      message: 'Booking cancelled successfully',
+      booking
+    });
+
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel booking',
+      error: error.message
+    });
+  }
+});
+
+router.post('/:id/confirm-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentId } = req.body;
+    
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.status === 'confirmed' || booking.status === 'fully_paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already confirmed'
+      });
+    }
+
+    // For full payment
+    if (booking.paymentType === 'full') {
+      booking.status = 'confirmed';
+      booking.paidAt = new Date();
+      booking.paymentId = paymentId;
+    } 
+    // For partial payment (initial)
+    else if (booking.paymentType === 'partial') {
+      booking.status = 'partial_paid';
+      booking.paidAt = new Date();
+      booking.initialPaymentId = paymentId;
+    }
+
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    console.log(`✅ Payment confirmed for booking ${id}`);
+
+    // 👇👇👇 ACTIVITY LOG START (PAYMENT CONFIRMATION) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Bookings',
+                user: userEmail,
+                userId: adminId || null,
+                description: `Payment confirmed for booking: ${booking.packageName} (${booking.fullName})`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                    recordId: booking._id.toString(),
+                    method: 'POST',
+                    paymentType: booking.paymentType,
+                    amount: booking.paymentType === 'full' ? booking.totalAmount : booking.initialPaymentAmount,
+                    paymentId: paymentId
+                }
+            });
+            console.log('✅ Activity Log saved for Payment Confirmation');
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
+    res.json({
+      success: true,
+      message: booking.paymentType === 'full' 
+        ? 'Payment confirmed successfully' 
+        : 'Initial payment confirmed successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Error confirming payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to confirm payment',
+      error: error.message
+    });
+  }
+});
+
+router.post('/:id/create-balance-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.paymentType !== 'partial') {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking is not set for partial payment'
+      });
+    }
+
+    if (booking.isFullyPaid()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already fully paid'
+      });
+    }
+
+    const axios = require('axios');
+    
+    const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-balance-intent', {
+      bookingId: booking._id,
+      amount: booking.remainingBalance
+    });
+
+    if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
+      booking.balancePaymentLinkId = paymentResponse.data.paymentLinkId;
+      await booking.save();
+
+      res.json({
+        success: true,
+        checkoutUrl: paymentResponse.data.checkoutUrl,
+        paymentLinkId: paymentResponse.data.paymentLinkId,
+        amount: booking.remainingBalance
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create payment link'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error creating balance payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create balance payment link',
+      error: error.message
+    });
+  }
+});
+
+router.put('/:id/confirm-balance-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentId } = req.body;
+    
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.isFullyPaid()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already fully paid'
+      });
+    }
+
+    booking.balancePaidAmount = booking.remainingBalance;
+    booking.remainingBalance = 0;
+    booking.balancePaymentId = paymentId;
+    booking.balancePaidAt = new Date();
+    booking.status = 'fully_paid';
+    booking.updatedAt = new Date();
+
+    await booking.save();
+
+    console.log(`✅ Balance payment confirmed for booking ${id}`);
+
+    // 👇👇👇 ACTIVITY LOG START (BALANCE PAYMENT) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Bookings',
+                user: userEmail,
+                userId: adminId || null,
+                description: `Balance payment confirmed for booking: ${booking.packageName} (${booking.fullName})`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                    recordId: booking._id.toString(),
+                    method: 'PUT',
+                    balancePaid: booking.balancePaidAmount,
+                    paymentType: 'Balance Payment'
+                }
+            });
+            console.log('✅ Activity Log saved for Balance Payment Confirmation');
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
+    res.json({
+      success: true,
+      message: 'Balance payment confirmed successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Error confirming balance payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to confirm balance payment',
+      error: error.message
+    });
+  }
+});
+
+router.get('/pending-balance/all', async (req, res) => {
+  try {
+    const bookings = await Booking.find({
+      paymentType: 'partial',
+      remainingBalance: { $gt: 0 },
+      status: 'partial_paid',
+      isArchive: 'No'
+    }).sort({ createdAt: -1 });
+
+    const bookingsWithBalance = bookings.map(booking => ({
+      _id: booking._id,
+      packageName: booking.packageName,
+      fullName: booking.fullName,
+      email: booking.email,
+      totalAmount: booking.totalAmount,
+      initialPaymentAmount: booking.initialPaymentAmount,
+      remainingBalance: booking.remainingBalance,
+      startDate: booking.startDate,
+      createdAt: booking.createdAt,
+      paidAt: booking.paidAt
+    }));
+
+    res.json({
+      success: true,
+      count: bookingsWithBalance.length,
+      bookings: bookingsWithBalance
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching pending balance bookings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch bookings with pending balance'
+    });
+  }
+});
+
+router.patch('/:id/customization', async (req, res) => {
+  try {
+    const { customizedInclusions, customizationAdditionalPrice } = req.body;
+
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // ── Snapshot before update (for activity log) ──────────────────────────
+    const prevTotalAmount   = booking.totalAmount;
+    const prevRemaining     = booking.remainingBalance;
+    const prevCustomization = booking.customizationAdditionalPrice;
+
+    // ── Derive the clean base amount ────────────────────────────────────────
+    // "Base" = totalAmount before any previous customization adjustment.
+    // We strip out the OLD customizationAdditionalPrice so we always compute
+    // from a clean starting point regardless of prior saves.
+    //
+    // Also account for any discount that was applied at booking time.
+    const oldCustomization = booking.customizationAdditionalPrice || 0;
+    const baseAmount       = booking.totalAmount - oldCustomization;
+
+    // ── New amounts ─────────────────────────────────────────────────────────
+    const newCustomizationPrice = Number(customizationAdditionalPrice) || 0;
+    const newTotalAmount        = baseAmount + newCustomizationPrice;
+
+    // ── Recalculate remaining balance ───────────────────────────────────────
+    // totalAlreadyPaid = initial payment made + any balance payments made
+    // For partial bookings this is the amount the client has actually paid so far.
+    // For full-payment bookings remainingBalance stays 0 (nothing owed).
+    let newRemainingBalance = booking.remainingBalance; // default: unchanged
+
+    if (booking.paymentType === 'partial') {
+      const totalAlreadyPaid =
+        (booking.initialPaymentAmount || 0) +
+        (booking.balancePaidAmount    || 0);
+
+      // Remaining = what they still owe on the NEW total
+      newRemainingBalance = Math.max(0, newTotalAmount - totalAlreadyPaid);
+    }
+
+    // ── Apply all updates ───────────────────────────────────────────────────
+    booking.customizedInclusions          = customizedInclusions;
+    booking.customizationAdditionalPrice  = newCustomizationPrice;
+    booking.isCustomized                  = true;
+    booking.totalAmount                   = newTotalAmount;
+    booking.finalPackageTotal             = newTotalAmount;   // keep in sync
+    booking.packageTotal                  = (booking.packageTotal || 0) +
+                                            (newCustomizationPrice - oldCustomization);
+    booking.remainingBalance              = newRemainingBalance;
+    booking.updatedAt                     = new Date();
+
+    await booking.save();
+    await booking.populate('packageId');
+
+    // ── Destination fallback ─────────────────────────────────────────────
+    // If packageId is null in the DB (stored as null or never set), populate
+    // returns nothing. Do a secondary title-based lookup so the frontend
+    // always receives a synthetic populated packageId with destination intact.
+    let responseBooking = booking.toObject ? booking.toObject() : booking;
+    if (!responseBooking.packageId?.destination && responseBooking.packageName) {
+      try {
+        const fallbackPkg = await Package.findOne(
+          { title: responseBooking.packageName },
+          'title destination inclusions tourType minPax duration'
+        ).lean();
+        if (fallbackPkg?.destination) {
+          responseBooking = {
+            ...responseBooking,
+            packageId: {
+              _id:         fallbackPkg._id,
+              title:       fallbackPkg.title,
+              destination: fallbackPkg.destination,
+              inclusions:  fallbackPkg.inclusions || [],
+              tourType:    fallbackPkg.tourType,
+              minPax:      fallbackPkg.minPax,
+              duration:    fallbackPkg.duration,
+            },
+          };
+        }
+      } catch (pkgErr) {
+        console.warn('⚠️ Package fallback lookup failed (non-fatal):', pkgErr.message);
+      }
+    }
+
+    // ── Activity log (non-fatal) ────────────────────────────────────────────
+    try {
+      const priceDelta = newTotalAmount - prevTotalAmount;
+      const sign       = priceDelta >= 0 ? '+' : '';
+
+      await ActivityLog.create({
+        action:   'UPDATE',
+        module:   'Bookings',
+        severity: 'SUCCESS',
+        user:     booking.email || 'User',
+        description: `Package inclusions customized for booking: ${booking.packageName} (${booking.fullName}). ` +
+          `Total changed from ₱${prevTotalAmount.toLocaleString()} → ₱${newTotalAmount.toLocaleString()} (${sign}₱${Math.abs(priceDelta).toLocaleString()}). ` +
+          (booking.paymentType === 'partial'
+            ? `Remaining balance updated: ₱${prevRemaining.toLocaleString()} → ₱${newRemainingBalance.toLocaleString()}.`
+            : ''),
+        details: {
+          recordTitle:              `${booking.packageName} - ${booking.fullName}`,
+          recordId:                 booking._id.toString(),
+          method:                   'PATCH',
+          endpoint:                 `/api/bookings/${booking._id}/customization`,
+          prevTotalAmount,
+          newTotalAmount,
+          prevRemainingBalance:     prevRemaining,
+          newRemainingBalance,
+          prevCustomizationPrice:   prevCustomization,
+          newCustomizationPrice,
+          paymentType:              booking.paymentType,
+          initialPaymentAmount:     booking.initialPaymentAmount,
+          balancePaidAmount:        booking.balancePaidAmount || 0,
+        },
+      });
+      console.log('✅ Activity log saved for customization update');
+    } catch (logErr) {
+      console.error('⚠️ Failed to log customization activity:', logErr.message);
+    }
+
+    console.log(
+      `✅ Customization saved — booking ${booking._id}` +
+      ` | total: ₱${prevTotalAmount} → ₱${newTotalAmount}` +
+      (booking.paymentType === 'partial'
+        ? ` | balance: ₱${prevRemaining} → ₱${newRemainingBalance}`
+        : '')
+    );
+
+    res.json({
+      message: 'Booking customization updated successfully',
+      booking: responseBooking,
+      // Surface the key computed values so the frontend can update its display
+      // without needing a full page refresh
+      summary: {
+        prevTotalAmount,
+        newTotalAmount,
+        customizationAdditionalPrice: newCustomizationPrice,
+        remainingBalance:             newRemainingBalance,
+        paymentType:                  booking.paymentType,
+      },
+    });
+
+  } catch (error) {
+    console.error('Error updating booking customization:', error);
+    res.status(400).json({ 
+      message: 'Error updating customization', 
+      error: error.message 
+    });
+  }
+});
+
+// Sa loob ng bookingRoute.js
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+    // I-update ang fields (gaya ng passengers)
+    Object.assign(booking, req.body);
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    res.json({ success: true, message: 'Booking updated successfully', booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Cancel booking route
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+    
+    if (!booking) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Booking not found' 
+      });
+    }
+
+    // Check if booking can be cancelled
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Booking is already cancelled' 
+      });
+    }
+
+    // Update booking status to cancelled
+    booking.status = 'cancelled';
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    // 👇👇👇 ACTIVITY LOG START (CANCEL BOOKING) 👇👇👇
+    try {
+      const { userEmail, adminId } = req.body;
+      if (userEmail) {
+        await ActivityLog.create({
+          action: 'UPDATE',
+          module: 'Bookings',
+          user: userEmail,
+          userId: adminId || null,
+          description: `Cancelled booking: ${booking.packageName} (${booking.fullName})`,
+          severity: 'WARNING',
+          details: {
+            recordTitle: `${booking.packageName} - ${booking.fullName}`,
+            recordId: booking._id.toString(),
+            method: 'POST',
+            previousStatus: 'pending',
+            newStatus: 'cancelled'
+          }
+        });
+        console.log('✅ Activity Log saved for Cancel Booking');
+      }
+    } catch (logError) {
+      console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
+    res.json({ 
+      success: true, 
+      message: 'Booking cancelled successfully', 
+      booking 
+    });
+
+  } catch (error) {
+    console.error('❌ Error cancelling booking:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to cancel booking',
+      error: error.message 
+    });
+  }
+});
+
+// ============================================
+// PATCH /:id/details — UPDATE BOOKING DETAILS
+// Called by BookingCustomizer when admin edits
+// Package Name, Duration, Travel Dates, or Pax
+// ============================================
+router.patch('/:id/details', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      packageName,
+      duration,
+      startDate,
+      endDate,
+      pax,
+      userEmail,
+      adminId,
+    } = req.body;
+
+    // 1. Find the existing booking
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ status: 'error', error: 'Booking not found' });
+    }
+
+    // 2. Build update object — only include fields that were actually sent
+    const updateData = {};
+    const changedFields = [];
+
+    if (packageName !== undefined && packageName !== booking.packageName) {
+      updateData.packageName = packageName.trim();
+      changedFields.push(`Package Name: "${booking.packageName}" → "${packageName.trim()}"`);
+    }
+
+    if (duration !== undefined && duration !== booking.duration) {
+      updateData.duration = duration.trim();
+      changedFields.push(`Duration: "${booking.duration}" → "${duration.trim()}"`);
+    }
+
+    if (startDate !== undefined) {
+      updateData.startDate = startDate ? new Date(startDate) : null;
+      changedFields.push('Start Date updated');
+    }
+
+    if (endDate !== undefined) {
+      updateData.endDate = endDate ? new Date(endDate) : null;
+      changedFields.push('End Date updated');
+    }
+
+    if (pax !== undefined && typeof pax === 'object') {
+      updateData.pax = {
+        adult:    Number(pax.adult)    || 0,
+        children: Number(pax.children) || 0,
+        infants:  Number(pax.infants)  || 0,
+      };
+      changedFields.push('Pax updated');
+    }
+
+    // 3. Nothing to update
+    if (Object.keys(updateData).length === 0) {
+      return res.status(200).json({
+        status: 'ok',
+        message: 'No changes detected',
+        booking,
+      });
+    }
+
+    // 4. Apply update (runValidators: false to avoid triggering unrelated validators)
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: false }
+    ).populate('packageId'); // ✅ Keep packageId populated so frontend destination check works
+
+    // ── Destination fallback ─────────────────────────────────────────────
+    let responseBookingDetails = updatedBooking.toObject ? updatedBooking.toObject() : updatedBooking;
+    if (!responseBookingDetails.packageId?.destination && responseBookingDetails.packageName) {
+      try {
+        const fallbackPkg = await Package.findOne(
+          { title: responseBookingDetails.packageName },
+          'title destination inclusions tourType minPax duration'
+        ).lean();
+        if (fallbackPkg?.destination) {
+          responseBookingDetails = {
+            ...responseBookingDetails,
+            packageId: {
+              _id:         fallbackPkg._id,
+              title:       fallbackPkg.title,
+              destination: fallbackPkg.destination,
+              inclusions:  fallbackPkg.inclusions || [],
+              tourType:    fallbackPkg.tourType,
+              minPax:      fallbackPkg.minPax,
+              duration:    fallbackPkg.duration,
+            },
+          };
+        }
+      } catch (pkgErr) {
+        console.warn('⚠️ Package fallback lookup failed (non-fatal):', pkgErr.message);
+      }
+    }
+
+    // 5. Activity log (non-fatal)
+    try {
+      if (userEmail) {
+        await ActivityLog.create({
+          action: 'UPDATE',
+          module: 'Bookings',
+          user: userEmail,
+          userId: adminId || null,
+          severity: 'SUCCESS',
+          description: `Updated booking details for: ${updatedBooking.packageName} (${updatedBooking.fullName})${
+            changedFields.length ? '. Changes: ' + changedFields.join(', ') : ''
+          }`,
+          details: {
+            recordTitle: `${updatedBooking.packageName} - ${updatedBooking.fullName}`,
+            recordId: updatedBooking._id.toString(),
+            method: 'PATCH',
+            endpoint: `/api/bookings/${id}/details`,
+          },
+        });
+        console.log('✅ Activity Log saved for Update Booking Details');
+      }
+    } catch (logError) {
+      console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+
+    console.log(`✅ Booking details updated: ${id} — ${changedFields.join(', ') || 'no changes'}`);
+
+    return res.status(200).json({
+      status: 'ok',
+      message: 'Booking details updated successfully',
+      booking: responseBookingDetails,
+    });
+
+  } catch (err) {
+    console.error('❌ Error updating booking details:', err);
+    return res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// PATCH /:id/hotel — UPDATE HOTEL SELECTION FROM USER DASHBOARD
+// Called by HotelCustomizer when the user picks a room tier and saves.
+// Updates selectedRoomType, hotelName, numberOfRooms on the booking.
+// ─────────────────────────────────────────────────────────────
+router.patch('/:id/hotel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { selectedRoomType, hotelName, numberOfRooms } = req.body;
+
+    if (!selectedRoomType) {
+      return res.status(400).json({ status: 'error', error: 'selectedRoomType is required' });
+    }
+
+    const updateData = {
+      selectedRoomType,
+      ...(hotelName     !== undefined && { hotelName }),
+      ...(numberOfRooms !== undefined && { numberOfRooms }),
+    };
+
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: false }
+    ).populate('packageId');
+
+    if (!updatedBooking) {
+      return res.status(404).json({ status: 'error', error: 'Booking not found' });
+    }
+
+    // ── Destination fallback ─────────────────────────────────────────────
+    let responseBookingHotel = updatedBooking.toObject ? updatedBooking.toObject() : updatedBooking;
+    if (!responseBookingHotel.packageId?.destination && responseBookingHotel.packageName) {
+      try {
+        const fallbackPkg = await Package.findOne(
+          { title: responseBookingHotel.packageName },
+          'title destination inclusions tourType minPax duration'
+        ).lean();
+        if (fallbackPkg?.destination) {
+          responseBookingHotel = {
+            ...responseBookingHotel,
+            packageId: {
+              _id:         fallbackPkg._id,
+              title:       fallbackPkg.title,
+              destination: fallbackPkg.destination,
+              inclusions:  fallbackPkg.inclusions || [],
+              tourType:    fallbackPkg.tourType,
+              minPax:      fallbackPkg.minPax,
+              duration:    fallbackPkg.duration,
+            },
+          };
+        }
+      } catch (pkgErr) {
+        console.warn('⚠️ Package fallback lookup failed (non-fatal):', pkgErr.message);
+      }
+    }
+
+    console.log(`✅ Hotel selection updated — booking ${id}: ${selectedRoomType} @ ${hotelName || 'N/A'}`);
+
+    return res.status(200).json({
+      status: 'ok',
+      message: 'Hotel selection updated successfully',
+      booking: responseBookingHotel,
+    });
+
+  } catch (err) {
+    console.error('❌ Error updating hotel selection:', err);
+    return res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
+module.exports = router;
