@@ -47,10 +47,21 @@ function PackageDealsContent() {
 
   // ============================================================
   // PAGE VIEW TRACKER — fires once on mount for /packages page
+  // Fetches real client IP via ipify so the backend can deduplicate
+  // by actual visitor IP address (not the loopback/proxy address).
   // ============================================================
   useEffect(() => {
     const trackPageView = async () => {
       try {
+        let visitorIp = 'unknown';
+        try {
+          const ipRes = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipRes.json();
+          visitorIp = ipData.ip;
+        } catch {
+          // If ipify fails, proceed anyway — backend will use fallback
+        }
+
         await fetch('https://wanderwaveph.onrender.com/api/page-views', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -58,6 +69,7 @@ function PackageDealsContent() {
             page: 'packages',
             path: '/packages',
             label: 'Package Deals Page',
+            visitorIp,
           }),
         });
       } catch (err) {

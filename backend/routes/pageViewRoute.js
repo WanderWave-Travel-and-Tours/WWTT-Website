@@ -1,12 +1,29 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { PageView, BookingCount } = require('../models/PageView');
 const Booking = require('../models/booking');
 
 // ===================================================================
+// HELPER — generates a stable visitorId from the client's real IP.
+// Priority: (1) visitorIp sent in request body (from ipify on frontend)
+//           (2) x-forwarded-for header (proxy/load balancer)
+//           (3) socket remote address (fallback)
+// ===================================================================
+function getVisitorId(req) {
+  const ip =
+    req.body?.visitorIp ||
+    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    req.socket?.remoteAddress ||
+    'unknown';
+  return crypto.createHash('sha256').update(ip).digest('hex');
+}
+
+// ===================================================================
 // POST /api/page-views
-// Records a single page view. Called silently from the frontend.
-// Body: { page, path, label, packageId?, packageName? }
+// Records a single UNIQUE page view per visitor IP per page per 24 hrs.
+// Called silently from the frontend.
+// Body: { page, path, label, packageId?, packageName?, visitorIp? }
 // ===================================================================
 router.post('/', async (req, res) => {
   try {
@@ -27,21 +44,44 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // ── Unique-view deduplication ────────────────────────────────────
+    // Same visitor IP on the same page within the last 24 hours
+    // is NOT counted again.
+    const visitorId = getVisitorId(req);
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const alreadyViewed = await PageView.exists({
+      visitorId,
+      page,
+      createdAt: { $gte: oneDayAgo },
+    });
+
+    if (alreadyViewed) {
+      console.log(`👁️  Duplicate view skipped: [${page}] ${path} — visitor already counted`);
+      return res.status(200).json({
+        status: 'ok',
+        message: 'Page view already recorded for this visitor today',
+        unique: false,
+      });
+    }
+
     const view = new PageView({
       page,
       path,
       label: label || '',
       packageId: packageId || null,
       packageName: packageName || null,
+      visitorId,
     });
 
     await view.save();
 
-    console.log(`📊 Page view recorded: [${page}] ${path}`);
+    console.log(`📊 Unique page view recorded: [${page}] ${path}`);
 
     return res.status(201).json({
       status: 'ok',
       message: 'Page view recorded',
+      unique: true,
     });
   } catch (err) {
     console.error('❌ Error recording page view:', err);

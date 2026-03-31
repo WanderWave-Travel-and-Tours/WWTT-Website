@@ -30,6 +30,15 @@ const pageViewSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // ── Unique visitor tracking ──────────────────────────────────────
+    // visitorId = SHA-256 hash of the client's real IP address.
+    // Sent from the frontend via ipify, used to deduplicate views.
+    // A visitor is counted once per page per 24-hour window.
+    visitorId: {
+      type: String,
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
@@ -38,6 +47,8 @@ const pageViewSchema = new mongoose.Schema(
 
 pageViewSchema.index({ createdAt: -1 });
 pageViewSchema.index({ page: 1, createdAt: -1 });
+// Compound index used by the duplicate-check query in the route
+pageViewSchema.index({ visitorId: 1, page: 1, createdAt: -1 });
 
 const PageView = mongoose.model('PageView', pageViewSchema);
 

@@ -31,10 +31,12 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
   if (!pkg) return null;
 
   // ============================================================
-  // PAGE VIEW TRACKER — fires once per package booking page view
+  // PAGE VIEW TRACKER — fires once per package booking page view.
+  // Waits for userIpAddress (already fetched via ipify below) so
+  // the backend can deduplicate by actual visitor IP address.
   // ============================================================
   useEffect(() => {
-    if (!pkg) return;
+    if (!pkg || !userIpAddress) return;
     const packageId = pkg._id || pkg.id;
     const packageName = pkg.name || pkg.title || 'Unknown Package';
 
@@ -49,6 +51,7 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
             label: `Booking Page: ${packageName}`,
             packageId,
             packageName,
+            visitorIp: userIpAddress,
           }),
         });
       } catch (err) {
@@ -56,7 +59,7 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
       }
     };
     trackPageView();
-  }, [pkg?.id, pkg?._id]);
+  }, [userIpAddress, pkg?.id, pkg?._id]);
 
   // ============================================
   // PREVENT BACK NAVIGATION FROM BOOKING PAGE

@@ -111,138 +111,83 @@ const createInquiryCheckoutSession = async (req, res) => {
   }
 };
 
-// ✅ UPDATED: Changed from Payment Link to Checkout Session
-// ✅ FINAL VERSION - NO BOOKING CREATION UNTIL PAYMENT IS RECEIVED
-// ✅ UPDATED createBookingPaymentIntent - Flexible Validation + Detailed Logging
 const createBookingPaymentIntent = async (req, res) => {
+  console.log('🚀 createBookingPaymentIntent - START');
+
+  const bookingData = req.body;
+
+  // Basic validation
+  if (!bookingData.packageName || !bookingData.email || !bookingData.totalAmount) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing required fields: packageName, email, totalAmount'
+    });
+  }
+
   try {
-    console.log('=======================================');
-    console.log('BOOKING PAYMENT - CHECKOUT SESSION START');
-    console.log('Full Booking Data Received:', JSON.stringify(req.body, null, 2));
-    console.log('Keys Received:', Object.keys(req.body));
-    console.log('=======================================');
-
-    const bookingData = req.body;
-
-    // ✅ Mas flexible na validation (hindi na strict sa bookingId)
-    const missingFields = [];
-    if (!bookingData.packageName) missingFields.push('packageName');
-    if (!bookingData.totalAmount && bookingData.totalAmount !== 0) missingFields.push('totalAmount');
-    if (!bookingData.fullName) missingFields.push('fullName');
-    if (!bookingData.email) missingFields.push('email');
-
-    if (missingFields.length > 0) {
-      console.error('❌ Missing required fields:', missingFields);
-      return res.status(400).json({
-        success: false,
-        message: `Missing required fields: ${missingFields.join(', ')}`,
-        receivedKeys: Object.keys(bookingData),
-        note: 'bookingId is not required for new bookings'
-      });
-    }
-
-    const amountToPay = bookingData.initialPaymentAmount || bookingData.totalAmount;
-    const amountInCentavos = Math.round(amountToPay * 100);
-
-    const isPartial = bookingData.paymentType === 'partial';
-    const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
-
-    // Clean data for webhook
-    const cleanBookingData = {
-      packageName: bookingData.packageName,
-      packageId: bookingData.packageId,
-      fullName: bookingData.fullName,
-      email: bookingData.email,
-      totalAmount: bookingData.totalAmount,
+    // ====================== 1. CREATE BOOKING FIRST (PENDING) ======================
+    const newBooking = new Booking({
+      ...bookingData,
+      status: 'pending',                          // ← Important!
       initialPaymentAmount: bookingData.initialPaymentAmount || bookingData.totalAmount,
-      paymentType: bookingData.paymentType || 'full',
-      startDate: bookingData.startDate,
-      endDate: bookingData.endDate,
-      duration: bookingData.duration,
-      pax: bookingData.pax,
-      passengers: bookingData.passengers || [],
-      includesAirfare: bookingData.includesAirfare || false,
-      selectedFlight: bookingData.selectedFlight || null,
-      selectedRoomType: bookingData.selectedRoomType || null,
-      isCustomized: bookingData.isCustomized || false,
-      customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
-      customizedInclusions: bookingData.customizedInclusions || [],
-      price: bookingData.price || bookingData.totalAmount || 0,
-      markup: bookingData.markup || 0,
-      sellerPrice: bookingData.sellerPrice || 0,
-      finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount || 0,
-      packageTotal: bookingData.packageTotal || bookingData.totalAmount || 0,
-      timerExpiredAtBooking: bookingData.timerExpiredAtBooking || false,
-      promoId: bookingData.promoId || null,
-    };
+      remainingBalance: bookingData.paymentType === 'partial' 
+        ? (bookingData.totalAmount - (bookingData.initialPaymentAmount || 0)) 
+        : 0,
+      paidAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
-    console.log('🧹 Cleaned bookingData ready for webhook');
+    await newBooking.save();
 
-    const checkoutOptions = {
-      method: 'POST',
-      url: `${PAYMONGO_API}/checkout_sessions`,
-      headers: {
-        accept: 'application/json',
-        'Content-Type': 'application/json',
-        authorization: `Basic ${authHeader}`
-      },
+    console.log(`✅ BOOKING CREATED SUCCESSFULLY (PENDING) - ID: ${newBooking._id}`);
+
+    // ====================== 2. CREATE PAYMONGO CHECKOUT SESSION ======================
+    const checkoutPayload = {
       data: {
-        data: {
-          attributes: {
-            line_items: [
-              {
-                currency: 'PHP',
-                amount: amountInCentavos,
-                description: `${bookingData.packageName} - ${paymentDescription}`,
-                name: bookingData.packageName,
-                quantity: 1
-              }
-            ],
-            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'],
-            reference_number: `WW-${Date.now()}`,
-            send_email_receipt: true,
-            show_description: true,
-            description: `${paymentDescription} for ${bookingData.fullName}`,
-            success_url: `${FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${FRONTEND_URL}/packages`,
-            metadata: {
-              rawBookingData: JSON.stringify(cleanBookingData),
-              payment_type: bookingData.paymentType || 'full',
-              is_initial_payment: true,
-              customer_name: bookingData.fullName,
-              customer_email: bookingData.email,
-              package_name: bookingData.packageName,
-              total_amount: bookingData.totalAmount,
-              includes_airfare: bookingData.includesAirfare || false
-            }
+        attributes: {
+          line_items: [{
+            name: bookingData.packageName,
+            quantity: 1,
+            amount: Math.round(bookingData.totalAmount * 100), // PayMongo uses cents
+            currency: bookingData.currency || 'PHP'
+          }],
+          payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
+          success_url: `https://wanderwaveph.onrender.com/payment-success?bookingId=${newBooking._id}`,
+          cancel_url: `https://wanderwaveph.onrender.com/booking`,
+          metadata: {
+            bookingId: newBooking._id.toString(),
+            paymentType: bookingData.paymentType || 'full'
           }
         }
       }
     };
 
-    const response = await axios.request(checkoutOptions);
-    const checkoutSession = response.data.data;
+    const paymongoResponse = await axios.post(
+      'https://api.paymongo.com/v1/checkout_sessions',
+      checkoutPayload,
+      {
+        headers: {
+          Authorization: `Basic ${authHeader}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    console.log('✅ PayMongo Checkout Session Created Successfully');
+    const checkoutUrl = paymongoResponse.data.data.attributes.checkout_url;
 
-    return res.json({
+    res.json({
       success: true,
-      checkoutUrl: checkoutSession.attributes.checkout_url,
-      checkoutSessionId: checkoutSession.id,
-      message: 'Checkout session created - booking will be created only after successful payment'
+      checkoutUrl: checkoutUrl,
+      bookingId: newBooking._id.toString()
     });
 
   } catch (error) {
-    console.error('=======================================');
-    console.error('BOOKING CHECKOUT SESSION ERROR');
-    console.error('Error Message:', error.message);
-    if (error.response) {
-      console.error('PayMongo Error Data:', JSON.stringify(error.response.data, null, 2));
-    }
+    console.error('❌ Create Intent Error:', error.response?.data || error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to create checkout session',
-      error: error.response?.data?.errors || error.message
+      message: 'Failed to create payment session',
+      error: error.message
     });
   }
 };
