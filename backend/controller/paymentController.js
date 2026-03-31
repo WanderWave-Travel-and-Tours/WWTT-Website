@@ -11,7 +11,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
 // ==================== VERSION MARKER ====================
-console.log('🚀 PAYMENT CONTROLLER v2026-04-01-FINAL-DUAL-v4-CACHE-BUST - DUAL FLOW ACTIVE (BookingFormModal + bookingId)');
+console.log('🚀 PAYMENT CONTROLLER FINAL-v5 - BOOKING CREATED BEFORE PAYMENT (BookingFormModal + bookingId)');
 console.log('🔄 CACHE BUST TIMESTAMP:', new Date().toISOString());
 console.log('✅ IF YOU SEE THIS LOG, THE NEW CODE IS LOADED CORRECTLY');
 // ========================================================
@@ -118,38 +118,17 @@ const createInquiryCheckoutSession = async (req, res) => {
 };
 
 const createBookingPaymentIntent = async (req, res) => {
-  console.log('🚀 createBookingPaymentIntent - START (v2026-04-01-FINAL-DUAL-v3)');
-  console.log('Body keys received:', Object.keys(req.body));
+  console.log('🚀 createBookingPaymentIntent - START (FINAL-v5)');
+  console.log('Body keys:', Object.keys(req.body));
 
   const body = req.body;
 
   try {
     let booking;
 
-    // === CASE 1: May bookingId (galing sa BookingRightForm) ===
-    if (body.bookingId) {
-      console.log(`📦 Using existing bookingId: ${body.bookingId}`);
-      booking = await Booking.findById(body.bookingId);
-
-      if (!booking) {
-        return res.status(404).json({
-          success: false,
-          message: `Booking not found for id: ${body.bookingId}`
-        });
-      }
-
-      if (body.paymentType) booking.paymentType = body.paymentType;
-      if (body.paymentAmount) {
-        booking.initialPaymentAmount = body.paymentAmount;
-        booking.remainingBalance = body.paymentType === 'partial'
-          ? (booking.totalAmount - body.paymentAmount)
-          : 0;
-      }
-      await booking.save();
-
-    // === CASE 2: Walang bookingId → BookingFormModal (ITO ANG GINAGAMIT NG MODAL) ===
-    } else {
-      console.log('📋 No bookingId detected → Creating NEW booking from BookingFormModal full data');
+    // CASE 2: BookingFormModal flow (Walang bookingId) — ITO ANG GUSTO MO
+    if (!body.bookingId) {
+      console.log('📋 No bookingId → Creating NEW pending booking from BookingFormModal');
       console.log('Package Name:', body.packageName);
       console.log('Email:', body.email);
       console.log('Total Amount:', body.totalAmount);
@@ -164,17 +143,34 @@ const createBookingPaymentIntent = async (req, res) => {
 
       booking = new Booking({
         ...body,
-        status: 'pending',
+        status: 'pending',                    // ← Important: pending muna
         initialPaymentAmount: body.initialPaymentAmount || body.totalAmount,
         remainingBalance: body.paymentType === 'partial'
-          ? (body.totalAmount - (body.initialPaymentAmount || 0))
-          : 0,
+          ? (body.totalAmount - (body.initialPaymentAmount || 0)) : 0,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
       await booking.save();
-      console.log(`✅ NEW BOOKING CREATED FROM MODAL - ID: ${booking._id}`);
+      console.log(`✅ BOOKING CREATED (PENDING) - ID: ${booking._id}`);
+
+    }
+    // CASE 1: May bookingId na (BookingRightForm flow)
+    else {
+      console.log(`📦 Using existing bookingId: ${body.bookingId}`);
+      booking = await Booking.findById(body.bookingId);
+
+      if (!booking) {
+        return res.status(404).json({ success: false, message: `Booking not found` });
+      }
+
+      if (body.paymentType) booking.paymentType = body.paymentType;
+      if (body.paymentAmount) {
+        booking.initialPaymentAmount = body.paymentAmount;
+        booking.remainingBalance = body.paymentType === 'partial'
+          ? (booking.totalAmount - body.paymentAmount) : 0;
+      }
+      await booking.save();
     }
 
     // ====================== PAYMONGO CHECKOUT SESSION ======================
@@ -194,7 +190,7 @@ const createBookingPaymentIntent = async (req, res) => {
           payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
           success_url: `https://wanderwaveph.onrender.com/payment-success?bookingId=${booking._id}`,
           cancel_url: `https://wanderwaveph.onrender.com/booking`,
-          description: `${paymentDescription} for ${booking.fullName}`,
+          description: `${paymentDescription} for ${booking.fullName} - ${booking.packageName}`,
           metadata: {
             bookingId: booking._id.toString(),
             paymentType: booking.paymentType || 'full'

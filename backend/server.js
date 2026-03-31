@@ -244,14 +244,6 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
 
 
 // ============================================================================
-// 🐛 DEBUG: Log ALL incoming requests
-// ============================================================================
-app.use((req, res, next) => {
-  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
-  next();
-});
-
-// ============================================================================
 // ✅ BOOKING UPDATE ROUTE - MUST BE BEFORE app.use('/api/bookings')
 // ============================================================================
 app.put('/api/bookings/:id', async (req, res) => {
@@ -334,6 +326,14 @@ app.put('/api/bookings/:id', async (req, res) => {
 
 console.log('✅ Booking update route registered');
 
+// ============================================================================
+// 🐛 DEBUG: Log ALL incoming requests
+// ============================================================================
+app.use((req, res, next) => {
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // ===================================================================
 // REGISTER ALL ROUTES
 // ===================================================================
@@ -344,8 +344,8 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/posters', posterRoutes); 
 app.use('/api/blogs', blogRoutes);
-app.use('/api/payment', paymentRoute);
-app.use('/api/bookings', bookingRoute);
+app.use('/api/payment', paymentRoute);           // ← Payment MUNA bago bookings
+app.use('/api/bookings', bookingRoute);          // ← Bookings routes
 app.use('/api/auth', authRoute);
 app.use('/api/tours', tourRoutes); 
 app.use('/api/users', userRoutes); 
