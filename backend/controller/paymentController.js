@@ -10,6 +10,10 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 // ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
+// ==================== VERSION MARKER ====================
+console.log('🚀 PAYMENT CONTROLLER v2026-04-01-FIXED - DUAL FLOW ACTIVE (BookingFormModal + bookingId)');
+// ========================================================
+
 const createInquiryCheckoutSession = async (req, res) => {
   try {
     console.log('=== INQUIRY PAYMENT START ===');
@@ -112,7 +116,7 @@ const createInquiryCheckoutSession = async (req, res) => {
 };
 
 const createBookingPaymentIntent = async (req, res) => {
-  console.log('🚀 createBookingPaymentIntent - START');
+  console.log('🚀 createBookingPaymentIntent - START (v2026-04-01-FIXED)');
   console.log('Body keys received:', Object.keys(req.body));
 
   const body = req.body;
