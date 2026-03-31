@@ -422,37 +422,30 @@ const BookingFormModal = ({
         timerExpiredAtBooking: false
       };
 
-      console.log('📤 Sending booking data to create-intent:', fullBookingData);
-
       // ✅ FIXED: Clean URL construction — hindi mag-double ng /api
       const API_BASE = import.meta.env.VITE_API_URL
         || (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
 
       const cleanBase = API_BASE
-        .replace(/\/+$/, '')       // tanggalin ang trailing slash
-        .replace(/\/api$/, '');    // tanggalin ang /api sa dulo kung meron
+        .replace(/\/+$/, '')    // tanggalin ang trailing slash
+        .replace(/\/api$/, ''); // tanggalin ang /api sa dulo kung meron
       const paymentUrl = `${cleanBase}/api/payment/create-intent`;
 
+      console.log('📤 Sending booking data to create-intent:', fullBookingData);
       console.log('📍 Requesting URL:', paymentUrl);
-      console.log('📮 Using method: POST (forced explicit)');
+      console.log('📮 Method: POST (forced)');
 
-      // ✅ EXPLICIT axios config — prevents browser/cache from converting to GET
-const response = await axios.post(paymentUrl, fullBookingData, {
-          method: 'POST',
-        url: paymentUrl,
-        data: fullBookingData,
+      // CLEAN & EXPLICIT POST CALL — ITO ANG PINAKAMATIBAY
+      const response = await axios.post(paymentUrl, fullBookingData, {
         headers: {
-    'Content-Type': 'application/json'
-  }
+          'Content-Type': 'application/json'
+        }
       });
 
       console.log('✅ Backend Response:', response.data);
 
       if (response.data.success && response.data.checkoutUrl) {
         toast.success('Redirecting to secure payment page...');
-        if (response.data.checkoutSessionId) {
-          sessionStorage.setItem('pendingCheckoutSessionId', response.data.checkoutSessionId);
-        }
         onClose();
         window.location.href = response.data.checkoutUrl;
       } else {
