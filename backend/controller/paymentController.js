@@ -113,57 +113,97 @@ const createInquiryCheckoutSession = async (req, res) => {
 
 const createBookingPaymentIntent = async (req, res) => {
   console.log('🚀 createBookingPaymentIntent - START');
+  console.log('Body keys received:', Object.keys(req.body));
 
-  const bookingData = req.body;
-
-  // Basic validation
-  if (!bookingData.packageName || !bookingData.email || !bookingData.totalAmount) {
-    return res.status(400).json({
-      success: false,
-      message: 'Missing required fields: packageName, email, totalAmount'
-    });
-  }
+  const body = req.body;
 
   try {
-    // ====================== 1. CREATE BOOKING FIRST (PENDING) ======================
-    const newBooking = new Booking({
-      ...bookingData,
-      status: 'pending',                          // ← Important!
-      initialPaymentAmount: bookingData.initialPaymentAmount || bookingData.totalAmount,
-      remainingBalance: bookingData.paymentType === 'partial' 
-        ? (bookingData.totalAmount - (bookingData.initialPaymentAmount || 0)) 
-        : 0,
-      paidAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+    let booking;
 
-    await newBooking.save();
+    // ====================== CASE 1: bookingRightForm nagpadala ng bookingId ======================
+    // Ang bookingRightForm.jsx ay gumagawa muna ng booking sa /api/bookings,
+    // tapos nagse-send ng bookingId + paymentType + paymentAmount dito.
+    if (body.bookingId) {
+      console.log(`📦 bookingId received: ${body.bookingId} — i-lookup sa DB`);
 
-    console.log(`✅ BOOKING CREATED SUCCESSFULLY (PENDING) - ID: ${newBooking._id}`);
+      booking = await Booking.findById(body.bookingId);
 
-    // ====================== 2. CREATE PAYMONGO CHECKOUT SESSION ======================
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message: `Booking not found for id: ${body.bookingId}`
+        });
+      }
+
+      // I-update ang paymentType at amounts kung ibinigay
+      if (body.paymentType) {
+        booking.paymentType = body.paymentType;
+      }
+      if (body.paymentAmount) {
+        booking.initialPaymentAmount = body.paymentAmount;
+        booking.remainingBalance = body.paymentType === 'partial'
+          ? (booking.totalAmount - body.paymentAmount)
+          : 0;
+      }
+
+      await booking.save();
+      console.log(`✅ EXISTING BOOKING FOUND - ID: ${booking._id}, Package: ${booking.packageName}`);
+
+    // ====================== CASE 2: BookingFormModal nagpadala ng full booking data ======================
+    // Ang BookingFormModal.jsx ay direktang nagse-send ng lahat ng booking fields dito.
+    // Gagawa tayo ng bagong booking record (pending) bago mag-PayMongo.
+    } else {
+      console.log('📋 No bookingId — gagawa ng bagong Booking record (pending)');
+
+      if (!body.packageName || !body.email || !body.totalAmount) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields: packageName, email, totalAmount'
+        });
+      }
+
+      booking = new Booking({
+        ...body,
+        status: 'pending',
+        initialPaymentAmount: body.initialPaymentAmount || body.totalAmount,
+        remainingBalance: body.paymentType === 'partial'
+          ? (body.totalAmount - (body.initialPaymentAmount || 0))
+          : 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await booking.save();
+      console.log(`✅ NEW BOOKING CREATED (PENDING) - ID: ${booking._id}`);
+    }
+
+    // ====================== PAYMONGO CHECKOUT SESSION ======================
+    const amountToPay = booking.initialPaymentAmount || booking.totalAmount;
+    const isPartial = booking.paymentType === 'partial';
+    const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
+
     const checkoutPayload = {
       data: {
         attributes: {
           line_items: [{
-            name: bookingData.packageName,
+            name: booking.packageName,
             quantity: 1,
-            amount: Math.round(bookingData.totalAmount * 100), // PayMongo uses cents
-            currency: bookingData.currency || 'PHP'
+            amount: Math.round(amountToPay * 100), // PayMongo uses cents
+            currency: 'PHP'
           }],
           payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
-          success_url: `https://wanderwaveph.onrender.com/payment-success?bookingId=${newBooking._id}`,
+          success_url: `https://wanderwaveph.onrender.com/payment-success?bookingId=${booking._id}`,
           cancel_url: `https://wanderwaveph.onrender.com/booking`,
+          description: `${paymentDescription} for ${booking.fullName}`,
           metadata: {
-            bookingId: newBooking._id.toString(),
-            paymentType: bookingData.paymentType || 'full'
+            bookingId: booking._id.toString(),
+            paymentType: booking.paymentType || 'full'
           }
         }
       }
     };
 
-    const paymongoResponse = await axios.post(
+    const response = await axios.post(
       'https://api.paymongo.com/v1/checkout_sessions',
       checkoutPayload,
       {
@@ -174,19 +214,21 @@ const createBookingPaymentIntent = async (req, res) => {
       }
     );
 
-    const checkoutUrl = paymongoResponse.data.data.attributes.checkout_url;
+    const checkoutUrl = response.data.data.attributes.checkout_url;
+
+    console.log(`✅ PayMongo Checkout Session created — redirecting to payment`);
 
     res.json({
       success: true,
       checkoutUrl: checkoutUrl,
-      bookingId: newBooking._id.toString()
+      bookingId: booking._id.toString()
     });
 
   } catch (error) {
     console.error('❌ Create Intent Error:', error.response?.data || error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to create payment session',
+      message: 'Failed to create checkout session',
       error: error.message
     });
   }
