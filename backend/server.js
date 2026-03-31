@@ -55,16 +55,13 @@ app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
 
-// ===================================================================
-// IMPORT ALL ROUTES
-// ===================================================================
 const flightRoutes = require('./routes/flightRoute');
 const packageRoutes = require('./routes/packageRoute');
 const testimonialRoutes = require('./routes/testimonialRoute');
 const promoRoutes = require('./routes/promoRoute');
 const adminRoutes = require('./routes/adminRoute');
 const posterRoutes = require('./routes/posters'); 
-const blogRoutes = require('./routes/blogs');
+const blogRoutes = require('./routes/blogs'); 
 const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
 const authRoute = require('./routes/authRoute');
@@ -78,28 +75,14 @@ const passportRoutes = require('./routes/passportRoute');
 const inquiryRoutes = require('./routes/inquiryRoute');
 const uploadRoutes = require('./routes/uploadRoute');
 const hotelRoutes = require('./routes/hotelRoute');
-const imagesRoutes = require('./routes/imagesRoute');
+const imagesRoutes = require('./routes/imagesRoute'); // ✅ ADD THIS LINE
 const sellerRateRoutes = require('./routes/sellerRoute');
-const activityLogRoute = require('./routes/activityLogRoute'); 
-const draftsRoutes = require('./routes/drafts');
-const activityLogsRoutes = require('./routes/activityLogRoute');
-const favoriteRoute = require('./routes/favoriteRoute');
-const feedbackRoutes = require('./routes/feedbackRoutes'); 
-const ipRoutes = require('./routes/ipRoute');
-const pageViewRoutes = require('./routes/pageViewRoute');
 
-
-// ===================================================================
-// ENSURE UPLOAD DIRECTORY EXISTS
-// ===================================================================
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
-// ===================================================================
-// MULTER CONFIGURATION
-// ===================================================================
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -110,17 +93,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// ===================================================================
-// IMPORT MODELS
-// ===================================================================
 const PackageModel = require('./models/package');
 const Booking = require('./models/booking');
 const Blog = require('./models/blog');
 const ServiceModel = require('./models/service');
 
-// ===================================================================
-// VISA FILE UPLOAD ENDPOINT
-// ===================================================================
 app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -153,9 +130,6 @@ app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// ===================================================================
-// CENOMAR FILE UPLOAD ENDPOINT
-// ===================================================================
 app.post('/api/cenomar/upload', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -188,9 +162,6 @@ app.post('/api/cenomar/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// ===================================================================
-// SERVICE CREATE ENDPOINT
-// ===================================================================
 app.post('/api/services', upload.single('image'), async (req, res) => {
     try {
         const imageFilename = req.file ? req.file.filename : null;
@@ -241,102 +212,6 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
     }
 });
 
-
-
-// ============================================================================
-// 🐛 DEBUG: Log ALL incoming requests
-// ============================================================================
-app.use((req, res, next) => {
-  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
-  next();
-});
-
-// ============================================================================
-// ✅ BOOKING UPDATE ROUTE - MUST BE BEFORE app.use('/api/bookings')
-// ============================================================================
-app.put('/api/bookings/:id', async (req, res) => {
-  console.log('');
-  console.log('🔥🔥🔥 BOOKING UPDATE ROUTE HIT! 🔥🔥🔥');
-  console.log('📍 Route: PUT /api/bookings/:id');
-  console.log('🆔 Booking ID:', req.params.id);
-  console.log('📦 Body:', JSON.stringify(req.body, null, 2));
-  console.log('');
-
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
-
-    if (!id || id === 'undefined' || id === 'null') {
-      console.log('❌ Invalid booking ID');
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid booking ID'
-      });
-    }
-
-    console.log('🔍 Finding booking:', id);
-    const booking = await Booking.findById(id);
-
-    if (!booking) {
-      console.log('❌ Booking not found');
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    console.log('✅ Booking found:', booking.packageName);
-
-    const allowedUpdates = [
-      'packageName', 'fullName', 'email', 'message', 
-      'startDate', 'endDate', 'duration', 'pax',
-      'selectedRoomType', 'hotelName', 'numberOfRooms',
-      'flightDetails', 'passengers'
-    ];
-
-    let updatedFields = [];
-    allowedUpdates.forEach(field => {
-      if (updateData[field] !== undefined) {
-        booking[field] = updateData[field];
-        updatedFields.push(field);
-      }
-    });
-
-    console.log('📝 Updated:', updatedFields.join(', '));
-
-    booking.updatedAt = new Date();
-    await booking.save();
-
-    console.log('💾 Saved!');
-    console.log('✅ Success!');
-    console.log('');
-
-    res.json({
-      success: true,
-      message: 'Booking updated successfully',
-      booking: booking
-    });
-
-  } catch (error) {
-    console.error('');
-    console.error('❌❌❌ ERROR ❌❌❌');
-    console.error('Message:', error.message);
-    console.error('Stack:', error.stack);
-    console.error('');
-    
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update booking',
-      error: error.message
-    });
-  }
-});
-
-console.log('✅ Booking update route registered');
-
-// ===================================================================
-// REGISTER ALL ROUTES
-// ===================================================================
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -358,20 +233,60 @@ app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/documents', require('./routes/documentRoute'));
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/hotels', hotelRoutes);
-app.use('/api/images', imagesRoutes);
+app.use('/api/images', imagesRoutes); // ✅ ADD THIS LINE
 app.use('/api/seller-rates', sellerRateRoutes);
-app.use('/api/activity-logs', activityLogRoute); 
-app.use('/api/drafts', require('./routes/drafts'));
-app.use('/api/activity-logs', activityLogRoute); 
-app.use('/api/favorites', favoriteRoute);
-app.use('/api/feedback', feedbackRoutes);
-app.use('/api/ip', ipRoutes);
-app.use('/api/page-views', pageViewRoutes);
 
 
-// ===================================================================
-// BOOKING ENDPOINTS
-// ===================================================================
+app.post('/api/packages/add', upload.single('image'), async (req, res) => {
+    try {
+        const { 
+            title, destination, sellerPrice, markup, duration, 
+            category, inclusions, itinerary 
+        } = req.body;
+
+        console.log('Received data:', req.body); 
+        
+        const imageFilename = req.file ? req.file.filename : null;
+        const parsedInclusions = inclusions ? JSON.parse(inclusions) : [];
+        const parsedItinerary = itinerary ? JSON.parse(itinerary) : [];
+        const parsedSellerPrice = parseFloat(sellerPrice);
+        const parsedMarkup = parseFloat(markup) || 0;
+
+        if (isNaN(parsedSellerPrice)) {
+            return res.status(400).json({ 
+                status: "error", 
+                error: "Seller price must be a valid number" 
+            });
+        }
+
+        const totalPrice = parsedSellerPrice + parsedMarkup;
+
+        const newPackage = new PackageModel({
+            title, 
+            destination, 
+            sellerPrice: parsedSellerPrice,
+            markup: parsedMarkup,
+            price: totalPrice,
+            duration, 
+            category,
+            image: imageFilename,
+            inclusions: parsedInclusions,
+            itinerary: parsedItinerary 
+        });
+
+        await newPackage.save();
+        res.json({ 
+            status: "ok", 
+            message: "Package added successfully!",
+            package: newPackage 
+        });
+
+    } catch (err) {
+        console.error("Error adding package:", err);
+        res.status(500).json({ status: "error", error: err.message });
+    }
+});
+
 app.post('/api/bookings', async (req, res) => {
   try {
     const bookingData = req.body;
@@ -540,17 +455,11 @@ app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
   }
 });
 
-// ===================================================================
-// BLOG ENDPOINTS
-// ===================================================================
 app.get('/api/blogs', async (req, res) => {
   const blogs = await Blog.find();
   res.json(blogs);
 });
 
-// ===================================================================
-// STATISTICS ENDPOINT
-// ===================================================================
 app.get('/api/admin/statistics', async (req, res) => {
   try {
     const confirmedBookings = await Booking.find({ status: 'confirmed' });
@@ -595,24 +504,6 @@ app.get('/api/admin/statistics', async (req, res) => {
     });
   }
 });
-
-const frontendBuildPath = path.join(__dirname, '../client/build'); 
-
-if (fs.existsSync(frontendBuildPath)) {
-  app.use(express.static(frontendBuildPath));
-
-  app.get('*', (req, res) => {
-    if (req.originalUrl.startsWith('/api')) {
-      return res.status(404).json({ success: false, message: 'API endpoint not found' });
-    }
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
-  });
-
-  console.log(`✅ Serving React frontend from: ${frontendBuildPath}`);
-} else {
-  console.warn(`⚠️ Frontend build folder not found at: ${frontendBuildPath}`);
-  console.warn(`   Run 'npm run build' in your React app folder and ensure the path is correct.`);
-}
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
