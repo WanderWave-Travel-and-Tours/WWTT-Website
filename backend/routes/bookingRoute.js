@@ -361,12 +361,7 @@ router.post('/', upload.any(), async (req, res) => {
           error: error.message
         });
     }
-console.log('=== BOOKING ROUTE HIT ===');
-console.log('req.body keys:', Object.keys(req.body));
-console.log('bookingData type:', typeof req.body.bookingData);
-if (typeof req.body.bookingData === 'string') {
-  console.log('bookingData length:', req.body.bookingData.length);
-}
+
 // ✅ PRICE VALIDATION - Verify submitted price matches expected price
 if (bookingData.packageId) {
   try {
@@ -1400,63 +1395,6 @@ router.patch('/:id/customization', async (req, res) => {
       message: 'Error updating customization', 
       error: error.message 
     });
-  }
-});
-
-// ============================================
-// PUT /:id/confirm — MANUAL CONFIRM BOOKING
-// Called by admin to manually confirm a booking
-// ============================================
-router.put('/:id/confirm', async (req, res) => {
-  try {
-    const booking = await Booking.findById(req.params.id);
-
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
-    }
-
-    if (booking.status === 'confirmed') {
-      return res.status(400).json({ success: false, message: 'Booking is already confirmed' });
-    }
-
-    const previousStatus = booking.status;
-    booking.status = 'confirmed';
-    booking.paidAt = new Date();
-    booking.updatedAt = new Date();
-    await booking.save();
-
-    // Activity Log (non-fatal)
-    try {
-      const { userEmail, adminId } = req.body;
-      if (userEmail) {
-        await ActivityLog.create({
-          action: 'UPDATE',
-          module: 'Bookings',
-          user: userEmail,
-          userId: adminId || null,
-          description: `Manually confirmed booking: ${booking.packageName} (${booking.fullName})`,
-          severity: 'SUCCESS',
-          details: {
-            recordTitle: `${booking.packageName} - ${booking.fullName}`,
-            recordId: booking._id.toString(),
-            method: 'PUT',
-            previousStatus,
-            newStatus: 'confirmed'
-          }
-        });
-        console.log('✅ Activity Log saved for Manual Confirm Booking');
-      }
-    } catch (logError) {
-      console.error('⚠️ Failed to save activity log:', logError.message);
-    }
-
-    console.log(`✅ Booking manually confirmed: ${req.params.id}`);
-
-    res.json({ success: true, message: 'Booking confirmed successfully', booking });
-
-  } catch (error) {
-    console.error('❌ Error confirming booking:', error);
-    res.status(500).json({ success: false, message: 'Failed to confirm booking', error: error.message });
   }
 });
 
