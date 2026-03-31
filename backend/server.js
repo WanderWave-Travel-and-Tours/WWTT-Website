@@ -77,6 +77,7 @@ const uploadRoutes = require('./routes/uploadRoute');
 const hotelRoutes = require('./routes/hotelRoute');
 const imagesRoutes = require('./routes/imagesRoute'); // ✅ ADD THIS LINE
 const sellerRateRoutes = require('./routes/sellerRoute');
+const pageViewRoutes = require('./routes/pageViewRoute');
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -235,6 +236,7 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/images', imagesRoutes); // ✅ ADD THIS LINE
 app.use('/api/seller-rates', sellerRateRoutes);
+app.use('/api/page-views', pageViewRoutes);
 
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {

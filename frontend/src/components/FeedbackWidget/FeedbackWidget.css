@@ -390,6 +390,7 @@ form {
   min-height: 100px;
   transition: all 0.2s;
   box-sizing: border-box;
+  color: #1f2937;
 }
 
 .form-group textarea:focus {

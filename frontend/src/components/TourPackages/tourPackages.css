@@ -1,0 +1,206 @@
+/* tourPackages.css */
+
+.tour-packages-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background-color: #f1f5f9;
+}
+
+/* ── Hero / Top Section (matches packageDeals top-section-bg) ── */
+.tours-top-section-bg {
+  width: 100%;
+  background:
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.60), rgba(15, 23, 42, 0.30)),
+    url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69140a812f19bc2e15508b23.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 0;
+  padding-top: 130px;
+}
+
+/* ── Content container ── */
+.tours-content-container {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0 16px 60px;
+  box-sizing: border-box;
+}
+
+/* ── Loading / Error states ── */
+.tours-loading-state,
+.tours-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 20px;
+  color: #fff;
+  text-align: center;
+  gap: 16px;
+}
+
+.tours-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #FF8C00;
+  border-radius: 50%;
+  animation: toursSpin 0.8s linear infinite;
+}
+
+@keyframes toursSpin {
+  to { transform: rotate(360deg); }
+}
+
+.tours-loading-state p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.tours-error-state h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.tours-error-state p {
+  font-size: 1rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.tours-error-state button {
+  background: #FF8C00;
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tours-error-state button:hover {
+  background: #e07800;
+}
+
+/* ── Section divider (scrolling bar + airplane — matches packageDeals) ── */
+.tours-section-divider {
+  width: 100%;
+  background: none;
+  background-color: transparent;
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+}
+
+.tours-divider-airplane-container {
+  position: absolute;
+  top: 0;
+  left: -280px;
+  transform: translateY(-75%);
+  z-index: 10;
+  pointer-events: none;
+  animation: toursFlyAcross 14s linear infinite;
+  animation-delay: 2s;
+}
+
+.tours-divider-airplane {
+  display: block;
+  width: 300px;
+  height: auto;
+}
+
+@keyframes toursFlyAcross {
+  from { left: -280px; }
+  to   { left: calc(100vw + 280px); }
+}
+
+.tours-divider-bar {
+  width: 100%;
+  background-color: #0d233e;
+  padding: 16px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  z-index: 5;
+}
+
+.tours-divider-wrapper {
+  display: inline-flex;
+  width: max-content;
+  animation: toursScrollBar 40s linear infinite;
+  will-change: transform;
+}
+
+.tours-divider-group {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 15px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.tours-divider-group span {
+  margin: 0 8px;
+}
+
+.tours-divider-label {
+  color: #fc9c1b !important;
+  margin-right: 10px !important;
+}
+
+@keyframes toursScrollBar {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .tours-content-container {
+    padding: 0 16px;
+    max-width: 100%;
+  }
+  .tours-top-section-bg {
+    padding-top: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tours-top-section-bg {
+    padding-top: 120px;
+    padding-bottom: 0;
+  }
+
+  .tours-divider-bar { padding: 12px 0; }
+  .tours-divider-group { font-size: 11px; }
+  .tours-divider-airplane-container { transform: translateY(-80%); }
+  .tours-divider-airplane { width: 180px; }
+}
+
+@media (max-width: 480px) {
+  .tours-top-section-bg {
+    padding-top: 100px;
+    padding-bottom: 0;
+  }
+
+  .tours-divider-bar { padding: 10px 0; }
+  .tours-divider-group { font-size: 10px; }
+  .tours-divider-airplane { width: 150px; }
+}
