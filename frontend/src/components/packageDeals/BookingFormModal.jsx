@@ -374,15 +374,7 @@ const BookingFormModal = ({
   // ============================================
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    
-    // For last passenger, show confirmation modal
-    if (isLastPassenger) {
-      setPendingSubmit(true);
-      setShowConfirmModal(true);
-    } else {
-      // For non-last passengers, proceed directly
-      handleNextPassenger(e);
-    }
+    handleNextPassenger(e);
   };
 
   // ============================================
@@ -1028,7 +1020,7 @@ const BookingFormModal = ({
                 className="bfm-submit-btn"
                 style={{ flex: passengerStep === 1 ? '1' : '2' }}
               >
-                {localLoading ? 'PROCESSING PAYMENT...' : 
+                {localLoading || loading ? 'PROCESSING...' : 
                  passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 
                  `NEXT: PASSENGER ${passengerStep + 1}`}
               </button>
