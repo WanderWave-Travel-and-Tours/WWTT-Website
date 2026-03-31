@@ -437,15 +437,13 @@ const BookingFormModal = ({
       console.log('📮 Using method: POST (forced explicit)');
 
       // ✅ EXPLICIT axios config — prevents browser/cache from converting to GET
-      const response = await axios({
-        method: 'POST',
+const response = await axios.post(paymentUrl, fullBookingData, {
+          method: 'POST',
         url: paymentUrl,
         data: fullBookingData,
         headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
+    'Content-Type': 'application/json'
+  }
       });
 
       console.log('✅ Backend Response:', response.data);
