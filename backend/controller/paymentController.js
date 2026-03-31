@@ -11,7 +11,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
 // ==================== VERSION MARKER ====================
-console.log('🚀 PAYMENT CONTROLLER FINAL-v5 - BOOKING CREATED BEFORE PAYMENT (BookingFormModal + bookingId)');
+console.log('🚀 PAYMENT CONTROLLER FINAL-v6 - FINAL FIX: totalAmount fallback + no bookingId required check (2026-03-31)');
 console.log('🔄 CACHE BUST TIMESTAMP:', new Date().toISOString());
 console.log('✅ IF YOU SEE THIS LOG, THE NEW CODE IS LOADED CORRECTLY');
 // ========================================================
@@ -118,65 +118,75 @@ const createInquiryCheckoutSession = async (req, res) => {
 };
 
 const createBookingPaymentIntent = async (req, res) => {
-  console.log('🚀 createBookingPaymentIntent - START (FINAL-v5)');
-  console.log('Body keys:', Object.keys(req.body));
+  console.log('🚀 createBookingPaymentIntent - START (FINAL-v6 - 2026-03-31)');
+  console.log('Body keys received:', Object.keys(req.body));
 
   const body = req.body;
 
   try {
     let booking;
 
-    // CASE 2: BookingFormModal flow (Walang bookingId) — ITO ANG GUSTO MO
+    // ====================== CASE 2: BookingFormModal (No bookingId) ======================
     if (!body.bookingId) {
       console.log('📋 No bookingId → Creating NEW pending booking from BookingFormModal');
-      console.log('Package Name:', body.packageName);
-      console.log('Email:', body.email);
-      console.log('Total Amount:', body.totalAmount);
 
-      if (!body.packageName || !body.email || !body.totalAmount) {
-        console.log('❌ Missing required fields in modal data:', Object.keys(body));
+      // Basic validation
+      if (!body.packageName || !body.email) {
+        console.log('❌ Missing packageName or email');
         return res.status(400).json({
           success: false,
-          message: 'Missing required fields: packageName, email, totalAmount'
+          message: 'Missing required fields: packageName or email'
+        });
+      }
+
+      // Compute totalAmount with fallback
+      const totalAmount = body.totalAmount || body.price || body.amount || body.initialPaymentAmount || 0;
+
+      if (!totalAmount || totalAmount <= 0) {
+        console.log('❌ Invalid totalAmount:', totalAmount);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or missing totalAmount'
         });
       }
 
       booking = new Booking({
         ...body,
-        status: 'pending',                    // ← Important: pending muna
-        initialPaymentAmount: body.initialPaymentAmount || body.totalAmount,
+        totalAmount: totalAmount,                    // ensure may totalAmount
+        status: 'pending',
+        initialPaymentAmount: body.initialPaymentAmount || totalAmount,
         remainingBalance: body.paymentType === 'partial'
-          ? (body.totalAmount - (body.initialPaymentAmount || 0)) : 0,
+          ? totalAmount - (body.initialPaymentAmount || 0)
+          : 0,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
       await booking.save();
-      console.log(`✅ BOOKING CREATED (PENDING) - ID: ${booking._id}`);
-
+      console.log(`✅ BOOKING CREATED (PENDING) - ID: ${booking._id} | Amount: ${totalAmount}`);
     }
-    // CASE 1: May bookingId na (BookingRightForm flow)
+
+    // ====================== CASE 1: May bookingId na ======================
     else {
       console.log(`📦 Using existing bookingId: ${body.bookingId}`);
       booking = await Booking.findById(body.bookingId);
 
       if (!booking) {
-        return res.status(404).json({ success: false, message: `Booking not found` });
+        return res.status(404).json({ success: false, message: 'Booking not found' });
       }
 
       if (body.paymentType) booking.paymentType = body.paymentType;
       if (body.paymentAmount) {
         booking.initialPaymentAmount = body.paymentAmount;
         booking.remainingBalance = body.paymentType === 'partial'
-          ? (booking.totalAmount - body.paymentAmount) : 0;
+          ? booking.totalAmount - body.paymentAmount
+          : 0;
       }
       await booking.save();
     }
 
-    // ====================== PAYMONGO CHECKOUT SESSION ======================
+    // ====================== PAYMONGO CHECKOUT ======================
     const amountToPay = booking.initialPaymentAmount || booking.totalAmount;
-    const isPartial = booking.paymentType === 'partial';
-    const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
 
     const checkoutPayload = {
       data: {
@@ -190,7 +200,7 @@ const createBookingPaymentIntent = async (req, res) => {
           payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
           success_url: `https://wanderwaveph.onrender.com/payment-success?bookingId=${booking._id}`,
           cancel_url: `https://wanderwaveph.onrender.com/booking`,
-          description: `${paymentDescription} for ${booking.fullName} - ${booking.packageName}`,
+          description: `Payment for ${booking.fullName} - ${booking.packageName}`,
           metadata: {
             bookingId: booking._id.toString(),
             paymentType: booking.paymentType || 'full'
@@ -210,11 +220,9 @@ const createBookingPaymentIntent = async (req, res) => {
       }
     );
 
-    const checkoutUrl = response.data.data.attributes.checkout_url;
-
     res.json({
       success: true,
-      checkoutUrl: checkoutUrl,
+      checkoutUrl: response.data.data.attributes.checkout_url,
       bookingId: booking._id.toString()
     });
 
