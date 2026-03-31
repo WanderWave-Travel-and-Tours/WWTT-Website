@@ -1,0 +1,331 @@
+/* tourCard.css */
+
+.tour-card {
+  background: rgba(241, 245, 249, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.tour-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  border-color: #ffffff;
+}
+
+/* ── Image ── */
+.tour-card-image {
+  width: 100%;
+  height: 220px;
+  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tour-image-content {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  display: block;
+}
+
+.tour-card:hover .tour-image-content {
+  transform: scale(1.08);
+}
+
+/* ── Category badge ── */
+.tour-category-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.tour-category-badge.local {
+  background-color: #0f766e;
+  color: #fff;
+}
+
+.tour-category-badge.intl {
+  background-color: #1d4ed8;
+  color: #fff;
+}
+
+/* ── Card Body ── */
+.tour-card-body {
+  padding: 14px 24px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: space-between;
+}
+
+.tour-card-header {
+  margin-bottom: 4px;
+}
+
+.tour-card-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  min-height: 3.5em;
+}
+
+/* Duration badge + title inline layout (reused from packageCard) */
+.title-with-badge {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 4px;
+  overflow: visible;
+}
+
+.duration-calendar-badge {
+  display: inline-flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+  position: static;
+  margin-top: 0;
+}
+
+.duration-calendar-svg {
+  width: 68px;
+  height: 68px;
+  display: block;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.22));
+}
+
+.title-text {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: inherit;
+  flex: 1 1 0;
+  min-width: 0;
+  word-break: break-word;
+  padding-top: 10px;
+}
+
+/* ── Meta row ── */
+.tour-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.tour-meta-divider {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+}
+
+.tour-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-detail-icon {
+  color: #ea580c;
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+}
+
+.tour-detail-text {
+  font-size: 0.82rem;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Tour type + minPax ── */
+.tour-type-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.tour-minpax-text {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ── Inclusions (reused from packageCard) ── */
+.inclusions-section {
+  margin-bottom: 20px;
+}
+
+.inclusions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.inclusion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.inclusion-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 13px;
+  height: 13px;
+}
+
+.inclusion-text {
+  font-size: 0.82rem;
+  color: #475569;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.inclusions-more {
+  display: inline-block;
+  margin-top: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: #ea580c;
+  border-radius: 20px;
+  padding: 2px 9px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Footer ── */
+.tour-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: auto;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tour-price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tour-price-label {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.tour-price-amount {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tour-currency {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.tour-price-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ea580c;
+}
+
+/* ── Book Button ── */
+.tour-book-button {
+  background-color: #ea580c;
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);
+  white-space: nowrap;
+  flex: 1 0 auto;
+  min-width: 120px;
+}
+
+.tour-book-button:hover {
+  background-color: #c2410c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(234, 88, 12, 0.35);
+}
+
+.tour-book-button:active {
+  transform: translateY(0);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .tour-card-body { padding: 20px; }
+  .tour-card-title { font-size: 1.125rem; min-height: 2.8em; }
+  .tour-price-value { font-size: 1.35rem; }
+  .tour-card-image { height: 200px; }
+  .tour-book-button { padding: 10px 20px; font-size: 0.9rem; }
+}
+
+@media (max-width: 768px) {
+  .tour-card-body { padding: 18px; }
+  .tour-card-title { font-size: 1.1rem; margin-bottom: 6px; }
+  .tour-detail-text { font-size: 0.85rem; }
+  .tour-price-value { font-size: 1.25rem; }
+  .tour-card-image { height: 180px; }
+}
+
+@media (max-width: 480px) {
+  .tour-card-body { padding: 16px; }
+  .tour-card-title { font-size: 1rem; min-height: auto; }
+  .tour-card-image { height: 160px; }
+  .duration-calendar-svg { width: 58px; height: 58px; }
+  .tour-card-footer { gap: 16px; }
+  .tour-price-info { width: 100%; }
+  .tour-book-button { width: 100%; padding: 12px 0; }
+}

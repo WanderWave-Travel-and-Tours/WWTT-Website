@@ -22,6 +22,7 @@ import {
   Briefcase,
   AlertTriangle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import "./otherservices.css";
 import MascotGif from "../MascotGif/MascotGif";
 import VisaTable from "./VisaTable";
@@ -103,6 +104,9 @@ const OtherServices = ({ setAuthPage }) => {
   // ── Refs ────────────────────────────────────────────────────────────────────
   const sliderRef = useRef(null);
   const wrapperRef = useRef(null); // ref for the SCROLLABLE carousel wrapper only
+
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  const navigate = useNavigate();
 
   // ── State ───────────────────────────────────────────────────────────────────
   const [services, setServices] = useState([]);
@@ -283,6 +287,15 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
+    // ── Tour Arrangements: redirect to dedicated tours page ──────────────────
+    if (
+      item.title === "Tour Arrangements" ||
+      item.title.toLowerCase().includes("tour arrangement")
+    ) {
+      navigate("/tours");
+      return;
+    }
+
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
       setIsPSAService(false);
@@ -459,14 +472,12 @@ const OtherServices = ({ setAuthPage }) => {
 
       if (selectedType.includes('RENEWAL')) appType = 'RENEWAL';
       else if (selectedType.includes('LOST')) appType = 'LOST';
-      else if (selectedType.includes('DAMAGED')) appType = 'DAMAGED';
-      else appType = 'NEW';
 
       const inquiryData = {
         serviceId: selectedPackage.serviceId,
         serviceName: selectedPackage.title,
-        fullName: `${wizardData.applicants[0].firstName} ${wizardData.applicants[0].lastName}`,
-        email: wizardData.applicants[0].email,
+        fullName: wizardData.applicants[0]?.name || 'Group Booking',
+        email: wizardData.applicants[0]?.email || '',
         message: `Passport Booking (${appType}) for ${wizardData.paxCount} pax. Type: ${wizardData.bookingType}.`,
         estimatedPrice: selectedPackage.price * wizardData.paxCount,
         inquiryType: 'PASSPORT',
