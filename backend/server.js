@@ -43,7 +43,7 @@ app.use((req, res, next) => {
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI)
+mongoose.connect(process.env.MONGODB_URI) 
     .then(() => console.log("✅ DATABASE CONNECTED!"))
     .catch((err) => {
         console.error("❌ Database Connection Error:", err);
@@ -244,6 +244,14 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
 
 
 // ============================================================================
+// 🐛 DEBUG: Log ALL incoming requests
+// ============================================================================
+app.use((req, res, next) => {
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// ============================================================================
 // ✅ BOOKING UPDATE ROUTE - MUST BE BEFORE app.use('/api/bookings')
 // ============================================================================
 app.put('/api/bookings/:id', async (req, res) => {
@@ -326,14 +334,6 @@ app.put('/api/bookings/:id', async (req, res) => {
 
 console.log('✅ Booking update route registered');
 
-// ============================================================================
-// 🐛 DEBUG: Log ALL incoming requests
-// ============================================================================
-app.use((req, res, next) => {
-  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
-  next();
-});
-
 // ===================================================================
 // REGISTER ALL ROUTES
 // ===================================================================
@@ -344,8 +344,8 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/posters', posterRoutes); 
 app.use('/api/blogs', blogRoutes);
-app.use('/api/payment', paymentRoute);           // ← Payment MUNA bago bookings
-app.use('/api/bookings', bookingRoute);          // ← Bookings routes
+app.use('/api/payment', paymentRoute);
+app.use('/api/bookings', bookingRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/tours', tourRoutes); 
 app.use('/api/users', userRoutes); 
@@ -368,6 +368,177 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/ip', ipRoutes);
 app.use('/api/page-views', pageViewRoutes);
 
+
+// ===================================================================
+// BOOKING ENDPOINTS
+// ===================================================================
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const bookingData = req.body;
+    const package = await PackageModel.findOne({ title: bookingData.packageName });
+    
+    if (!package) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Package not found' 
+      });
+    }
+    
+    const totalPax = 
+      (bookingData.pax?.adult || 1) + 
+      (bookingData.pax?.children || 0) + 
+      (bookingData.pax?.infants || 0);
+    
+    const totalAmount = package.price * totalPax;
+    
+    console.log('📦 Creating booking with pricing:', {
+      packageName: package.title,
+      sellerPrice: package.sellerPrice,
+      markup: package.markup,
+      price: package.price,
+      totalPax,
+      totalAmount
+    });
+    
+    const newBooking = new Booking({
+      ...bookingData,
+      packageId: package._id,
+      sellerPrice: package.sellerPrice,
+      markup: package.markup,
+      price: package.price,
+      totalAmount: totalAmount
+    });
+    
+    await newBooking.save();
+    
+    console.log('✅ Booking created successfully with ID:', newBooking._id);
+    
+    res.status(201).json({ 
+      success: true,
+      message: 'Booking created successfully', 
+      booking: newBooking 
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creating booking:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error creating booking', 
+      error: error.message 
+    });
+  }
+});
+
+app.get('/api/admin/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .sort({ createdAt: -1 }) 
+      .select('-__v'); 
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ message: 'Failed to fetch bookings', error: error.message });
+  }
+});
+
+app.put('/api/admin/bookings/:id/confirm', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.status === 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already confirmed'
+      });
+    }
+
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot confirm a cancelled booking'
+      });
+    }
+
+    booking.status = 'confirmed';
+    booking.updatedAt = new Date();
+    
+    if (!booking.paidAt) {
+      booking.paidAt = new Date();
+    }
+
+    await booking.save();
+
+    console.log('✅ Booking confirmed:', id);
+
+    res.json({
+      success: true,
+      message: 'Booking confirmed successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Confirm booking error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to confirm booking',
+      error: error.message
+    });
+  }
+});
+
+app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already cancelled'
+      });
+    }
+
+    booking.status = 'cancelled';
+    booking.updatedAt = new Date();
+    booking.cancelledAt = new Date();
+
+    await booking.save();
+
+    console.log('❌ Booking cancelled:', id);
+
+    res.json({
+      success: true,
+      message: 'Booking cancelled successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Cancel booking error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel booking',
+      error: error.message
+    });
+  }
+});
 
 // ===================================================================
 // BLOG ENDPOINTS
@@ -425,33 +596,20 @@ app.get('/api/admin/statistics', async (req, res) => {
   }
 });
 
-const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+const frontendBuildPath = path.join(__dirname, '../client/build'); 
+
 if (fs.existsSync(frontendBuildPath)) {
   app.use(express.static(frontendBuildPath));
 
-  app.all('/{*path}', (req, res) => {
+  app.get('*', (req, res) => {
     if (req.originalUrl.startsWith('/api')) {
-      return res.status(404).json({ 
-        success: false, 
-        message: `API endpoint not found: ${req.method} ${req.originalUrl}` 
-      });
+      return res.status(404).json({ success: false, message: 'API endpoint not found' });
     }
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
   });
 
   console.log(`✅ Serving React frontend from: ${frontendBuildPath}`);
 } else {
-  // No frontend build — still guard API routes from returning HTML
-  app.all('/{*path}', (req, res) => {
-    if (req.originalUrl.startsWith('/api')) {
-      return res.status(404).json({ 
-        success: false, 
-        message: `API endpoint not found: ${req.method} ${req.originalUrl}` 
-      });
-    }
-    res.status(404).json({ success: false, message: 'Not found' });
-  });
-
   console.warn(`⚠️ Frontend build folder not found at: ${frontendBuildPath}`);
   console.warn(`   Run 'npm run build' in your React app folder and ensure the path is correct.`);
 }
