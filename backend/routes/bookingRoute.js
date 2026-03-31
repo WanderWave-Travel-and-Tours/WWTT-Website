@@ -506,13 +506,17 @@ if (bookingData.packageId) {
 
       console.log(`📋 Processing ${rawPassengers.length} passengers for regular booking...`);
 
-      rawPassengers.forEach((passengerData, index) => {
+      for (let index = 0; index < rawPassengers.length; index++) {
+        const passengerData = rawPassengers[index];
           // Validate required fields for regular bookings
           if (!passengerData.firstName || !passengerData.lastName || 
               !passengerData.email || !passengerData.phone || 
               !passengerData.dateOfBirth) {
-              console.warn(`⚠️ Warning: Skipping passenger ${index + 1} due to missing required fields`);
-              return; // Skip this passenger
+              req.files?.forEach(file => { try { fs.unlinkSync(file.path); } catch (e) {} });
+              return res.status(400).json({
+                success: false,
+                message: `Passenger ${index + 1} is missing required fields (firstName, lastName, email, phone, or dateOfBirth). Please complete all passenger details.`
+              });
           }
 
           // Build passenger object
@@ -555,7 +559,7 @@ if (bookingData.packageId) {
 
           // ✅ ADD PASSENGER TO ARRAY
           passengers.push(passenger);
-      });
+      }
 
       // ✅ STRICT VALIDATION: Only for regular bookings (non-walk-in)
       if (passengers.length !== totalExpectedPassengers) {
