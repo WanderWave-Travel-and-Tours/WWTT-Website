@@ -434,8 +434,19 @@ const BookingFormModal = ({
       const paymentUrl = `${cleanBase}/api/payment/create-intent`;
 
       console.log('📍 Requesting URL:', paymentUrl);
+      console.log('📮 Using method: POST (forced explicit)');
 
-      const response = await axios.post(paymentUrl, fullBookingData);
+      // ✅ EXPLICIT axios config — prevents browser/cache from converting to GET
+      const response = await axios({
+        method: 'POST',
+        url: paymentUrl,
+        data: fullBookingData,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
 
       console.log('✅ Backend Response:', response.data);
 
