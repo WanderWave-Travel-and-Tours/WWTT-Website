@@ -10,10 +10,6 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 // ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
-// ==================== VERSION MARKER ====================
-console.log('🚀 PAYMENT CONTROLLER v2026-04-01-FINAL-DUAL-v3 - DUAL FLOW ACTIVE (BookingFormModal + bookingId)');
-// ========================================================
-
 const createInquiryCheckoutSession = async (req, res) => {
   try {
     console.log('=== INQUIRY PAYMENT START ===');
@@ -115,122 +111,177 @@ const createInquiryCheckoutSession = async (req, res) => {
   }
 };
 
+// ✅ UPDATED: Changed from Payment Link to Checkout Session
 const createBookingPaymentIntent = async (req, res) => {
-  console.log('🚀 createBookingPaymentIntent - START (v2026-04-01-FINAL-DUAL-v3)');
-  console.log('Body keys received:', Object.keys(req.body));
-
-  const body = req.body;
-
   try {
-    let booking;
+    console.log('=======================================');
+    console.log('BOOKING PAYMENT CHECKOUT SESSION START');
+    console.log('=======================================');
+    console.log('Request Body:', req.body);
 
-    // === CASE 1: May bookingId (galing sa BookingRightForm) ===
-    if (body.bookingId) {
-      console.log(`📦 Using existing bookingId: ${body.bookingId}`);
-      booking = await Booking.findById(body.bookingId);
+    const { bookingId, paymentType, paymentAmount, method } = req.body;
 
-      if (!booking) {
-        return res.status(404).json({
-          success: false,
-          message: `Booking not found for id: ${body.bookingId}`
-        });
-      }
-
-      if (body.paymentType) booking.paymentType = body.paymentType;
-      if (body.paymentAmount) {
-        booking.initialPaymentAmount = body.paymentAmount;
-        booking.remainingBalance = body.paymentType === 'partial'
-          ? (booking.totalAmount - body.paymentAmount)
-          : 0;
-      }
-      await booking.save();
-
-    // === CASE 2: Walang bookingId → BookingFormModal (ITO ANG GINAGAMIT NG MODAL) ===
-    } else {
-      console.log('📋 No bookingId detected → Creating NEW booking from BookingFormModal full data');
-      console.log('Package Name:', body.packageName);
-      console.log('Email:', body.email);
-      console.log('Total Amount:', body.totalAmount);
-
-      if (!body.packageName || !body.email || !body.totalAmount) {
-        console.log('❌ Missing required fields in modal data:', Object.keys(body));
-        return res.status(400).json({
-          success: false,
-          message: 'Missing required fields: packageName, email, totalAmount'
-        });
-      }
-
-      booking = new Booking({
-        ...body,
-        status: 'pending',
-        initialPaymentAmount: body.initialPaymentAmount || body.totalAmount,
-        remainingBalance: body.paymentType === 'partial'
-          ? (body.totalAmount - (body.initialPaymentAmount || 0))
-          : 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+    if (!bookingId) {
+      console.error('Missing bookingId in request body');
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required field: bookingId'
       });
-
-      await booking.save();
-      console.log(`✅ NEW BOOKING CREATED FROM MODAL - ID: ${booking._id}`);
     }
 
-    // ====================== PAYMONGO CHECKOUT SESSION ======================
-    const amountToPay = booking.initialPaymentAmount || booking.totalAmount;
-    const isPartial = booking.paymentType === 'partial';
-    const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
+    console.log('BookingId received:', bookingId);
+    console.log('Payment Type:', paymentType || 'full');
+    console.log('Payment Amount:', paymentAmount);
+    console.log('Payment Method:', method);
 
-    const checkoutPayload = {
+    console.log('Searching for booking in database...');
+    const booking = await Booking.findById(bookingId);
+    
+    if (!booking) {
+      console.error('Booking not found in database');
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found',
+        searchedId: bookingId
+      });
+    }
+
+    console.log('Booking found:', {
+      id: booking._id,
+      packageName: booking.packageName,
+      totalAmount: booking.totalAmount,
+      status: booking.status
+    });
+
+    const amountToPay = paymentAmount || booking.totalAmount;
+    const amountInCentavos = Math.round(amountToPay * 100);
+    
+    const isPartial = paymentType === 'partial';
+    const paymentDescription = isPartial 
+      ? `Initial Payment (${paymentType === 'partial' && booking.includesAirfare ? '85%' : '50%'})`
+      : 'Full Payment';
+
+    console.log('Payment Details:', {
+      paymentType: paymentType || 'full',
+      amountToPay: amountToPay,
+      amountInCentavos: amountInCentavos,
+      totalAmount: booking.totalAmount,
+      description: paymentDescription
+    });
+
+    // ✅ Determine which payment methods to enable based on user selection
+    let paymentMethods = ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'];
+    
+    // If user selected specific method, prioritize it (optional - you can keep all methods available)
+    if (method) {
+      console.log('User selected payment method:', method);
+    }
+
+    console.log('Creating Checkout Session...');
+
+    const checkoutOptions = {
+      method: 'POST',
+      url: `${PAYMONGO_API}/checkout_sessions`,
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+        authorization: `Basic ${authHeader}`
+      },
       data: {
-        attributes: {
-          line_items: [{
-            name: booking.packageName,
-            quantity: 1,
-            amount: Math.round(amountToPay * 100),
-            currency: 'PHP'
-          }],
-          payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
-          success_url: `https://wanderwaveph.onrender.com/payment-success?bookingId=${booking._id}`,
-          cancel_url: `https://wanderwaveph.onrender.com/booking`,
-          description: `${paymentDescription} for ${booking.fullName}`,
-          metadata: {
-            bookingId: booking._id.toString(),
-            paymentType: booking.paymentType || 'full'
+        data: {
+          attributes: {
+            line_items: [
+              {
+                currency: 'PHP',
+                amount: amountInCentavos,
+                description: `${booking.packageName} - ${paymentDescription}`,
+                name: booking.packageName,
+                quantity: 1
+              }
+            ],
+            payment_method_types: paymentMethods,
+            reference_number: bookingId,
+            send_email_receipt: true,
+            show_description: true,
+            description: `${paymentDescription} for ${booking.fullName}`,
+            // ✅ IMPORTANT: Use booking_id (with underscore) to match existing success page
+            success_url: `${FRONTEND_URL}/payment-success?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
+            cancel_url: `${FRONTEND_URL}/packages`,
+            metadata: {
+              booking_id: bookingId,
+              customer_name: booking.fullName,
+              customer_email: booking.email,
+              package: booking.packageName,
+              total_amount: booking.totalAmount,
+              payment_amount: amountToPay,
+              payment_type: paymentType || 'full',
+              is_initial_payment: true,
+              includes_airfare: booking.includesAirfare || false
+            }
           }
         }
       }
     };
 
-    const response = await axios.post(
-      'https://api.paymongo.com/v1/checkout_sessions',
-      checkoutPayload,
-      {
-        headers: {
-          Authorization: `Basic ${authHeader}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    const response = await axios.request(checkoutOptions);
+    const checkoutSession = response.data.data;
+    
+    console.log('PayMongo Checkout Session Created:', {
+      sessionId: checkoutSession.id,
+      checkoutUrl: checkoutSession.attributes.checkout_url,
+      referenceNumber: checkoutSession.attributes.reference_number
+    });
 
-    const checkoutUrl = response.data.data.attributes.checkout_url;
+    // ✅ Update booking with checkout session details
+    booking.checkoutSessionId = checkoutSession.id;
+    booking.referenceNumber = checkoutSession.attributes.reference_number;
+    booking.paymentType = paymentType || 'full';
+    booking.initialPaymentAmount = amountToPay;
+    
+    if (isPartial) {
+      booking.remainingBalance = booking.totalAmount - amountToPay;
+    }
+    
+    await booking.save();
 
-    res.json({
+    console.log('Booking updated with checkout session details');
+    console.log('=======================================');
+    console.log('CHECKOUT SESSION CREATED SUCCESSFULLY');
+    console.log('=======================================');
+
+    return res.json({
       success: true,
-      checkoutUrl: checkoutUrl,
-      bookingId: booking._id.toString()
+      checkoutUrl: checkoutSession.attributes.checkout_url,
+      checkoutSessionId: checkoutSession.id,
+      referenceNumber: checkoutSession.attributes.reference_number,
+      bookingId: bookingId,
+      paymentType: paymentType || 'full',
+      paymentAmount: amountToPay,
+      message: 'Checkout session created successfully'
     });
 
   } catch (error) {
-    console.error('❌ Create Intent Error:', error.response?.data || error.message);
+    console.error('=======================================');
+    console.error('BOOKING CHECKOUT SESSION ERROR');
+    console.error('=======================================');
+    console.error('Error Type:', error.name);
+    console.error('Error Message:', error.message);
+    
+    if (error.response) {
+      console.error('PayMongo API Error:');
+      console.error('Status:', error.response.status);
+      console.error('Data:', JSON.stringify(error.response.data, null, 2));
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to create checkout session',
-      error: error.message
+      error: error.response?.data?.errors || error.message
     });
   }
 };
 
-// ✅ Keep Payment Link option for balance payments (hindi ko ginalaw)
+// ✅ Keep Payment Link option for balance payments
 const createBalancePaymentLink = async (req, res) => {
   try {
     console.log('=======================================');
@@ -354,6 +405,6 @@ const createBalancePaymentLink = async (req, res) => {
 
 module.exports = { 
     createInquiryCheckoutSession, 
-    createBookingPaymentIntent,  
+    createBookingPaymentIntent,  // ✅ Updated export name
     createBalancePaymentLink 
 };
