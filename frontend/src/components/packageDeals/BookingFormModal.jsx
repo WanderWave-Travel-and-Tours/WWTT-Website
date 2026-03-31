@@ -516,17 +516,24 @@ const BookingFormModal = ({
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      if (!bookingRes.data?.success && !bookingRes.data?.booking?._id) {
+      if (!bookingRes.data?.success) {
         throw new Error(bookingRes.data?.message || 'Failed to create booking');
       }
 
       const bookingId = bookingRes.data.bookingId || bookingRes.data.data?._id;
+
+      if (!bookingId) {
+        throw new Error('Booking was created but no booking ID was returned. Please contact support.');
+      }
+
       console.log('✅ Booking created (pending) → ID:', bookingId);
 
       // 2. CREATE PAYMENT CHECKOUT SESSION
+      const amountToPay = paymentType === 'full' ? finalAmount : partialAmount;
       const paymentRes = await axios.post(paymentUrl, {
         bookingId: bookingId,
-        paymentType: paymentType
+        paymentType: paymentType,
+        paymentAmount: amountToPay,
       });
 
       if (paymentRes.data.success && paymentRes.data.checkoutUrl) {
