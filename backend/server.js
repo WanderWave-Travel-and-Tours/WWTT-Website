@@ -370,12 +370,6 @@ app.use('/api/page-views', pageViewRoutes);
 
 
 // ===================================================================
-// NOTE: Booking CRUD is fully handled by bookingRoute.js
-// The duplicate endpoints that were here have been removed to prevent
-// them from intercepting requests before bookingRoute.js handles them.
-// ===================================================================
-
-// ===================================================================
 // BLOG ENDPOINTS
 // ===================================================================
 app.get('/api/blogs', async (req, res) => {

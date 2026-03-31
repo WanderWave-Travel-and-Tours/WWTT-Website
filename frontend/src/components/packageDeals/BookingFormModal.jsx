@@ -506,15 +506,45 @@ const BookingFormModal = ({
         (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
       const baseUrl = API_BASE.replace(/\/+$/, '');
 
-      // ✅ Guard against double /api if VITE_API_URL already ends with /api
       const bookingUrl = baseUrl.endsWith("/api") ? `${baseUrl}/bookings` : `${baseUrl}/api/bookings`;
       const paymentUrl = baseUrl.endsWith("/api") ? `${baseUrl}/payment/create-intent` : `${baseUrl}/api/payment/create-intent`;
+      const pingUrl = baseUrl.endsWith("/api") ? baseUrl.replace(/\/api$/, '') : baseUrl;
 
-      // 1. CREATE BOOKING FIRST (status = pending)
+      // ✅ STEP 1: Wake up Render server (free tier sleeps after inactivity)
+      // Ping first so server is warm before the actual booking request
+      console.log('Waking up server...');
+      toast.info('Connecting to server, please wait...');
+      try {
+        await axios.get(pingUrl, { timeout: 25000 });
+      } catch (_) {
+        // Ignore — server may still be starting up, we proceed anyway
+      }
+
+      // ✅ STEP 2: CREATE BOOKING with long timeout + 1 retry on network/timeout errors
       console.log('Creating booking as PENDING...');
-      const bookingRes = await axios.post(bookingUrl, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+
+      const postBooking = () => axios.post(bookingUrl, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 90000, // 90s — enough for Render cold start
       });
+
+      let bookingRes;
+      try {
+        bookingRes = await postBooking();
+      } catch (firstErr) {
+        const isRetryable =
+          firstErr.code === 'ECONNABORTED' ||
+          firstErr.message?.includes('timeout') ||
+          firstErr.message?.includes('Network Error');
+        if (isRetryable) {
+          console.warn('First attempt failed, retrying once...');
+          toast.info('Server is starting up, retrying...');
+          await new Promise(r => setTimeout(r, 4000));
+          bookingRes = await postBooking();
+        } else {
+          throw firstErr;
+        }
+      }
 
       if (!bookingRes.data?.success) {
         throw new Error(bookingRes.data?.message || 'Failed to create booking');
@@ -528,13 +558,13 @@ const BookingFormModal = ({
 
       console.log('✅ Booking created (pending) → ID:', bookingId);
 
-      // 2. CREATE PAYMENT CHECKOUT SESSION
+      // ✅ STEP 3: CREATE PAYMENT CHECKOUT SESSION
       const amountToPay = paymentType === 'full' ? finalAmount : partialAmount;
       const paymentRes = await axios.post(paymentUrl, {
         bookingId: bookingId,
         paymentType: paymentType,
         paymentAmount: amountToPay,
-      });
+      }, { timeout: 60000 });
 
       if (paymentRes.data.success && paymentRes.data.checkoutUrl) {
         toast.success('Redirecting to secure payment page...');

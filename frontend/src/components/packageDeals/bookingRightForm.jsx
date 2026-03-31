@@ -1146,9 +1146,33 @@ const handleNextPassenger = async (e) => {
       }
     });
     
-    const bookingResponse = await axios.post('https://wanderwaveph.onrender.com/api/bookings', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+
+    // ✅ Wake up Render server before booking (free tier sleeps after inactivity)
+    try { await axios.get(RENDER_BASE, { timeout: 25000 }); } catch (_) {}
+
+    // ✅ POST booking with long timeout + 1 retry on network/timeout errors
+    const postBooking = () => axios.post(`${RENDER_BASE}/api/bookings`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
     });
+
+    let bookingResponse;
+    try {
+      bookingResponse = await postBooking();
+    } catch (firstErr) {
+      const isRetryable =
+        firstErr.code === 'ECONNABORTED' ||
+        firstErr.message?.includes('timeout') ||
+        firstErr.message?.includes('Network Error');
+      if (isRetryable) {
+        toast.info('Server is starting up, retrying...');
+        await new Promise(r => setTimeout(r, 4000));
+        bookingResponse = await postBooking();
+      } else {
+        throw firstErr;
+      }
+    }
 
     if (bookingResponse.data.success) {
       const bookingId = bookingResponse.data.bookingId;
@@ -1171,11 +1195,11 @@ const handleNextPassenger = async (e) => {
 
       toast.success('Booking saved! Preparing payment link...');
       
-      const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-intent', {
+      const paymentResponse = await axios.post(`${RENDER_BASE}/api/payment/create-intent`, {
         bookingId: bookingId,
         paymentType: paymentType || 'full',
         paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
-      });
+      }, { timeout: 60000 });
       
       if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
         const checkoutUrl = paymentResponse.data.checkoutUrl;
