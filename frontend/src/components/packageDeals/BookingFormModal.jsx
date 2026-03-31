@@ -438,12 +438,51 @@ const BookingFormModal = ({
           // DO NOT send File objects in JSON
         })),
 
-        selectedFlight: selectedFlight,
-        selectedRoomType: selectedRoomType,
-        includesAirfare: bookingWithAirfare,
+        // ✅ Flight / airfare fields
+        selectedFlight: selectedFlight || null,
+        includesAirfare: bookingWithAirfare || false,
+        airfareTotal: airfareTotal || 0,
+        flightDetails: selectedFlight ? {
+          airline: selectedFlight.airline?.name || selectedFlight.airline || '',
+          flightNumber: selectedFlight.flightNumber || '',
+          route: `${selectedFlight.departure?.iataCode || ''} → ${selectedFlight.arrival?.iataCode || ''}`,
+          departureTime: selectedFlight.departure?.at || selectedFlight.departureTime || '',
+          arrivalTime: selectedFlight.arrival?.at || selectedFlight.arrivalTime || '',
+          isInternational: isInternationalFlight || false,
+        } : null,
+
+        // ✅ Room / hotel fields
+        selectedRoomType: selectedRoomType?.type || selectedRoomType || null,
+        hotelName: selectedRoomType?.hotelName || null,
+
+        // ✅ Customization fields — mapped correctly from customizationData prop
         isCustomized: !!customizationData,
-        customizationAdditionalPrice: customizationData?.customizationAdditionalPrice || 0,
-        appliedPromo: appliedPromo,
+        customizedInclusions: customizationData
+          ? (customizationData.inclusions || []).map(inc => ({
+              id: inc.id,
+              name: inc.name,
+              price: inc.price || 0,
+              supplierRate: inc.supplierRate || null,
+              markup: inc.markup || null,
+              markupType: inc.markupType || null,
+              supplier: inc.supplier || null,
+              destination: inc.destination || null,
+              pax: inc.pax || null,
+              notes: inc.notes || null,
+              isOriginal: inc.isOriginal !== undefined ? inc.isOriginal : false,
+              isChecked: inc.isChecked !== undefined ? inc.isChecked : true,
+              source: inc.source || (inc.sellerRateId ? 'seller-rate' : 'package'),
+              sellerRateId: inc.sellerRateId || null,
+            }))
+          : [],
+        customizationAdditionalPrice: customizationData?.additionalPrice || customizationData?.customizationAdditionalPrice || 0,
+        originalInclusions: customizationData ? (pkg.inclusions || []) : [],
+
+        // ✅ Promo fields — extracted from appliedPromo object
+        promoCode: appliedPromo?.code || null,
+        promoId: appliedPromo?._id || appliedPromo?.id || null,
+        discountAmount: discountAmount || 0,
+
         currency: currency,
         timerExpiredAtBooking: false,
         priceType: 'discounted',
