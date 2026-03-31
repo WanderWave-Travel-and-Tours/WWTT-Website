@@ -422,14 +422,22 @@ const BookingFormModal = ({
         timerExpiredAtBooking: false
       };
 
-      console.log('📤 Sending to create-intent:', fullBookingData);
+      console.log('📤 Sending booking data to create-intent:', fullBookingData);
 
-      const API_BASE = import.meta.env.VITE_API_URL || 'https://wanderwaveph.onrender.com';
-      const paymentUrl = `${API_BASE.replace(/\/+$/, '')}/api/payment/create-intent`;
+      // ✅ FIXED: Clean URL construction — hindi mag-double ng /api
+      const API_BASE = import.meta.env.VITE_API_URL
+        || (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
+
+      const cleanBase = API_BASE
+        .replace(/\/+$/, '')       // tanggalin ang trailing slash
+        .replace(/\/api$/, '');    // tanggalin ang /api sa dulo kung meron
+      const paymentUrl = `${cleanBase}/api/payment/create-intent`;
+
+      console.log('📍 Requesting URL:', paymentUrl);
 
       const response = await axios.post(paymentUrl, fullBookingData);
 
-      console.log('✅ Response from backend:', response.data);
+      console.log('✅ Backend Response:', response.data);
 
       if (response.data.success && response.data.checkoutUrl) {
         toast.success('Redirecting to secure payment page...');
@@ -439,7 +447,7 @@ const BookingFormModal = ({
         onClose();
         window.location.href = response.data.checkoutUrl;
       } else {
-        throw new Error(response.data.message || 'No checkout URL returned');
+        throw new Error(response.data.message || 'No checkout URL returned from server');
       }
 
     } catch (error) {
