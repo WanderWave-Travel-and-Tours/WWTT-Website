@@ -11,7 +11,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
 // ==================== VERSION MARKER ====================
-console.log('🚀 PAYMENT CONTROLLER FINAL-v6 - FINAL FIX: totalAmount fallback + no bookingId required check (2026-03-31)');
+console.log('🚀 PAYMENT CONTROLLER v2026-04-01-FINAL-DUAL-v4-CACHE-BUST - DUAL FLOW ACTIVE (BookingFormModal + bookingId)');
 console.log('🔄 CACHE BUST TIMESTAMP:', new Date().toISOString());
 console.log('✅ IF YOU SEE THIS LOG, THE NEW CODE IS LOADED CORRECTLY');
 // ========================================================
@@ -118,7 +118,7 @@ const createInquiryCheckoutSession = async (req, res) => {
 };
 
 const createBookingPaymentIntent = async (req, res) => {
-  console.log('🚀 createBookingPaymentIntent - START (FINAL-v6 - 2026-03-31)');
+  console.log('🚀 createBookingPaymentIntent - START (v2026-04-01-FINAL-DUAL-v3)');
   console.log('Body keys received:', Object.keys(req.body));
 
   const body = req.body;
@@ -126,67 +126,61 @@ const createBookingPaymentIntent = async (req, res) => {
   try {
     let booking;
 
-    // ====================== CASE 2: BookingFormModal (No bookingId) ======================
-    if (!body.bookingId) {
-      console.log('📋 No bookingId → Creating NEW pending booking from BookingFormModal');
-
-      // Basic validation
-      if (!body.packageName || !body.email) {
-        console.log('❌ Missing packageName or email');
-        return res.status(400).json({
-          success: false,
-          message: 'Missing required fields: packageName or email'
-        });
-      }
-
-      // Compute totalAmount with fallback
-      const totalAmount = body.totalAmount || body.price || body.amount || body.initialPaymentAmount || 0;
-
-      if (!totalAmount || totalAmount <= 0) {
-        console.log('❌ Invalid totalAmount:', totalAmount);
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid or missing totalAmount'
-        });
-      }
-
-      booking = new Booking({
-        ...body,
-        totalAmount: totalAmount,                    // ensure may totalAmount
-        status: 'pending',
-        initialPaymentAmount: body.initialPaymentAmount || totalAmount,
-        remainingBalance: body.paymentType === 'partial'
-          ? totalAmount - (body.initialPaymentAmount || 0)
-          : 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      await booking.save();
-      console.log(`✅ BOOKING CREATED (PENDING) - ID: ${booking._id} | Amount: ${totalAmount}`);
-    }
-
-    // ====================== CASE 1: May bookingId na ======================
-    else {
+    // === CASE 1: May bookingId (galing sa BookingRightForm) ===
+    if (body.bookingId) {
       console.log(`📦 Using existing bookingId: ${body.bookingId}`);
       booking = await Booking.findById(body.bookingId);
 
       if (!booking) {
-        return res.status(404).json({ success: false, message: 'Booking not found' });
+        return res.status(404).json({
+          success: false,
+          message: `Booking not found for id: ${body.bookingId}`
+        });
       }
 
       if (body.paymentType) booking.paymentType = body.paymentType;
       if (body.paymentAmount) {
         booking.initialPaymentAmount = body.paymentAmount;
         booking.remainingBalance = body.paymentType === 'partial'
-          ? booking.totalAmount - body.paymentAmount
+          ? (booking.totalAmount - body.paymentAmount)
           : 0;
       }
       await booking.save();
+
+    // === CASE 2: Walang bookingId → BookingFormModal (ITO ANG GINAGAMIT NG MODAL) ===
+    } else {
+      console.log('📋 No bookingId detected → Creating NEW booking from BookingFormModal full data');
+      console.log('Package Name:', body.packageName);
+      console.log('Email:', body.email);
+      console.log('Total Amount:', body.totalAmount);
+
+      if (!body.packageName || !body.email || !body.totalAmount) {
+        console.log('❌ Missing required fields in modal data:', Object.keys(body));
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields: packageName, email, totalAmount'
+        });
+      }
+
+      booking = new Booking({
+        ...body,
+        status: 'pending',
+        initialPaymentAmount: body.initialPaymentAmount || body.totalAmount,
+        remainingBalance: body.paymentType === 'partial'
+          ? (body.totalAmount - (body.initialPaymentAmount || 0))
+          : 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await booking.save();
+      console.log(`✅ NEW BOOKING CREATED FROM MODAL - ID: ${booking._id}`);
     }
 
-    // ====================== PAYMONGO CHECKOUT ======================
+    // ====================== PAYMONGO CHECKOUT SESSION ======================
     const amountToPay = booking.initialPaymentAmount || booking.totalAmount;
+    const isPartial = booking.paymentType === 'partial';
+    const paymentDescription = isPartial ? 'Initial Payment' : 'Full Payment';
 
     const checkoutPayload = {
       data: {
@@ -200,7 +194,7 @@ const createBookingPaymentIntent = async (req, res) => {
           payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
           success_url: `https://wanderwaveph.onrender.com/payment-success?bookingId=${booking._id}`,
           cancel_url: `https://wanderwaveph.onrender.com/booking`,
-          description: `Payment for ${booking.fullName} - ${booking.packageName}`,
+          description: `${paymentDescription} for ${booking.fullName}`,
           metadata: {
             bookingId: booking._id.toString(),
             paymentType: booking.paymentType || 'full'
@@ -220,9 +214,11 @@ const createBookingPaymentIntent = async (req, res) => {
       }
     );
 
+    const checkoutUrl = response.data.data.attributes.checkout_url;
+
     res.json({
       success: true,
-      checkoutUrl: response.data.data.attributes.checkout_url,
+      checkoutUrl: checkoutUrl,
       bookingId: booking._id.toString()
     });
 
