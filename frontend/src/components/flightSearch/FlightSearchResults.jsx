@@ -24,7 +24,7 @@ const FlightCard = ({ flight, searchParams, onFlightSelect, roundTripStep, onOut
   };
 
   const getBookBtnLabel = () => {
-    if (isRoundTrip && roundTripStep === 1) return 'Select as Outbound ✈';
+    if (isRoundTrip && roundTripStep === 1) return 'Select as Departure ✈';
     if (isRoundTrip && roundTripStep === 2) return 'Select as Return ✈';
     return 'Book Now';
   };
@@ -238,7 +238,7 @@ const FlightSearchResults = ({
               </div>
               <div className="route-subtext">
                 <span className="check-icon">✓</span>
-                {searchInfo.disclaimer || `${searchInfo.count} flights found`}
+                {(searchInfo.disclaimer || `${searchInfo.count} flights found`).replace(/^[\u2713\u2714\u2611\u2705✓✔☑✅]\s*/, '')}
               </div>
             </div>
 
@@ -266,26 +266,45 @@ const FlightSearchResults = ({
         {/* ── Round-Trip Step Banner ── */}
         {isRoundTrip && roundTripStep === 1 && (
           <div className="round-trip-notice">
-            <span>✈️</span>
-            <span>
-              <strong>Step 1 of 2:</strong> Select your <strong>outbound flight</strong> below.
-              Your return options will appear next.
-            </span>
+            <div className="rt-steps-header">
+              <div className="rt-step-pill active">
+                <span className="rt-step-num">1</span>
+                <span className="rt-step-label">Departure</span>
+              </div>
+              <div className="rt-step-connector"></div>
+              <div className="rt-step-pill">
+                <span className="rt-step-num">2</span>
+                <span className="rt-step-label">Return</span>
+              </div>
+            </div>
+            <p className="rt-step-desc">
+              Select your <strong>departure flight</strong> below. Your return options will appear next.
+            </p>
           </div>
         )}
 
         {isRoundTrip && roundTripStep === 2 && (
-          <div className="round-trip-notice" style={{ background: '#fff3e0', borderColor: '#fc9c1b' }}>
-            <span>🔄</span>
-            <span>
-              <strong>Step 2 of 2:</strong> Now select your <strong>return flight</strong>.
+          <div className="round-trip-notice">
+            <div className="rt-steps-header">
+              <div className="rt-step-pill done">
+                <span className="rt-step-num">✓</span>
+                <span className="rt-step-label">Departure</span>
+              </div>
+              <div className="rt-step-connector filled"></div>
+              <div className="rt-step-pill active">
+                <span className="rt-step-num">2</span>
+                <span className="rt-step-label">Return</span>
+              </div>
+            </div>
+            <p className="rt-step-desc">
+              Now select your <strong>return flight</strong>.
               {selectedOutbound && (
-                <span style={{ marginLeft: 8, color: '#64748b' }}>
-                  Outbound: {selectedOutbound.departure?.iataCode} → {selectedOutbound.arrival?.iataCode}
+                <span className="rt-outbound-info">
+                  Departure: {selectedOutbound.departure?.iataCode} → {selectedOutbound.arrival?.iataCode}
                   {' '}(₱{(selectedOutbound.price?.amount || 0).toLocaleString()})
                 </span>
               )}
-            </span>
+            </p>
           </div>
         )}
 

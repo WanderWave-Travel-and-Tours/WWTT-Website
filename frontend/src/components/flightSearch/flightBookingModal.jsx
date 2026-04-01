@@ -20,6 +20,8 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
   const [formUnlocked, setFormUnlocked]       = useState(!isRoundTrip);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentSlide, setCurrentSlide]       = useState(0);
+  // ── Mobile: track which panel is visible ──
+  const [mobilePanel, setMobilePanel]         = useState('left'); // 'left' | 'right'
   const totalSlides = totalPax;
 
   const [contactInfo, setContactInfo] = useState({
@@ -56,6 +58,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     setTimeout(() => {
       setFormUnlocked(true);
       setIsTransitioning(false);
+      setMobilePanel('right');
     }, 340);
   };
 
@@ -158,6 +161,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
   };
 
   const priceLabel = `₱${totalPrice.toLocaleString()}`;
+  const summaryLabel = isRoundTrip ? 'Total Round-Trip' : 'Total Price';
 
   // ── Inline SVG icons ──
   const IcUser    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
@@ -181,38 +185,58 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
   );
 
   // ── Left panel leg card ──
-  const LegCard = ({ badge, badgeClass, depCode, arrCode, airline, time, price, planeColor }) => (
-    <div className="bm-leg-card">
-      <span className={`bm-leg-badge ${badgeClass}`}>{badge}</span>
-      <div className="bm-leg-route-strip">
-        <span className="bm-leg-iata">{depCode}</span>
-        <div className="bm-route-visual">
-          <div className="bm-route-dot" />
-          <div className="bm-route-dashes" />
-          <svg width="13" height="13" viewBox="0 0 24 24" fill={planeColor || '#fc9c1b'}>
-            <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
-          </svg>
-          <div className="bm-route-dashes" />
-          <div className="bm-route-dot" />
+  const formatLegDate = (dateStr) => {
+    if (!dateStr) return null;
+    try {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const LegCard = ({ badge, badgeClass, depCode, arrCode, airline, time, date, price, planeColor }) => {
+    const formattedDate = formatLegDate(date);
+    const dateTime = [formattedDate, time].filter(Boolean).join(' · ');
+    return (
+      <div className="bm-leg-card">
+        <div className="bm-leg-card-header-row">
+          <span className={`bm-leg-badge ${badgeClass}`}>{badge}</span>
         </div>
-        <span className="bm-leg-iata">{arrCode}</span>
+        <div className="bm-leg-route-strip">
+          <span className="bm-leg-iata">{depCode}</span>
+          <div className="bm-route-visual">
+            <div className="bm-route-dot" />
+            <div className="bm-route-dashes" />
+            <svg width="13" height="13" viewBox="0 0 24 24" fill={planeColor || '#fc9c1b'}>
+              <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+            </svg>
+            <div className="bm-route-dashes" />
+            <div className="bm-route-dot" />
+          </div>
+          <span className="bm-leg-iata">{arrCode}</span>
+        </div>
+        <div className="bm-leg-footer">
+          <div className="bm-leg-meta-group">
+            <span className="bm-leg-meta">{airline}</span>
+            {dateTime && <span className="bm-leg-datetime">{dateTime}</span>}
+          </div>
+          <span className="bm-leg-price-tag">₱{price.toLocaleString()}</span>
+        </div>
       </div>
-      <div className="bm-leg-footer">
-        <span className="bm-leg-meta">{airline}{time ? ` · ${time}` : ''}</span>
-        <span className="bm-leg-price-tag">₱{price.toLocaleString()}</span>
-      </div>
-    </div>
-  );
+    );
+  };
+
 
   return ReactDOM.createPortal(
     <div className="modal-overlay">
-      <div className="booking-modal bm-two-panel">
+      <div className={`booking-modal bm-two-panel bm-mobile-${mobilePanel}`}>
 
         {/* ══════════════════════════════════════
             CLOSE BUTTON — top-right of the whole modal
         ══════════════════════════════════════ */}
         <button className="bm-close-btn" onClick={onClose} aria-label="Close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
@@ -223,14 +247,12 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
         <div className="bm-left">
 
           <div className="bm-left-header">
-
             {/* Plane icon — always shown, no airline logo */}
             <div className="bm-left-plane-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                 <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
               </svg>
             </div>
-
             <h2 className="bm-left-title">
               {isRoundTrip ? 'Round-Trip Summary' : 'Flight Summary'}
             </h2>
@@ -244,30 +266,67 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
           <div className="bm-left-body">
             {isRoundTrip ? (
               <>
-                <LegCard
-                  badge="Departure"
-                  badgeClass="bm-badge-outbound"
-                  depCode={outboundFlight.departure.iataCode}
-                  arrCode={outboundFlight.arrival.iataCode}
-                  airline={outboundFlight.airline.name}
-                  time={outboundFlight.departure.time}
-                  price={outboundFlight.price.amount || 0}
-                  planeColor="#fc9c1b"
-                />
-                <LegCard
-                  badge="Return"
-                  badgeClass="bm-badge-return"
-                  depCode={returnFlight.departure.iataCode}
-                  arrCode={returnFlight.arrival.iataCode}
-                  airline={returnFlight.airline.name}
-                  time={returnFlight.departure.time}
-                  price={returnFlight.price.amount || 0}
-                  planeColor="rgba(255,255,255,0.5)"
-                />
+                {/* ── Top group: leg cards + pax pills ── */}
+                <div className="bm-left-top-group">
+                  <LegCard
+                    badge="Departure"
+                    badgeClass="bm-badge-outbound"
+                    depCode={outboundFlight.departure.iataCode}
+                    arrCode={outboundFlight.arrival.iataCode}
+                    airline={outboundFlight.airline.name}
+                    time={outboundFlight.departure.time}
+                    date={searchParams?.departureDate || outboundFlight?.departure?.date || null}
+                    price={outboundFlight.price.amount || 0}
+                    planeColor="#fc9c1b"
+                  />
+                  <LegCard
+                    badge="Return"
+                    badgeClass="bm-badge-return"
+                    depCode={returnFlight.departure.iataCode}
+                    arrCode={returnFlight.arrival.iataCode}
+                    airline={returnFlight.airline.name}
+                    time={returnFlight.departure.time}
+                    date={searchParams?.returnDate || returnFlight?.departure?.date || null}
+                    price={returnFlight.price.amount || 0}
+                    planeColor="rgba(255,255,255,0.5)"
+                  />
+
+                  {/* ── Pax + Cabin highlighted pills ── */}
+                  <div className="bm-pax-highlight-row">
+                    <div className="bm-pax-pill">
+                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                      <span>{totalPax} Passenger{totalPax > 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="bm-pax-pill">
+                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                      </svg>
+                      <span>{searchParams.cabinType || 'Economy'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Total pinned to bottom ── */}
                 <div className="bm-total-block">
                   <span className="bm-total-label">Total Round-Trip</span>
                   <span className="bm-total-price">{priceLabel}</span>
                 </div>
+
+                {/* ── Mobile-only Continue button ── */}
+                <button
+                  type="button"
+                  className="bm-mobile-continue-btn"
+                  onClick={handleContinueToBooking}
+                >
+                  Continue to Booking
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
               </>
             ) : (
               <>
@@ -278,6 +337,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
                   arrCode={flight.arrival.iataCode}
                   airline={flight.airline.name}
                   time={flight.departure.time}
+                  date={searchParams?.departureDate || flight?.departure?.date || null}
                   price={totalPrice}
                   planeColor="#fc9c1b"
                 />
@@ -285,25 +345,20 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
                   <span className="bm-total-label">Total Price</span>
                   <span className="bm-total-price">{priceLabel}</span>
                 </div>
+
+                {/* ── Mobile-only Continue button ── */}
+                <button
+                  type="button"
+                  className="bm-mobile-continue-btn"
+                  onClick={() => setMobilePanel('right')}
+                >
+                  Continue to Booking
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
               </>
             )}
-
-            <div className="bm-pax-info-box">
-              <div className="bm-pax-row">
-                <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <span>{totalPax} Passenger{totalPax > 1 ? 's' : ''}</span>
-              </div>
-              <div className="bm-pax-row">
-                <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" viewBox="0 0 24 24">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                </svg>
-                <span>{searchParams.cabinType || 'Economy'}</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -311,6 +366,19 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
             RIGHT PANEL — fixed size, no resize
         ══════════════════════════════════════ */}
         <div className="bm-right">
+
+          {/* ── Mobile back button ── */}
+          <button
+            type="button"
+            className="bm-mobile-back-btn"
+            onClick={() => setMobilePanel('left')}
+            aria-label="Back to summary"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back to Summary
+          </button>
 
           {!formUnlocked && (
             <div className={`bm-locked-container${isTransitioning ? ' bm-fading-out' : ''}`}>
@@ -463,7 +531,6 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
 
               {/* Navigation */}
               <div className="bm-form-nav">
-                {/* Only render back button when not on first slide */}
                 {currentSlide > 0 && (
                   <button type="button" className="bm-nav-back" onClick={handleBack}>
                     ← Back
