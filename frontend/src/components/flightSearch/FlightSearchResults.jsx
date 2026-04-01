@@ -1,165 +1,312 @@
-import React, { useState } from "react";
-import "./FlightSearchResults.css";
-import FlightBookingModal from "./flightBookingModal"; 
+import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
+import FlightBookingModal from './flightBookingModal';
+import RoundTripPriceBreakdown from './RoundTripPriceBreakdown';
+import './FlightSearchResults.css';
 
-function FlightSearchResults({ searchInfo, flights, error, loading, searchParams, onFlightSelect }) {
+// ─── Individual Flight Card ───────────────────────────────────────────────────
 
-  const [selectedFlight, setSelectedFlight] = useState(null);
+const FlightCard = ({ flight, searchParams, onFlightSelect, roundTripStep, onOutboundSelect, onReturnSelect }) => {
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
-  const handleBookClick = (flight) => {
-    if (onFlightSelect) {
-      onFlightSelect(flight);
+  const isRoundTrip = searchParams?.journeyType === 'round-trip';
+
+  const handleBookClick = () => {
+    if (isRoundTrip) {
+      if (roundTripStep === 1) {
+        onOutboundSelect(flight);
+      } else if (roundTripStep === 2) {
+        onReturnSelect(flight);
+      }
     } else {
-      setSelectedFlight(flight);
+      setShowBookingModal(true);
     }
   };
+
+  const getBookBtnLabel = () => {
+    if (isRoundTrip && roundTripStep === 1) return 'Select as Outbound ✈';
+    if (isRoundTrip && roundTripStep === 2) return 'Select as Return ✈';
+    return 'Book Now';
+  };
+
+  return (
+    <div className="flight-card">
+
+      {/* ── TOP MAIN SECTION ── */}
+      <div className="flight-main">
+
+        {/* LEFT — Airline */}
+        <div className="airline-section">
+          <div className="airline-logo-wrapper">
+            {flight.airline?.logo
+              ? <img
+                  src={flight.airline.logo}
+                  alt={flight.airline.name}
+                  className="airline-logo-img"
+                  onError={e => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              : null
+            }
+            <div
+              className="airline-logo-placeholder"
+              style={{ display: flight.airline?.logo ? 'none' : 'flex' }}
+            >
+              ✈️
+            </div>
+          </div>
+          <span className="airline-name">{flight.airline?.name || 'Unknown Airline'}</span>
+        </div>
+
+        {/* CENTER — Route */}
+        <div className="flight-details">
+
+          {/* Departure */}
+          <div className="flight-time-info">
+            <div className="time-large">
+              {flight.departure?.time || flight.departure?.displayTime || '—'}
+            </div>
+            <div className="airport-code">{flight.departure?.iataCode}</div>
+          </div>
+
+          {/* Duration line */}
+          <div className="flight-duration-info">
+            <span className="duration-text">{flight.duration}</span>
+            <div className="flight-line">
+              <div className="dot-start"></div>
+              <div className="line-bar"></div>
+              <span className="plane-icon-center">✈</span>
+              <div className="dot-end"></div>
+            </div>
+            <span className={`stops-text ${flight.stops === 0 ? 'nonstop' : ''}`}>
+              {flight.stops === 0 ? 'Nonstop' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`}
+            </span>
+          </div>
+
+          {/* Arrival */}
+          <div className="flight-time-info">
+            <div className="time-large">
+              {flight.arrival?.time || flight.arrival?.displayTime || '—'}
+            </div>
+            <div className="airport-code">{flight.arrival?.iataCode}</div>
+          </div>
+        </div>
+
+        {/* RIGHT — Pricing */}
+        <div className="flight-pricing">
+          <div className="price-amount">
+            {flight.price?.formatted || `₱${(flight.price?.amount || 0).toLocaleString()}`}
+          </div>
+          <div className="price-label">
+            ₱{(flight.price?.perPerson || 0).toLocaleString()} / person
+            {(flight.price?.totalPassengers || 1) > 1 && (
+              <> · {flight.price.totalPassengers} pax</>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── FOOTER ── */}
+      <div className="flight-footer">
+        <div className="quality-badge">
+          <span className="star">★</span>
+          {flight.cabinClass || 'Economy'}
+          &nbsp;·&nbsp;
+          {flight.type || 'One-Way'}
+        </div>
+
+        <button
+          className="book-btn"
+          onClick={handleBookClick}
+        >
+          {getBookBtnLabel()}
+        </button>
+      </div>
+
+      {/* ── Booking Modal (only for non-round-trip) ── */}
+      {showBookingModal && (
+        <FlightBookingModal
+          flight={flight}
+          searchParams={searchParams}
+          onClose={() => setShowBookingModal(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// ─── Results Container ────────────────────────────────────────────────────────
+
+const FlightSearchResults = ({
+  searchInfo,
+  flights,
+  error,
+  loading,
+  searchParams,
+  onFlightSelect,
+  roundTripStep,
+  selectedOutbound,
+  onOutboundSelect,
+  onReturnSelect,
+}) => {
+
+  if (loading) {
+    return (
+      <div className="results-section">
+        <div className="results-content">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Searching for the best flights…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="results-section">
+        <div className="results-content">
+          <div className="error-banner">
+            <div className="error-icon">!</div>
+            <span>{error}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+    if (!flights || flights.length === 0) {
+    return (
+      <div className="results-section">
+        <div className="results-content">
+          <div style={{
+            background: 'white',
+            borderRadius: '20px',
+            padding: '60px 40px',
+            maxWidth: '560px',
+            margin: '80px auto 0',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+            border: '1px solid #f1f5f9'
+          }}>
+            <div style={{ fontSize: '78px', marginBottom: '20px' }}>🌍</div>
+            <h3 style={{
+              fontSize: '1.65rem',
+              fontWeight: 700,
+              color: '#0f172a',
+              marginBottom: '8px'
+            }}>
+              Start searching for flights
+            </h3>
+            <p style={{
+              color: '#64748b',
+              fontSize: '1.05rem',
+              lineHeight: 1.5
+            }}>
+              Search airports worldwide — Philippines, USA, Europe, Asia, and more!
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isRoundTrip = searchParams?.journeyType === 'round-trip';
 
   return (
     <div className="results-section">
       <div className="results-content">
-        {searchInfo && flights.length > 0 && (
+
+        {/* ── Search Summary Banner ── */}
+        {searchInfo && (
           <div className="search-success-banner">
             <div className="banner-left">
-                <div className="route-header">
-                    <div className="plane-icon-box">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                             <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                             <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    </div>
-                    <h2 className="route-text">
-                        {searchInfo.routeInfo?.origin?.iataCode || "Origin"} 
-                        <span className="arrow">→</span> 
-                        {searchInfo.routeInfo?.destination?.iataCode || "Destination"}
-                    </h2>
+              <div className="route-header">
+                <div className="plane-icon-box">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                  </svg>
                 </div>
-                <div className="route-subtext">
-                    <span className="check-icon">✓</span>
-                    Found {searchInfo.count} {searchInfo.count === 1 ? "flight" : "flights"} • {searchParams.cabinType} • {searchInfo.pricingInfo?.passengers || 1} {searchInfo.pricingInfo?.passengers > 1 ? 'Passengers' : 'Passenger'}
-                </div>
+                <h2 className="route-text">
+                  {searchInfo.routeInfo?.origin}
+                  <span className="arrow">→</span>
+                  {searchInfo.routeInfo?.destination}
+                </h2>
+              </div>
+              <div className="route-subtext">
+                <span className="check-icon">✓</span>
+                {searchInfo.disclaimer || `${searchInfo.count} flights found`}
+              </div>
             </div>
 
             <div className="banner-right">
-                <div className="stat-box">
-                    <span className="stat-label">TOTAL FLIGHTS</span>
-                    <span className="stat-value">{searchInfo.count}</span>
-                </div>
-                <div className="stat-divider"></div>
-                <div className="stat-box">
-                    <span className="stat-label">BEST PRICE</span>
-                    <span className="stat-value highlight-price">₱{searchInfo.pricingInfo?.totalPrice?.toLocaleString() || "0"}</span>
-                </div>
+              <div className="stat-box">
+                <span className="stat-label">Flights</span>
+                <span className="stat-value">{searchInfo.count}</span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-box">
+                <span className="stat-label">From</span>
+                <span className="stat-value highlight-price">
+                  ₱{(searchInfo.pricingInfo?.pricePerAdult || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-box">
+                <span className="stat-label">Pax</span>
+                <span className="stat-value">{searchInfo.pricingInfo?.passengers || 1}</span>
+              </div>
             </div>
           </div>
         )}
 
-        {error && (
-          <div className="error-banner">
-            <div className="error-icon">✕</div>
-            <strong>{error}</strong>
+        {/* ── Round-Trip Step Banner ── */}
+        {isRoundTrip && roundTripStep === 1 && (
+          <div className="round-trip-notice">
+            <span>✈️</span>
+            <span>
+              <strong>Step 1 of 2:</strong> Select your <strong>outbound flight</strong> below.
+              Your return options will appear next.
+            </span>
           </div>
         )}
 
-        {loading && (
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Fetching real-time prices from airlines...</p>
+        {isRoundTrip && roundTripStep === 2 && (
+          <div className="round-trip-notice" style={{ background: '#fff3e0', borderColor: '#fc9c1b' }}>
+            <span>🔄</span>
+            <span>
+              <strong>Step 2 of 2:</strong> Now select your <strong>return flight</strong>.
+              {selectedOutbound && (
+                <span style={{ marginLeft: 8, color: '#64748b' }}>
+                  Outbound: {selectedOutbound.departure?.iataCode} → {selectedOutbound.arrival?.iataCode}
+                  {' '}(₱{(selectedOutbound.price?.amount || 0).toLocaleString()})
+                </span>
+              )}
+            </span>
           </div>
         )}
 
+        {/* ── Flight Cards ── */}
         <div className="flight-results">
           {flights.map((flight, index) => (
-            <div key={flight.id || index} className="flight-card">
-              <div className="flight-main">
-                <div className="airline-section">
-                  {flight.airline?.logo ? (
-                    <div className="airline-logo-wrapper">
-                        <img
-                        src={flight.airline.logo}
-                        alt={flight.airline.name}
-                        className="airline-logo-img"
-                        onError={(e) => {
-                            e.target.style.display = "none";
-                        }}
-                        />
-                    </div>
-                  ) : (
-                    <div className="airline-logo-placeholder">
-                      {flight.airline?.code || "✈"}
-                    </div>
-                  )}
-                  <div className="airline-name">
-                    {flight.airline?.name || "Unknown Airline"}
-                  </div>
-                </div>
-                <div className="flight-details">
-                  <div className="flight-time-info">
-                    <div className="time-large">{flight.departure?.displayTime}</div>
-                    <div className="airport-code">{flight.departure?.iataCode}</div>
-                  </div>
-
-                  <div className="flight-duration-info">
-                    <div className="duration-text">{flight.duration}</div>
-                    <div className="flight-line">
-                      <div className="line-bar"></div>
-                      <div className="plane-icon-center">✈</div>
-                      <div className="dot-start"></div>
-                      <div className="dot-end"></div>
-                    </div>
-                    <div className={`stops-text ${flight.stops === 0 ? "nonstop" : ""}`}>
-                      {flight.stops === 0 ? "Direct" : `${flight.stops} stop${flight.stops > 1 ? "s" : ""}`}
-                    </div>
-                  </div>
-
-                  <div className="flight-time-info">
-                    <div className="time-large">{flight.arrival?.displayTime}</div>
-                    <div className="airport-code">{flight.arrival?.iataCode}</div>
-                  </div>
-                </div>
-
-                <div className="flight-pricing">
-                  <div className="price-amount">{flight.price.formatted}</div>
-                  <div className="price-label">
-                    {flight.price.totalPassengers} {flight.price.totalPassengers > 1 ? "passengers" : "passenger"} • {searchParams.cabinType}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flight-footer">
-                {flight.quality !== undefined ? (
-                  <div className="quality-badge">
-                    <span className="star">★</span> Quality Score: <strong>{flight.quality}/10</strong>
-                  </div>
-                ) : (
-                  <div></div> 
-                )}
-                
-                <button className="book-btn" onClick={() => handleBookClick(flight)}>
-                  {onFlightSelect ? 'Select Flight' : 'Book Now'}
-                </button>
-              </div>
-
-            </div>
-          ))}
-
-          {!loading && flights.length === 0 && !error && (
-            <div className="no-flights">
-              <div className="no-flights-icon">🌏</div>
-              <h3>Start searching for flights</h3>
-              <p>Search airports worldwide - Philippines, USA, Europe, Asia, and more!</p>
-            </div>
-          )}
-          {selectedFlight && !onFlightSelect && (
-            <FlightBookingModal 
-              flight={selectedFlight} 
-              searchParams={searchParams} 
-              onClose={() => setSelectedFlight(null)} 
+            <FlightCard
+              key={flight.id || `flight-${index}`}
+              flight={flight}
+              searchParams={searchParams}
+              onFlightSelect={onFlightSelect}
+              roundTripStep={roundTripStep}
+              onOutboundSelect={onOutboundSelect}
+              onReturnSelect={onReturnSelect}
             />
-          )}
+          ))}
         </div>
+
       </div>
     </div>
   );
-}
+};
 
 export default FlightSearchResults;

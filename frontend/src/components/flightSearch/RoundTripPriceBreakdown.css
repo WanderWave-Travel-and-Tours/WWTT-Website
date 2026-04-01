@@ -1,0 +1,173 @@
+/* src/components/flightSearch/RoundTripPriceBreakdown.css */
+/* ── All classes scoped under .price-breakdown-modal to prevent global conflicts ── */
+
+.price-breakdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.price-breakdown-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  margin: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Scoped to .price-breakdown-modal to avoid overriding flightBookingModal .modal-header */
+.price-breakdown-modal .modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+}
+
+.price-breakdown-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1e2937;
+}
+
+/* Simple clean close button — no conflicts */
+.price-breakdown-modal .rt-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.price-breakdown-modal .rt-close-btn:hover {
+  background: #f1f5f9;
+  color: #1e2937;
+}
+
+.breakdown-content {
+  padding: 24px;
+}
+
+.leg-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.leg-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.leg-type {
+  font-weight: 600;
+  color: #fc9c1b;
+  font-size: 0.95rem;
+}
+
+.leg-route {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1e2937;
+}
+
+.cheapest-note {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.leg-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e2937;
+}
+
+.divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 20px 0;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.total-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e2937;
+}
+
+.total-price {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fc9c1b;
+}
+
+.per-person {
+  text-align: right;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.markup-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.markup-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #334155;
+}
+
+.markup-detail {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.markup-detail span:last-child {
+  font-weight: 500;
+}
+
+.book-now-btn {
+  width: 100%;
+  padding: 16px;
+  background: #fc9c1b;
+  color: white;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0 0 16px 16px;
+}
+
+.book-now-btn:hover {
+  background: #e68a0f;
+}

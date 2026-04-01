@@ -1,42 +1,39 @@
+/* ═══════════════════════════════════════════════════════
+   EXISTING STYLES — kept as-is for backward compatibility
+   ═══════════════════════════════════════════════════════ */
+
 .modal-overlay {
-  position: fixed; 
-  top: 0; 
-  left: 0; 
-  width: 100vw; 
-  height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   background: rgba(10, 32, 59, 0.85);
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  z-index: 2147483647; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2147483647;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
 .booking-modal {
-  background: white; 
-  width: 95%; 
+  background: white;
+  width: 95%;
   max-width: 600px;
   padding: 0;
   border-radius: 20px;
-  position: relative; 
-  max-height: 90vh; 
+  position: relative;
+  max-height: 90vh;
   overflow: hidden;
-  box-shadow: 
-    0 25px 60px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1); 
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
   animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   flex-direction: column;
 }
 
-/* Orange header bar like boarding pass */
 .booking-modal::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 8px;
   background: linear-gradient(90deg, #fc9c1b 0%, #ff6b00 100%);
   z-index: 10;
@@ -44,27 +41,24 @@
 
 @keyframes modalPop {
   from { transform: scale(0.92); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  to   { transform: scale(1); opacity: 1; }
 }
 
-/* --- UPDATED CLOSE BUTTON (Matching otherservices.css design) --- */
-.booking-modal .close-btn,
-button.close-btn {
+.booking-modal .close-btn {
   position: absolute !important;
-  top: 15px !important; 
+  top: 15px !important;
   right: 15px !important;
   left: auto !important;
   margin-left: 0 !important;
   background: white;
-  border: 2px solid rgba(0, 0, 0, 0.1); 
+  border: 2px solid rgba(0, 0, 0, 0.1);
   color: #0a203b;
   cursor: pointer;
   padding: 0;
   border-radius: 50%;
-  width: 40px; 
-  height: 40px;
-  display: flex !important; 
-  align-items: center !important; 
+  width: 40px; height: 40px;
+  display: flex !important;
+  align-items: center !important;
   justify-content: center !important;
   transition: all 0.3s ease;
   z-index: 1010;
@@ -73,8 +67,7 @@ button.close-btn {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.booking-modal .close-btn:hover,
-button.close-btn:hover {
+.booking-modal .close-btn:hover {
   background: #fc9c1b;
   color: white;
   border-color: #fc9c1b;
@@ -82,22 +75,15 @@ button.close-btn:hover {
   box-shadow: 0 6px 16px rgba(252, 156, 27, 0.4);
 }
 
-/* X symbol styling */
-.booking-modal .close-btn svg,
-button.close-btn svg {
-  width: 20px;
-  height: 20px;
+.booking-modal .close-btn svg {
+  width: 20px; height: 20px;
   stroke-width: 2.5;
   stroke: #0a203b;
   display: block;
   margin: auto;
 }
 
-.booking-modal .close-btn:hover svg,
-button.close-btn:hover svg {
-  stroke: white;
-}
-/* ---------------------------- */
+.booking-modal .close-btn:hover svg { stroke: white; }
 
 .modal-header {
   background: linear-gradient(135deg, #0a203b 0%, #1a3a5f 100%);
@@ -106,47 +92,41 @@ button.close-btn:hover svg {
   flex-shrink: 0;
 }
 
-.modal-header h2 { 
-  margin: 0 0 12px; 
-  color: white; 
-  font-size: 1.75rem; 
-  font-weight: 900; 
+.modal-header h2 {
+  margin: 0 0 12px;
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 900;
   font-family: 'Inter', sans-serif;
   letter-spacing: -0.5px;
 }
 
-.flight-summary { 
-  background: rgba(252, 156, 27, 0.2); 
-  color: #fc9c1b; 
-  padding: 12px 18px; 
-  border-radius: 10px; 
-  font-weight: 700; 
-  font-size: 0.95rem; 
+.flight-summary {
+  background: rgba(252, 156, 27, 0.2);
+  color: #fc9c1b;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
   border: 2px solid rgba(252, 156, 27, 0.3);
   font-family: 'Roboto', sans-serif;
   letter-spacing: 0.3px;
 }
 
-/* Form container with scrollable area */
-.booking-modal form {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-}
+.booking-modal form { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
-.form-step { 
-  padding: 32px 30px; 
+.form-step {
+  padding: 32px 30px;
   background: white;
   overflow-y: auto;
   flex: 1;
 }
 
-.form-step h3 { 
-  color: #0a203b; 
-  margin: 0 0 24px; 
-  border-bottom: 3px solid #fc9c1b; 
-  padding-bottom: 12px; 
+.form-step h3 {
+  color: #0a203b;
+  margin: 0 0 24px;
+  border-bottom: 3px solid #fc9c1b;
+  padding-bottom: 12px;
   font-weight: 800;
   font-size: 1.2rem;
   font-family: 'Inter', sans-serif;
@@ -164,27 +144,25 @@ button.close-btn:hover svg {
   line-height: 1.5;
 }
 
-.form-group { 
-  margin-bottom: 20px; 
-}
+.form-group { margin-bottom: 20px; }
 
-.form-group label { 
-  display: block; 
-  margin-bottom: 8px; 
-  font-weight: 700; 
-  font-size: 0.8rem; 
-  color: #0a203b; 
-  text-transform: uppercase; 
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #0a203b;
+  text-transform: uppercase;
   letter-spacing: 0.5px;
   font-family: 'Inter', sans-serif;
 }
 
-.form-group input, 
-.passenger-card input { 
-  width: 100%; 
-  padding: 14px 16px; 
-  border: 2px solid #e2e8f0; 
-  border-radius: 10px; 
+.form-group input,
+.passenger-card input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   color: #0f172a;
@@ -193,7 +171,7 @@ button.close-btn:hover svg {
   background: white;
 }
 
-.form-group input:focus, 
+.form-group input:focus,
 .passenger-card input:focus {
   outline: none;
   border-color: #fc9c1b;
@@ -202,49 +180,29 @@ button.close-btn:hover svg {
 }
 
 .form-group input::placeholder,
-.passenger-card input::placeholder {
-  color: #94a3b8;
-  font-weight: 500;
-}
+.passenger-card input::placeholder { color: #94a3b8; font-weight: 500; }
 
-.row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 0;
-}
+.row { display: flex; gap: 12px; margin-bottom: 0; }
 
-.passengers-scroll { 
-  max-height: 400px; 
-  overflow-y: auto; 
+.passengers-scroll {
+  max-height: 400px;
+  overflow-y: auto;
   padding: 4px;
   margin-top: 8px;
   margin-bottom: 16px;
 }
 
-.passengers-scroll::-webkit-scrollbar {
-  width: 8px;
-}
+.passengers-scroll::-webkit-scrollbar { width: 8px; }
+.passengers-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.passengers-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.passengers-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-.passengers-scroll::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.passengers-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.passengers-scroll::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.passenger-card { 
-  background: white; 
-  padding: 24px; 
-  border-radius: 14px; 
-  margin-bottom: 16px; 
-  border: 2px solid #e2e8f0; 
+.passenger-card {
+  background: white;
+  padding: 24px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  border: 2px solid #e2e8f0;
   position: relative;
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -256,22 +214,19 @@ button.close-btn:hover svg {
   transform: translateY(-2px);
 }
 
-/* Orange accent on passenger cards */
 .passenger-card::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: 0; top: 0; bottom: 0;
   width: 6px;
   background: linear-gradient(to bottom, #fc9c1b, #ff6b00);
   border-radius: 14px 0 0 14px;
 }
 
-.passenger-card h4 { 
-  margin: 0 0 18px; 
-  font-size: 1.05rem; 
-  color: #0a203b; 
+.passenger-card h4 {
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+  color: #0a203b;
   font-weight: 800;
   font-family: 'Inter', sans-serif;
   display: flex;
@@ -279,39 +234,24 @@ button.close-btn:hover svg {
   gap: 8px;
 }
 
-.passenger-card h4::before {
-  content: '✈';
-  color: #fc9c1b;
-  font-size: 1.2rem;
-}
+.passenger-card h4::before { content: '✈'; color: #fc9c1b; font-size: 1.2rem; }
 
-.passenger-card .row { 
-  display: flex; 
-  gap: 12px; 
-  margin-bottom: 16px; 
-}
+.passenger-card .row { display: flex; gap: 12px; margin-bottom: 16px; }
+.passenger-card .row:last-child { margin-bottom: 0; }
+.passenger-card input { flex: 1; background: white; }
 
-.passenger-card .row:last-child {
-  margin-bottom: 0;
-}
-
-.passenger-card input { 
-  flex: 1;
-  background: white;
-}
-
-.next-btn, 
-.submit-btn { 
-  width: 100%; 
-  padding: 16px; 
-  background: linear-gradient(135deg, #fc9c1b 0%, #ff6b00 100%); 
-  color: white; 
-  border: none; 
-  border-radius: 12px; 
-  font-weight: 800; 
-  font-size: 1.05rem; 
-  cursor: pointer; 
-  margin-top: 24px; 
+.next-btn,
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #fc9c1b 0%, #ff6b00 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  margin-top: 24px;
   box-shadow: 0 6px 20px rgba(252, 156, 27, 0.4);
   transition: all 0.2s;
   text-transform: uppercase;
@@ -321,55 +261,32 @@ button.close-btn:hover svg {
   overflow: hidden;
 }
 
-.next-btn::before,
-.submit-btn::before {
+.next-btn::before, .submit-btn::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   transition: left 0.5s ease;
 }
 
-.next-btn:hover, 
-.submit-btn:hover { 
-  transform: translateY(-2px); 
-  box-shadow: 0 8px 28px rgba(252, 156, 27, 0.5);
-}
+.next-btn:hover, .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(252, 156, 27, 0.5); }
+.next-btn:hover::before, .submit-btn:hover::before { left: 100%; }
+.next-btn:disabled, .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-.next-btn:hover::before,
-.submit-btn:hover::before {
-  left: 100%;
-}
+.btn-group { display: flex; gap: 16px; margin-top: 28px; align-items: stretch; }
 
-.next-btn:disabled,
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* --- UPDATED BUTTON GROUP & BACK BUTTON --- */
-.btn-group { 
-  display: flex; 
-  gap: 16px; 
-  margin-top: 28px;
-  align-items: stretch;
-}
-
-.back-btn { 
+.back-btn {
   background: white;
-  color: #64748b; 
-  border: 2px solid #e2e8f0; 
-  padding: 16px 24px; 
-  border-radius: 12px; 
-  font-weight: 700; 
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 1rem;
-  flex: 0 0 auto; /* Allow auto width */
+  flex: 0 0 auto;
   min-width: 120px;
   display: flex;
   align-items: center;
@@ -379,26 +296,13 @@ button.close-btn:hover svg {
   font-family: 'Inter', sans-serif;
 }
 
-.back-btn:hover { 
-  background: #f1f5f9; 
-  border-color: #cbd5e1;
-  color: #0f172a;
-  transform: translateY(-1px);
-}
+.back-btn:hover { background: #f1f5f9; border-color: #cbd5e1; color: #0f172a; transform: translateY(-1px); }
+.submit-btn { flex: 1; margin-top: 0; }
 
-.submit-btn {
-  flex: 1; /* Take remaining space */
-  margin-top: 0; /* Remove top margin when inside group */
-}
-/* ------------------------------------------ */
-
-/* Flight search modal styles */
 .flight-search-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   background: rgba(10, 32, 59, 0.9);
   display: flex;
   justify-content: center;
@@ -418,19 +322,14 @@ button.close-btn:hover svg {
   border-radius: 20px;
   position: relative;
   overflow-y: auto;
-  box-shadow: 
-    0 25px 60px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
   animation: slideInFromBottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Orange accent bar */
 .flight-search-modal-content::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 8px;
   background: linear-gradient(90deg, #fc9c1b 0%, #ff6b00 100%);
   border-radius: 20px 20px 0 0;
@@ -438,24 +337,16 @@ button.close-btn:hover svg {
 }
 
 @keyframes slideInFromBottom {
-  from {
-    transform: translateY(80px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(80px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 .flight-modal-close-btn {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 24px; right: 24px;
   background: rgba(255, 255, 255, 0.98);
   border: none;
-  width: 48px;
-  height: 48px;
+  width: 48px; height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -468,11 +359,7 @@ button.close-btn:hover svg {
   font-size: 24px;
 }
 
-.flight-modal-close-btn:hover {
-  background: #ef4444;
-  color: white;
-  transform: rotate(90deg) scale(1.1);
-}
+.flight-modal-close-btn:hover { background: #ef4444; color: white; transform: rotate(90deg) scale(1.1); }
 
 .flight-modal-header {
   background: linear-gradient(135deg, #0a203b 0%, #1a3a5f 100%);
@@ -483,41 +370,13 @@ button.close-btn:hover svg {
   position: relative;
 }
 
-.flight-modal-header h2 {
-  margin: 16px 0 12px;
-  font-size: 2rem;
-  font-weight: 900;
-  font-family: 'Inter', sans-serif;
-  letter-spacing: -0.5px;
-}
+.flight-modal-header h2 { margin: 16px 0 12px; font-size: 2rem; font-weight: 900; font-family: 'Inter', sans-serif; letter-spacing: -0.5px; }
+.flight-modal-header p { margin: 10px 0; font-size: 1.05rem; opacity: 0.95; font-weight: 500; }
+.flight-modal-header p strong { color: #fc9c1b; font-weight: 800; }
 
-.flight-modal-header p {
-  margin: 10px 0;
-  font-size: 1.05rem;
-  opacity: 0.95;
-  font-weight: 500;
-}
-
-.flight-modal-header p strong {
-  color: #fc9c1b;
-  font-weight: 800;
-}
-
-.flight-search-wrapper {
-  padding: 0;
-  background: #f8f9fa;
-}
-
-.flight-search-modal-content .flight-search-container {
-  min-height: auto;
-  padding: 0;
-  background: transparent;
-}
-
-.flight-search-modal-content .orange-divider {
-  margin: 0;
-  padding: 20px 0;
-}
+.flight-search-wrapper { padding: 0; background: #f8f9fa; }
+.flight-search-modal-content .flight-search-container { min-height: auto; padding: 0; background: transparent; }
+.flight-search-modal-content .orange-divider { margin: 0; padding: 20px 0; }
 
 .book-with-airfare-btn {
   width: 100%;
@@ -547,120 +406,904 @@ button.close-btn:hover svg {
   border-color: #ff6b00;
 }
 
-/* Mobile responsive */
+/* ── Legacy step 0 round-trip cards (still used by old non-2panel flow) ── */
+.rt-breakdown-card { background: #f8fafc; border-radius: 14px; border: 1.5px solid #e2e8f0; padding: 20px; margin-bottom: 24px; }
+.rt-leg-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; }
+.rt-leg-left { display: flex; flex-direction: column; gap: 4px; }
+.rt-leg-badge { display: inline-block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; padding: 3px 10px; border-radius: 20px; width: fit-content; }
+.outbound-badge { background: rgba(252, 156, 27, 0.15); color: #fc9c1b; }
+.return-badge { background: rgba(10, 32, 59, 0.1); color: #0a203b; }
+.rt-leg-route { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+.rt-arrow { color: #fc9c1b; }
+.rt-leg-meta { font-size: 0.82rem; color: #64748b; }
+.rt-leg-price { font-size: 1.2rem; font-weight: 800; color: #0f172a; white-space: nowrap; }
+.rt-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
+.rt-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px solid #e2e8f0; }
+.rt-total-label { font-size: 1rem; font-weight: 700; color: #0f172a; }
+.rt-total-price { font-size: 1.6rem; font-weight: 900; color: #fc9c1b; }
+
+
+/* ═══════════════════════════════════════════════════════
+   NEW — 2-PANEL BOOKING MODAL
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Keyframes ── */
+@keyframes bm-fade-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 0; transform: scale(0.96) translateY(6px); }
+}
+
+@keyframes bm-fade-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 2-panel wrapper ── */
+.booking-modal.bm-two-panel {
+  max-width: 940px;
+  width: 95%;
+  /* Fixed height so the modal never resizes between locked↔form states */
+  height: 620px;
+  max-height: 92vh;
+  flex-direction: row;
+  align-items: stretch;
+  border-radius: 20px;
+  overflow: hidden;
+  animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Remove top bar — left panel provides the branding accent */
+.booking-modal.bm-two-panel::before { display: none; }
+
+/* Hide the generic close-btn in 2-panel mode — we use bm-close-btn on the modal itself */
+.booking-modal.bm-two-panel > .close-btn,
+.booking-modal.bm-two-panel > button.close-btn { display: none !important; }
+
+
+/* ═══ GLOBAL CLOSE BUTTON — top-right of the whole modal ═══ */
+.bm-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  transition: color 0.18s ease, background 0.18s ease;
+  flex-shrink: 0;
+}
+
+.bm-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.bm-close-btn svg {
+  display: block;
+  stroke: currentColor;
+}
+
+
+/* ═══ LEFT PANEL ═══ */
+.bm-left {
+  width: 300px;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, #071829 0%, #0d2a47 50%, #0a203b 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Orange top accent */
+.bm-left::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #fc9c1b, #ff6b00);
+  border-radius: 20px 0 0 0;
+}
+
+/* ── Airline Logo (shown in left panel header when logo is available) ── */
+.bm-airline-logo-wrap {
+  width: 72px;
+  height: 72px;
+  background: white;
+  border-radius: 14px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.bm-airline-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.bm-left-header {
+  padding: 18px 20px 14px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.bm-left-plane-icon {
+  width: 42px;
+  height: 42px;
+  background: rgba(252, 156, 27, 0.15);
+  border: 1.5px solid rgba(252, 156, 27, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+
+.bm-left-title {
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 900;
+  font-family: 'Inter', sans-serif;
+  margin: 0 0 8px;
+  letter-spacing: -0.2px;
+}
+
+.bm-left-route {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(252, 156, 27, 0.12);
+  border: 1px solid rgba(252, 156, 27, 0.28);
+  border-radius: 50px;
+  padding: 5px 14px;
+}
+
+.bm-route-iata {
+  color: #fc9c1b;
+  font-size: 0.95rem;
+  font-weight: 900;
+  font-family: 'Roboto', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.bm-route-arrow {
+  color: rgba(252, 156, 27, 0.55);
+  font-size: 0.85rem;
+}
+
+/* Left body — fixed, no scroll */
+.bm-left-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Leg card — compact ── */
+.bm-leg-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+/* Badge + logo on same row */
+.bm-leg-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.bm-leg-card-top .bm-leg-badge {
+  margin-bottom: 0;
+}
+
+.bm-leg-logo-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.bm-leg-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.bm-leg-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-bottom: 6px;
+}
+
+.bm-badge-outbound {
+  background: rgba(252, 156, 27, 0.18);
+  color: #fc9c1b;
+  border: 1px solid rgba(252, 156, 27, 0.3);
+}
+
+.bm-badge-return {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Route strip: IATA ──✈── IATA */
+.bm-leg-route-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.bm-leg-iata {
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 900;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.bm-route-visual {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.bm-route-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.bm-route-dashes {
+  flex: 1;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.25) 0px,
+    rgba(255, 255, 255, 0.25) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+/* Leg footer: airline + price */
+.bm-leg-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bm-leg-meta {
+  font-size: 0.73rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bm-leg-price-tag {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: white;
+  white-space: nowrap;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* ── Total block — highlighted ── */
+.bm-total-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: rgba(252, 156, 27, 0.13);
+  border: 1.5px solid rgba(252, 156, 27, 0.35);
+  border-radius: 12px;
+  margin-top: 6px;
+  box-shadow: 0 0 18px rgba(252, 156, 27, 0.1);
+}
+
+.bm-total-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.bm-total-price {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #fc9c1b;
+  font-family: 'Roboto', sans-serif;
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 24px rgba(252, 156, 27, 0.4);
+}
+
+/* Pax info */
+.bm-pax-info-box {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.bm-pax-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.77rem;
+  font-weight: 500;
+}
+
+
+/* ═══ RIGHT PANEL ═══ */
+.bm-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  position: relative;  /* anchor for absolute children */
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Both states fill the right panel completely (no resize) */
+.bm-locked-container,
+.bm-form-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Locked state ── */
+.bm-locked-container { background: white; }
+
+.bm-fading-out {
+  animation: bm-fade-out 0.34s ease forwards;
+  pointer-events: none;
+}
+
+.bm-ghost-preview {
+  flex: 1;
+  padding: 52px 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bm-ghost-title {
+  height: 16px;
+  width: 48%;
+  background: linear-gradient(90deg, #edf1f7 25%, #e2e8f0 50%, #edf1f7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.bm-ghost-field {
+  height: 44px;
+  width: 100%;
+  background: linear-gradient(90deg, #edf1f7 25%, #e2e8f0 50%, #edf1f7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 10px;
+}
+
+.bm-ghost-field.lg  { height: 50px; animation-delay: 0.1s; }
+.bm-ghost-field.sm  { flex: 0 0 30%; animation-delay: 0.2s; }
+
+.bm-ghost-row {
+  display: flex;
+  gap: 12px;
+}
+
+.bm-ghost-row .bm-ghost-field { flex: 1; animation-delay: 0.15s; }
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* Lock overlay */
+.bm-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,250,252,0.96) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 36px;
+  text-align: center;
+  gap: 10px;
+}
+
+.bm-lock-icon-wrap {
+  width: 64px;
+  height: 64px;
+  background: rgba(252, 156, 27, 0.08);
+  border: 2px solid rgba(252, 156, 27, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.bm-lock-title {
+  color: #0a203b;
+  font-size: 1.25rem;
+  font-weight: 900;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.bm-lock-desc {
+  color: #64748b;
+  font-size: 0.87rem;
+  line-height: 1.65;
+  max-width: 260px;
+  margin: 0;
+}
+
+.bm-continue-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #fc9c1b 0%, #ff6b00 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.2px;
+  box-shadow: 0 8px 24px rgba(252, 156, 27, 0.38);
+  transition: all 0.25s ease;
+}
+
+.bm-continue-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(252, 156, 27, 0.52);
+}
+
+.bm-continue-btn:active { transform: translateY(0); }
+
+
+/* ── Unlocked form ── */
+.bm-form-container {
+  animation: bm-fade-in 0.38s ease forwards;
+}
+
+.bm-form-header {
+  padding: 28px 28px 0;
+  flex-shrink: 0;
+}
+
+.bm-form-title {
+  color: #0a203b;
+  font-size: 1.1rem;
+  font-weight: 900;
+  font-family: 'Inter', sans-serif;
+  margin: 0 0 3px;
+  letter-spacing: -0.2px;
+}
+
+.bm-form-subtitle {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Progress row: dots left, counter right */
+.bm-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px 0;
+  flex-shrink: 0;
+}
+
+.bm-progress-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bm-dot {
+  height: 7px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+  background: #e2e8f0;
+  width: 7px;
+}
+
+.bm-dot.done {
+  background: rgba(252, 156, 27, 0.45);
+  width: 7px;
+}
+
+.bm-dot.active {
+  background: #fc9c1b;
+  width: 22px;
+}
+
+/* Counter "1 / 3" */
+.bm-slide-counter {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #94a3b8;
+  font-family: 'Roboto', sans-serif;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* Slides */
+.bm-slides-wrapper {
+  flex: 1;
+  overflow: hidden;
+  margin-top: 16px;
+  position: relative;
+}
+
+.bm-slides-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.bm-slide {
+  min-width: 100%;
+  padding: 0 28px 12px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+.bm-slide::-webkit-scrollbar { width: 4px; }
+.bm-slide::-webkit-scrollbar-track { background: transparent; }
+.bm-slide::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+.bm-pax-label-row { margin-bottom: 16px; }
+
+.bm-pax-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.primary-badge {
+  background: rgba(252, 156, 27, 0.1);
+  color: #cc7700;
+  border: 1.5px solid rgba(252, 156, 27, 0.25);
+}
+
+.companion-badge {
+  background: rgba(10, 32, 59, 0.06);
+  color: #0a203b;
+  border: 1.5px solid rgba(10, 32, 59, 0.12);
+}
+
+/* Form fields */
+.bm-form-group {
+  margin-bottom: 12px;
+  flex: 1;
+}
+
+.bm-form-group.bm-narrow { flex: 0 0 90px; }
+
+.bm-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-family: 'Inter', sans-serif;
+}
+
+.bm-optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #94a3b8;
+}
+
+/* Input wrapper for icon */
+.bm-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bm-field-icon {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  color: #b0bdcc;
+  pointer-events: none;
+  transition: color 0.2s;
+  z-index: 1;
+}
+
+.bm-input-wrap:focus-within .bm-field-icon { color: #fc9c1b; }
+
+.bm-input {
+  width: 100%;
+  padding: 11px 13px 11px 36px;
+  border: 1.5px solid #e8edf4;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: #fafbfd;
+  transition: all 0.2s ease;
+  font-family: 'Roboto', sans-serif;
+  box-sizing: border-box;
+}
+
+.bm-input:focus {
+  outline: none;
+  border-color: #fc9c1b;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
+}
+
+.bm-input::placeholder { color: #b0bdcc; font-weight: 400; }
+
+/* ── Fix age/number input — remove browser spinners ── */
+.bm-input-age,
+.bm-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  padding-right: 10px;
+}
+
+.bm-input-age::-webkit-inner-spin-button,
+.bm-input-age::-webkit-outer-spin-button,
+.bm-input[type="number"]::-webkit-inner-spin-button,
+.bm-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bm-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* Navigation bar */
+.bm-form-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px 20px;
+  border-top: 1px solid #f1f5f9;
+  flex-shrink: 0;
+}
+
+.bm-nav-back {
+  padding: 12px 18px;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bm-nav-back:hover { border-color: #cbd5e1; background: #f8fafc; color: #0f172a; }
+
+.bm-nav-next {
+  flex: 1;
+  padding: 13px;
+  background: #0a203b;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.bm-nav-next:hover { background: #1a3a5f; transform: translateY(-1px); }
+
+.bm-nav-submit {
+  flex: 1;
+  padding: 13px;
+  background: linear-gradient(135deg, #fc9c1b 0%, #ff6b00 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 5px 18px rgba(252, 156, 27, 0.32);
+  letter-spacing: 0.1px;
+  text-align: center;
+}
+
+.bm-nav-submit:hover { transform: translateY(-2px); box-shadow: 0 9px 26px rgba(252, 156, 27, 0.48); }
+.bm-nav-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+
+/* ═══ RESPONSIVE ═══ */
 @media (max-width: 768px) {
   .booking-modal {
-    width: 100%;
-    max-width: 100%;
+    width: 100%; max-width: 100%; max-height: 100vh; border-radius: 0;
+  }
+  .booking-modal::before { border-radius: 0; }
+  .modal-header { padding: 36px 24px 24px; }
+  .modal-header h2 { font-size: 1.5rem; }
+  .form-step { padding: 24px 20px; }
+  .booking-modal .close-btn { top: 15px !important; right: 15px !important; left: auto !important; width: 40px; height: 40px; }
+  .booking-modal .close-btn svg { width: 18px; height: 18px; }
+  .passenger-card { padding: 20px; }
+  .btn-group { gap: 12px; }
+  .back-btn { flex: 0 0 100px; padding: 14px 16px; font-size: 0.9rem; }
+  .passengers-scroll { max-height: 300px; }
+
+  /* 2-panel stacks on mobile */
+  .booking-modal.bm-two-panel {
+    flex-direction: column;
+    height: auto;
     max-height: 100vh;
     border-radius: 0;
-  }
-
-  .booking-modal::before {
-    border-radius: 0;
-  }
-
-  .modal-header {
-    padding: 36px 24px 24px;
-  }
-
-  .modal-header h2 {
-    font-size: 1.5rem;
-  }
-
-  .form-step {
-    padding: 24px 20px;
-  }
-
-  /* Close btn adjustments for mobile */
-  .booking-modal .close-btn,
-  button.close-btn {
-    top: 15px !important;
-    right: 15px !important;
-    left: auto !important;
-    width: 40px;
-    height: 40px;
-  }
-  
-  .booking-modal .close-btn svg,
-  button.close-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .passenger-card {
-    padding: 20px;
-  }
-
-  .btn-group {
-    gap: 12px;
-  }
-
-  .back-btn {
-    flex: 0 0 100px;
-    padding: 14px 16px;
-    font-size: 0.9rem;
-  }
-
-  .passengers-scroll {
-    max-height: 300px;
-  }
-
-  .flight-search-modal-content {
     width: 100%;
     max-width: 100%;
-    max-height: 100vh;
+  }
+
+  .bm-left {
+    width: 100%;
+    flex-shrink: 0;
     border-radius: 0;
+    max-height: 280px;
   }
 
-  .flight-search-modal-content::before {
+  .bm-left::before { border-radius: 0; }
+  .bm-left-header { padding: 28px 20px 16px; }
+  .bm-left-body { padding: 16px 20px 14px; }
+
+  /* Airline logo smaller on mobile */
+  .bm-airline-logo-wrap {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+  }
+
+  .bm-right {
+    flex: 1;
     border-radius: 0;
+    position: relative;
+    min-height: 440px;
   }
 
-  .flight-modal-header {
-    border-radius: 0;
-    padding: 44px 24px 28px;
+  .bm-form-header { padding: 20px 20px 0; }
+  .bm-progress-row { padding: 12px 20px 0; }
+  .bm-slide { padding: 0 20px 12px; }
+  .bm-form-nav { padding: 12px 20px 18px; }
+  .bm-ghost-preview { padding: 36px 20px 20px; }
+  .bm-lock-overlay { padding: 28px 20px; }
+
+  /* Close btn on mobile — slightly repositioned */
+  .bm-close-btn {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    z-index: 60;
   }
 
-  .flight-modal-close-btn {
-    top: 16px;
-    right: 16px;
-    width: 42px;
-    height: 42px;
-  }
-
-  .flight-modal-header h2 {
-    font-size: 1.6rem;
-  }
+  .flight-search-modal-content { width: 100%; max-width: 100%; max-height: 100vh; border-radius: 0; }
+  .flight-search-modal-content::before { border-radius: 0; }
+  .flight-modal-header { border-radius: 0; padding: 44px 24px 28px; }
+  .flight-modal-close-btn { top: 16px; right: 16px; width: 42px; height: 42px; }
+  .flight-modal-header h2 { font-size: 1.6rem; }
 }
 
 @media (max-width: 480px) {
-  .form-group input,
-  .passenger-card input {
-    padding: 12px 14px;
-    font-size: 0.95rem;
-  }
+  .form-group input, .passenger-card input { padding: 12px 14px; font-size: 0.95rem; }
+  .next-btn, .submit-btn { padding: 14px; font-size: 1rem; }
+  .passenger-card { padding: 18px; }
+  .modal-header h2 { font-size: 1.3rem; }
+  .flight-summary { font-size: 0.85rem; padding: 10px 14px; }
+  .passengers-scroll { max-height: 250px; }
+  .bm-left-title { font-size: 0.95rem; }
+  .bm-total-price { font-size: 1.3rem; }
+  .bm-leg-iata { font-size: 1.1rem; }
+  .bm-form-nav { flex-wrap: wrap; }
+  .bm-nav-back { flex: 0 0 auto; }
+  .bm-nav-next, .bm-nav-submit { flex: 1; min-width: 0; }
 
-  .next-btn,
-  .submit-btn {
-    padding: 14px;
-    font-size: 1rem;
-  }
-
-  .passenger-card {
-    padding: 18px;
-  }
-
-  .modal-header h2 {
-    font-size: 1.3rem;
-  }
-
-  .flight-summary {
-    font-size: 0.85rem;
-    padding: 10px 14px;
-  }
-
-  .passengers-scroll {
-    max-height: 250px;
+  /* Full-width submit/next when only one button */
+  .bm-form-nav > .bm-nav-submit:only-child,
+  .bm-form-nav > .bm-nav-next:only-child {
+    width: 100%;
   }
 }
