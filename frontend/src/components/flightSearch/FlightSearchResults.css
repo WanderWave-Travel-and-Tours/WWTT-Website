@@ -791,3 +791,162 @@
     max-width: 100px;
   }
 }
+/* ================================
+   ROUND-TRIP NOTICE BANNER
+   ================================ */
+.round-trip-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(252, 156, 27, 0.08);
+  border: 1px solid rgba(252, 156, 27, 0.35);
+  border-radius: 14px;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  color: #7a4a00;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+}
+
+.round-trip-notice strong {
+  color: #fc9c1b;
+}
+
+/* ================================
+   PRICE BREAKDOWN TRIGGER BUTTON
+   (inside the flight-pricing column)
+   ================================ */
+.breakdown-trigger-btn {
+  margin-top: 8px;
+  background: none;
+  border: 1.5px solid rgba(252, 156, 27, 0.6);
+  color: #fc9c1b;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+
+.breakdown-trigger-btn:hover {
+  background: #fc9c1b;
+  color: #ffffff;
+  border-color: #fc9c1b;
+}
+/* ================================
+   RESPONSIVENESS ENHANCEMENTS
+   ================================ */
+
+/* Fix stat-box min-width on smaller screens */
+@media (max-width: 900px) {
+  .stat-box {
+    min-width: unset;
+    flex: 1;
+  }
+
+  .round-trip-notice {
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .search-success-banner {
+    padding: 18px 16px;
+    gap: 16px;
+  }
+
+  .banner-right {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.8px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-divider {
+    width: 100%;
+    height: 1px;
+  }
+
+  .results-section {
+    padding: 24px 12px 60px;
+  }
+
+  .flight-card {
+    border-radius: 14px;
+  }
+
+  .flight-main {
+    padding: 32px 16px 20px;
+  }
+
+  .flight-main::after {
+    left: 16px;
+    right: 16px;
+  }
+
+  .flight-footer {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .price-amount {
+    font-size: 28px;
+    letter-spacing: -1px;
+  }
+
+  .time-large {
+    font-size: 24px;
+    letter-spacing: -1px;
+  }
+
+  .airport-code {
+    font-size: 11px;
+    padding: 3px 8px;
+    letter-spacing: 1px;
+  }
+
+  .round-trip-notice {
+    font-size: 0.8rem;
+    padding: 10px 14px;
+  }
+
+  .breakdown-trigger-btn {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .route-text {
+    font-size: 16px;
+  }
+
+  .route-header {
+    gap: 10px;
+  }
+
+  .plane-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .price-amount {
+    font-size: 26px;
+  }
+}

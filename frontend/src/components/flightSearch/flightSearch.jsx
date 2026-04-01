@@ -5,6 +5,7 @@ import "./flightSearch.css";
 import MascotGif from "../MascotGif/MascotGif";
 import FlightSearchForm from "./FlightSearchForm";
 import FlightSearchResults from "./FlightSearchResults";
+import FlightBookingModal from "./flightBookingModal";
 import { ChevronLeft } from 'lucide-react';
 import { BookingStateManager } from '../../utils/bookingStateManager';
 
@@ -86,10 +87,14 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   
   const [airportSearchLoading, setAirportSearchLoading] = useState(false);
   const [activeMultiCityField, setActiveMultiCityField] = useState(null);
-  
-  const originRef = useRef(null);
-  const destinationRef = useRef(null);
-  const suggestionsRef = useRef(null);
+
+  // ── ROUND-TRIP 2-STEP STATES ──
+  const [roundTripStep, setRoundTripStep] = useState(1);
+  const [selectedOutbound, setSelectedOutbound] = useState(null);
+
+  // ── BOOKING MODAL: set when ready to open (round-trip: after return selected; one-way: direct) ──
+  const [bookingModalFlight, setBookingModalFlight] = useState(null);
+
   const searchTimerRef = useRef(null);
   const multiCityContainerRef = useRef(null); 
 
@@ -101,7 +106,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
       });
     }
   };
-
 
   function getTomorrowDate() {
     const tomorrow = new Date();
@@ -126,7 +130,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
         departureDate: depDate,
         returnDate: retDate || prev.returnDate 
       }));
-        
       setMultiCityLegs(prev => {
         const updated = [...prev];
         updated[0] = { ...updated[0], departureDate: depDate };
@@ -144,12 +147,10 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
             "https://wanderwaveph.onrender.com/api/flights/airports",
             { params: { search: destination } }
           );
-
           if (response.data.success && response.data.data && response.data.data.length > 0) {
             const airport = response.data.data[0];
             const iataCode = airport.iata_code;
             const displayName = `${airport.city_name} (${iataCode})`;
-
             setOneWayData(prev => ({ ...prev, destination: iataCode }));
             setRoundTripData(prev => ({ ...prev, destination: iataCode }));
             setMultiCityLegs(prev => {
@@ -157,14 +158,12 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
               updated[0] = { ...updated[0], destination: iataCode };
               return updated;
             });
-
             setDestinationSearchTerm(displayName);
           }
         } catch (error) {
           console.error("Auto-search destination error:", error);
         }
       };
-
       searchDestination();
     }
   }, [prefilledDestination, packageData?.destination]);
@@ -177,15 +176,12 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
       setAirportSearchLoading(false);
       return; 
     }
-
     setAirportSearchLoading(true);
-
     try {
       const response = await axios.get(
         "https://wanderwaveph.onrender.com/api/flights/airports",
         { params: { search: searchTerm } }
       );
-
       if (response.data.success && response.data.data) {
         const airports = response.data.data
           .filter((airport) => airport.iata_code)
@@ -197,7 +193,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
             countryCode: airport.country_iso2,
           }))
           .slice(0, 50);
-
         if (field === "origin") setOriginSuggestions(airports);
         else if (field === "destination") setDestinationSuggestions(airports);
         else if (field === "multi-city") setMultiCitySuggestions(airports);
@@ -215,22 +210,19 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   const debouncedSearch = (searchTerm, field) => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     if (searchTerm && searchTerm.trim().length >= 2) {
-        searchTimerRef.current = setTimeout(() => {
-          searchAirportsFromAPI(searchTerm, field);
-        }, 500);
+      searchTimerRef.current = setTimeout(() => {
+        searchAirportsFromAPI(searchTerm, field);
+      }, 500);
     } else {
-        if (field === "origin") setOriginSuggestions([]);
-        if (field === "destination") setDestinationSuggestions([]);
-        if (field === "multi-city") setMultiCitySuggestions([]);
+      if (field === "origin") setOriginSuggestions([]);
+      if (field === "destination") setDestinationSuggestions([]);
+      if (field === "multi-city") setMultiCitySuggestions([]);
     }
   };
 
   const handleAirportInputChange = (field, value) => {
-    if (field === "origin") {
-      setOriginSearchTerm(value);
-    } else {
-      setDestinationSearchTerm(value);
-    }
+    if (field === "origin") setOriginSearchTerm(value);
+    else setDestinationSearchTerm(value);
     debouncedSearch(value, field);
   };
 
@@ -238,13 +230,11 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     const iataCode = airport.iataCode;
     const displayName = `${airport.city} (${iataCode})`;
-
     if (searchParams.journeyType === "one-way") {
       setOneWayData(prev => ({ ...prev, [field]: iataCode }));
     } else if (searchParams.journeyType === "round-trip") {
       setRoundTripData(prev => ({ ...prev, [field]: iataCode }));
     }
-
     if (field === "origin") {
       setOriginSearchTerm(displayName);
       setOriginSuggestions([]);
@@ -270,23 +260,19 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   const selectMultiCityAirport = (airport) => {
     if (!activeMultiCityField) return;
     const { legIndex, field } = activeMultiCityField;
-    
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     const iataCode = airport.iataCode;
     const displayName = `${airport.city} (${iataCode})`;
-    
     setMultiCityLegs(prev => {
       const updated = [...prev];
       updated[legIndex] = { ...updated[legIndex], [field]: iataCode };
       return updated;
     });
-    
     setMultiCitySearchTerms(prev => {
       const updated = [...prev];
       updated[legIndex] = { ...updated[legIndex], [field]: displayName };
       return updated;
     });
-    
     setMultiCitySuggestions([]);
     setActiveMultiCityField(null);
   };
@@ -298,15 +284,15 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   };
   
   const addMultiCityLeg = () => {
-      setMultiCityLegs([...multiCityLegs, { origin: "", destination: "", departureDate: getTomorrowDate() }]);
-      setMultiCitySearchTerms([...multiCitySearchTerms, { origin: "", destination: "" }]);
+    setMultiCityLegs([...multiCityLegs, { origin: "", destination: "", departureDate: getTomorrowDate() }]);
+    setMultiCitySearchTerms([...multiCitySearchTerms, { origin: "", destination: "" }]);
   };
 
   const removeMultiCityLeg = (index) => {
-      if (multiCityLegs.length > 2) {
-          setMultiCityLegs(multiCityLegs.filter((_, i) => i !== index));
-          setMultiCitySearchTerms(multiCitySearchTerms.filter((_, i) => i !== index));
-      }
+    if (multiCityLegs.length > 2) {
+      setMultiCityLegs(multiCityLegs.filter((_, i) => i !== index));
+      setMultiCitySearchTerms(multiCitySearchTerms.filter((_, i) => i !== index));
+    }
   };
 
   useEffect(() => {
@@ -321,32 +307,28 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
 
   const swapCities = () => {
     if (searchParams.journeyType === "one-way") {
-        const tempOrigin = oneWayData.origin; 
-        setOneWayData(p => ({ ...p, origin: p.destination, destination: tempOrigin }));
-        const tempTerm = originSearchTerm;
-        setOriginSearchTerm(destinationSearchTerm);
-        setDestinationSearchTerm(tempTerm);
+      const tempOrigin = oneWayData.origin; 
+      setOneWayData(p => ({ ...p, origin: p.destination, destination: tempOrigin }));
+      const tempTerm = originSearchTerm;
+      setOriginSearchTerm(destinationSearchTerm);
+      setDestinationSearchTerm(tempTerm);
     } else if (searchParams.journeyType === "round-trip") {
-        const tempOrigin = roundTripData.origin;
-        setRoundTripData(p => ({ ...p, origin: p.destination, destination: tempOrigin }));
-        const tempTerm = originSearchTerm;
-        setOriginSearchTerm(destinationSearchTerm);
-        setDestinationSearchTerm(tempTerm);
+      const tempOrigin = roundTripData.origin;
+      setRoundTripData(p => ({ ...p, origin: p.destination, destination: tempOrigin }));
+      const tempTerm = originSearchTerm;
+      setOriginSearchTerm(destinationSearchTerm);
+      setDestinationSearchTerm(tempTerm);
     }
   };
 
-  const getTotalPassengers = () => parseInt(searchParams.adults) + parseInt(searchParams.children) + parseInt(searchParams.infants);
+  const getTotalPassengers = () =>
+    parseInt(searchParams.adults) + parseInt(searchParams.children) + parseInt(searchParams.infants);
 
   const handleFlightSelectFromBooking = (flight) => {
     const bookingData = JSON.parse(sessionStorage.getItem('pendingBookingData') || '{}');
-    
-    console.log('Flight selected, booking data:', bookingData);
     bookingData.selectedFlight = flight;
     sessionStorage.setItem('pendingBookingData', JSON.stringify(bookingData));
     const returnPath = bookingData.returnPath;
-    
-    console.log('Navigating back to:', returnPath);
-
     navigate(returnPath, {
       state: { 
         selectedFlight: flight,
@@ -357,68 +339,180 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     });
   };
 
+  // ── ROUND-TRIP: Step 1 → outbound selected, trigger return search ──
+  const handleOutboundSelect = (flight) => {
+    setSelectedOutbound(flight);
+    setRoundTripStep(2);
+    triggerReturnSearch();
+  };
+
+  const triggerReturnSearch = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get("https://wanderwaveph.onrender.com/api/flights/search-domestic", {
+        params: {
+          origin: roundTripData.destination,
+          destination: roundTripData.origin,
+          departureDate: roundTripData.returnDate,
+          adults: searchParams.adults,
+          children: searchParams.children,
+          infants: searchParams.infants,
+          cabinType: searchParams.cabinType,
+        },
+      });
+      if (res.data.success && res.data.data.length > 0) {
+        const returnFlights = res.data.data.map((flight, index) => ({
+          ...flight,
+          id: flight.id || `return-flight-${index}`,
+          departure: { ...flight.departure, displayTime: flight.departure.time },
+          arrival: { ...flight.arrival, displayTime: flight.arrival.time },
+          airline: { ...flight.airline, logo: flight.airline.logo || "https://images.kiwi.com/airlines/64/5J.png" },
+          price: {
+            ...flight.price,
+            amount: parseFloat(flight.price.amount) || 0,
+            formatted: flight.price.formatted || `₱${(parseFloat(flight.price.amount) || 0).toLocaleString()}`,
+          },
+          source: "Google Flights",
+        }));
+        setFlights(returnFlights);
+        setSearchInfo(prev => ({
+          ...prev,
+          count: returnFlights.length,
+          routeInfo: { origin: roundTripData.destination, destination: roundTripData.origin },
+          disclaimer: `✅ ${returnFlights.length} return flights found — select your return flight`,
+          pricingInfo: {
+            pricePerAdult: returnFlights[0].price.perPerson,
+            totalPrice: returnFlights[0].price.amount,
+            passengers: getTotalPassengers(),
+          },
+        }));
+      } else {
+        setError("No return flights found for the selected date.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load return flights. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── ROUND-TRIP: Step 2 → return selected, build combined flight, open booking modal ──
+  const handleReturnSelect = (returnFlight) => {
+    const outboundAmount = selectedOutbound?.price?.amount || 0;
+    const returnAmount   = returnFlight?.price?.amount    || 0;
+    const total          = outboundAmount + returnAmount;
+
+    const combinedFlight = {
+      type: 'Round-Trip',
+      airline: {
+        name:         selectedOutbound?.airline?.name         || '',
+        flightNumber: selectedOutbound?.airline?.flightNumber || 'N/A',
+        logo:         selectedOutbound?.airline?.logo         || '',
+      },
+      departure: {
+        iataCode: selectedOutbound?.departure?.iataCode || '',
+        time:     selectedOutbound?.departure?.time || selectedOutbound?.departure?.displayTime || '',
+      },
+      arrival: {
+        iataCode: selectedOutbound?.arrival?.iataCode || '',
+        time:     selectedOutbound?.arrival?.time || selectedOutbound?.arrival?.displayTime || '',
+      },
+      duration:   selectedOutbound?.duration  || '',
+      stops:      selectedOutbound?.stops     ?? 0,
+      cabinClass: selectedOutbound?.cabinClass || '',
+      price: {
+        amount:          total,
+        formatted:       `₱${total.toLocaleString()}`,
+        perPerson:       selectedOutbound?.price?.perPerson       || 0,
+        totalPassengers: selectedOutbound?.price?.totalPassengers || 1,
+      },
+      roundTripOutbound: {
+        airline:   { name: selectedOutbound?.airline?.name || '', flightNumber: selectedOutbound?.airline?.flightNumber || 'N/A', logo: selectedOutbound?.airline?.logo || '' },
+        departure: { iataCode: selectedOutbound?.departure?.iataCode || '', time: selectedOutbound?.departure?.time || selectedOutbound?.departure?.displayTime || '' },
+        arrival:   { iataCode: selectedOutbound?.arrival?.iataCode  || '', time: selectedOutbound?.arrival?.time   || selectedOutbound?.arrival?.displayTime   || '' },
+        duration:  selectedOutbound?.duration || '',
+        stops:     selectedOutbound?.stops    ?? 0,
+        price:     { amount: outboundAmount },
+      },
+      roundTripReturn: {
+        airline:   { name: returnFlight?.airline?.name || '', flightNumber: returnFlight?.airline?.flightNumber || 'N/A', logo: returnFlight?.airline?.logo || '' },
+        departure: { iataCode: returnFlight?.departure?.iataCode || '', time: returnFlight?.departure?.time || returnFlight?.departure?.displayTime || '' },
+        arrival:   { iataCode: returnFlight?.arrival?.iataCode  || '', time: returnFlight?.arrival?.time   || returnFlight?.arrival?.displayTime   || '' },
+        duration:  returnFlight?.duration || '',
+        stops:     returnFlight?.stops    ?? 0,
+        price:     { amount: returnAmount },
+      },
+    };
+
+    setBookingModalFlight(combinedFlight);
+  };
+
+  // ── MAIN SEARCH ──
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSearchInfo(null);
     setFlights([]);
+    setSelectedOutbound(null);
+    setRoundTripStep(1);
+    setBookingModalFlight(null);
     
     let searchData = {};
     
     if (searchParams.journeyType === "one-way") {
-        if (!oneWayData.origin || !oneWayData.destination) {
-            setError("Please enter origin and destination"); 
-            setLoading(false); 
-            return;
-        }
-        searchData = { 
-          origin: oneWayData.origin, 
-          destination: oneWayData.destination, 
-          departureDate: oneWayData.departureDate 
-        };
+      if (!oneWayData.origin || !oneWayData.destination) {
+        setError("Please enter origin and destination"); 
+        setLoading(false); 
+        return;
+      }
+      searchData = { 
+        origin: oneWayData.origin, 
+        destination: oneWayData.destination, 
+        departureDate: oneWayData.departureDate 
+      };
     } else if (searchParams.journeyType === "round-trip") {
-        if (!roundTripData.origin || !roundTripData.destination) {
-            setError("Please enter origin and destination"); 
-            setLoading(false); 
-            return;
-        }
-        if (!roundTripData.returnDate) {
-            setError("Please select return date"); 
-            setLoading(false); 
-            return;
-        }
-        searchData = { 
-          origin: roundTripData.origin, 
-          destination: roundTripData.destination, 
-          departureDate: roundTripData.departureDate, 
-          returnDate: roundTripData.returnDate 
-        };
+      if (!roundTripData.origin || !roundTripData.destination) {
+        setError("Please enter origin and destination"); 
+        setLoading(false); 
+        return;
+      }
+      if (!roundTripData.returnDate) {
+        setError("Please select return date"); 
+        setLoading(false); 
+        return;
+      }
+      searchData = { 
+        origin: roundTripData.origin, 
+        destination: roundTripData.destination, 
+        departureDate: roundTripData.departureDate,
+      };
     } else if (searchParams.journeyType === "multi-city") {
-        for (let i = 0; i < multiCityLegs.length; i++) {
-            if (!multiCityLegs[i].origin || !multiCityLegs[i].destination) {
-                setError(`Please fill in origin and destination for flight ${i + 1}`); 
-                setLoading(false); 
-                return;
-            }
+      for (let i = 0; i < multiCityLegs.length; i++) {
+        if (!multiCityLegs[i].origin || !multiCityLegs[i].destination) {
+          setError(`Please fill in origin and destination for flight ${i + 1}`); 
+          setLoading(false); 
+          return;
         }
-        
-        searchData = {
-          origin: multiCityLegs[0].origin,
-          destination: multiCityLegs[0].destination,
-          departureDate: multiCityLegs[0].departureDate
-        };
+      }
+      searchData = {
+        origin: multiCityLegs[0].origin,
+        destination: multiCityLegs[0].destination,
+        departureDate: multiCityLegs[0].departureDate
+      };
     }
 
     try {
       const response = await axios.get("https://wanderwaveph.onrender.com/api/flights/search-domestic", {
-          params: { 
-            ...searchData, 
-            adults: searchParams.adults, 
-            children: searchParams.children, 
-            infants: searchParams.infants, 
-            cabinType: searchParams.cabinType 
-          }
+        params: { 
+          ...searchData, 
+          adults: searchParams.adults, 
+          children: searchParams.children, 
+          infants: searchParams.infants, 
+          cabinType: searchParams.cabinType 
+        }
       });
 
       if (response.data.success && response.data.data.length > 0) {
@@ -429,11 +523,10 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
           arrival: { ...flight.arrival, displayTime: flight.arrival.time },
           airline: { ...flight.airline, logo: flight.airline.logo || "https://images.kiwi.com/airlines/64/5J.png" },
           price: {
-             ...flight.price,
-             amount: parseFloat(flight.price.amount) || 0,
-             formatted: flight.price.formatted || `₱${(parseFloat(flight.price.amount) || 0).toLocaleString()}`
+            ...flight.price,
+            amount: parseFloat(flight.price.amount) || 0,
+            formatted: flight.price.formatted || `₱${(parseFloat(flight.price.amount) || 0).toLocaleString()}`
           },
-
           source: "Google Flights",
         }));
         
@@ -441,7 +534,9 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
         setSearchInfo({
           source: "Google Flights",
           count: allFlights.length,
-          disclaimer: `✅ ${allFlights.length} flights found`,
+          disclaimer: searchParams.journeyType === "round-trip"
+            ? `✅ ${allFlights.length} outbound flights found — select your outbound flight`
+            : `✅ ${allFlights.length} flights found`,
           routeInfo: searchParams.journeyType === "multi-city" 
             ? { origin: "Multi", destination: "City" }
             : { origin: searchData.origin, destination: searchData.destination },
@@ -468,10 +563,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     <div className="flight-search-container">
       {shouldShowBackButton && (
         <div className="back-button-wrapper">
-          <button 
-            className="back-button"
-            onClick={handleBackToBooking}
-          >
+          <button className="back-button" onClick={handleBackToBooking}>
             <ChevronLeft size={20} strokeWidth={2.5} />
             <span>Back to Package Booking</span>
           </button>
@@ -524,7 +616,24 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
         loading={loading} 
         searchParams={searchParams}
         onFlightSelect={isFromBooking ? handleFlightSelectFromBooking : onFlightSelect}
+        roundTripStep={roundTripStep}
+        selectedOutbound={selectedOutbound}
+        onOutboundSelect={handleOutboundSelect}
+        onReturnSelect={handleReturnSelect}
+        onOneWayBook={(flight) => setBookingModalFlight(flight)}
       />
+
+      {/* Single booking modal entry point for all journey types.
+          For round-trip: starts at breakdown step (step 0) inside the modal.
+          For one-way / multi-city: starts directly at passenger form (step 1). */}
+      {bookingModalFlight && (
+        <FlightBookingModal
+          flight={bookingModalFlight}
+          searchParams={searchParams}
+          onClose={() => setBookingModalFlight(null)}
+        />
+      )}
+
       <MascotGif />
     </div>
   );
