@@ -60,10 +60,10 @@ const RoundTripPriceBreakdown = ({ outbound, returnFlight, searchParams, onClose
         </div>
 
         <div className="breakdown-content">
-          {/* Outbound leg */}
+          {/* Departure leg */}
           <div className="leg-row">
             <div className="leg-info">
-              <span className="leg-type">Outbound</span>
+              <span className="leg-type">Departure</span>
               <span className="leg-route">
                 {outbound?.departure?.iataCode} → {outbound?.arrival?.iataCode}
               </span>
