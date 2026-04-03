@@ -101,7 +101,7 @@ const VisitorJourney = ({ recentViews = [] }) => {
   const visitors = useMemo(() => {
     const map = {};
 
-    recentViews.forEach(v => {
+    views.forEach(v => {
       const id = v.visitorId || 'unknown';
 
       if (!map[id]) {
@@ -170,7 +170,7 @@ const VisitorJourney = ({ recentViews = [] }) => {
     .sort((a, b) => {
       // Active visitors first, then most recently seen
       if (a.isActive && !b.isActive) return -1;
-      if (!a.isActive && b.isActive) return 1;
+      if (!a.isActive && b.isActive) return  1;
       return new Date(b.lastSeen) - new Date(a.lastSeen);
     });
   }, [recentViews]);
@@ -231,14 +231,26 @@ const VisitorJourney = ({ recentViews = [] }) => {
           <div>
             <h3 className="vj-title">Visitor Journey Tracker</h3>
             <p className="vj-subtitle">
-              {visitors.length} unique visitor{visitors.length !== 1 ? 's' : ''} tracked
-              {activeCount > 0 && (
+              {loading
+                ? 'Loading…'
+                : `${visitors.length} unique visitor${visitors.length !== 1 ? 's' : ''} tracked`
+              }
+              {/* Active badge uses server-computed session count — counts each open
+                  browser tab separately, not just unique IPs */}
+              {!loading && activeSessionCount > 0 && (
                 <span style={{
                   marginLeft: '8px', background: '#dcfce7', color: '#15803d',
                   fontSize: '11px', fontWeight: 700, padding: '1px 7px',
                   borderRadius: '99px', border: '1px solid #bbf7d0',
                 }}>
-                  🟢 {activeCount} active now
+                  🟢 {activeSessionCount} active now
+                </span>
+              )}
+              {lastRefreshed && (
+                <span style={{ marginLeft: '8px', color: '#94a3b8', fontSize: '11px' }}>
+                  · Updated {lastRefreshed.toLocaleTimeString('en-PH', {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                  })}
                 </span>
               )}
             </p>
@@ -317,9 +329,38 @@ const VisitorJourney = ({ recentViews = [] }) => {
         </div>
       )}
 
-      {/* Visitor List */}
-      {filtered.length === 0 ? (
-        <div className="vj-empty">No visitors found for the selected filters.</div>
+      {/* Visitor list */}
+      {loading ? (
+        <div style={{
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          padding: '56px 0', gap: '12px',
+        }}>
+          <RefreshCw size={22} style={{ animation: 'vj-spin 0.8s linear infinite', color: '#6366f1' }} />
+          <span style={{ fontSize: '13px', color: '#94a3b8' }}>Loading visitor data…</span>
+        </div>
+      ) : fetchError ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444', fontSize: '13px' }}>
+          {fetchError}
+          <button
+            onClick={() => fetchData(true)}
+            style={{
+              display: 'block', margin: '12px auto 0', padding: '6px 16px',
+              borderRadius: '8px', border: '1px solid #fca5a5',
+              background: '#fff', color: '#ef4444',
+              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="vj-empty">
+          {visitors.length === 0
+            ? 'No visitor data yet.'
+            : 'No visitors match the selected filters.'
+          }
+        </div>
       ) : (
         <div className="vj-list">
           {filtered.map(v => {
@@ -394,12 +435,16 @@ const VisitorJourney = ({ recentViews = [] }) => {
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="vj-card-right">
-                    <div className="vj-card-stage-wrap">
-                      <StagePill stage={v.highestStage} />
-                      <StageProgressBar stage={v.highestStage} />
+                    <div className="vj-card-right">
+                      <div className="vj-card-stage-wrap">
+                        <StagePill stage={v.highestStage} />
+                        <StageProgressBar stage={v.highestStage} />
+                      </div>
+                      {isOpen
+                        ? <ChevronUp   size={16} className="vj-chevron" />
+                        : <ChevronDown size={16} className="vj-chevron" />
+                      }
                     </div>
                     {isOpen
                       ? <ChevronUp   size={16} className="vj-chevron" />
@@ -471,15 +516,36 @@ const VisitorJourney = ({ recentViews = [] }) => {
                               {duration && <>&nbsp;·&nbsp;⏱ {duration} on page</>}
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Show more / Show less button — only visible when there are more than 5 */}
+          {filtered.length > DISPLAY_LIMIT && (
+            <button
+              onClick={() => setShowAll(p => !p)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: '6px', width: '100%', marginTop: '12px',
+                padding: '9px 0', borderRadius: '10px',
+                border: '1px dashed #c7d2fe',
+                background: showAll ? '#f8fafc' : '#eef2ff',
+                color: '#6366f1', fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}
+            >
+              {showAll
+                ? <><ChevronUp size={15} /> Show less</>
+                : <><ChevronDown size={15} /> Show {hiddenCount} more visitor{hiddenCount !== 1 ? 's' : ''}</>
+              }
+            </button>
+          )}
+        </>
       )}
     </div>
   );
