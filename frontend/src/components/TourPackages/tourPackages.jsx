@@ -6,6 +6,7 @@ import './tourPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
+import usePageTracker from '../../hooks/usePageTracker';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -55,37 +56,9 @@ function TourPackagesContent() {
     fetchTours();
   }, []);
 
-  // ============================================================
-  // PAGE VIEW TRACKER
-  // ============================================================
-  useEffect(() => {
-    const trackPageView = async () => {
-      try {
-        let visitorIp = 'unknown';
-        try {
-          const ipRes = await fetch('https://api.ipify.org?format=json');
-          const ipData = await ipRes.json();
-          visitorIp = ipData.ip;
-        } catch {
-          // silent fail
-        }
-
-        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            page: 'tours',
-            path: '/tours',
-            label: 'Tour Packages Page',
-            visitorIp,
-          }),
-        });
-      } catch (err) {
-        console.warn('⚠️ Tour page view tracking failed:', err);
-      }
-    };
-    trackPageView();
-  }, []);
+  // ── Page View Tracker ────────────────────────────────────────────
+  // Fires once on mount — permanent dedup per visitor IP.
+  usePageTracker('tours', '/tours', 'Tour Packages Page');
 
   // ============================================================
   // DERIVED FILTER OPTIONS

@@ -3,14 +3,14 @@ const mongoose = require('mongoose');
 // ===================================================================
 // PAGE VIEW MODEL
 // Tracks every visit to key frontend pages
-// pages: 'packages' | 'booking' | 'flights' | 'services'
+// pages: 'packages' | 'booking' | 'flights' | 'services' | 'tours'
 // ===================================================================
 const pageViewSchema = new mongoose.Schema(
   {
     page: {
       type: String,
       required: true,
-      enum: ['packages', 'booking', 'flights', 'services'],
+      enum: ['packages', 'booking', 'flights', 'services', 'tours'],
       index: true,
     },
     path: {
@@ -33,10 +33,30 @@ const pageViewSchema = new mongoose.Schema(
     // ── Unique visitor tracking ──────────────────────────────────────
     // visitorId = SHA-256 hash of the client's real IP address.
     // Sent from the frontend via ipify, used to deduplicate views.
-    // A visitor is counted once per page per 24-hour window.
+    // A visitor is counted ONCE per page — permanently (no time window).
     visitorId: {
       type: String,
+      required: true,
+      index: true,
+    },
+
+    // ── Journey Stage for GHL Pipeline ────────────────────────────────
+    stage: {
+      type: String,
+      enum: ['awareness', 'interest', 'consideration', 'intent', 'conversion'],
+      default: 'awareness',
+      index: true,
+    },
+
+    // Optional but useful
+    sessionId: {
+      type: String,
       default: null,
+    },
+    email: {
+      type: String,
+      default: null,
+      lowercase: true,
       index: true,
     },
   },
@@ -47,8 +67,10 @@ const pageViewSchema = new mongoose.Schema(
 
 pageViewSchema.index({ createdAt: -1 });
 pageViewSchema.index({ page: 1, createdAt: -1 });
-// Compound index used by the duplicate-check query in the route
-pageViewSchema.index({ visitorId: 1, page: 1, createdAt: -1 });
+// Main unique check — permanent per visitorId + page
+pageViewSchema.index({ visitorId: 1, page: 1 });
+pageViewSchema.index({ page: 1, stage: 1, createdAt: -1 });
+pageViewSchema.index({ visitorId: 1, stage: 1 });
 
 const PageView = mongoose.model('PageView', pageViewSchema);
 

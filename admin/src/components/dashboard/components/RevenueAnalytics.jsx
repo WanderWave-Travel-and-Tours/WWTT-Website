@@ -21,9 +21,12 @@ import {
   Eye,
   ShoppingBag,
   BarChart2,
-  Package
+  Package,
+  Map,
+  Users,
 } from "lucide-react";
 import "./RevenueAnalytics.css";
+import VisitorJourney from './VisitorJourney';
 
 const RevenueAnalytics = ({ 
   stats, 
@@ -42,6 +45,7 @@ const RevenueAnalytics = ({
     bookingPageViews: 0,
     flightsPageViews: 0,
     servicesPageViews: 0,
+    toursPageViews: 0,
     topViewedPackages: [],
     recentViews: [],
     dailyViewsData: [],
@@ -273,6 +277,19 @@ const RevenueAnalytics = ({
     const bookingPageViews  = filtered.filter(v => v.page === 'booking').length;
     const flightsPageViews  = filtered.filter(v => v.page === 'flights').length;
     const servicesPageViews = filtered.filter(v => v.page === 'services').length;
+    const toursPageViews    = filtered.filter(v => v.page === 'tours').length;
+
+    // Journey stage breakdown from filtered views
+    const stageOrder = ['awareness', 'interest', 'consideration', 'intent', 'conversion'];
+    const stageCounts = {};
+    stageOrder.forEach(s => { stageCounts[s] = 0; });
+    filtered.forEach(v => {
+      if (v.stage && stageCounts[v.stage] !== undefined) stageCounts[v.stage]++;
+    });
+    const stageBreakdown = stageOrder.map(stage => ({
+      stage,
+      count: stageCounts[stage],
+    }));
 
     // Build lookups from allPackages for enrichment
     const pkgLookupById   = allPackages.reduce((acc, pkg) => { if (pkg._id) acc[String(pkg._id)] = pkg; return acc; }, {});
@@ -361,8 +378,10 @@ const RevenueAnalytics = ({
       bookingPageViews,
       flightsPageViews,
       servicesPageViews,
+      toursPageViews,
       topViewedPackages,
       dailyViewsData: chartData,
+      stageBreakdown,
     };
   }, [analyticsDateWindow, pageViewStats.recentViews, viewMode, allPackages]);
 
@@ -748,6 +767,17 @@ const RevenueAnalytics = ({
             </div>
           </div>
 
+          <div className="rev-pv-card rev-pv-card--tours">
+            <div className="rev-pv-card-icon">
+              <Map size={22} />
+            </div>
+            <div className="rev-pv-card-body">
+              <span className="rev-pv-card-label">Tour Packages</span>
+              <span className="rev-pv-card-value">{(filteredPageViewStats.toursPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-sub">Tour Page Visits</span>
+            </div>
+          </div>
+
           <div className="rev-pv-card rev-pv-card--rate">
             <div className="rev-pv-card-icon">
               <TrendingUp size={22} />
@@ -796,6 +826,70 @@ const RevenueAnalytics = ({
           </div>
         )}
       </div>
+
+      {/* ─── JOURNEY STAGE FUNNEL ─── */}
+      {filteredPageViewStats.stageBreakdown && filteredPageViewStats.stageBreakdown.some(s => s.count > 0) && (
+        <div className="rev-stage-section">
+          <div className="rev-pageviews-header">
+            <div className="rev-pageviews-title-wrap">
+              <Users size={18} className="rev-pageviews-icon" />
+              <h3 className="rev-pageviews-title">
+                Visitor Journey Stages
+                <span className="rev-pageviews-period">— {getViewModeLabel()}</span>
+              </h3>
+            </div>
+            <span className="rev-pageviews-badge">GHL Pipeline</span>
+          </div>
+
+          <div className="rev-stage-funnel">
+            {(() => {
+              const stageLabels = {
+                awareness:     { label: 'Awareness',     desc: 'Visited any page',          color: '#6366f1' },
+                interest:      { label: 'Interest',      desc: 'Browsed packages / tours',  color: '#3b82f6' },
+                consideration: { label: 'Consideration', desc: 'Viewed specific package',   color: '#f59e0b' },
+                intent:        { label: 'Intent',        desc: 'Reached booking page',      color: '#10b981' },
+                conversion:    { label: 'Conversion',    desc: 'Completed a booking',       color: '#22c55e' },
+              };
+              const topCount = filteredPageViewStats.stageBreakdown[0]?.count || 1;
+
+              return filteredPageViewStats.stageBreakdown.map((item, idx) => {
+                const { label, desc, color } = stageLabels[item.stage] || {};
+                const barPct = Math.max(4, Math.round((item.count / topCount) * 100));
+                const prevCount = idx > 0 ? filteredPageViewStats.stageBreakdown[idx - 1].count : null;
+                const dropOff = prevCount && prevCount > 0
+                  ? Math.round(((prevCount - item.count) / prevCount) * 100)
+                  : null;
+
+                return (
+                  <div key={item.stage} className="rev-stage-row">
+                    <div className="rev-stage-label-col">
+                      <span className="rev-stage-name" style={{ color }}>{label}</span>
+                      <span className="rev-stage-desc">{desc}</span>
+                    </div>
+                    <div className="rev-stage-bar-col">
+                      <div className="rev-stage-bar-track">
+                        <div
+                          className="rev-stage-bar-fill"
+                          style={{ width: `${barPct}%`, backgroundColor: color }}
+                        />
+                      </div>
+                    </div>
+                    <div className="rev-stage-count-col">
+                      <span className="rev-stage-count">{item.count.toLocaleString()}</span>
+                      {dropOff !== null && (
+                        <span className="rev-stage-dropoff">↓ {dropOff}%</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ─── VISITOR JOURNEY TRACKER ─── */}
+      <VisitorJourney recentViews={pageViewStats.recentViews} />
     </div>
   );
 };
