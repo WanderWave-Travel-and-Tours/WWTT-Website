@@ -7,6 +7,7 @@ import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -59,6 +60,13 @@ function TourPackagesContent() {
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
   usePageTracker({ page: 'tours', path: '/tours', label: 'Tour Packages Page' });
+
+  // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
+  useGHLTrigger({ 
+    enabled: true, 
+    delayMinutes: 1,     // 1 minute
+    triggerOnExit: true 
+  });
 
   // ============================================================
   // DERIVED FILTER OPTIONS
