@@ -16,36 +16,40 @@ function getVisitorId(req) {
     req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
     req.socket?.remoteAddress ||
     'unknown';
-  return crypto.createHash('sha256').update(ip).digest('hex');
+  return {
+    visitorId: crypto.createHash('sha256').update(ip).digest('hex'),
+    ipAddress: ip,
+  };
 }
 
 // ===================================================================
 // HELPER — determines the journey stage based on page/path/label.
-// Used for GHL pipeline automation.
 // ===================================================================
 function determineStage(page, path, label, packageId) {
   if (page === 'booking' || path?.includes('booking') || label?.toLowerCase().includes('book')) {
-    return 'intent';
+    return packageId ? 'consideration' : 'intent';
   }
   if (packageId || path?.includes('/package') || path?.includes('/tour')) {
     return 'consideration';
   }
-  if (page === 'packages' || page === 'tours' || page === 'flights') {
+  if (page === 'packages' || page === 'tours') {
     return 'interest';
   }
-  if (page === 'services') {
-    return 'interest';
+  if (page === 'flights' || page === 'services') {
+    return 'awareness';
   }
   return 'awareness';
 }
 
 // ===================================================================
 // POST /api/page-views
-// Records a single UNIQUE page view per visitor IP — permanently.
-// Once an IP has viewed a specific page, it will never count again
-// for that exact page, even after many days or weeks.
-// Called silently from the frontend.
-// Body: { page, path, label, packageId?, packageName?, visitorIp?, sessionId?, email? }
+// Records EVERY page visit as its own document — full history logging.
+// Deduplication is at the SESSION level: same visitor + same page
+// within the same session is counted only once (prevents rapid
+// refresh spam), but a new session always creates a new record.
+//
+// Body: { page, path, label?, packageId?, packageName?,
+//         visitorIp?, sessionId, email? }
 // ===================================================================
 router.post('/', async (req, res) => {
   try {
@@ -66,48 +70,61 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // ── Permanent unique-view deduplication ──────────────────────────
-    // Same visitor IP on the same page is NEVER counted again,
-    // regardless of how much time has passed.
-    const visitorId = getVisitorId(req);
+    const { visitorId, ipAddress } = getVisitorId(req);
 
-    const alreadyViewed = await PageView.exists({
-      visitorId,
-      page,
-    });
-
-    if (alreadyViewed) {
-      console.log(`👁️  Duplicate view skipped (permanent): [${page}] ${path} — visitor already counted`);
-      return res.status(200).json({
-        status: 'ok',
-        message: 'Page view already recorded for this visitor',
-        unique: false,
+    // ── Session-level dedup ──────────────────────────────────────────
+    // Same visitor + same page + same session → skip (prevents double-log
+    // on React strict mode double-render or rapid revisit within same tab).
+    if (sessionId) {
+      const alreadyInSession = await PageView.exists({
+        visitorId,
+        page,
+        sessionId,
       });
+
+      if (alreadyInSession) {
+        console.log(`👁️  Session-duplicate skipped: [${page}] visitor already counted this session`);
+        return res.status(200).json({
+          status: 'ok',
+          message: 'Already recorded in this session',
+          unique: false,
+        });
+      }
     }
 
-    // Determine journey stage for GHL pipeline
+    // ── Clear stoppedHere on all previous records for this visitor ───
+    // When they navigate to a new page, unmark the old "last page".
+    // The new record will be unmarked by default (stoppedHere: false).
+    await PageView.updateMany(
+      { visitorId, stoppedHere: true },
+      { $set: { stoppedHere: false } }
+    );
+
     const stage = determineStage(page, path, label, packageId);
 
     const view = new PageView({
       page,
       path,
-      label: label || '',
-      packageId: packageId || null,
+      label:       label       || '',
+      packageId:   packageId   || null,
       packageName: packageName || null,
       visitorId,
+      ipAddress,
       stage,
-      sessionId: sessionId || null,
-      email: email || null,
+      sessionId:   sessionId   || null,
+      email:       email       || null,
+      stoppedHere: false,  // will be set true on tab close
     });
 
     await view.save();
 
-    console.log(`📊 Unique page view recorded (permanent): [${page}] ${path} | Stage: ${stage}`);
+    console.log(`📊 Page view recorded: [${page}] ${path} | Stage: ${stage} | Visitor: ${visitorId.slice(0, 8)}…`);
 
     return res.status(201).json({
       status: 'ok',
       message: 'Page view recorded',
       unique: true,
+      viewId: view._id,          // ← returned so frontend can PATCH stoppedHere later
     });
   } catch (err) {
     console.error('❌ Error recording page view:', err);
@@ -120,9 +137,51 @@ router.post('/', async (req, res) => {
 });
 
 // ===================================================================
+// PATCH /api/page-views/:id/stop
+// Called from the frontend on beforeunload / visibilitychange (hidden).
+// Marks the specific view record as the last page the visitor was on.
+// Also records time spent on page if provided.
+//
+// Body: { timeOnPageSeconds? }
+// ===================================================================
+router.patch('/:id/stop', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timeOnPageSeconds } = req.body;
+
+    const update = {
+      stoppedHere: true,
+      stoppedAt:   new Date(),
+    };
+
+    if (typeof timeOnPageSeconds === 'number' && timeOnPageSeconds >= 0) {
+      update.timeOnPageSeconds = Math.round(timeOnPageSeconds);
+    }
+
+    const view = await PageView.findByIdAndUpdate(id, { $set: update }, { new: true });
+
+    if (!view) {
+      return res.status(404).json({ status: 'error', message: 'View record not found' });
+    }
+
+    console.log(`🛑 Visitor stopped at [${view.page}] — ${view.path} | Time: ${update.timeOnPageSeconds ?? '?'}s`);
+
+    return res.status(200).json({ status: 'ok', message: 'Stop recorded' });
+  } catch (err) {
+    console.error('❌ Error recording stop:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to record stop',
+      error: err.message,
+    });
+  }
+});
+
+// ===================================================================
 // GET /api/page-views/stats
 // Returns aggregated page view + booking count stats for the dashboard.
-// Both datasets are returned in one response to avoid a second fetch.
+// recentViews now includes visitorId + email so VisitorJourney can
+// group records into per-visitor histories.
 // ===================================================================
 router.get('/stats', async (req, res) => {
   try {
@@ -139,8 +198,8 @@ router.get('/stats', async (req, res) => {
       { $match: { page: 'booking', packageName: { $ne: null } } },
       {
         $group: {
-          _id: '$packageName',
-          views: { $sum: 1 },
+          _id:       '$packageName',
+          views:     { $sum: 1 },
           packageId: { $first: '$packageId' },
         },
       },
@@ -148,19 +207,25 @@ router.get('/stats', async (req, res) => {
       { $limit: 10 },
       {
         $project: {
-          _id: 0,
+          _id:       0,
           packageName: '$_id',
-          packageId: 1,
-          views: 1,
+          packageId:   1,
+          views:       1,
         },
       },
     ]);
 
-    // ── Recent 5000 page views (dashboard date-range filtering) ──────
+    // ── Recent page views ────────────────────────────────────────────
+    // NOW includes visitorId + email so VisitorJourney can group by
+    // visitor and reconstruct each person's full page history.
+    // stoppedHere / stoppedAt so the frontend can show "last page" badge.
     const recentViews = await PageView.find()
       .sort({ createdAt: -1 })
       .limit(5000)
-      .select('page path label packageName packageId createdAt stage')
+      .select(
+        'page path label packageName packageId createdAt stage ' +
+        'visitorId email sessionId stoppedHere stoppedAt timeOnPageSeconds'
+      )
       .lean();
 
     // ── Daily page view breakdown — last 30 days ─────────────────────
@@ -182,37 +247,69 @@ router.get('/stats', async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
     ]);
 
-    // ── Unique visitors per journey stage (for GHL pipeline insight) ─
+    // ── Unique visitors per journey stage ────────────────────────────
     const stageStats = await PageView.aggregate([
-      { $group: { _id: '$stage', uniqueVisitors: { $addToSet: '$visitorId' } } },
-      { $project: { stage: '$_id', _id: 0, uniqueVisitors: { $size: '$uniqueVisitors' } } },
+      {
+        $group: {
+          _id:            '$stage',
+          uniqueVisitors: { $addToSet: '$visitorId' },
+        },
+      },
+      {
+        $project: {
+          stage:          '$_id',
+          _id:            0,
+          uniqueVisitors: { $size: '$uniqueVisitors' },
+        },
+      },
       { $sort: { uniqueVisitors: -1 } },
     ]);
 
-    // ── Booking totals — sourced directly from the Booking model ────
-    // We no longer use the BookingCount collection here because it can
-    // hold stale / null-bookingId records that inflate the count.
-    // Ground truth is the actual Booking documents (isArchive !== 'Yes').
+    // ── Visitor journey summary ──────────────────────────────────────
+    // Groups all views by visitorId so the dashboard can show a
+    // "per visitor" breakdown: total pages, last page, highest stage.
+    const visitorSummaries = await PageView.aggregate([
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $group: {
+          _id:         '$visitorId',
+          email:       { $first: '$email' },
+          totalPages:  { $sum: 1 },
+          lastPage:    { $first: '$page' },
+          lastPath:    { $first: '$path' },
+          lastSeen:    { $first: '$createdAt' },
+          firstSeen:   { $last:  '$createdAt' },
+          stoppedHere: { $first: '$stoppedHere' },
+          stoppedAt:   { $first: '$stoppedAt' },
+          stages:      { $addToSet: '$stage' },
+        },
+      },
+      { $sort: { lastSeen: -1 } },
+      { $limit: 500 },
+    ]);
+
+    // ── Booking data (ground truth from Booking model) ───────────────
     const activeBookingFilter = { isArchive: { $ne: 'Yes' } };
 
     const totalBookingCounts = await Booking.countDocuments(activeBookingFilter);
 
-    // ── Top booked packages (from actual Booking records) ────────────
     const topBookedPackages = await Booking.aggregate([
       { $match: { ...activeBookingFilter, packageName: { $ne: null } } },
       {
         $group: {
-          _id: '$packageName',
+          _id:          '$packageName',
           bookingCounts: { $sum: 1 },
-          packageId:     { $first: '$packageId' },
-          totalRevenue:  { $sum: '$totalAmount' },
+          packageId:    { $first: '$packageId' },
+          totalRevenue: { $sum: '$totalAmount' },
         },
       },
       { $sort: { bookingCounts: -1 } },
       { $limit: 10 },
       {
         $project: {
-          _id: 0,
+          _id:           0,
           packageName:   '$_id',
           packageId:     1,
           bookingCounts: 1,
@@ -221,9 +318,6 @@ router.get('/stats', async (req, res) => {
       },
     ]);
 
-    // ── Recent 5000 bookings for frontend date-range filtering ───────
-    // Field names kept identical to the old BookingCount shape so
-    // Reporting.jsx needs zero changes.
     const recentBookingCounts = await Booking.find(activeBookingFilter)
       .sort({ createdAt: -1 })
       .limit(5000)
@@ -241,10 +335,11 @@ router.get('/stats', async (req, res) => {
         servicesPageViews,
         toursPageViews,
         topViewedPackages,
-        recentViews,
+        recentViews,           // ← now has visitorId, email, stoppedHere, stoppedAt
         dailyBreakdown,
         stageStats,
-        // Booking count fields (same response, no extra fetch needed)
+        visitorSummaries,      // ← NEW: pre-aggregated per-visitor summary
+        // Booking count fields
         totalBookingCounts,
         topBookedPackages,
         recentBookingCounts,
@@ -290,9 +385,36 @@ router.get('/', async (req, res) => {
 });
 
 // ===================================================================
+// GET /api/page-views/visitor/:visitorId
+// Returns the FULL page history for a single visitor.
+// Useful for drilling down into one person's journey.
+// ===================================================================
+router.get('/visitor/:visitorId', async (req, res) => {
+  try {
+    const { visitorId } = req.params;
+
+    const views = await PageView.find({ visitorId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      status: 'ok',
+      count: views.length,
+      data: views,
+    });
+  } catch (err) {
+    console.error('❌ Error fetching visitor history:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch visitor history',
+      error: err.message,
+    });
+  }
+});
+
+// ===================================================================
 // POST /api/page-views/booking-count
 // Records a confirmed booking from BookingFormModal.
-// Merged here so no separate route file or extra deploy is needed.
 // Body: { packageId?, packageName?, paxCount?, paymentType?, totalAmount? }
 // ===================================================================
 router.post('/booking-count', async (req, res) => {
@@ -329,7 +451,6 @@ router.post('/booking-count', async (req, res) => {
 // ===================================================================
 // DELETE /api/page-views/booking-counts/reset
 // Resets the View-to-Book Rate by wiping ALL BookingCount records.
-// PageView records are NOT affected — page view stats stay intact.
 // ===================================================================
 router.delete('/booking-counts/reset', async (req, res) => {
   try {

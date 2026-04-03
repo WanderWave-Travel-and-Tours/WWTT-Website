@@ -8,7 +8,7 @@ import FlightSearchResults from "./FlightSearchResults";
 import FlightBookingModal from "./flightBookingModal";
 import { ChevronLeft } from 'lucide-react';
 import { BookingStateManager } from '../../utils/bookingStateManager';
-import usePageTracker from '../../hooks/usePageTracker';
+import { usePageTracker } from '../../hooks/usePageTracker';
 
 function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestination, prefilledPassengers }) {
   const location = useLocation();
@@ -25,7 +25,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   }, [isFromBooking, packageData]);
 
   // ── Page View Tracker ────────────────────────────────────────────
-  usePageTracker('flights', '/flights', 'Flight Search Page');
+  usePageTracker({ page: 'flights', path: '/flights', label: 'Flight Search Page' });
 
   const shouldShowBackButton = context && context.returnTo && (isFromBooking || packageData);
 

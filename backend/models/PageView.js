@@ -40,6 +40,12 @@ const pageViewSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Raw IP address (for internal reference only — not exposed to frontend)
+    ipAddress: {
+      type: String,
+      default: null,
+    },
+
     // ── Journey Stage for GHL Pipeline ────────────────────────────────
     stage: {
       type: String,
@@ -59,6 +65,31 @@ const pageViewSchema = new mongoose.Schema(
       lowercase: true,
       index: true,
     },
+
+    // ── Exit / Stop Tracking ─────────────────────────────────────────
+    // stoppedHere = true means this was the last page the visitor was on
+    // before closing the tab or navigating away from the site entirely.
+    // Set to true via PATCH /api/page-views/:id/stop (sendBeacon on unload).
+    // Cleared (set back to false) on all previous records when a new page
+    // visit is recorded for the same visitor.
+    stoppedHere: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    // Timestamp of when the stop signal was received from the frontend.
+    stoppedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // How long the visitor spent on this page (in seconds).
+    // Calculated on the frontend: Date.now() - arrival time, sent on stop.
+    timeOnPageSeconds: {
+      type: Number,
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
@@ -71,6 +102,7 @@ pageViewSchema.index({ page: 1, createdAt: -1 });
 pageViewSchema.index({ visitorId: 1, page: 1 });
 pageViewSchema.index({ page: 1, stage: 1, createdAt: -1 });
 pageViewSchema.index({ visitorId: 1, stage: 1 });
+pageViewSchema.index({ stoppedHere: 1, visitorId: 1 });
 
 const PageView = mongoose.model('PageView', pageViewSchema);
 

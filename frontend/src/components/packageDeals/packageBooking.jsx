@@ -7,6 +7,7 @@ import {
   CheckCircle, Zap, Star 
 } from 'lucide-react';
 import './packageBooking.css';
+import { usePageTracker } from '../../hooks/usePageTracker';
 
 function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) {
   const [customizationData, setCustomizationData] = useState(null);
@@ -32,34 +33,19 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
 
   // ============================================================
   // PAGE VIEW TRACKER — fires once per package booking page view.
-  // Waits for userIpAddress (already fetched via ipify below) so
-  // the backend can deduplicate by actual visitor IP address.
+  // Uses the shared hook so stop signals (tab close/navigate away)
+  // are automatically sent via sendBeacon.
   // ============================================================
-  useEffect(() => {
-    if (!pkg || !userIpAddress) return;
-    const packageId = pkg._id || pkg.id;
-    const packageName = pkg.name || pkg.title || 'Unknown Package';
+  const packageId   = pkg._id || pkg.id;
+  const packageName = pkg.name || pkg.title || 'Unknown Package';
 
-    const trackPageView = async () => {
-      try {
-        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            page: 'booking',
-            path: `/booking/${packageId}`,
-            label: `Booking Page: ${packageName}`,
-            packageId,
-            packageName,
-            visitorIp: userIpAddress,
-          }),
-        });
-      } catch (err) {
-        console.warn('⚠️ Booking page view tracking failed:', err);
-      }
-    };
-    trackPageView();
-  }, [userIpAddress, pkg?.id, pkg?._id]);
+  usePageTracker({
+    page:        'booking',
+    path:        `/booking/${packageId}`,
+    label:       `Booking Page: ${packageName}`,
+    packageId,
+    packageName,
+  });
 
   // ============================================
   // PREVENT BACK NAVIGATION FROM BOOKING PAGE

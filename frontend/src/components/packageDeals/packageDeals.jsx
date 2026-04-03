@@ -11,7 +11,7 @@ import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
-import usePageTracker from '../../hooks/usePageTracker';
+import { usePageTracker } from '../../hooks/usePageTracker';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -48,7 +48,7 @@ function PackageDealsContent() {
 
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
-  usePageTracker('packages', '/packages', 'Package Deals Page');
+  usePageTracker({ page: 'packages', path: '/packages', label: 'Package Deals Page' });
 
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
