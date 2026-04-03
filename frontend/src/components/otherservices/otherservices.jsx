@@ -34,6 +34,7 @@ import PassportWizard from "./PassportWizard";
 import { useToast } from "../toast/ToastManager";
 // Import the Custom Confirm Modal
 import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
+import usePageTracker from '../../hooks/usePageTracker';
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -181,39 +182,9 @@ const OtherServices = ({ setAuthPage }) => {
     fetchServices();
   }, []);
 
-  // ============================================================
-  // PAGE VIEW TRACKER — fires once on mount for /services page
-  // Fetches real client IP via ipify so the backend can deduplicate
-  // by actual visitor IP address (not the loopback/proxy address).
-  // ============================================================
-  useEffect(() => {
-    const trackPageView = async () => {
-      try {
-        let visitorIp = 'unknown';
-        try {
-          const ipRes = await fetch('https://api.ipify.org?format=json');
-          const ipData = await ipRes.json();
-          visitorIp = ipData.ip;
-        } catch {
-          // If ipify fails, proceed anyway — backend will use fallback
-        }
-
-        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            page: 'services',
-            path: '/services',
-            label: 'Other Services Page',
-            visitorIp,
-          }),
-        });
-      } catch (err) {
-        console.warn('⚠️ Services page view tracking failed:', err);
-      }
-    };
-    trackPageView();
-  }, []);
+  // ── Page View Tracker ────────────────────────────────────────────
+  // Fires once on mount — permanent dedup per visitor IP.
+  usePageTracker('services', '/services', 'Other Services Page');
 
   const fetchServices = async () => {
     try {

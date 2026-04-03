@@ -1219,3 +1219,110 @@
   background: #ef4444;
   color: #fff;
 }
+
+/* ================================================================
+   ADD THESE STYLES TO YOUR RevenueAnalytics.css
+   New classes for: Tours page view card + Journey Stage Funnel
+================================================================ */
+
+/* ── Tours Card (matches existing rev-pv-card pattern) ─────── */
+.rev-pv-card--tours {
+  border-top: 3px solid #f97316;
+}
+.rev-pv-card--tours .rev-pv-card-icon {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  color: #f97316;
+}
+
+/* ── Journey Stage Funnel Section ───────────────────────────── */
+.rev-stage-section {
+  margin-top: 24px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rev-stage-funnel {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rev-stage-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 90px;
+  align-items: center;
+  gap: 16px;
+}
+
+.rev-stage-label-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rev-stage-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.rev-stage-desc {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.rev-stage-bar-col {
+  flex: 1;
+}
+
+.rev-stage-bar-track {
+  background: #f1f5f9;
+  border-radius: 99px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.rev-stage-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+.rev-stage-count-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.rev-stage-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.rev-stage-dropoff {
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .rev-stage-row {
+    grid-template-columns: 130px 1fr 70px;
+    gap: 10px;
+  }
+
+  .rev-stage-name {
+    font-size: 12px;
+  }
+
+  .rev-stage-desc {
+    display: none;
+  }
+}

@@ -20,14 +20,36 @@ function getVisitorId(req) {
 }
 
 // ===================================================================
+// HELPER — determines the journey stage based on page/path/label.
+// Used for GHL pipeline automation.
+// ===================================================================
+function determineStage(page, path, label, packageId) {
+  if (page === 'booking' || path?.includes('booking') || label?.toLowerCase().includes('book')) {
+    return 'intent';
+  }
+  if (packageId || path?.includes('/package') || path?.includes('/tour')) {
+    return 'consideration';
+  }
+  if (page === 'packages' || page === 'tours' || page === 'flights') {
+    return 'interest';
+  }
+  if (page === 'services') {
+    return 'interest';
+  }
+  return 'awareness';
+}
+
+// ===================================================================
 // POST /api/page-views
-// Records a single UNIQUE page view per visitor IP per page per 24 hrs.
+// Records a single UNIQUE page view per visitor IP — permanently.
+// Once an IP has viewed a specific page, it will never count again
+// for that exact page, even after many days or weeks.
 // Called silently from the frontend.
-// Body: { page, path, label, packageId?, packageName?, visitorIp? }
+// Body: { page, path, label, packageId?, packageName?, visitorIp?, sessionId?, email? }
 // ===================================================================
 router.post('/', async (req, res) => {
   try {
-    const { page, path, label, packageId, packageName } = req.body;
+    const { page, path, label, packageId, packageName, sessionId, email } = req.body;
 
     if (!page || !path) {
       return res.status(400).json({
@@ -36,7 +58,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const validPages = ['packages', 'booking', 'flights', 'services'];
+    const validPages = ['packages', 'booking', 'flights', 'services', 'tours'];
     if (!validPages.includes(page)) {
       return res.status(400).json({
         status: 'error',
@@ -44,26 +66,27 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // ── Unique-view deduplication ────────────────────────────────────
-    // Same visitor IP on the same page within the last 24 hours
-    // is NOT counted again.
+    // ── Permanent unique-view deduplication ──────────────────────────
+    // Same visitor IP on the same page is NEVER counted again,
+    // regardless of how much time has passed.
     const visitorId = getVisitorId(req);
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const alreadyViewed = await PageView.exists({
       visitorId,
       page,
-      createdAt: { $gte: oneDayAgo },
     });
 
     if (alreadyViewed) {
-      console.log(`👁️  Duplicate view skipped: [${page}] ${path} — visitor already counted`);
+      console.log(`👁️  Duplicate view skipped (permanent): [${page}] ${path} — visitor already counted`);
       return res.status(200).json({
         status: 'ok',
-        message: 'Page view already recorded for this visitor today',
+        message: 'Page view already recorded for this visitor',
         unique: false,
       });
     }
+
+    // Determine journey stage for GHL pipeline
+    const stage = determineStage(page, path, label, packageId);
 
     const view = new PageView({
       page,
@@ -72,11 +95,14 @@ router.post('/', async (req, res) => {
       packageId: packageId || null,
       packageName: packageName || null,
       visitorId,
+      stage,
+      sessionId: sessionId || null,
+      email: email || null,
     });
 
     await view.save();
 
-    console.log(`📊 Unique page view recorded: [${page}] ${path}`);
+    console.log(`📊 Unique page view recorded (permanent): [${page}] ${path} | Stage: ${stage}`);
 
     return res.status(201).json({
       status: 'ok',
@@ -106,6 +132,7 @@ router.get('/stats', async (req, res) => {
     const bookingPageViews  = await PageView.countDocuments({ page: 'booking' });
     const flightsPageViews  = await PageView.countDocuments({ page: 'flights' });
     const servicesPageViews = await PageView.countDocuments({ page: 'services' });
+    const toursPageViews    = await PageView.countDocuments({ page: 'tours' });
 
     // ── Top viewed packages (booking page views only) ────────────────
     const topViewedPackages = await PageView.aggregate([
@@ -133,7 +160,7 @@ router.get('/stats', async (req, res) => {
     const recentViews = await PageView.find()
       .sort({ createdAt: -1 })
       .limit(5000)
-      .select('page path label packageName packageId createdAt')
+      .select('page path label packageName packageId createdAt stage')
       .lean();
 
     // ── Daily page view breakdown — last 30 days ─────────────────────
@@ -153,6 +180,13 @@ router.get('/stats', async (req, res) => {
         },
       },
       { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+    ]);
+
+    // ── Unique visitors per journey stage (for GHL pipeline insight) ─
+    const stageStats = await PageView.aggregate([
+      { $group: { _id: '$stage', uniqueVisitors: { $addToSet: '$visitorId' } } },
+      { $project: { stage: '$_id', _id: 0, uniqueVisitors: { $size: '$uniqueVisitors' } } },
+      { $sort: { uniqueVisitors: -1 } },
     ]);
 
     // ── Booking totals — sourced directly from the Booking model ────
@@ -205,9 +239,11 @@ router.get('/stats', async (req, res) => {
         bookingPageViews,
         flightsPageViews,
         servicesPageViews,
+        toursPageViews,
         topViewedPackages,
         recentViews,
         dailyBreakdown,
+        stageStats,
         // Booking count fields (same response, no extra fetch needed)
         totalBookingCounts,
         topBookedPackages,

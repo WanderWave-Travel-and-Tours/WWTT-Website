@@ -11,6 +11,7 @@ import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
+import usePageTracker from '../../hooks/usePageTracker';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -45,40 +46,9 @@ function PackageDealsContent() {
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
 
-  // ============================================================
-  // PAGE VIEW TRACKER — fires once on mount for /packages page
-  // Fetches real client IP via ipify so the backend can deduplicate
-  // by actual visitor IP address (not the loopback/proxy address).
-  // ============================================================
-  useEffect(() => {
-    const trackPageView = async () => {
-      try {
-        let visitorIp = 'unknown';
-        try {
-          const ipRes = await fetch('https://api.ipify.org?format=json');
-          const ipData = await ipRes.json();
-          visitorIp = ipData.ip;
-        } catch {
-          // If ipify fails, proceed anyway — backend will use fallback
-        }
-
-        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            page: 'packages',
-            path: '/packages',
-            label: 'Package Deals Page',
-            visitorIp,
-          }),
-        });
-      } catch (err) {
-        // Silent fail — never block UX for analytics
-        console.warn('⚠️ Page view tracking failed:', err);
-      }
-    };
-    trackPageView();
-  }, []);
+  // ── Page View Tracker ────────────────────────────────────────────
+  // Fires once on mount — permanent dedup per visitor IP.
+  usePageTracker('packages', '/packages', 'Package Deals Page');
 
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
