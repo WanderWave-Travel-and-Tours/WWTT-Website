@@ -9,12 +9,25 @@
   margin-top: 24px;
 }
 
-/* ── Header ───────────────────────────────────────────── */
+/* ── Animations ───────────────────────────────────────────── */
+@keyframes vj-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes vj-slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ───────────────────────────────────────────────── */
 .vj-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .vj-header-left {
   display: flex;
@@ -35,9 +48,13 @@
   font-size: 12px;
   color: #94a3b8;
   margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-/* ── Controls ─────────────────────────────────────────── */
+/* ── Controls ─────────────────────────────────────────────── */
 .vj-controls {
   display: flex;
   gap: 10px;
@@ -85,13 +102,7 @@
   border-color: #6366f1;
 }
 
-/* ── Exit Notification Toast ──────────────────────────────── */
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Visitor List ─────────────────────────────────────── */
+/* ── Visitor List ─────────────────────────────────────────── */
 .vj-list {
   display: flex;
   flex-direction: column;
@@ -111,7 +122,7 @@
   font-size: 14px;
 }
 
-/* ── Visitor Card ─────────────────────────────────────── */
+/* ── Visitor Card ─────────────────────────────────────────── */
 .vj-card {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -173,6 +184,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
 }
 .vj-card-right {
   display: flex;
@@ -192,7 +204,7 @@
   flex-shrink: 0;
 }
 
-/* ── Stage Pill ──────────────────────────────────────── */
+/* ── Stage Pill ──────────────────────────────────────────── */
 .vj-stage-pill {
   font-size: 11px;
   font-weight: 600;
@@ -201,7 +213,7 @@
   white-space: nowrap;
 }
 
-/* ── Progress Bar ─────────────────────────────────────── */
+/* ── Progress Bar ─────────────────────────────────────────── */
 .vj-progress-track {
   width: 100px;
   height: 4px;
@@ -215,7 +227,7 @@
   transition: width 0.4s ease;
 }
 
-/* ── Timeline ─────────────────────────────────────────── */
+/* ── Timeline ─────────────────────────────────────────────── */
 .vj-timeline {
   padding: 0 16px 14px;
   background: #fafafa;
@@ -267,20 +279,14 @@
   align-items: center;
   gap: 4px;
   margin-top: 3px;
+  flex-wrap: wrap;
 }
 
-/* ── Responsive ───────────────────────────────────────── */
+/* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .vj-card-stage-wrap {
-    min-width: 90px;
-  }
-  .vj-progress-track {
-    width: 70px;
-  }
-  .vj-controls {
-    flex-direction: column;
-  }
-  .vj-select {
-    width: 100%;
-  }
+  .vj-card-stage-wrap { min-width: 90px; }
+  .vj-progress-track  { width: 70px; }
+  .vj-controls        { flex-direction: column; }
+  .vj-select          { width: 100%; }
+  .vj-header          { flex-direction: column; align-items: flex-start; }
 }

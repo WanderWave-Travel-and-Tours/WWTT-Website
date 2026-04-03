@@ -12,6 +12,7 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -49,6 +50,13 @@ function PackageDealsContent() {
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
   usePageTracker({ page: 'packages', path: '/packages', label: 'Package Deals Page' });
+
+  // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
+  useGHLTrigger({ 
+    enabled: true, 
+    delayMinutes: 1,     // 1 minute
+    triggerOnExit: true 
+  });
 
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);

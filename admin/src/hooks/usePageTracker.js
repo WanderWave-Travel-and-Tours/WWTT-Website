@@ -10,8 +10,11 @@
 //   1. Fetches the visitor's real public IP via ipify (once per app session)
 //   2. Generates/reuses a stable sessionId per browser tab
 //   3. POSTs the page visit to /api/page-views → gets back a viewId
+//      (even on session-duplicate, the backend now returns the existing viewId)
 //   4. On tab close / page hide → PATCHes /api/page-views/:viewId/stop
 //      so the backend can mark exactly where the visitor stopped
+//   5. On tab re-focus (visibilitychange → visible) → PATCHes /api/page-views/:viewId/resume
+//      so the visitor shows as active again in the dashboard
 
 import { useEffect, useRef } from 'react';
 
@@ -51,6 +54,9 @@ export function usePageTracker({ page, path, label = '', packageId = null, packa
   useEffect(() => {
     let cancelled = false;
 
+    // ── Track (or recover) the view for this page ────────────────────
+    // The backend returns a viewId even on session-duplicate (dedup),
+    // so we can always set up stop/resume signalling correctly.
     async function trackView() {
       try {
         const visitorIp = await getPublicIp();
@@ -76,9 +82,12 @@ export function usePageTracker({ page, path, label = '', packageId = null, packa
         const data = await res.json();
 
         if (!cancelled && data.status === 'ok' && data.viewId) {
-          viewIdRef.current    = data.viewId;
-          startTimeRef.current = Date.now();
-          console.log(`📍 Tracking: [${page}] viewId=${data.viewId}`);
+          viewIdRef.current = data.viewId;
+          // Only reset the timer if this is a fresh arrival (not a re-track after tab resume)
+          if (!startTimeRef.current) {
+            startTimeRef.current = Date.now();
+          }
+          console.log(`📍 Tracking: [${page}] viewId=${data.viewId} unique=${data.unique}`);
         }
       } catch (err) {
         console.warn('⚠️ usePageTracker: failed to log view', err);
@@ -87,7 +96,7 @@ export function usePageTracker({ page, path, label = '', packageId = null, packa
 
     trackView();
 
-    // ── Stop tracking — called when user leaves ──────────────────────
+    // ── Stop tracking — called when user leaves or hides the tab ─────
     function sendStop() {
       const viewId = viewIdRef.current;
       if (!viewId) return;
@@ -114,14 +123,41 @@ export function usePageTracker({ page, path, label = '', packageId = null, packa
 
       console.log(`🛑 Stop sent: [${page}] viewId=${viewId} time=${timeOnPageSeconds}s`);
 
-      // Clear so we don't double-send
+      // Clear viewId so we don't double-send stop signals.
+      // startTimeRef is intentionally kept so accumulated time carries over on resume.
       viewIdRef.current = null;
     }
 
-    // visibilitychange: fires reliably on mobile and most desktop browsers
+    // ── Resume — called when the user switches back to this tab ──────
+    // Clears stoppedHere on the backend so the visitor shows as active.
+    // If viewIdRef was cleared by sendStop, re-calls trackView() to
+    // recover the existing viewId from the backend (dedup returns it).
+    function sendResume() {
+      const viewId = viewIdRef.current;
+
+      if (viewId) {
+        // We still have the viewId — send a lightweight resume PATCH
+        fetch(`${API_BASE}/${viewId}/resume`, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+        }).catch(() => {});
+        console.log(`▶️  Resume sent: [${page}] viewId=${viewId}`);
+      } else {
+        // viewId was cleared by sendStop — re-call trackView to recover it.
+        // The backend dedup will return the existing viewId for this session.
+        console.log(`🔄 Re-tracking after tab resume: [${page}]`);
+        trackView();
+      }
+    }
+
+    // ── Visibility handler ────────────────────────────────────────────
+    // hidden  → send stop (user switched tabs, minimized, locked screen)
+    // visible → send resume (user came back)
     function handleVisibilityChange() {
       if (document.visibilityState === 'hidden') {
         sendStop();
+      } else if (document.visibilityState === 'visible') {
+        sendResume();
       }
     }
 

@@ -75,19 +75,22 @@ router.post('/', async (req, res) => {
     // ── Session-level dedup ──────────────────────────────────────────
     // Same visitor + same page + same session → skip (prevents double-log
     // on React strict mode double-render or rapid revisit within same tab).
+    // FIX: Return the existing viewId so the frontend can still send stop
+    // signals (sendBeacon on tab close / visibilitychange).
     if (sessionId) {
-      const alreadyInSession = await PageView.exists({
+      const existingInSession = await PageView.findOne({
         visitorId,
         page,
         sessionId,
-      });
+      }).select('_id').lean();
 
-      if (alreadyInSession) {
+      if (existingInSession) {
         console.log(`👁️  Session-duplicate skipped: [${page}] visitor already counted this session`);
         return res.status(200).json({
           status: 'ok',
           message: 'Already recorded in this session',
           unique: false,
+          viewId: existingInSession._id,   // ← FIX: return existing id so stop/resume still works
         });
       }
     }
@@ -172,6 +175,38 @@ router.patch('/:id/stop', async (req, res) => {
     return res.status(500).json({
       status: 'error',
       message: 'Failed to record stop',
+      error: err.message,
+    });
+  }
+});
+
+// ===================================================================
+// PATCH /api/page-views/:id/resume
+// Called when a visitor returns to the tab (visibilitychange → visible).
+// Clears stoppedHere/stoppedAt so the visitor shows as active again.
+// ===================================================================
+router.patch('/:id/resume', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const view = await PageView.findByIdAndUpdate(
+      id,
+      { $set: { stoppedHere: false, stoppedAt: null } },
+      { new: true }
+    );
+
+    if (!view) {
+      return res.status(404).json({ status: 'error', message: 'View record not found' });
+    }
+
+    console.log(`▶️  Visitor resumed at [${view.page}] — ${view.path}`);
+
+    return res.status(200).json({ status: 'ok', message: 'Resume recorded' });
+  } catch (err) {
+    console.error('❌ Error recording resume:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to record resume',
       error: err.message,
     });
   }
@@ -290,6 +325,19 @@ router.get('/stats', async (req, res) => {
       { $limit: 500 },
     ]);
 
+    // ── Active session count ─────────────────────────────────────────
+    // Counts distinct sessionIds with any page view activity in the last
+    // 10 minutes. This correctly counts multiple open browser tabs from
+    // the same device as separate active sessions (unlike visitorId which
+    // is IP-based and collapses all tabs into one).
+    const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
+    const activeSessionIds = await PageView.distinct('sessionId', {
+      createdAt:  { $gte: tenMinsAgo },
+      sessionId:  { $ne: null },
+      stoppedHere: false,
+    });
+    const activeSessionCount = activeSessionIds.length;
+
     // ── Booking data (ground truth from Booking model) ───────────────
     const activeBookingFilter = { isArchive: { $ne: 'Yes' } };
 
@@ -338,7 +386,8 @@ router.get('/stats', async (req, res) => {
         recentViews,           // ← now has visitorId, email, stoppedHere, stoppedAt
         dailyBreakdown,
         stageStats,
-        visitorSummaries,      // ← NEW: pre-aggregated per-visitor summary
+        visitorSummaries,      // ← pre-aggregated per-visitor summary
+        activeSessionCount,    // ← NEW: number of distinct sessions active in last 10 min
         // Booking count fields
         totalBookingCounts,
         topBookedPackages,
