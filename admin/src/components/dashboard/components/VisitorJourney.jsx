@@ -1,15 +1,17 @@
 // src/components/Dashboard/VisitorJourney.jsx
-// Drop this anywhere in your dashboard. Pass recentViews from your /stats fetch.
 //
 // Usage:
 //   <VisitorJourney recentViews={pageViewStats.recentViews} />
+//
+// recentViews must now include: visitorId, email, sessionId,
+// stoppedHere, stoppedAt, timeOnPageSeconds (all returned by
+// the updated /api/page-views/stats endpoint).
 
-import React, { useMemo, useState } from 'react';
-import { Search, ChevronDown, ChevronUp, MapPin, Clock, Layers } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Search, ChevronDown, ChevronUp, MapPin, Clock, Layers, Wifi, WifiOff, Bell } from 'lucide-react';
 import './VisitorJourney.css';
 
 // ── Config ─────────────────────────────────────────────────────────────
-// Stage order from lowest to highest (matches RevenueAnalytics funnel)
 const STAGE_ORDER = ['awareness', 'interest', 'consideration', 'intent', 'conversion'];
 
 const STAGE_CONFIG = {
@@ -20,41 +22,16 @@ const STAGE_CONFIG = {
   conversion:    { label: 'Conversion',    color: '#22c55e', bg: '#f0fdf4' },
 };
 
-// ── PAGE → STAGE MAPPING ────────────────────────────────────────────────
-// This must match exactly how the backend/tracker assigns stages per page.
-// Based on the funnel logic in RevenueAnalytics.jsx:
-//   awareness     = any visit (home, services, flights, tours)
-//   interest      = browsing packages or tours page
-//   consideration = viewing a specific package (booking page with packageName)
-//   intent        = reached booking page (ready to book)
-//   conversion    = completed a booking
-const PAGE_TO_STAGE = {
-  home:     'awareness',
-  services: 'awareness',
-  flights:  'awareness',
-  tours:    'interest',
-  packages: 'interest',
-  booking:  'intent',        // default for booking page
-  // 'conversion' is set below if packageName is present AND status is confirmed
-};
-
-// Derive stage from a single view record (mirrors backend tracker logic)
+// Page to stage mapping — mirrors backend determineStage logic
 function deriveStage(view) {
-  // If the backend already set a valid stage, trust it
-  if (view.stage && STAGE_ORDER.includes(view.stage)) {
-    return view.stage;
-  }
-  // Fallback: derive from page
-  const page = view.page || '';
-  if (page === 'booking') {
-    // If packageName exists → visitor is considering a specific package
-    return view.packageName ? 'consideration' : 'intent';
-  }
-  return PAGE_TO_STAGE[page] || 'awareness';
+  if (view.stage && STAGE_ORDER.includes(view.stage)) return view.stage;
+  const { page, packageId } = view;
+  if (page === 'booking') return packageId ? 'consideration' : 'intent';
+  if (page === 'packages' || page === 'tours') return 'interest';
+  return 'awareness';
 }
 
 const PAGE_LABELS = {
-  home:     'Home',
   packages: 'Package Deals',
   booking:  'Booking',
   flights:  'Flights',
@@ -62,18 +39,29 @@ const PAGE_LABELS = {
   tours:    'Tours',
 };
 
+// ── Formatting helpers ──────────────────────────────────────────────────
 function formatRelative(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  if (!dateStr) return '—';
+  const diff  = Date.now() - new Date(dateStr).getTime();
   const mins  = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days  = Math.floor(diff / 86400000);
-  if (mins  < 1)   return 'just now';
-  if (mins  < 60)  return `${mins}m ago`;
-  if (hours < 24)  return `${hours}h ago`;
-  if (days  < 7)   return `${days}d ago`;
+  if (mins  < 1)  return 'just now';
+  if (mins  < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days  < 7)  return `${days}d ago`;
   return new Date(dateStr).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
 }
 
+function formatDuration(seconds) {
+  if (!seconds || seconds < 0) return null;
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────
 function StagePill({ stage }) {
   const cfg = STAGE_CONFIG[stage] || { label: stage, color: '#64748b', bg: '#f1f5f9' };
   return (
@@ -100,122 +88,142 @@ function StageProgressBar({ stage }) {
   );
 }
 
-// ── Current Page Badge ──────────────────────────────────────────────────
-function CurrentPageBadge({ page }) {
-  const label = PAGE_LABELS[page] || page;
-  return (
-    <span
-      style={{
-        fontSize: '10px',
-        fontWeight: 700,
-        padding: '2px 7px',
-        borderRadius: '99px',
-        background: '#fef9c3',
-        color: '#854d0e',
-        border: '1px solid #fde047',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      📍 Now: {label}
-    </span>
-  );
-}
-
 // ── Main Component ──────────────────────────────────────────────────────
 const VisitorJourney = ({ recentViews = [] }) => {
-  const [search, setSearch]       = useState('');
-  const [expandedId, setExpanded] = useState(null);
-  const [stageFilter, setStage]   = useState('all');
-  const [pageFilter, setPage]     = useState('all');
+  const [search,        setSearch]       = useState('');
+  const [expandedId,    setExpanded]     = useState(null);
+  const [pageFilter,    setPage]         = useState('all');
+  const [showActive,    setShowActive]   = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const prevVisitorsRef = useRef({});
 
-  // Group views by visitorId ─────────────────────────────────────────
+  // ── Group all view records by visitorId ─────────────────────────────
   const visitors = useMemo(() => {
     const map = {};
 
     recentViews.forEach(v => {
       const id = v.visitorId || 'unknown';
+
       if (!map[id]) {
         map[id] = {
-          visitorId:  id,
-          shortId:    'V-' + id.slice(0, 6).toUpperCase(),
-          email:      v.email || null,
-          pages:      [],
-          lastSeen:   v.createdAt,
-          firstSeen:  v.createdAt,
+          visitorId: id,
+          shortId:   'V-' + id.slice(0, 6).toUpperCase(),
+          email:     v.email || null,
+          pages:     [],
+          lastSeen:  v.createdAt,
+          firstSeen: v.createdAt,
         };
       }
+
       const vis = map[id];
 
-      // Track first/last seen
       if (new Date(v.createdAt) > new Date(vis.lastSeen))  vis.lastSeen  = v.createdAt;
       if (new Date(v.createdAt) < new Date(vis.firstSeen)) vis.firstSeen = v.createdAt;
-
-      // Derive correct stage from page (fixes wrong stage bug)
-      const derivedStage = deriveStage(v);
+      if (v.email && !vis.email) vis.email = v.email;
 
       vis.pages.push({
-        page:        v.page,
-        path:        v.path,
-        label:       v.label,
-        stage:       derivedStage,            // ← use derived, not raw v.stage
-        packageName: v.packageName || null,
-        createdAt:   v.createdAt,
+        _id:               v._id,
+        page:              v.page,
+        path:              v.path,
+        label:             v.label,
+        stage:             deriveStage(v),
+        packageName:       v.packageName       || null,
+        createdAt:         v.createdAt,
+        sessionId:         v.sessionId         || null,
+        stoppedHere:       !!v.stoppedHere,
+        stoppedAt:         v.stoppedAt         || null,
+        timeOnPageSeconds: v.timeOnPageSeconds || null,
       });
-
-      // Email — pick it up if any view has it
-      if (v.email && !vis.email) vis.email = v.email;
     });
 
-    return Object.values(map).map(v => {
-      // Sort pages newest first
-      v.pages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return Object.values(map).map(vis => {
+      // Sort newest first
+      vis.pages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      // Current page = the most recent page visit
-      v.currentPage = v.pages[0]?.page || null;
-      v.currentPageTime = v.pages[0]?.createdAt || null;
+      // Current (most recent) page
+      vis.currentPage     = vis.pages[0]?.page      || null;
+      vis.currentPath     = vis.pages[0]?.path      || null;
+      vis.currentPageTime = vis.pages[0]?.createdAt || null;
 
-      // Highest stage = highest stage index across all pages
-      const stageIdx = v.pages.reduce((best, p) => {
+      // Page where they closed the tab / left the site
+      const stoppedRecord = vis.pages.find(p => p.stoppedHere);
+      vis.stoppedPage = stoppedRecord?.page    || null;
+      vis.stoppedAt   = stoppedRecord?.stoppedAt || null;
+
+      // Highest stage reached across all visits
+      const stageIdx = vis.pages.reduce((best, p) => {
         const idx = STAGE_ORDER.indexOf(p.stage);
         return idx > best ? idx : best;
       }, -1);
+      vis.highestStage = stageIdx >= 0 ? STAGE_ORDER[stageIdx] : 'awareness';
+      vis.stageIndex   = stageIdx;
 
-      v.highestStage = stageIdx >= 0 ? STAGE_ORDER[stageIdx] : 'awareness';
-      v.stageIndex   = stageIdx;
+      // Active = last seen within 10 minutes
+      const minsAgo  = (Date.now() - new Date(vis.lastSeen).getTime()) / 60000;
+      vis.isActive   = minsAgo <= 10;
 
-      // Is visitor currently active? (last seen within 15 minutes)
-      const minsAgo = (Date.now() - new Date(v.lastSeen).getTime()) / 60000;
-      v.isActive = minsAgo <= 15;
+      // Unique pages visited
+      vis.uniquePages = new Set(vis.pages.map(p => p.page)).size;
 
-      return v;
+      return vis;
     })
-    // Sort: active first, then most recently seen
     .sort((a, b) => {
+      // Active visitors first, then most recently seen
       if (a.isActive && !b.isActive) return -1;
       if (!a.isActive && b.isActive) return 1;
       return new Date(b.lastSeen) - new Date(a.lastSeen);
     });
   }, [recentViews]);
 
-  // Filters ─────────────────────────────────────────────────────────
+  // ── Detect when a visitor closes/leaves a page → show notification ──
+  useEffect(() => {
+    const prev = prevVisitorsRef.current;
+
+    visitors.forEach(v => {
+      const prevV = prev[v.visitorId];
+      if (
+        v.stoppedPage &&
+        (!prevV || prevV.stoppedPage !== v.stoppedPage)
+      ) {
+        const notif = {
+          id:        `${v.visitorId}-${Date.now()}`,
+          visitorId: v.visitorId,
+          shortId:   v.shortId,
+          email:     v.email,
+          page:      v.stoppedPage,
+          stoppedAt: v.stoppedAt,
+          ts:        Date.now(),
+        };
+        setNotifications(prev => [notif, ...prev].slice(0, 5));
+        setTimeout(() => {
+          setNotifications(prev => prev.filter(n => n.id !== notif.id));
+        }, 8000);
+      }
+    });
+
+    const snapshot = {};
+    visitors.forEach(v => { snapshot[v.visitorId] = { stoppedPage: v.stoppedPage }; });
+    prevVisitorsRef.current = snapshot;
+  }, [visitors]);
+
+  // ── Filters ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     return visitors.filter(v => {
-      const matchStage = stageFilter === 'all' || v.highestStage === stageFilter;
-      const matchPage  = pageFilter  === 'all' || v.pages.some(p => p.page === pageFilter);
+      if (showActive && !v.isActive) return false;
+      const matchPage   = pageFilter === 'all' || v.pages.some(p => p.page === pageFilter);
       const matchSearch = !search.trim() ||
         v.shortId.toLowerCase().includes(search.toLowerCase()) ||
         (v.email && v.email.toLowerCase().includes(search.toLowerCase()));
-      return matchStage && matchPage && matchSearch;
+      return matchPage && matchSearch;
     });
-  }, [visitors, stageFilter, pageFilter, search]);
+  }, [visitors, pageFilter, search, showActive]);
 
-  // Count active visitors
   const activeCount = visitors.filter(v => v.isActive).length;
-
-  const toggleExpand = (id) => setExpanded(prev => prev === id ? null : id);
+  const toggleExpand = id => setExpanded(prev => prev === id ? null : id);
 
   return (
     <div className="vj-root">
+
       {/* Header */}
       <div className="vj-header">
         <div className="vj-header-left">
@@ -226,14 +234,9 @@ const VisitorJourney = ({ recentViews = [] }) => {
               {visitors.length} unique visitor{visitors.length !== 1 ? 's' : ''} tracked
               {activeCount > 0 && (
                 <span style={{
-                  marginLeft: '8px',
-                  background: '#dcfce7',
-                  color: '#15803d',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  padding: '1px 7px',
-                  borderRadius: '99px',
-                  border: '1px solid #bbf7d0',
+                  marginLeft: '8px', background: '#dcfce7', color: '#15803d',
+                  fontSize: '11px', fontWeight: 700, padding: '1px 7px',
+                  borderRadius: '99px', border: '1px solid #bbf7d0',
                 }}>
                   🟢 {activeCount} active now
                 </span>
@@ -241,6 +244,23 @@ const VisitorJourney = ({ recentViews = [] }) => {
             </p>
           </div>
         </div>
+
+        {activeCount > 0 && (
+          <button
+            onClick={() => setShowActive(p => !p)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', borderRadius: '8px', border: '1px solid',
+              borderColor: showActive ? '#22c55e' : '#e2e8f0',
+              background:  showActive ? '#f0fdf4' : '#fff',
+              color:       showActive ? '#15803d' : '#64748b',
+              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Wifi size={14} />
+            {showActive ? 'Showing active only' : 'Show active only'}
+          </button>
+        )}
       </div>
 
       {/* Controls */}
@@ -254,14 +274,6 @@ const VisitorJourney = ({ recentViews = [] }) => {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-
-        <select className="vj-select" value={stageFilter} onChange={e => setStage(e.target.value)}>
-          <option value="all">All Stages</option>
-          {STAGE_ORDER.map(s => (
-            <option key={s} value={s}>{STAGE_CONFIG[s].label}</option>
-          ))}
-        </select>
-
         <select className="vj-select" value={pageFilter} onChange={e => setPage(e.target.value)}>
           <option value="all">All Pages</option>
           {Object.entries(PAGE_LABELS).map(([val, lbl]) => (
@@ -270,25 +282,40 @@ const VisitorJourney = ({ recentViews = [] }) => {
         </select>
       </div>
 
-      {/* Stage Summary Chips */}
-      <div className="vj-stage-summary">
-        {STAGE_ORDER.map(s => {
-          const count = visitors.filter(v => v.highestStage === s).length;
-          const cfg   = STAGE_CONFIG[s];
-          return (
-            <button
-              key={s}
-              className={`vj-stage-chip ${stageFilter === s ? 'active' : ''}`}
-              style={stageFilter === s ? { background: cfg.color, color: '#fff', borderColor: cfg.color } : {}}
-              onClick={() => setStage(prev => prev === s ? 'all' : s)}
-            >
-              <span className="vj-chip-dot" style={{ background: cfg.color }} />
-              {cfg.label}
-              <span className="vj-chip-count">{count}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Exit Notifications */}
+      {notifications.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+          {notifications.map(n => (
+            <div key={n.id} style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '9px 14px', borderRadius: '10px',
+              background: '#fff7ed', border: '1px solid #fed7aa',
+              animation: 'slideIn 0.3s ease',
+            }}>
+              <Bell size={14} style={{ color: '#ea580c', flexShrink: 0 }} />
+              <span style={{ fontSize: '13px', color: '#9a3412', fontWeight: 600 }}>
+                {n.email || n.shortId}
+              </span>
+              <span style={{ fontSize: '13px', color: '#c2410c' }}>
+                left the site at&nbsp;
+                <strong>{PAGE_LABELS[n.page] || n.page}</strong>
+              </span>
+              {n.stoppedAt && (
+                <span style={{ fontSize: '11px', color: '#fb923c', marginLeft: 'auto' }}>
+                  {formatRelative(n.stoppedAt)}
+                </span>
+              )}
+              <button
+                onClick={() => setNotifications(prev => prev.filter(x => x.id !== n.id))}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#fb923c', fontSize: '14px', lineHeight: 1, padding: '0 2px',
+                }}
+              >×</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Visitor List */}
       {filtered.length === 0 ? (
@@ -298,47 +325,74 @@ const VisitorJourney = ({ recentViews = [] }) => {
           {filtered.map(v => {
             const isOpen = expandedId === v.visitorId;
             const cfg    = STAGE_CONFIG[v.highestStage] || {};
+
             return (
               <div key={v.visitorId} className={`vj-card ${isOpen ? 'open' : ''}`}>
 
-                {/* Row summary */}
+                {/* Collapsed row */}
                 <button className="vj-card-row" onClick={() => toggleExpand(v.visitorId)}>
                   <div className="vj-card-left">
-                    {/* Active indicator dot on avatar */}
+
+                    {/* Avatar + status dot */}
                     <div style={{ position: 'relative', flexShrink: 0 }}>
                       <div className="vj-avatar" style={{ background: cfg.bg, color: cfg.color }}>
                         {v.email ? v.email[0].toUpperCase() : v.shortId.slice(-2)}
                       </div>
+                      {/* Green dot = active now */}
                       {v.isActive && (
                         <span style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          right: 0,
-                          width: '10px',
-                          height: '10px',
-                          borderRadius: '50%',
-                          background: '#22c55e',
-                          border: '2px solid #fff',
+                          position: 'absolute', bottom: 0, right: 0,
+                          width: '10px', height: '10px', borderRadius: '50%',
+                          background: '#22c55e', border: '2px solid #fff',
+                        }} />
+                      )}
+                      {/* Grey dot = left site, stopped somewhere */}
+                      {!v.isActive && v.stoppedPage && (
+                        <span style={{
+                          position: 'absolute', bottom: 0, right: 0,
+                          width: '10px', height: '10px', borderRadius: '50%',
+                          background: '#94a3b8', border: '2px solid #fff',
                         }} />
                       )}
                     </div>
 
                     <div className="vj-card-info">
-                      <span className="vj-card-id">
-                        {v.email || v.shortId}
-                      </span>
+                      <span className="vj-card-id">{v.email || v.shortId}</span>
+
                       <span className="vj-card-meta">
                         <Clock size={11} />
                         Last seen {formatRelative(v.lastSeen)}
                         &nbsp;·&nbsp;
-                        {v.pages.length} page{v.pages.length !== 1 ? 's' : ''}
+                        {v.pages.length} visit{v.pages.length !== 1 ? 's' : ''}
+                        &nbsp;·&nbsp;
+                        {v.uniquePages} page{v.uniquePages !== 1 ? 's' : ''}
                       </span>
-                      {/* Current page badge — shown when active or recently visited */}
-                      {v.currentPage && (
-                        <span style={{ marginTop: '2px' }}>
-                          <CurrentPageBadge page={v.currentPage} />
-                        </span>
-                      )}
+
+                      {/* Status badges */}
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '3px' }}>
+                        {/* Active: currently on a page */}
+                        {v.isActive && v.currentPage && (
+                          <span style={{
+                            fontSize: '10px', fontWeight: 700, padding: '1px 7px',
+                            borderRadius: '99px', background: '#dcfce7',
+                            color: '#15803d', border: '1px solid #bbf7d0',
+                          }}>
+                            📍 Now: {PAGE_LABELS[v.currentPage] || v.currentPage}
+                          </span>
+                        )}
+
+                        {/* Inactive: shows last page before they left */}
+                        {!v.isActive && v.stoppedPage && (
+                          <span style={{
+                            fontSize: '10px', fontWeight: 700, padding: '1px 7px',
+                            borderRadius: '99px', background: '#f1f5f9',
+                            color: '#475569', border: '1px solid #cbd5e1',
+                          }}>
+                            🚪 Left at: {PAGE_LABELS[v.stoppedPage] || v.stoppedPage}
+                            {v.stoppedAt ? ` · ${formatRelative(v.stoppedAt)}` : ''}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -347,25 +401,35 @@ const VisitorJourney = ({ recentViews = [] }) => {
                       <StagePill stage={v.highestStage} />
                       <StageProgressBar stage={v.highestStage} />
                     </div>
-                    {isOpen ? <ChevronUp size={16} className="vj-chevron" /> : <ChevronDown size={16} className="vj-chevron" />}
+                    {isOpen
+                      ? <ChevronUp   size={16} className="vj-chevron" />
+                      : <ChevronDown size={16} className="vj-chevron" />
+                    }
                   </div>
                 </button>
 
-                {/* Expanded: full page timeline */}
+                {/* Expanded: full timeline */}
                 {isOpen && (
                   <div className="vj-timeline">
-                    <p className="vj-timeline-heading">Pages Visited</p>
+                    <p className="vj-timeline-heading">
+                      Full Page History&nbsp;
+                      <span style={{ fontWeight: 400, textTransform: 'none', color: '#64748b' }}>
+                        ({v.pages.length} visit{v.pages.length !== 1 ? 's' : ''} across {v.uniquePages} page{v.uniquePages !== 1 ? 's' : ''})
+                      </span>
+                    </p>
+
                     {v.pages.map((p, i) => {
                       const stageCfg = STAGE_CONFIG[p.stage] || { color: '#64748b', bg: '#f1f5f9' };
-                      const isCurrent = i === 0; // most recent = index 0 (sorted newest first)
+                      const isLatest = i === 0;
+                      const duration = formatDuration(p.timeOnPageSeconds);
+
                       return (
-                        <div key={i} className="vj-timeline-row">
+                        <div key={`${p._id || i}`} className="vj-timeline-row">
                           <div
                             className="vj-tl-dot"
                             style={{
                               background: stageCfg.color,
-                              // pulse ring on current page
-                              boxShadow: isCurrent ? `0 0 0 3px ${stageCfg.color}33` : 'none',
+                              boxShadow:  isLatest ? `0 0 0 3px ${stageCfg.color}33` : 'none',
                             }}
                           />
                           <div className="vj-tl-content">
@@ -377,24 +441,34 @@ const VisitorJourney = ({ recentViews = [] }) => {
                                 )}
                               </span>
                               <StagePill stage={p.stage} />
-                              {isCurrent && (
+
+                              {isLatest && (
                                 <span style={{
-                                  fontSize: '10px',
-                                  fontWeight: 700,
-                                  padding: '1px 6px',
-                                  borderRadius: '99px',
-                                  background: '#fef9c3',
-                                  color: '#854d0e',
-                                  border: '1px solid #fde047',
+                                  fontSize: '10px', fontWeight: 700, padding: '1px 6px',
+                                  borderRadius: '99px', background: '#fef9c3',
+                                  color: '#854d0e', border: '1px solid #fde047',
                                 }}>
-                                  Latest Visit
+                                  Latest
+                                </span>
+                              )}
+
+                              {p.stoppedHere && (
+                                <span style={{
+                                  fontSize: '10px', fontWeight: 700, padding: '1px 6px',
+                                  borderRadius: '99px', background: '#f1f5f9',
+                                  color: '#475569', border: '1px solid #cbd5e1',
+                                  display: 'flex', alignItems: 'center', gap: '3px',
+                                }}>
+                                  <WifiOff size={9} /> Left here
                                 </span>
                               )}
                             </div>
+
                             <div className="vj-tl-meta">
                               <MapPin size={11} /> {p.path}
                               &nbsp;·&nbsp;
                               <Clock size={11} /> {formatRelative(p.createdAt)}
+                              {duration && <>&nbsp;·&nbsp;⏱ {duration} on page</>}
                             </div>
                           </div>
                         </div>

@@ -85,45 +85,10 @@
   border-color: #6366f1;
 }
 
-/* ── Stage Summary Chips ──────────────────────────────── */
-.vj-stage-summary {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-.vj-stage-chip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.vj-stage-chip:hover {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
-}
-.vj-chip-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.vj-chip-count {
-  background: rgba(0,0,0,0.1);
-  border-radius: 99px;
-  padding: 1px 6px;
-  font-size: 11px;
-}
-.vj-stage-chip.active .vj-chip-count {
-  background: rgba(255,255,255,0.25);
+/* ── Exit Notification Toast ──────────────────────────────── */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Visitor List ─────────────────────────────────────── */

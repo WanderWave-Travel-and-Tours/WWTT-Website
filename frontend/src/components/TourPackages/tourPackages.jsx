@@ -6,7 +6,7 @@ import './tourPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
-import usePageTracker from '../../hooks/usePageTracker';
+import { usePageTracker } from '../../hooks/usePageTracker';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -58,7 +58,7 @@ function TourPackagesContent() {
 
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
-  usePageTracker('tours', '/tours', 'Tour Packages Page');
+  usePageTracker({ page: 'tours', path: '/tours', label: 'Tour Packages Page' });
 
   // ============================================================
   // DERIVED FILTER OPTIONS
