@@ -350,6 +350,22 @@ const verifyPaymentSession = async (sessionId) => {
     }
   };
 
+  // ✅ BACK TO HOME WITH WEBHOOK TRIGGER
+  const handleBackToHome = () => {
+    fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/2537b614-8763-4705-8aa7-295d73a6bdf5', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'back_to_home_clicked',
+        timestamp: new Date().toISOString(),
+        user: user || null,
+        details: details || null,
+        type: type || null
+      })
+    }).catch(err => console.error('Webhook error:', err));
+    navigate('/');
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -460,7 +476,8 @@ const verifyPaymentSession = async (sessionId) => {
 
           <div className="success-footer">
             <p>Need help? Contact us at <a href="mailto:support@wanderwave.com">support@wanderwave.com</a></p>
-            <button className="btn-link" onClick={() => navigate('/')}>
+            {/* ✅ UPDATED: Back to Home now triggers webhook before navigating */}
+            <button className="btn-link" onClick={handleBackToHome}>
               <Home size={16} style={{marginRight: '4px', display:'inline-block', verticalAlign:'text-bottom'}}/>
               Back to Home
             </button>
