@@ -10,7 +10,13 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
-app.use(cors()); 
+app.use(cors({
+  origin: [
+    'http://localhost:3000', 
+    'https://wanderwaveph.onrender.com' // Add your production frontend URL here if you have one
+  ], 
+  credentials: true, // This is the magic line that allows cookies/auth headers
+}));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -101,6 +107,7 @@ const PackageModel = require('./models/package');
 const Booking = require('./models/booking');
 const Blog = require('./models/blog');
 const ServiceModel = require('./models/service');
+const User = require('./models/user');
 
 app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
     try {
@@ -507,6 +514,123 @@ app.get('/api/admin/statistics', async (req, res) => {
       message: 'Error fetching statistics', 
       error: error.message 
     });
+  }
+});
+
+// ============================================================
+// ⭐ FAVORITES / WISHLIST ROUTES
+// ============================================================
+
+// GET /api/favorites/:userId — fetch all favorites for a user
+app.get('/api/favorites/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select('favorites');
+
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+
+    res.status(200).json({ status: 'ok', data: user.favorites || [] });
+  } catch (error) {
+    console.error('❌ Error fetching favorites:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// POST /api/favorites/:userId/add — add a package to favorites
+app.post('/api/favorites/:userId/add', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { packageId } = req.body;
+
+    if (!packageId) {
+      return res.status(400).json({ status: 'error', message: 'packageId is required' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { favorites: packageId } },
+      { new: true }
+    ).select('favorites');
+
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+
+    console.log(`✅ Added package ${packageId} to favorites for user ${userId}`);
+    res.status(200).json({ status: 'ok', data: user.favorites });
+  } catch (error) {
+    console.error('❌ Error adding favorite:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// DELETE /api/favorites/:userId/remove — remove a package from favorites
+app.delete('/api/favorites/:userId/remove', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { packageId } = req.body;
+
+    if (!packageId) {
+      return res.status(400).json({ status: 'error', message: 'packageId is required' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { favorites: packageId } },
+      { new: true }
+    ).select('favorites');
+
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+
+    console.log(`✅ Removed package ${packageId} from favorites for user ${userId}`);
+    res.status(200).json({ status: 'ok', data: user.favorites });
+  } catch (error) {
+    console.error('❌ Error removing favorite:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// POST /api/favorites/:userId/toggle — toggle a package in/out of favorites
+app.post('/api/favorites/:userId/toggle', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { packageId } = req.body;
+
+    if (!packageId) {
+      return res.status(400).json({ status: 'error', message: 'packageId is required' });
+    }
+
+    const user = await User.findById(userId).select('favorites');
+
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+
+    const isFavorited = user.favorites && user.favorites.map(String).includes(String(packageId));
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      isFavorited
+        ? { $pull: { favorites: packageId } }
+        : { $addToSet: { favorites: packageId } },
+      { new: true }
+    ).select('favorites');
+
+    const action = isFavorited ? 'removed from' : 'added to';
+    console.log(`✅ Package ${packageId} ${action} favorites for user ${userId}`);
+
+    res.status(200).json({
+      status: 'ok',
+      isFavorited: !isFavorited,
+      data: updatedUser.favorites,
+    });
+  } catch (error) {
+    console.error('❌ Error toggling favorite:', error);
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
