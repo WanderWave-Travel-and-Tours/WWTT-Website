@@ -10,16 +10,7 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
-app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'https://wanderwaveph.onrender.com',
-    'https://wanderwaveph.com',
-    'https://www.wanderwaveph.com',
-    'https://app.gohighlevel.com'   // ✅ GHL funnel landing pages
-  ], 
-  credentials: true,
-}));
+app.use(cors({}));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
