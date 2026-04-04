@@ -62,6 +62,9 @@ function PackageDealsContent() {
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
   const [shouldScrollToPackages, setShouldScrollToPackages] = useState(false);
 
+  // ✅ Holds ?book=<id> from funnel until packages are loaded
+  const [pendingBookId, setPendingBookId] = useState(null);
+
   const handleLoginRequired = () => {
     console.log('🚨 Login Required triggered!');
     setShowLoginNotice(true);
@@ -273,20 +276,98 @@ function PackageDealsContent() {
   // ============================================================
   // HANDLE ?book= QUERY PARAM (from funnel "Book Now" link)
   // ============================================================
+  // Step 1 — Capture bookId from URL immediately on mount/param change,
+  // store it in pendingBookId, then clear the URL so the param doesn't
+  // linger after navigation. This survives the packages-not-yet-loaded
+  // race condition because pendingBookId persists in state.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const bookId = params.get('book');
 
-    if (bookId && packages.length > 0) {
-      const foundPkg = packages.find(p => p.id === bookId || p._id === bookId);
-      if (foundPkg) {
-        setSelectedPackageForBooking(foundPkg);
-        setCurrentView('booking');
-        // Clear the query param after loading
-        navigate('/packages', { replace: true });
-      }
+    if (bookId) {
+      console.log('📦 ?book= param detected:', bookId);
+      setPendingBookId(bookId);
+      // Clear the param from the URL immediately
+      navigate('/packages', { replace: true });
     }
-  }, [location.search, packages]);
+  }, [location.search]);
+
+  // Step 2 — Once packages are loaded AND pendingBookId is set, find and open booking.
+  // Runs whenever packages load or pendingBookId changes.
+  useEffect(() => {
+    if (!pendingBookId || packages.length === 0) return;
+
+    const foundPkg = packages.find(
+      (p) => String(p.id) === pendingBookId || String(p._id) === pendingBookId
+    );
+
+    if (foundPkg) {
+      console.log('✅ Found package for direct booking:', foundPkg.name);
+      setSelectedPackageForBooking(foundPkg);
+      setCurrentView('booking');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setPendingBookId(null); // consumed — clear it
+    } else {
+      // Package not in current list — fetch it directly by ID from the API
+      const fetchAndOpenPackage = async () => {
+        try {
+          console.log('🔍 Package not in list, fetching by ID:', pendingBookId);
+          const res = await fetch(`https://wanderwaveph.onrender.com/api/packages/${pendingBookId}`);
+          if (!res.ok) throw new Error(`Status ${res.status}`);
+          const json = await res.json();
+          if (json.status === 'ok' && json.data) {
+            const pkg = json.data;
+            // Shape it the same way formattedPackages does
+            const seed = pkg._id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seededRandom = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
+            const calculatedRating = (seededRandom(seed) * 0.9 + 4.0).toFixed(1);
+            const randomReviews = Math.floor(seededRandom(seed + 2) * 460) + 40;
+            const shapedPkg = {
+              id: pkg._id,
+              name: pkg.title,
+              category: pkg.category?.toLowerCase() || 'local',
+              scope: pkg.category?.toLowerCase() === 'local' ? 'local' : 'international',
+              location: pkg.destination,
+              duration: pkg.duration,
+              nights: pkg.duration?.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights',
+              price: pkg.price,
+              originalPrice: pkg.price + Math.floor(pkg.price * 0.3),
+              discount: 30,
+              hasRealDiscount: false,
+              isDiscountExpired: false,
+              discountEndDate: null,
+              rating: calculatedRating,
+              reviews: randomReviews,
+              image: pkg.image,
+              inclusions: pkg.inclusions || [],
+              itinerary: pkg.itinerary || [],
+              excludes: [],
+              maxGuests: pkg.pax || pkg.minPax || 4,
+              pax: pkg.pax,
+              minPax: pkg.minPax,
+              tourType: pkg.tourType || 'private',
+              featured: false,
+              description: pkg.title,
+              includes: pkg.inclusions || [],
+              hasTours: false,
+              tourCount: 0,
+              matchedTours: [],
+            };
+            setSelectedPackageForBooking(shapedPkg);
+            setCurrentView('booking');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            console.warn('⚠️ Package not found for ID:', pendingBookId);
+          }
+        } catch (err) {
+          console.error('❌ Failed to fetch package by ID:', err);
+        } finally {
+          setPendingBookId(null); // consumed — clear regardless
+        }
+      };
+      fetchAndOpenPackage();
+    }
+  }, [pendingBookId, packages]);
 
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
