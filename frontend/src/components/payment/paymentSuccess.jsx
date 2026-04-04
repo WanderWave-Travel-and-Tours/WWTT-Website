@@ -349,7 +349,7 @@ const verifyPaymentSession = async (sessionId) => {
       navigate('/login');
     }
   };
-
+ 
   // ✅ BACK TO HOME WITH WEBHOOK TRIGGER
   const handleBackToHome = () => {
     fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/2537b614-8763-4705-8aa7-295d73a6bdf5', {
