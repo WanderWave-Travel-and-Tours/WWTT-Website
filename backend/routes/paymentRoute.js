@@ -5,6 +5,9 @@ const Booking = require('../models/booking');
 const Inquiry = require('../models/inquiry');
 const paymentController = require('../controller/paymentController');
 
+// 🔥 IMPORT GHL SERVICE
+const { sendBookingConfirmationToGHL } = require('../services/ghlService');
+
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 // ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
@@ -38,6 +41,7 @@ router.post('/webhook', async (req, res) => {
       
       if (booking) {
         console.log('Booking found for checkout session');
+        console.log('✅ Booking found:', booking._id, '| Email:', booking.email);
         
         const paymentType = metadata?.payment_type || 'full';
         const isInitialPayment = metadata?.is_initial_payment === true || metadata?.is_initial_payment === 'true';
@@ -60,7 +64,24 @@ router.post('/webhook', async (req, res) => {
         await booking.save();
         
         console.log('Booking updated successfully via webhook');
-        return res.json({ received: true, bookingConfirmed: true });
+
+        // 🔥 AUTOMATIC ONBOARDING KIT EMAIL VIA GHL
+        try {
+          await sendBookingConfirmationToGHL(
+            booking.email,
+            booking.fullName || `${booking.passengers?.[0]?.firstName || ''} ${booking.passengers?.[0]?.lastName || ''}`.trim(),
+            booking.packageName,
+            booking.totalAmount,
+            booking.startDate,
+            booking.endDate,
+            booking.passengers?.length || booking.pax?.adult || 1
+          );
+        } catch (ghlError) {
+          console.error('⚠️ GHL Onboarding Kit failed (checkout session):', ghlError.message);
+          // Huwag iblock ang webhook kahit mag-fail ang GHL email
+        }
+
+        return res.json({ received: true, bookingConfirmed: true, onboardingKitSent: true });
       }
 
       // Check if this is an inquiry payment
@@ -117,7 +138,24 @@ router.post('/webhook', async (req, res) => {
       await booking.save();
 
       console.log('Balance payment confirmed via webhook');
-      return res.json({ received: true, balancePaymentConfirmed: true });
+
+      // 🔥 AUTOMATIC ONBOARDING KIT EMAIL VIA GHL (Balance Payment)
+      try {
+        await sendBookingConfirmationToGHL(
+          booking.email,
+          booking.fullName || `${booking.passengers?.[0]?.firstName || ''} ${booking.passengers?.[0]?.lastName || ''}`.trim(),
+          booking.packageName,
+          booking.totalAmount,
+          booking.startDate,
+          booking.endDate,
+          booking.passengers?.length || booking.pax?.adult || 1
+        );
+      } catch (ghlError) {
+        console.error('⚠️ GHL Onboarding Kit failed (balance payment):', ghlError.message);
+        // Huwag iblock ang webhook kahit mag-fail ang GHL email
+      }
+
+      return res.json({ received: true, balancePaymentConfirmed: true, onboardingKitSent: true });
     }
 
     // ✅ Other event types

@@ -15,7 +15,8 @@ app.use(cors({
     'http://localhost:3000', 
     'https://wanderwaveph.onrender.com',
     'https://wanderwaveph.com',
-    'https://www.wanderwaveph.com'
+    'https://www.wanderwaveph.com',
+    'https://app.gohighlevel.com'   // ✅ GHL funnel landing pages
   ], 
   credentials: true,
 }));
