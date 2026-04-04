@@ -444,15 +444,26 @@ router.get('/search', async (req, res) => {
         const packages = await Package.find(query).sort({ _id: -1 });
 
         // Compute display price per pax
+        // Priority order:
+        //   pax === 1 → soloPaxPrice → multiplePaxPrice → price
+        //   pax  > 1 → multiplePaxPrice → soloPaxPrice  → price
+        // Using != null (not falsy) so that a legitimate ₱0 custom price is
+        // still accepted, while a missing/unset field (null) is skipped.
+        // The final cascade to the sibling pax price handles packages whose
+        // admins set only one of the two custom prices.
         const results = packages.map((pkg) => {
             const obj = pkg.toObject();
 
-            let displayPrice = obj.price;
+            let displayPrice;
 
-            if (paxNum === 1 && obj.soloPaxPrice != null) {
-                displayPrice = obj.soloPaxPrice;
-            } else if (paxNum > 1 && obj.multiplePaxPrice != null) {
-                displayPrice = obj.multiplePaxPrice;
+            if (paxNum === 1) {
+                if (obj.soloPaxPrice != null)         displayPrice = obj.soloPaxPrice;
+                else if (obj.multiplePaxPrice != null) displayPrice = obj.multiplePaxPrice;
+                else                                   displayPrice = obj.price;
+            } else {
+                if (obj.multiplePaxPrice != null)     displayPrice = obj.multiplePaxPrice;
+                else if (obj.soloPaxPrice != null)     displayPrice = obj.soloPaxPrice;
+                else                                   displayPrice = obj.price;
             }
 
             return {
