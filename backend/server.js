@@ -13,9 +13,11 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:3000', 
-    'https://wanderwaveph.onrender.com' // Add your production frontend URL here if you have one
+    'https://wanderwaveph.onrender.com',
+    'https://wanderwaveph.com',
+    'https://www.wanderwaveph.com'
   ], 
-  credentials: true, // This is the magic line that allows cookies/auth headers
+  credentials: true,
 }));
 
 app.use(express.json({ limit: '50mb' }));
