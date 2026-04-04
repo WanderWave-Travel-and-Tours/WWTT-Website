@@ -35,6 +35,7 @@ import { useToast } from "../toast/ToastManager";
 // Import the Custom Confirm Modal
 import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
 import { usePageTracker } from '../../hooks/usePageTracker';
+import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -185,6 +186,13 @@ const OtherServices = ({ setAuthPage }) => {
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
   usePageTracker({ page: 'services', path: '/services', label: 'Other Services Page' });
+
+  // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
+  useGHLTrigger({
+    enabled: true,
+    delayMinutes: 1,
+    triggerOnExit: true
+  });
 
   const fetchServices = async () => {
     try {

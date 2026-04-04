@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import './packageBooking.css';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
 function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) {
   const [customizationData, setCustomizationData] = useState(null);
@@ -45,6 +46,13 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
     label:       `Booking Page: ${packageName}`,
     packageId,
     packageName,
+  });
+
+  // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
+  useGHLTrigger({
+    enabled: true,
+    delayMinutes: 1,
+    triggerOnExit: true
   });
 
   // ============================================

@@ -9,6 +9,7 @@ import FlightBookingModal from "./flightBookingModal";
 import { ChevronLeft } from 'lucide-react';
 import { BookingStateManager } from '../../utils/bookingStateManager';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
 function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestination, prefilledPassengers }) {
   const location = useLocation();
@@ -26,6 +27,13 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
 
   // ── Page View Tracker ────────────────────────────────────────────
   usePageTracker({ page: 'flights', path: '/flights', label: 'Flight Search Page' });
+
+  // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
+  useGHLTrigger({
+    enabled: true,
+    delayMinutes: 1,
+    triggerOnExit: true
+  });
 
   const shouldShowBackButton = context && context.returnTo && (isFromBooking || packageData);
 

@@ -55,12 +55,11 @@ router.post('/add', upload.single('image'), async (req, res) => {
             title, destination, sellerPrice, markup, markupType,
             duration, category, inclusions, itinerary,
             tourType, pax, minPax,
-            soloPaxPrice,       // ✅ Selling price for solo (1 person) booking
-            multiplePaxPrice,   // ✅ Selling price for multiple/group booking
+            soloPaxPrice,
+            multiplePaxPrice,
             userEmail, adminId 
         } = req.body;
 
-        // Validation
         if (!title || !destination || !sellerPrice || !duration || !category) {
             return res.status(400).json({ status: 'error', error: 'Missing required fields' });
         }
@@ -69,7 +68,6 @@ router.post('/add', upload.single('image'), async (req, res) => {
             return res.status(400).json({ status: 'error', error: 'Image is required' });
         }
 
-        // ✅ Validate tourType, pax, and minPax
         if (tourType === 'private' && (!pax || parseInt(pax) < 1)) {
             return res.status(400).json({ status: 'error', error: 'Pax is required for private tours' });
         }
@@ -82,22 +80,20 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const markupNum = Number(markup) || 0;
         const logUserId = getValidAdminId(adminId);
 
-        // ✅ Log received pax prices for verification
         console.log('📦 Package /add — soloPaxPrice:', soloPaxPrice, '| multiplePaxPrice:', multiplePaxPrice);
 
-        // ✅ Prepare package data
         const packageData = {
             title,
             destination,
             sellerPrice: sellerPriceNum,
             markup: markupNum,
-            markupType: markupType || 'fixed',             // ✅ pass markupType so pre-save computes price correctly
+            markupType: markupType || 'fixed',
             price: sellerPriceNum + markupNum,
             duration,
             category,
             tourType: tourType || 'private',
-            soloPaxPrice: parsePaxPrice(soloPaxPrice),         // ✅ null if blank
-            multiplePaxPrice: parsePaxPrice(multiplePaxPrice), // ✅ null if blank
+            soloPaxPrice: parsePaxPrice(soloPaxPrice),
+            multiplePaxPrice: parsePaxPrice(multiplePaxPrice),
             image: req.file.path,
             imagePublicId: req.file.filename,
             inclusions: inclusions ? JSON.parse(inclusions) : [],
@@ -105,7 +101,6 @@ router.post('/add', upload.single('image'), async (req, res) => {
             isArchive: 'No'
         };
 
-        // ✅ Add pax or minPax based on tourType
         if (tourType === 'private' && pax) {
             packageData.pax = parseInt(pax);
         } else if (tourType === 'joiners' && minPax) {
@@ -115,7 +110,6 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const newPackage = new Package(packageData);
         const savedPackage = await newPackage.save();
 
-        // Activity Logging
         await ActivityLog.create({
             action: 'CREATE',
             module: 'Packages',
@@ -149,8 +143,8 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             title, destination, sellerPrice, markup, markupType, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
             tourType, pax, minPax,
-            soloPaxPrice,       // ✅ Selling price for solo (1 person) booking
-            multiplePaxPrice,   // ✅ Selling price for multiple/group booking
+            soloPaxPrice,
+            multiplePaxPrice,
             userEmail, adminId, changes
         } = req.body;
         
@@ -158,7 +152,6 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
 
-        // ✅ Compute correct price here since findByIdAndUpdate does NOT trigger pre-save hooks
         let computedPrice;
         if (markupType === 'percentage') {
             const markupAmount = (sellerPriceNum * markupNum) / 100;
@@ -167,7 +160,6 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             computedPrice = sellerPriceNum + markupNum;
         }
 
-        // ✅ Validate tourType, pax, and minPax for Edit
         if (tourType === 'private' && (!pax || parseInt(pax) < 1)) {
             return res.status(400).json({ status: 'error', error: 'Pax is required for private tours' });
         }
@@ -182,59 +174,51 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             sellerPrice: sellerPriceNum,
             markup: markupNum,
             markupType: markupType || 'fixed',
-            price: computedPrice,                          // ✅ uses correct price based on markupType
+            price: computedPrice,
             duration,
             category,
             tourType: tourType || 'private',
-            soloPaxPrice: parsePaxPrice(soloPaxPrice),         // ✅ null if blank
-            multiplePaxPrice: parsePaxPrice(multiplePaxPrice), // ✅ null if blank
+            soloPaxPrice: parsePaxPrice(soloPaxPrice),
+            multiplePaxPrice: parsePaxPrice(multiplePaxPrice),
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
 
-
-
-
-// ✅ SAFE ITINERARY - Huwag burahin kung walang valid itinerary na sinend
-if (itinerary && itinerary !== '' && itinerary !== '[]') {
-    try {
-        const parsed = JSON.parse(itinerary);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-            updateData.itinerary = parsed;
-            console.log(`Itinerary updated with ${parsed.length} days`);
-        } else {
-            console.log("Received empty itinerary - skipping to protect existing data");
-        }
-    } catch (e) {
-        console.error("Invalid itinerary JSON from frontend");
-    }
-} else {
-    console.log("No itinerary in request - keeping existing itinerary (safe mode)");
-}
-        
-        // ✅ Handle pax and minPax based on tourType
         if (tourType === 'private' && pax) {
             updateData.pax = parseInt(pax);
-            updateData.minPax = null; // Clear minPax
+            updateData.minPax = null;
         } else if (tourType === 'joiners' && minPax) {
             updateData.minPax = parseInt(minPax);
-            updateData.pax = null; // Clear pax
+            updateData.pax = null;
         }
 
+        // ✅ SAFE ITINERARY - Huwag burahin kung walang valid itinerary na sinend
+        if (itinerary && itinerary !== '' && itinerary !== '[]') {
+            try {
+                const parsed = JSON.parse(itinerary);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    updateData.itinerary = parsed;
+                }
+            } catch (e) {
+                console.warn('⚠️ Could not parse itinerary, keeping existing');
+                delete updateData.itinerary;
+            }
+        } else {
+            delete updateData.itinerary;
+        }
+
+        // Handle image
         if (req.file) {
             updateData.image = req.file.path;
             updateData.imagePublicId = req.file.filename;
-            
             if (existingImagePublicId) {
-                await cloudinary.uploader.destroy(existingImagePublicId).catch(e => console.error('Old image delete failed:', e));
+                await cloudinary.uploader.destroy(existingImagePublicId).catch(() => {});
             }
-        } else {
+        } else if (existingImage) {
             updateData.image = existingImage;
-            updateData.imagePublicId = existingImagePublicId;
+            updateData.imagePublicId = existingImagePublicId || '';
         }
 
-        // ✅ Use $set explicitly so null values for soloPaxPrice/multiplePaxPrice are written to DB
-        // Without $set, MongoDB may ignore null fields on update
         const updatedPkg = await Package.findByIdAndUpdate(
             req.params.id,
             { $set: updateData },
@@ -242,15 +226,11 @@ if (itinerary && itinerary !== '' && itinerary !== '[]') {
         );
 
         if (!updatedPkg) {
-            if (req.file?.filename) {
-                await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
-            }
             return res.status(404).json({ status: 'error', error: 'Package not found' });
         }
 
         try {
             let logDescription = `Updated tour package: ${title}`;
-
             if (changes) {
                 try {
                     const parsedChanges = JSON.parse(changes); 
@@ -288,13 +268,12 @@ if (itinerary && itinerary !== '' && itinerary !== '[]') {
     }
 });
 
-// 3. ARCHIVE TOGGLE ✅ FIX: Bypasses Validation for legacy data
+// 3. ARCHIVE TOGGLE
 router.post('/:id/archive', async (req, res) => {
     try {
         const { userEmail, adminId } = req.body; 
         const logUserId = getValidAdminId(adminId);
 
-        // 1. Fetch package first to get current status and title
         const pkg = await Package.findById(req.params.id);
         
         if (!pkg) {
@@ -302,12 +281,9 @@ router.post('/:id/archive', async (req, res) => {
             return res.status(404).json({ status: "error", message: "Package not found" });
         }
 
-        // 2. Determine new values
         const newStatus = pkg.isArchive === 'Yes' ? 'No' : 'Yes';
         const newArchivedAt = newStatus === 'Yes' ? new Date() : null;
         
-        // 3. UPDATE using findByIdAndUpdate with runValidators: false
-        // This avoids validation errors (like "pax required") on old data when just archiving
         await Package.findByIdAndUpdate(
             req.params.id,
             { 
@@ -316,7 +292,7 @@ router.post('/:id/archive', async (req, res) => {
                     archivedAt: newArchivedAt
                 } 
             },
-            { new: true, runValidators: false } // <--- CRITICAL FIX
+            { new: true, runValidators: false }
         );
 
         const actionType = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
@@ -385,17 +361,11 @@ router.get('/init-archive', async (req, res) => {
 });
 
 // 7. FETCH ALL ACTIVE PACKAGES ENRICHED WITH TOUR AVAILABILITY
-// Analyzes each package's destination against the Tour collection
-// Returns packages with hasTours: true/false and matchedTours metadata
 router.get('/with-tours', async (req, res) => {
     try {
-        // Fetch all active packages
         const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
-
-        // Fetch all non-archived tours (only need destination field for matching)
         const tours = await Tour.find({ isArchive: 'No' }, { destination: 1, title: 1, tourType: 1, price: 1 });
 
-        // Build a map: normalized destination → [tour docs]
         const toursByDestination = {};
         for (const tour of tours) {
             const key = tour.destination.trim().toLowerCase();
@@ -405,15 +375,11 @@ router.get('/with-tours', async (req, res) => {
             toursByDestination[key].push(tour);
         }
 
-        // Enrich each package
         const enriched = packages.map((pkg) => {
             const pkgDestKey = (pkg.destination || '').trim().toLowerCase();
-
-            // Exact match first, then partial match
             let matchedTours = toursByDestination[pkgDestKey] || [];
 
             if (matchedTours.length === 0) {
-                // Partial match: destination contains or is contained by tour destination
                 matchedTours = tours.filter((t) => {
                     const tKey = t.destination.trim().toLowerCase();
                     return tKey.includes(pkgDestKey) || pkgDestKey.includes(tKey);
@@ -438,6 +404,70 @@ router.get('/with-tours', async (req, res) => {
         res.status(200).json({ status: 'ok', data: enriched });
     } catch (error) {
         console.error('❌ Error in /with-tours:', error);
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// ============================================================
+// ✅ NEW: FUNNEL SEARCH ENDPOINT
+// GET /api/packages/search?destination=Bohol&duration=3D2N&pax=2
+//
+// Logic:
+//  - Filter by destination (case-insensitive partial match)
+//  - Filter by duration (case-insensitive exact match, optional)
+//  - Compute the correct display price based on pax count:
+//      • If package has soloPaxPrice set and pax === 1 → use soloPaxPrice
+//      • If package has multiplePaxPrice set and pax > 1  → use multiplePaxPrice
+//      • Otherwise → use package.price (base computed price)
+//  - Only return active (non-archived) packages
+// ============================================================
+router.get('/search', async (req, res) => {
+    try {
+        const { destination, duration, pax } = req.query;
+        const paxNum = parseInt(pax) || 1;
+
+        if (!destination) {
+            return res.status(400).json({ status: 'error', error: 'Destination is required.' });
+        }
+
+        // Build query
+        const query = {
+            isArchive: 'No',
+            destination: { $regex: destination.trim(), $options: 'i' }
+        };
+
+        // Optional: filter by duration if provided
+        if (duration && duration.trim() !== '') {
+            query.duration = { $regex: duration.trim(), $options: 'i' };
+        }
+
+        const packages = await Package.find(query).sort({ _id: -1 });
+
+        // Compute display price per pax
+        const results = packages.map((pkg) => {
+            const obj = pkg.toObject();
+
+            let displayPrice = obj.price;
+
+            if (paxNum === 1 && obj.soloPaxPrice != null) {
+                displayPrice = obj.soloPaxPrice;
+            } else if (paxNum > 1 && obj.multiplePaxPrice != null) {
+                displayPrice = obj.multiplePaxPrice;
+            }
+
+            return {
+                ...obj,
+                displayPrice,
+                paxUsed: paxNum
+            };
+        });
+
+        console.log(`🔍 /search — destination: "${destination}", duration: "${duration}", pax: ${paxNum} → ${results.length} result(s)`);
+
+        res.status(200).json({ status: 'ok', data: results });
+
+    } catch (error) {
+        console.error('❌ Error in /search:', error);
         res.status(500).json({ status: 'error', error: error.message });
     }
 });
