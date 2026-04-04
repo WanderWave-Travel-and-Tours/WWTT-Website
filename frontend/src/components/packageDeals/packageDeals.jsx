@@ -270,6 +270,24 @@ function PackageDealsContent() {
     };
   }, [location.search]);
 
+  // ============================================================
+  // HANDLE ?book= QUERY PARAM (from funnel "Book Now" link)
+  // ============================================================
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const bookId = params.get('book');
+
+    if (bookId && packages.length > 0) {
+      const foundPkg = packages.find(p => p.id === bookId || p._id === bookId);
+      if (foundPkg) {
+        setSelectedPackageForBooking(foundPkg);
+        setCurrentView('booking');
+        // Clear the query param after loading
+        navigate('/packages', { replace: true });
+      }
+    }
+  }, [location.search, packages]);
+
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
