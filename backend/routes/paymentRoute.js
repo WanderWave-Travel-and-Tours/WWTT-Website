@@ -6,7 +6,7 @@ const Inquiry = require('../models/inquiry');
 const paymentController = require('../controller/paymentController');
 
 // 🔥 IMPORT GHL SERVICE
-const { sendBookingConfirmationToGHL } = require('../services/ghlService');
+const { sendBookingConfirmationToGHL } = require('../utils/ghlService');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 // ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
