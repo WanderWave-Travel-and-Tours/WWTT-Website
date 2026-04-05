@@ -1746,19 +1746,27 @@ router.post('/abandoned', async (req, res) => {
 
     // 🔥 Trigger GHL Webhook for follow-up automation
     if (GHL_ABANDONED_WEBHOOK_URL) {
+      // ✅ I-split ang fullName para makuha ang first at last name
+      const nameParts = (fullName || targetBooking.fullName || "").trim().split(" ");
+      const firstName = nameParts[0] || "Guest";
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
       const ghlPayload = {
         type: 'ABANDONED_BOOKING',
         event: 'booking_form_submitted',
         bookingId: targetBooking._id.toString(),
+        // ✅ Gamitin ang mga hiwalay na fields na ito
+        first_name: firstName, 
+        last_name: lastName,
         email: email || targetBooking.email,
-        fullName: fullName || targetBooking.fullName,
+        phone: phone || targetBooking.phone, // Siguraduhing kasama ang phone
         packageName: packageName || targetBooking.packageName,
         totalAmount: totalAmount || targetBooking.totalAmount,
         startDate: startDate || targetBooking.startDate,
         endDate: endDate || targetBooking.endDate,
         pax: pax || targetBooking.pax?.adult || 1,
-        paymentLink: checkoutUrl || '', // ✅ PayMongo checkout URL for GHL to include in email
-        paymentType: paymentType || (targetBooking.paymentType === 'partial' ? 'Partial Payment' : 'Full Payment'), // ✅ FIXED: Include payment type for GHL email template
+        paymentLink: checkoutUrl || '', 
+        paymentType: paymentType || (targetBooking.paymentType === 'partial' ? 'Partial Payment' : 'Full Payment'),
         timestamp: new Date().toISOString(),
         source: 'WanderWave Booking Form',
       };
