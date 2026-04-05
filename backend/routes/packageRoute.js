@@ -415,14 +415,10 @@ router.get('/with-tours', async (req, res) => {
 // Logic:
 //  - Filter by destination (case-insensitive partial match)
 //  - Filter by duration (case-insensitive exact match, optional)
-//  - Compute a GENERALIZED display price — the lowest available
-//    price across soloPaxPrice, multiplePaxPrice, and base price.
-//    This ensures the landing page always shows the most attractive
-//    starting price regardless of the pax query param.
-//      • Collect all non-null custom prices (soloPaxPrice, multiplePaxPrice)
-//      • displayPrice = Math.min(...customPrices) if any exist, else pkg.price
-//      • hasPaxPricing = true when at least one custom pax price is set
-//        (used by the frontend to show a "Starts at" label)
+//  - displayPrice always uses pkg.price (the required base price
+//    computed from sellerPrice + markup). soloPaxPrice and
+//    multiplePaxPrice are stored on the record but are NOT used
+//    for the landing page display — pkg.price is always shown.
 //  - Only return active (non-archived) packages
 // ============================================================
 router.get('/search', async (req, res) => {
@@ -447,25 +443,15 @@ router.get('/search', async (req, res) => {
 
         const packages = await Package.find(query).sort({ _id: -1 });
 
-        // ✅ GENERALIZED display price:
-        // Collect all non-null custom pax prices and take the lowest.
-        // Falls back to pkg.price when no custom pax prices are set.
-        // Using != null so that a legitimate ₱0 custom price is accepted.
+        // ✅ displayPrice always equals pkg.price.
+        // Even when soloPaxPrice or multiplePaxPrice are set on the record,
+        // the landing page always shows the base computed price.
         const results = packages.map((pkg) => {
             const obj = pkg.toObject();
 
-            const customPrices = [obj.soloPaxPrice, obj.multiplePaxPrice].filter(v => v != null);
-            const displayPrice = customPrices.length > 0
-                ? Math.min(...customPrices)
-                : obj.price;
-
-            // hasPaxPricing lets the frontend show a "Starts at" label
-            const hasPaxPricing = customPrices.length > 0;
-
             return {
                 ...obj,
-                displayPrice,
-                hasPaxPricing,
+                displayPrice: obj.price,
                 paxUsed: paxNum
             };
         });
