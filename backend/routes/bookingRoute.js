@@ -1715,6 +1715,7 @@ router.post('/abandoned', async (req, res) => {
       startDate,
       endDate,
       pax,
+      paymentType,       // ✅ FIXED: "Full Payment" or "Partial Payment" — needed for GHL email template
     } = req.body;
 
     const GHL_ABANDONED_WEBHOOK_URL = process.env.GHL_ABANDONED_BOOKING_WEBHOOK_URL;
@@ -1757,6 +1758,7 @@ router.post('/abandoned', async (req, res) => {
         endDate: endDate || targetBooking.endDate,
         pax: pax || targetBooking.pax?.adult || 1,
         paymentLink: checkoutUrl || '', // ✅ PayMongo checkout URL for GHL to include in email
+        paymentType: paymentType || (targetBooking.paymentType === 'partial' ? 'Partial Payment' : 'Full Payment'), // ✅ FIXED: Include payment type for GHL email template
         timestamp: new Date().toISOString(),
         source: 'WanderWave Booking Form',
       };

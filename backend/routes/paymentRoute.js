@@ -12,6 +12,31 @@ const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 // ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
+// ✅ Helper: Notify GHL that payment is confirmed — updates Payment Status to "Paid"
+// This allows the GHL abandoned booking workflow If/Else condition to evaluate correctly
+// and removes the contact from the follow-up sequence automatically.
+const notifyGHLPaymentConfirmed = async (email, bookingId) => {
+  const GHL_PAYMENT_CONFIRMED_URL = process.env.GHL_ABANDONED_BOOKING_WEBHOOK_URL;
+  if (!GHL_PAYMENT_CONFIRMED_URL) return;
+  try {
+    await axios.post(GHL_PAYMENT_CONFIRMED_URL, {
+      type: 'PAYMENT_CONFIRMED',
+      event: 'payment_completed',
+      bookingId: bookingId ? bookingId.toString() : '',
+      email: email || '',
+      paymentStatus: 'Paid', // ✅ GHL will map this to the Payment Status custom field
+      timestamp: new Date().toISOString(),
+      source: 'WanderWave PayMongo Webhook',
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 8000,
+    });
+    console.log('✅ GHL notified: Payment Status updated to Paid for', email);
+  } catch (err) {
+    console.error('⚠️ Failed to notify GHL of payment confirmation (non-fatal):', err.message);
+  }
+};
+
 // ✅ Routes
 router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutSession);
 router.post('/create-intent', paymentController.createBookingPaymentIntent); // ✅ Updated to use checkout session
@@ -68,6 +93,10 @@ router.post('/webhook', async (req, res) => {
         await booking.save();
         
         console.log('Booking updated successfully via webhook');
+
+        // ✅ FIXED: Notify GHL that payment is confirmed — this updates Payment Status = "Paid"
+        // which triggers the If/Else condition in the abandoned booking workflow to stop follow-ups
+        notifyGHLPaymentConfirmed(booking.email, booking._id).catch(() => {});
 
         // 🔥 AUTOMATIC ONBOARDING KIT EMAIL VIA GHL
         try {
@@ -146,6 +175,9 @@ router.post('/webhook', async (req, res) => {
       await booking.save();
 
       console.log('Balance payment confirmed via webhook');
+
+      // ✅ FIXED: Notify GHL that payment is confirmed — stops the abandoned booking follow-up workflow
+      notifyGHLPaymentConfirmed(booking.email, booking._id).catch(() => {});
 
       // 🔥 AUTOMATIC ONBOARDING KIT EMAIL VIA GHL (Balance Payment)
       try {

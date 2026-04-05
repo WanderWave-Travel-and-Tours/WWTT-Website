@@ -1216,6 +1216,7 @@ const handleNextPassenger = async (e) => {
           startDate: startDateFormatted,
           endDate: endDateFormatted,
           pax: quantities.adult,
+          paymentType: paymentType === 'partial' ? 'Partial Payment' : 'Full Payment', // ✅ FIXED: Send readable string to GHL
         }).catch(err => console.warn('⚠️ GHL abandoned webhook failed (non-fatal):', err.message));
 
         setShowModal(false);
