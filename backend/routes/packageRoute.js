@@ -409,16 +409,20 @@ router.get('/with-tours', async (req, res) => {
 });
 
 // ============================================================
-// ✅ NEW: FUNNEL SEARCH ENDPOINT
+// ✅ FUNNEL SEARCH ENDPOINT
 // GET /api/packages/search?destination=Bohol&duration=3D2N&pax=2
 //
 // Logic:
 //  - Filter by destination (case-insensitive partial match)
 //  - Filter by duration (case-insensitive exact match, optional)
-//  - Compute the correct display price based on pax count:
-//      • If package has soloPaxPrice set and pax === 1 → use soloPaxPrice
-//      • If package has multiplePaxPrice set and pax > 1  → use multiplePaxPrice
-//      • Otherwise → use package.price (base computed price)
+//  - Compute a GENERALIZED display price — the lowest available
+//    price across soloPaxPrice, multiplePaxPrice, and base price.
+//    This ensures the landing page always shows the most attractive
+//    starting price regardless of the pax query param.
+//      • Collect all non-null custom prices (soloPaxPrice, multiplePaxPrice)
+//      • displayPrice = Math.min(...customPrices) if any exist, else pkg.price
+//      • hasPaxPricing = true when at least one custom pax price is set
+//        (used by the frontend to show a "Starts at" label)
 //  - Only return active (non-archived) packages
 // ============================================================
 router.get('/search', async (req, res) => {
@@ -443,32 +447,25 @@ router.get('/search', async (req, res) => {
 
         const packages = await Package.find(query).sort({ _id: -1 });
 
-        // Compute display price per pax
-        // Priority order:
-        //   pax === 1 → soloPaxPrice → multiplePaxPrice → price
-        //   pax  > 1 → multiplePaxPrice → soloPaxPrice  → price
-        // Using != null (not falsy) so that a legitimate ₱0 custom price is
-        // still accepted, while a missing/unset field (null) is skipped.
-        // The final cascade to the sibling pax price handles packages whose
-        // admins set only one of the two custom prices.
+        // ✅ GENERALIZED display price:
+        // Collect all non-null custom pax prices and take the lowest.
+        // Falls back to pkg.price when no custom pax prices are set.
+        // Using != null so that a legitimate ₱0 custom price is accepted.
         const results = packages.map((pkg) => {
             const obj = pkg.toObject();
 
-            let displayPrice;
+            const customPrices = [obj.soloPaxPrice, obj.multiplePaxPrice].filter(v => v != null);
+            const displayPrice = customPrices.length > 0
+                ? Math.min(...customPrices)
+                : obj.price;
 
-            if (paxNum === 1) {
-                if (obj.soloPaxPrice != null)         displayPrice = obj.soloPaxPrice;
-                else if (obj.multiplePaxPrice != null) displayPrice = obj.multiplePaxPrice;
-                else                                   displayPrice = obj.price;
-            } else {
-                if (obj.multiplePaxPrice != null)     displayPrice = obj.multiplePaxPrice;
-                else if (obj.soloPaxPrice != null)     displayPrice = obj.soloPaxPrice;
-                else                                   displayPrice = obj.price;
-            }
+            // hasPaxPricing lets the frontend show a "Starts at" label
+            const hasPaxPricing = customPrices.length > 0;
 
             return {
                 ...obj,
                 displayPrice,
+                hasPaxPricing,
                 paxUsed: paxNum
             };
         });
