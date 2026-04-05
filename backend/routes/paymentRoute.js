@@ -60,6 +60,10 @@ router.post('/webhook', async (req, res) => {
 
         booking.paidAt = new Date();
         booking.updatedAt = new Date();
+
+        // ✅ NEW: Reset abandoned booking tracking — payment was received, no more follow-ups needed
+        booking.abandonedAt = null;
+        booking.followUpCount = 0;
         
         await booking.save();
         
@@ -135,6 +139,10 @@ router.post('/webhook', async (req, res) => {
       }
 
       booking.updatedAt = new Date();
+
+      // ✅ NEW: Reset abandoned booking tracking — payment was received, no more follow-ups needed
+      booking.abandonedAt = null;
+      booking.followUpCount = 0;
       await booking.save();
 
       console.log('Balance payment confirmed via webhook');

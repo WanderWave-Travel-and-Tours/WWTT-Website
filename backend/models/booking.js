@@ -60,7 +60,7 @@ const bookingSchema = new mongoose.Schema({
   sellerPrice: { type: Number, required: true },
   markup: { type: Number, required: true },
   price: { type: Number, required: true }, 
-timerExpiredAtBooking: { type: Boolean, default: false },
+  timerExpiredAtBooking: { type: Boolean, default: false },
   priceType: { 
     type: String, 
     enum: ['discounted', 'markup'],
@@ -161,7 +161,13 @@ timerExpiredAtBooking: { type: Boolean, default: false },
   // Walk-in appointment fields
   isWalkin: { type: Boolean, default: false },
   appointmentDate: { type: String },
-  appointmentTime: { type: String }
+  appointmentTime: { type: String },
+
+  // ✅ NEW: Abandoned booking tracking fields (for GHL follow-up automation)
+  abandonedAt: { type: Date, default: null },
+  followUpCount: { type: Number, default: 0 },
+  lastFollowUpAt: { type: Date, default: null },
+  ghlAbandonedId: { type: String, default: null }, // GHL contact/workflow ID for tracking
 });
 
 bookingSchema.pre('save', function(next) {

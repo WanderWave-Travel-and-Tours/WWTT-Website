@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios'); // ✅ Added for GHL webhook calls
 const Booking = require('../models/booking');
 const User = require('../models/user');
 const Promo = require('../models/promo');
@@ -1103,8 +1104,6 @@ router.post('/:id/create-balance-payment', async (req, res) => {
       });
     }
 
-    const axios = require('axios');
-    
     const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-balance-intent', {
       bookingId: booking._id,
       amount: booking.remainingBalance
@@ -1695,6 +1694,95 @@ router.patch('/:id/hotel', async (req, res) => {
   } catch (err) {
     console.error('❌ Error updating hotel selection:', err);
     return res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
+// ============================================
+// POST /abandoned — ABANDONED BOOKING + GHL WEBHOOK
+// Triggered after booking is saved + payment link is generated.
+// Updates the booking with abandoned tracking fields and fires GHL webhook
+// so the automation can send follow-up emails if payment is not completed.
+// ============================================
+router.post('/abandoned', async (req, res) => {
+  try {
+    const {
+      existingBookingId, // ✅ ID of the already-created booking
+      checkoutUrl,       // ✅ PayMongo checkout URL to include in GHL email
+      email,
+      fullName,
+      packageName,
+      totalAmount,
+      startDate,
+      endDate,
+      pax,
+    } = req.body;
+
+    const GHL_ABANDONED_WEBHOOK_URL = process.env.GHL_ABANDONED_BOOKING_WEBHOOK_URL;
+
+    // ✅ We only update an EXISTING booking — never create a duplicate
+    if (!existingBookingId) {
+      return res.status(400).json({ success: false, message: 'existingBookingId is required.' });
+    }
+
+    const targetBooking = await Booking.findByIdAndUpdate(
+      existingBookingId,
+      {
+        $set: {
+          abandonedAt: new Date(),
+          followUpCount: 0,
+          lastFollowUpAt: null,
+        }
+      },
+      { new: true }
+    );
+
+    if (!targetBooking) {
+      console.warn('⚠️ Abandoned booking: no booking found for ID:', existingBookingId);
+      return res.status(404).json({ success: false, message: 'Booking not found.' });
+    }
+
+    console.log('✅ Abandoned tracking set for booking:', targetBooking._id);
+
+    // 🔥 Trigger GHL Webhook for follow-up automation
+    if (GHL_ABANDONED_WEBHOOK_URL) {
+      const ghlPayload = {
+        type: 'ABANDONED_BOOKING',
+        event: 'booking_form_submitted',
+        bookingId: targetBooking._id.toString(),
+        email: email || targetBooking.email,
+        fullName: fullName || targetBooking.fullName,
+        packageName: packageName || targetBooking.packageName,
+        totalAmount: totalAmount || targetBooking.totalAmount,
+        startDate: startDate || targetBooking.startDate,
+        endDate: endDate || targetBooking.endDate,
+        pax: pax || targetBooking.pax?.adult || 1,
+        paymentLink: checkoutUrl || '', // ✅ PayMongo checkout URL for GHL to include in email
+        timestamp: new Date().toISOString(),
+        source: 'WanderWave Booking Form',
+      };
+
+      await axios.post(GHL_ABANDONED_WEBHOOK_URL, ghlPayload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000,
+      }).catch(err => {
+        // ✅ Non-fatal — never block the response due to GHL failure
+        console.error('⚠️ Failed to send to GHL abandoned webhook:', err.message);
+      });
+
+      console.log('✅ GHL abandoned webhook fired for booking:', targetBooking._id);
+    } else {
+      console.warn('⚠️ GHL_ABANDONED_BOOKING_WEBHOOK_URL not set in .env — skipping GHL notification.');
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Abandoned booking tracked and GHL notified.',
+      bookingId: targetBooking._id,
+    });
+
+  } catch (error) {
+    console.error('❌ Abandoned booking error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
