@@ -1744,12 +1744,17 @@ router.post('/abandoned', async (req, res) => {
 
     console.log('✅ Abandoned tracking set for booking:', targetBooking._id);
 
+    // ✅ Kunin ang contact info mula sa targetBooking (database) o sa request body
+    const resolvedEmail = email || targetBooking.email || "";
+    const resolvedPhone = targetBooking.phone || "";
+    const resolvedFullName = fullName || targetBooking.fullName || "";
+
     // 🔥 Trigger GHL Webhook for follow-up automation
     if (GHL_ABANDONED_WEBHOOK_URL) {
       // ✅ I-split ang fullName para makuha ang first at last name
-      const nameParts = (fullName || targetBooking.fullName || "").trim().split(" ");
+      const nameParts = resolvedFullName.trim().split(" ");
       const firstName = nameParts[0] || "Guest";
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "User";
 
       const ghlPayload = {
         type: 'ABANDONED_BOOKING',
@@ -1758,8 +1763,8 @@ router.post('/abandoned', async (req, res) => {
         // ✅ Gamitin ang mga hiwalay na fields na ito
         first_name: firstName, 
         last_name: lastName,
-        email: email || targetBooking.email,
-        phone: phone || targetBooking.phone, // Siguraduhing kasama ang phone
+        email: resolvedEmail,
+        phone: resolvedPhone, // ✅ Ngayon, defined na itong 'phone'
         packageName: packageName || targetBooking.packageName,
         totalAmount: totalAmount || targetBooking.totalAmount,
         startDate: startDate || targetBooking.startDate,
@@ -1775,12 +1780,11 @@ router.post('/abandoned', async (req, res) => {
         headers: { 'Content-Type': 'application/json' },
         timeout: 10000,
       }).catch(err => {
-        // ✅ Non-fatal — never block the response due to GHL failure
         console.error('⚠️ Failed to send to GHL abandoned webhook:', err.message);
       });
 
       console.log('✅ GHL abandoned webhook fired for booking:', targetBooking._id);
-    } else {
+} else {
       console.warn('⚠️ GHL_ABANDONED_BOOKING_WEBHOOK_URL not set in .env — skipping GHL notification.');
     }
 
