@@ -1203,6 +1203,21 @@ const handleNextPassenger = async (e) => {
       
       if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
         const checkoutUrl = paymentResponse.data.checkoutUrl;
+
+        // 🔥 NEW: Fire abandoned booking webhook (non-blocking, fire-and-forget)
+        // GHL will send initial payment email and follow up if payment is not completed
+        axios.post(`${RENDER_BASE}/api/bookings/abandoned`, {
+          existingBookingId: bookingId,
+          checkoutUrl: checkoutUrl,
+          email: passengers[0].email,
+          fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
+          packageName: pkg.title || pkg.name,
+          totalAmount: finalTotalAmount,
+          startDate: startDateFormatted,
+          endDate: endDateFormatted,
+          pax: quantities.adult,
+        }).catch(err => console.warn('⚠️ GHL abandoned webhook failed (non-fatal):', err.message));
+
         setShowModal(false);
         setConfirmModal({
           isOpen: true,
