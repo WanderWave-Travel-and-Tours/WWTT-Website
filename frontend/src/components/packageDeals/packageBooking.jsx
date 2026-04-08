@@ -10,8 +10,7 @@ function PackageBooking({
   pkg, 
   onGoBack, 
   currency = 'PHP', 
-  exchangeRate = 58,
-  initialPaxFromFunnel = null 
+  exchangeRate = 58 
 }) {
   const [customizationData, setCustomizationData] = useState(null);
   const [paxCount, setPaxCount] = useState(1); // ✅ Lifted pax state — synced from BookingRightForm via onPaxChange
