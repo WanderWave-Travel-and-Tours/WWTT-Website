@@ -65,7 +65,9 @@ const BookingRightForm = ({
     ? Math.max(funnelPax, isMinTwoPkg ? 2 : isSoloPkg ? 1 : 1)
     : Math.max(defaultPax, isMinTwoPkg ? 2 : 1);
 
-  const [quantities, setQuantities] = useState({ adult: startingAdultPax });  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [quantities, setQuantities] = useState({ adult: startingAdultPax });
+  const [selectedDate, setSelectedDate] = useState(null); // ✅ FIX: was missing, caused ReferenceError
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ Package preview before booking
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);

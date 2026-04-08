@@ -64,6 +64,8 @@ function PackageDealsContent() {
 
   // ✅ Holds ?book=<id> from funnel until packages are loaded
   const [pendingBookId, setPendingBookId] = useState(null);
+  // ✅ Holds ?initialPax= captured before URL is cleared, so Step 2 can still read it
+  const [pendingInitialPax, setPendingInitialPax] = useState(null);
 
   const handleLoginRequired = () => {
     console.log('🚨 Login Required triggered!');
@@ -286,7 +288,10 @@ function PackageDealsContent() {
 
     if (bookId) {
       console.log('📦 ?book= param detected:', bookId);
+      // ✅ FIX: Capture initialPax HERE before navigate() clears the URL
+      const initialPax = parseInt(params.get('initialPax')) || null;
       setPendingBookId(bookId);
+      setPendingInitialPax(initialPax);
       // Clear the param from the URL immediately
       navigate('/packages', { replace: true });
     }
@@ -304,18 +309,16 @@ function PackageDealsContent() {
      if (foundPkg) {
       console.log('✅ Found package for direct booking:', foundPkg.name);
       
-      // Kunin ang initialPax mula sa URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const initialPax = parseInt(urlParams.get('initialPax')) || null;
-
+      // ✅ FIX: Use pendingInitialPax (captured before URL was cleared) instead of window.location.search
       setSelectedPackageForBooking({
         ...foundPkg,
-        initialPaxFromFunnel: initialPax
+        initialPaxFromFunnel: pendingInitialPax
       });
       
       setCurrentView('booking');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setPendingBookId(null);
+      setPendingInitialPax(null);
     } else {
       // Package not in current list — fetch it directly by ID from the API
       const fetchAndOpenPackage = async () => {
@@ -361,7 +364,7 @@ function PackageDealsContent() {
               hasTours: false,
               tourCount: 0,
               matchedTours: [],
-              initialPaxFromFunnel: parseInt(new URLSearchParams(window.location.search).get('initialPax')) || null,
+              initialPaxFromFunnel: pendingInitialPax,
             };
             setSelectedPackageForBooking(shapedPkg);
             setCurrentView('booking');
@@ -372,12 +375,13 @@ function PackageDealsContent() {
         } catch (err) {
           console.error('❌ Failed to fetch package by ID:', err);
         } finally {
-          setPendingBookId(null); // consumed — clear regardless
+          setPendingBookId(null);    // consumed — clear regardless
+          setPendingInitialPax(null); // ✅ FIX: clear alongside pendingBookId
         }
       };
       fetchAndOpenPackage();
     }
-  }, [pendingBookId, packages]);
+  }, [pendingBookId, pendingInitialPax, packages]);
 
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
