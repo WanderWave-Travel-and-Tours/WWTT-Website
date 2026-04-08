@@ -433,6 +433,22 @@ if (savedState.formData.appliedPromo) {
     }
   }, []);// eslint-disable-line react-hooks/exhaustive-deps
 
+  // ✅ FIX: Reactively apply funnel pax whenever the prop arrives.
+  // This runs AFTER the BookingStateManager restore effect (defined earlier),
+  // so it always takes priority over any saved session state.
+  // Also handles the edge case where the prop was null on first render
+  // and arrives asynchronously after packages load.
+  useEffect(() => {
+    if (!initialPaxFromFunnel) return;
+    const fp = parseInt(initialPaxFromFunnel);
+    if (!fp || isNaN(fp) || fp <= 0) return;
+    // Respect per-package minimums
+    const minPax = isSoloPkg ? 1 : isMinTwoPkg ? 2 : 1;
+    const newPax = Math.max(fp, minPax);
+    setQuantities({ adult: newPax });
+    if (onPaxChange) onPaxChange(isSoloPkg ? 1 : newPax);
+  }, [initialPaxFromFunnel]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (initialCustomizationData) {
       setCustomizationData(initialCustomizationData);
