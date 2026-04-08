@@ -56,13 +56,21 @@ const BookingRightForm = ({
   const isSoloJoiners = (!isSoloPkg && pkg.tourType === 'joiners') || titleIsSoloJoiners;
   // isMinTwoPkg: base price covers 2 pax; extra pax = price/2 — DB pax===2 OR title says min of 2
   const isMinTwoPkg   = (!isSoloPkg && (pkg.tourType === 'private' && pkg.pax === 2)) || titleIsMinTwo;
-
+  // ✅ AUTO-SET PAX FROM FUNNEL FORM
+  const initialPaxFromFunnel = parseInt(new URLSearchParams(window.location.search).get('initialPax')) 
+    || props.initialPaxFromFunnel 
+    || null;
   // ✅ defaultPax: solo=1 (locked), min-2=2 (locked min), solo/joiners=1 (free, solo default), normal=2
   const defaultPax = isSoloPkg ? 1 : isMinTwoPkg ? 2 : isSoloJoiners ? 1 : 2;
 
   const [selectedDate, setSelectedDate] = useState(null);
   // ✅ Clamp initial adult count to the correct minimum so min-2 never starts at 1
-  const [quantities, setQuantities] = useState({ adult: Math.max(defaultPax, isMinTwoPkg ? 2 : 1) });
+    // ✅ Auto-set pax from funnel (respect package rules)
+  const startingAdultPax = initialPaxFromFunnel 
+    ? Math.max(initialPaxFromFunnel, isMinTwoPkg ? 2 : isSoloPkg ? 1 : 1)
+    : Math.max(defaultPax, isMinTwoPkg ? 2 : 1);
+
+  const [quantities, setQuantities] = useState({ adult: startingAdultPax });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ Package preview before booking

@@ -301,12 +301,20 @@ function PackageDealsContent() {
       (p) => String(p.id) === pendingBookId || String(p._id) === pendingBookId
     );
 
-    if (foundPkg) {
+        if (foundPkg) {
       console.log('✅ Found package for direct booking:', foundPkg.name);
-      setSelectedPackageForBooking(foundPkg);
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialPax = parseInt(urlParams.get('initialPax')) || null;
+
+      setSelectedPackageForBooking({
+        ...foundPkg,
+        initialPaxFromFunnel: initialPax   // ← ipinasa natin
+      });
+      
       setCurrentView('booking');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      setPendingBookId(null); // consumed — clear it
+      setPendingBookId(null);
     } else {
       // Package not in current list — fetch it directly by ID from the API
       const fetchAndOpenPackage = async () => {
@@ -352,6 +360,7 @@ function PackageDealsContent() {
               hasTours: false,
               tourCount: 0,
               matchedTours: [],
+              initialPaxFromFunnel: parseInt(new URLSearchParams(window.location.search).get('initialPax')) || null,
             };
             setSelectedPackageForBooking(shapedPkg);
             setCurrentView('booking');

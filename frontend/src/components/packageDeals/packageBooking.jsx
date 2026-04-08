@@ -6,7 +6,13 @@ import './packageBooking.css';
 import { usePageTracker } from '../../hooks/usePageTracker';
 import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
-function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) {
+function PackageBooking({ 
+  pkg, 
+  onGoBack, 
+  currency = 'PHP', 
+  exchangeRate = 58,
+  initialPaxFromFunnel = null   // ← idagdag
+}) {
   const [customizationData, setCustomizationData] = useState(null);
   const [paxCount, setPaxCount] = useState(1); // ✅ Lifted pax state — synced from BookingRightForm via onPaxChange
   const [selectedFlight, setSelectedFlight] = useState(null); // ✅ Lifted flight state — synced from BookingRightForm
@@ -274,6 +280,7 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
               timerExpired={timerExpired}
               onPaxChange={setPaxCount}
               onFlightChange={setSelectedFlight}
+              initialPaxFromFunnel={initialPaxFromFunnel || pkg.initialPaxFromFunnel}
             />
           </div>
         </div>
