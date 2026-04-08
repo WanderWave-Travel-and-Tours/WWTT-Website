@@ -41,41 +41,34 @@ const BookingRightForm = ({
     setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
   // ✅ PAX RULES — checks BOTH DB fields AND package title (pkg.title is the DB field; pkg.name is the alias used in some places)
   // Title-based detection handles packages where DB pax fields are missing/incomplete
+    // ✅ PAX RULES — checks BOTH DB fields AND package title
   const pkgNameLower = (pkg.title || pkg.name || '').toLowerCase();
-  // ✅ Use regex for solo/joiners to handle ALL spacing variants:
-  //    "solo/joiners", "solo/ joiners", "solo /joiners", "solo / joiners", "solo joiners"
   const titleIsSoloJoiners = /solo\s*\/\s*joiners/i.test(pkgNameLower) || /\bsolo\s+joiners\b/i.test(pkgNameLower);
-  // ✅ "solo" must be an exact standalone word — not part of "solo/joiners"
-  const titleIsSolo       = !titleIsSoloJoiners && /\bsolo\b/i.test(pkgNameLower);
-  const titleIsMinTwo     = pkgNameLower.includes('min of 2') || pkgNameLower.includes('min. of 2') || pkgNameLower.includes('minimum 2') || pkgNameLower.includes('min 2 pax') || pkgNameLower.includes('min.of 2');
-  // ✅ AUTO-SET PAX FROM FUNNEL (Fixed)
-  const funnelPax = initialPaxFromFunnel || 
-                    parseInt(new URLSearchParams(window.location.search).get('initialPax')) || 
-                    null;
-  // isSoloPkg: locked at 1 pax — DB pax===1 OR title says Solo (not Solo/Joiners)
-  // ⚠️ titleIsSoloJoiners ALWAYS takes priority — a "solo/joiners" package must NEVER
-  //    be treated as solo even if pax===1 is stored in the DB for that record.
-  const isSoloPkg     = !titleIsSoloJoiners && ((pkg.pax === 1) || titleIsSolo);
-  // isSoloJoiners: free +/−, min 1 — joiners tourType or title says Solo/Joiners
+  const titleIsSolo = !titleIsSoloJoiners && /\bsolo\b/i.test(pkgNameLower);
+  const titleIsMinTwo = pkgNameLower.includes('min of 2') || pkgNameLower.includes('min. of 2') || 
+                        pkgNameLower.includes('minimum 2') || pkgNameLower.includes('min 2 pax') || 
+                        pkgNameLower.includes('min.of 2');
+
+  // isSoloPkg, isSoloJoiners, isMinTwoPkg
+  const isSoloPkg = !titleIsSoloJoiners && ((pkg.pax === 1) || titleIsSolo);
   const isSoloJoiners = (!isSoloPkg && pkg.tourType === 'joiners') || titleIsSoloJoiners;
-  // isMinTwoPkg: base price covers 2 pax; extra pax = price/2 — DB pax===2 OR title says min of 2
-  const isMinTwoPkg   = (!isSoloPkg && (pkg.tourType === 'private' && pkg.pax === 2)) || titleIsMinTwo;
-  // ✅ AUTO-SET PAX FROM FUNNEL FORM
-    // ✅ AUTO-SET PAX FROM FUNNEL FORM (Safe version)
-  const funnelInitialPax = parseInt(new URLSearchParams(window.location.search).get('initialPax')) 
-    || initialPaxFromFunnel 
-    || null;
-  // ✅ defaultPax: solo=1 (locked), min-2=2 (locked min), solo/joiners=1 (free, solo default), normal=2
+  const isMinTwoPkg = (!isSoloPkg && (pkg.tourType === 'private' && pkg.pax === 2)) || titleIsMinTwo;
+
+  // ✅ defaultPax fallback
   const defaultPax = isSoloPkg ? 1 : isMinTwoPkg ? 2 : isSoloJoiners ? 1 : 2;
 
-  const [selectedDate, setSelectedDate] = useState(null);
-  // ✅ Clamp initial adult count to the correct minimum so min-2 never starts at 1
-    // ✅ Auto-set pax from funnel (respect package rules)
-  const startingAdultPax = initialPaxFromFunnel 
-    ? Math.max(initialPaxFromFunnel, isMinTwoPkg ? 2 : isSoloPkg ? 1 : 1)
+  // ✅ AUTO-SET PAX FROM FUNNEL (This is the important part)
+  const funnelPax = parseInt(initialPaxFromFunnel) || 
+                    parseInt(new URLSearchParams(window.location.search).get('initialPax')) || 
+                    null;
+
+  // Calculate final starting pax (respect package rules)
+  const startingAdultPax = funnelPax 
+    ? Math.max(funnelPax, isMinTwoPkg ? 2 : isSoloPkg ? 1 : 1)
     : Math.max(defaultPax, isMinTwoPkg ? 2 : 1);
 
-    const [quantities, setQuantities] = useState({ adult: Math.max(defaultPax, isMinTwoPkg ? 2 : 1) });
+  // ✅ Use the calculated starting pax
+  const [quantities, setQuantities] = useState({ adult: startingAdultPax });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ Package preview before booking
