@@ -301,7 +301,7 @@ function PackageDealsContent() {
       (p) => String(p.id) === pendingBookId || String(p._id) === pendingBookId
     );
 
-        if (foundPkg) {
+       if (foundPkg) {
       console.log('✅ Found package for direct booking:', foundPkg.name);
       
       const urlParams = new URLSearchParams(window.location.search);
@@ -309,7 +309,7 @@ function PackageDealsContent() {
 
       setSelectedPackageForBooking({
         ...foundPkg,
-        initialPaxFromFunnel: initialPax   // ← ipinasa natin
+        initialPaxFromFunnel: initialPax
       });
       
       setCurrentView('booking');

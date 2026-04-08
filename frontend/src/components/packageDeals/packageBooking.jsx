@@ -11,7 +11,7 @@ function PackageBooking({
   onGoBack, 
   currency = 'PHP', 
   exchangeRate = 58,
-  initialPaxFromFunnel = null   // ← idagdag
+  initialPaxFromFunnel = null 
 }) {
   const [customizationData, setCustomizationData] = useState(null);
   const [paxCount, setPaxCount] = useState(1); // ✅ Lifted pax state — synced from BookingRightForm via onPaxChange
@@ -280,7 +280,7 @@ function PackageBooking({
               timerExpired={timerExpired}
               onPaxChange={setPaxCount}
               onFlightChange={setSelectedFlight}
-              initialPaxFromFunnel={initialPaxFromFunnel || pkg.initialPaxFromFunnel}
+                initialPaxFromFunnel={initialPaxFromFunnel || pkg.initialPaxFromFunnel}
             />
           </div>
         </div>
