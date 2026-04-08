@@ -10,10 +10,20 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
-app.use(cors({
-  origin: ['https://wanderwaveph.com', 'http://localhost:3000'], // idagdag ang production at local
-  credentials: true
-}));
+const corsOptions = {
+  origin: [
+    'https://wanderwaveph.com',
+    'https://app.gohighlevel.com',           // Main GHL domain
+    'https://*.gohighlevel.com',             // All GHL subdomains
+    'http://localhost:3000',                 // Local development
+    'http://127.0.0.1:3000'
+  ],
+  credentials: true,                         // Allow cookies/auth if needed
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
