@@ -268,7 +268,7 @@ function PackageBooking({
             />
           </div>
 
-          <div className="pb-right-panel">
+                    <div className="pb-right-panel">
             <BookingRightForm 
               pkg={pkg} 
               currency={currency}       
@@ -279,7 +279,7 @@ function PackageBooking({
               timerExpired={timerExpired}
               onPaxChange={setPaxCount}
               onFlightChange={setSelectedFlight}
-                initialPaxFromFunnel={initialPaxFromFunnel || pkg.initialPaxFromFunnel}
+              initialPaxFromFunnel={pkg.initialPaxFromFunnel}   // ← Ito ang tamang paraan
             />
           </div>
         </div>
