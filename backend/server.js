@@ -10,7 +10,10 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
-app.use(cors({}));
+app.use(cors({
+  origin: ['https://wanderwaveph.com', 'http://localhost:3000'], // idagdag ang production at local
+  credentials: true
+}));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
