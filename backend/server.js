@@ -15,7 +15,8 @@ const corsOptions = {
     'https://wanderwaveph.com',
     'https://app.gohighlevel.com',           // Main GHL domain
     'https://*.gohighlevel.com',             // All GHL subdomains
-    'http://localhost:3000',                 // Local development
+    'http://localhost:3000', 
+    'http://localhost:3001',                // Local development
     'http://127.0.0.1:3000'
   ],
   credentials: true,                         // Allow cookies/auth if needed
@@ -24,6 +25,10 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// ✅ CRITICAL: PayMongo webhook needs raw body — must be registered BEFORE express.json()
+// This ensures the webhook payload is not parsed/mutated before processing
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
