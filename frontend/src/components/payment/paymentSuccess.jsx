@@ -24,16 +24,15 @@ if (sessionId) {
 
 const verifyPaymentSession = async (sessionId) => {
   try {
-    const res = await fetch(`https://wanderwaveph.onrender.com/api/payment/verify-session/${sessionId}`);
+    // ✅ FIX: Use the new safety-net endpoint to confirm booking if webhook missed it
+    const res = await fetch(`https://wanderwaveph.onrender.com/api/payment/confirm-by-session/${sessionId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
     const data = await res.json();
-
-    if (data.success && data.session) {
-      // Try to find booking by checkoutSessionId
-      const bookingRes = await fetch(`https://wanderwaveph.onrender.com/api/bookings?checkoutSessionId=${sessionId}`);
-      // ... handle response at i-set ang details
-    }
+    console.log('✅ Safety-net confirm result:', data);
   } catch (err) {
-    console.error('Session verification failed', err);
+    console.error('Safety-net session confirmation failed (non-fatal):', err);
   } finally {
     setLoading(false);
   }
@@ -93,38 +92,61 @@ const verifyPaymentSession = async (sessionId) => {
   }, [searchParams]);
 
   const fetchBookingDetails = async (id, paymentType) => {
-    try {
-      const response = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${id}`);
-      const data = await response.json();
-      
-      if (data && data._id) {
-        const booking = data.success ? data.booking : data;
-        const isPartialPayment = paymentType === 'partial' || booking.paymentType === 'partial';
-        const paidAmount = isPartialPayment ? booking.initialPaymentAmount : booking.totalAmount;
+    // ✅ FIX: Poll with retries to wait for PayMongo webhook to update booking status.
+    // Without this, the page loads before the webhook fires and shows 'pending'.
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY_MS = 2000; // 2 seconds between retries
+
+    const tryFetch = async (attempt) => {
+      try {
+        const response = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${id}`);
+        const data = await response.json();
         
-        setDetails({
-          id: booking._id,
-          reference: booking.referenceNumber || booking._id.slice(-8).toUpperCase(),
-          title: booking.packageName,
-          subTitle: `${booking.duration} • ${booking.pax?.adult || 1} Pax`,
-          amount: paidAmount,
-          totalAmount: booking.totalAmount,
-          remainingBalance: booking.remainingBalance,
-          email: booking.email,
-          dateLabel: "Travel Dates",
-          dateValue: `${booking.startDate} - ${booking.endDate}`,
-          status: booking.status,
-          isPartial: isPartialPayment,
-          paymentType: booking.paymentType,
-          fullName: booking.fullName,
-          createdAt: booking.createdAt
-        });
+        if (data && (data._id || (data.success && data.booking))) {
+          const booking = data.success ? data.booking : data;
+          const isPartialPayment = paymentType === 'partial' || booking.paymentType === 'partial';
+          const paidAmount = isPartialPayment ? booking.initialPaymentAmount : booking.totalAmount;
+
+          // ✅ If booking is still pending and we have retries left, keep polling
+          if (booking.status === 'pending' && attempt < MAX_RETRIES) {
+            console.log(`⏳ Booking still pending, retrying... (attempt ${attempt}/${MAX_RETRIES})`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            return tryFetch(attempt + 1);
+          }
+          
+          setDetails({
+            id: booking._id,
+            reference: booking.referenceNumber || booking._id.slice(-8).toUpperCase(),
+            title: booking.packageName,
+            subTitle: `${booking.duration} • ${booking.pax?.adult || 1} Pax`,
+            amount: paidAmount,
+            totalAmount: booking.totalAmount,
+            remainingBalance: booking.remainingBalance,
+            email: booking.email,
+            dateLabel: "Travel Dates",
+            dateValue: `${booking.startDate} - ${booking.endDate}`,
+            status: booking.status,
+            isPartial: isPartialPayment,
+            paymentType: booking.paymentType,
+            fullName: booking.fullName,
+            createdAt: booking.createdAt
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching booking:', error);
+        if (attempt < MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+          return tryFetch(attempt + 1);
+        }
+      } finally {
+        if (attempt >= MAX_RETRIES) {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error('Error fetching booking:', error);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    await tryFetch(1);
+    setLoading(false);
   };
 
   const fetchInquiryDetails = async (id) => {
