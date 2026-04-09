@@ -116,34 +116,30 @@ router.post('/webhook', async (req, res) => {
       if (booking) {
         console.log('Booking found for checkout session');
 
-        const metadata = session.attributes.payments?.[0]?.attributes?.metadata || session.attributes.metadata || {};
+        const metadata = session.attributes.payments?.[0]?.attributes?.metadata
+                      || session.attributes.metadata
+                      || {};
+
         const paymentType = metadata?.payment_type || 'full';
-        const isInitialPayment = metadata?.is_initial_payment === true ||
-                                 metadata?.is_initial_payment === 'true' ||
-                                 metadata?.is_initial_payment === 1;
+        const isInitialPayment = metadata?.is_initial_payment === true
+                              || metadata?.is_initial_payment === 'true'
+                              || metadata?.is_initial_payment === 1;
 
-        console.log('Payment metadata detected:', {
-          paymentType,
-          isInitialPayment,
-          rawMetadata: metadata
-        });
+        console.log('🔍 Payment metadata:', { paymentType, isInitialPayment });
 
-        // ────── FIXED STATUS LOGIC ──────
         if (paymentType === 'partial' && isInitialPayment) {
           booking.status = 'partial_paid';
           booking.initialPaymentPaid = true;
           booking.initialPaymentPaidAt = new Date();
-          console.log('✅ Set as PARTIAL_PAID (initial payment)');
+          console.log('✅ Updated to PARTIAL_PAID');
         } else {
-          // Full payment o balance payment
           booking.status = 'confirmed';
           booking.fullyPaid = true;
           booking.fullyPaidAt = new Date();
           booking.initialPaymentPaid = true;
           booking.initialPaymentPaidAt = new Date();
-          console.log('✅ Set as CONFIRMED (full payment)');
+          console.log('✅ Updated to CONFIRMED (Full Payment)');
         }
-        // ─────────────────────────────────
 
         booking.paidAt = new Date();
         booking.updatedAt = new Date();
@@ -154,7 +150,7 @@ router.post('/webhook', async (req, res) => {
 
         await booking.save();
 
-        console.log(`✅ Booking ${booking._id} updated to status: ${booking.status}`);
+        console.log(`✅ FINAL STATUS: ${booking.status} for booking ${booking._id}`);
 
         // ✅ Notify GHL that payment is confirmed
         notifyGHLPaymentConfirmed(booking.email, booking._id).catch(() => {});
@@ -347,25 +343,30 @@ router.post('/confirm-by-session/:sessionId', async (req, res) => {
       return res.json({ success: true, message: 'Booking already confirmed', status: booking.status });
     }
 
-    const metadata = session.attributes.payments?.[0]?.attributes?.metadata || session.attributes.metadata || {};
-    const paymentType = metadata?.payment_type || 'full';
-    const isInitialPayment = metadata?.is_initial_payment === true ||
-                             metadata?.is_initial_payment === 'true' ||
-                             metadata?.is_initial_payment === 1;
+    const metadata = session.attributes.payments?.[0]?.attributes?.metadata
+                  || session.attributes.metadata
+                  || {};
 
-    // ────── FIXED STATUS LOGIC (same as webhook) ──────
+    const paymentType = metadata?.payment_type || 'full';
+    const isInitialPayment = metadata?.is_initial_payment === true
+                          || metadata?.is_initial_payment === 'true'
+                          || metadata?.is_initial_payment === 1;
+
+    console.log('🔍 Payment metadata:', { paymentType, isInitialPayment });
+
     if (paymentType === 'partial' && isInitialPayment) {
       booking.status = 'partial_paid';
       booking.initialPaymentPaid = true;
       booking.initialPaymentPaidAt = new Date();
+      console.log('✅ Updated to PARTIAL_PAID');
     } else {
       booking.status = 'confirmed';
       booking.fullyPaid = true;
       booking.fullyPaidAt = new Date();
       booking.initialPaymentPaid = true;
       booking.initialPaymentPaidAt = new Date();
+      console.log('✅ Updated to CONFIRMED (Full Payment)');
     }
-    // ─────────────────────────────────────────────────
 
     booking.paidAt = new Date();
     booking.updatedAt = new Date();
@@ -374,7 +375,7 @@ router.post('/confirm-by-session/:sessionId', async (req, res) => {
 
     await booking.save();
 
-    console.log('✅ Booking manually confirmed via session verify:', booking._id);
+    console.log(`✅ FINAL STATUS: ${booking.status} for booking ${booking._id}`);
 
     // Notify GHL (non-fatal)
     notifyGHLPaymentConfirmed(booking.email, booking._id).catch(() => {});
