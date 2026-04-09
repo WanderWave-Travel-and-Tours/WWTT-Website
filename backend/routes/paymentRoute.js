@@ -118,12 +118,12 @@ router.post('/webhook', async (req, res) => {
         const isInitialPayment = metadata?.is_initial_payment === true || metadata?.is_initial_payment === 'true';
 
         if (paymentType === 'partial' && isInitialPayment) {
-          // Partial payment - mark as confirmed but not fully paid
-          booking.status = 'confirmed';
+          // Partial initial payment → partial_paid (shows as pending until balance is settled)
+          booking.status = 'partial_paid'; // ✅ FIXED: was 'confirmed', now correctly 'partial_paid'
           booking.initialPaymentPaid = true;
           booking.initialPaymentPaidAt = new Date();
         } else {
-          // Full payment
+          // Full payment → confirmed immediately
           booking.status = 'confirmed';
           booking.fullyPaid = true;
           booking.fullyPaidAt = new Date();
@@ -321,11 +321,11 @@ router.post('/confirm-by-session/:sessionId', async (req, res) => {
     const isInitialPayment = metadata?.is_initial_payment === true || metadata?.is_initial_payment === 'true';
 
     if (paymentType === 'partial' && isInitialPayment) {
-      booking.status = 'confirmed';
+      booking.status = 'partial_paid'; // ✅ FIXED: was 'confirmed', now correctly 'partial_paid'
       booking.initialPaymentPaid = true;
       booking.initialPaymentPaidAt = new Date();
     } else {
-      booking.status = 'confirmed';
+      booking.status = 'confirmed'; // Full payment → confirmed immediately
       booking.fullyPaid = true;
       booking.fullyPaidAt = new Date();
       booking.initialPaymentPaid = true;
