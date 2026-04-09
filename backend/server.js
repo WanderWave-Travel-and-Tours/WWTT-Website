@@ -10,28 +10,48 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
+
+// ====================== CRITICAL: WEBHOOK SETUP FIRST ======================
+
+// 1. PayMongo Webhook — RAW body, must be registered BEFORE cors() and express.json()
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
+
+// 2. CORS — after webhook so it doesn't interfere with PayMongo's raw requests
 const corsOptions = {
   origin: [
     'https://wanderwaveph.com',
     'https://app.gohighlevel.com',           // Main GHL domain
     'https://*.gohighlevel.com',             // All GHL subdomains
-    'http://localhost:3000', 
-    'http://localhost:3001',                // Local development
-    'http://127.0.0.1:3000'
+    'http://localhost:3000',
+    'http://localhost:3001',                 // Local development
+    'http://127.0.0.1:3000',
+    'https://checkout.paymongo.com',         // PayMongo checkout
   ],
-  credentials: true,                         // Allow cookies/auth if needed
+  credentials: true,                        // Allow cookies/auth if needed
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
-app.use(cors(corsOptions));
+// PayMongo webhook is an external service — skip CORS for it
+app.use((req, res, next) => {
+  if (req.path === '/api/payment/webhook') {
+    return next(); // Skip CORS for webhook
+  }
+  cors(corsOptions)(req, res, next);
+});
 
-// ✅ CRITICAL: PayMongo webhook needs raw body — must be registered BEFORE express.json()
-// This ensures the webhook payload is not parsed/mutated before processing
-app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
-
+// 3. Normal middleware — after webhook and CORS
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// 4. Webhook request logger — confirms webhook is actually reaching the server
+app.use((req, res, next) => {
+  if (req.path === '/api/payment/webhook') {
+    console.log('🔥 WEBHOOK REQUEST RECEIVED - Path:', req.path);
+    console.log('Content-Type:', req.headers['content-type']);
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   if (req.body && req.body.passengers) {
