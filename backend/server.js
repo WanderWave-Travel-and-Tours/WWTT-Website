@@ -668,6 +668,46 @@ app.post('/api/favorites/:userId/toggle', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SOCIAL MEDIA REDIRECT ROUTES
+// Logs a SiteVisit record then redirects to the landing page with ?source=
+// so the Reporting dashboard can count per-platform clicks.
+//
+// Routes:
+//   GET /fb  →  logs 'facebook'   → redirects to wanderwaveph.com?source=facebook
+//   GET /ig  →  logs 'instagram'  → redirects to wanderwaveph.com?source=instagram
+//   GET /tt  →  logs 'tiktok'     → redirects to wanderwaveph.com?source=tiktok
+// ─────────────────────────────────────────────────────────────────────────────
+const SOCIAL_REDIRECTS = {
+  fb: {
+    platform: 'facebook',
+    url: 'https://wanderwaveph.com?source=facebook',
+  },
+  ig: {
+    platform: 'instagram',
+    url: 'https://wanderwaveph.com?source=instagram',
+  },
+  tt: {
+    platform: 'tiktok',
+    url: 'https://wanderwaveph.com?source=tiktok',
+  },
+};
+
+Object.entries(SOCIAL_REDIRECTS).forEach(([slug, { platform, url }]) => {
+  app.get(`/${slug}`, async (req, res) => {
+    try {
+      const SiteVisit = require('./models/siteVisit');
+      const visit = new SiteVisit({ platform });
+      await visit.save();
+      console.log(`✅ Social visit logged — platform: ${platform}`);
+    } catch (err) {
+      console.error(`❌ Failed to log visit for /${slug}:`, err.message);
+      // Still redirect even if DB logging fails
+    }
+    res.redirect(302, url);
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
