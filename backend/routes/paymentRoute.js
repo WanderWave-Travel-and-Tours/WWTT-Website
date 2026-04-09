@@ -37,6 +37,24 @@ const notifyGHLPaymentConfirmed = async (email, bookingId) => {
   }
 };
 
+// ✅ Helper: Determine booking status based on remaining balance
+// This is the source of truth — remainingBalance <= 0 means fully paid
+// regardless of whether paymentType is 'partial' or 'full'
+const resolveBookingStatus = (booking, paymentType, isInitialPayment) => {
+  const remainingBalance = booking.remainingBalance || 0;
+
+  if (remainingBalance <= 0) {
+    // Walang balance na natitira — confirmed agad kahit partial ang payment type
+    return 'confirmed';
+  } else if (paymentType === 'partial' && isInitialPayment) {
+    // May balance pa at partial payment ito — partial_paid
+    return 'partial_paid';
+  } else {
+    // Full payment or default
+    return 'confirmed';
+  }
+};
+
 // ✅ Routes
 router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutSession);
 router.post('/create-intent', paymentController.createBookingPaymentIntent); // ✅ Updated to use checkout session
@@ -127,18 +145,21 @@ router.post('/webhook', async (req, res) => {
 
         console.log('🔍 Payment metadata:', { paymentType, isInitialPayment });
 
-        if (paymentType === 'partial' && isInitialPayment) {
-          booking.status = 'partial_paid';
-          booking.initialPaymentPaid = true;
-          booking.initialPaymentPaidAt = new Date();
-          console.log('✅ Updated to PARTIAL_PAID');
-        } else {
-          booking.status = 'confirmed';
+        // ✅ UPDATED: Base status on remaining balance, not just payment type
+        const newStatus = resolveBookingStatus(booking, paymentType, isInitialPayment);
+        booking.status = newStatus;
+
+        if (newStatus === 'confirmed') {
           booking.fullyPaid = true;
           booking.fullyPaidAt = new Date();
           booking.initialPaymentPaid = true;
           booking.initialPaymentPaidAt = new Date();
-          console.log('✅ Updated to CONFIRMED (Full Payment)');
+          console.log('✅ Updated to CONFIRMED (remainingBalance <= 0 or full payment)');
+        } else {
+          // partial_paid
+          booking.initialPaymentPaid = true;
+          booking.initialPaymentPaidAt = new Date();
+          console.log('✅ Updated to PARTIAL_PAID (remaining balance:', booking.remainingBalance, ')');
         }
 
         booking.paidAt = new Date();
@@ -354,18 +375,21 @@ router.post('/confirm-by-session/:sessionId', async (req, res) => {
 
     console.log('🔍 Payment metadata:', { paymentType, isInitialPayment });
 
-    if (paymentType === 'partial' && isInitialPayment) {
-      booking.status = 'partial_paid';
-      booking.initialPaymentPaid = true;
-      booking.initialPaymentPaidAt = new Date();
-      console.log('✅ Updated to PARTIAL_PAID');
-    } else {
-      booking.status = 'confirmed';
+    // ✅ UPDATED: Base status on remaining balance, not just payment type
+    const newStatus = resolveBookingStatus(booking, paymentType, isInitialPayment);
+    booking.status = newStatus;
+
+    if (newStatus === 'confirmed') {
       booking.fullyPaid = true;
       booking.fullyPaidAt = new Date();
       booking.initialPaymentPaid = true;
       booking.initialPaymentPaidAt = new Date();
-      console.log('✅ Updated to CONFIRMED (Full Payment)');
+      console.log('✅ Updated to CONFIRMED (remainingBalance <= 0 or full payment)');
+    } else {
+      // partial_paid
+      booking.initialPaymentPaid = true;
+      booking.initialPaymentPaidAt = new Date();
+      console.log('✅ Updated to PARTIAL_PAID (remaining balance:', booking.remainingBalance, ')');
     }
 
     booking.paidAt = new Date();
@@ -449,18 +473,21 @@ router.post('/confirm-by-booking/:bookingId', async (req, res) => {
 
     console.log('🔍 Payment metadata (confirm-by-booking):', { paymentType, isInitialPayment });
 
-    if (paymentType === 'partial' && isInitialPayment) {
-      booking.status = 'partial_paid';
-      booking.initialPaymentPaid = true;
-      booking.initialPaymentPaidAt = new Date();
-      console.log('✅ Updated to PARTIAL_PAID');
-    } else {
-      booking.status = 'confirmed';
+    // ✅ UPDATED: Base status on remaining balance, not just payment type
+    const newStatus = resolveBookingStatus(booking, paymentType, isInitialPayment);
+    booking.status = newStatus;
+
+    if (newStatus === 'confirmed') {
       booking.fullyPaid = true;
       booking.fullyPaidAt = new Date();
       booking.initialPaymentPaid = true;
       booking.initialPaymentPaidAt = new Date();
-      console.log('✅ Updated to CONFIRMED (Full Payment)');
+      console.log('✅ Updated to CONFIRMED (remainingBalance <= 0 or full payment)');
+    } else {
+      // partial_paid
+      booking.initialPaymentPaid = true;
+      booking.initialPaymentPaidAt = new Date();
+      console.log('✅ Updated to PARTIAL_PAID (remaining balance:', booking.remainingBalance, ')');
     }
 
     booking.paidAt = new Date();

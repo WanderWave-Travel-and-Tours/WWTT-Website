@@ -237,10 +237,17 @@ const createBookingPaymentIntent = async (req, res) => {
     booking.referenceNumber = checkoutSession.attributes.reference_number;
     booking.paymentType = paymentType || 'full';
     booking.initialPaymentAmount = amountToPay;
-    
-    if (isPartial) {
-      booking.remainingBalance = booking.totalAmount - amountToPay;
-    }
+
+    // ✅ UPDATED: Always compute remainingBalance regardless of paymentType
+    // This is the source of truth used later to determine confirmed vs partial_paid
+    const newRemainingBalance = booking.totalAmount - amountToPay;
+    booking.remainingBalance = Math.max(0, newRemainingBalance);
+
+    console.log('Remaining Balance Computed:', {
+      totalAmount: booking.totalAmount,
+      amountToPay: amountToPay,
+      remainingBalance: booking.remainingBalance
+    });
     
     await booking.save();
 
