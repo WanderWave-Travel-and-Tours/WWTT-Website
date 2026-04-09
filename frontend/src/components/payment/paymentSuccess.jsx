@@ -13,30 +13,31 @@ const PaymentSuccess = () => {
   const [user, setUser] = useState(null); // ✅ NEW
 
   useEffect(() => {
-    // ✅ RESTORE USER SESSION FROM LOCALSTORAGE
-// Pagkatapos ng confetti at user session restore
-const sessionId = searchParams.get('session_id');
+    // ✅ SAFETY NET: Confirm booking immediately on page load using booking_id.
+    // This is the PRIMARY fallback when the PayMongo webhook doesn't fire.
+    // We call confirm-by-booking FIRST (non-blocking), then fetch booking details.
+    const bookingId = searchParams.get('booking_id') || searchParams.get('bookingId');
+    const inquiryId = searchParams.get('inquiryId');
+    const paymentType = searchParams.get('paymentType');
 
-if (sessionId) {
-  // Verify the session and try to get booking
-  verifyPaymentSession(sessionId);
-}
+    // ✅ Must declare BEFORE calling — const is not hoisted
+    const confirmBookingByID = async (id) => {
+      try {
+        const res = await fetch(`https://wanderwaveph.onrender.com/api/payment/confirm-by-booking/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        console.log('✅ Safety-net confirm-by-booking result:', data);
+      } catch (err) {
+        console.error('Safety-net booking confirmation failed (non-fatal):', err);
+      }
+    };
 
-const verifyPaymentSession = async (sessionId) => {
-  try {
-    // ✅ FIX: Use the new safety-net endpoint to confirm booking if webhook missed it
-    const res = await fetch(`https://wanderwaveph.onrender.com/api/payment/confirm-by-session/${sessionId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await res.json();
-    console.log('✅ Safety-net confirm result:', data);
-  } catch (err) {
-    console.error('Safety-net session confirmation failed (non-fatal):', err);
-  } finally {
-    setLoading(false);
-  }
-};
+    if (bookingId) {
+      // Fire immediately — don't await, let fetchBookingDetails poll for the result
+      confirmBookingByID(bookingId);
+    }
 
     const storedUser = localStorage.getItem('wanderwave_user');
     if (storedUser) {
@@ -75,11 +76,7 @@ const verifyPaymentSession = async (sessionId) => {
     };
     frame();
 
-    // Identify Transaction Type
-    const bookingId = searchParams.get('booking_id') || searchParams.get('bookingId');
-    const inquiryId = searchParams.get('inquiryId');
-    const paymentType = searchParams.get('paymentType');
-
+    // Identify Transaction Type and fetch details
     if (bookingId) {
       setType('booking');
       fetchBookingDetails(bookingId, paymentType);

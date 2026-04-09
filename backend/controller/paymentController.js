@@ -215,7 +215,7 @@ const createBookingPaymentIntent = async (req, res) => {
               total_amount: booking.totalAmount,
               payment_amount: amountToPay,
               payment_type: paymentType || 'full',
-              is_initial_payment: true,
+              is_initial_payment: isPartial ? true : false,  // ✅ FIXED: was always true, breaks metadata check for full payments
               includes_airfare: booking.includesAirfare || false
             }
           }

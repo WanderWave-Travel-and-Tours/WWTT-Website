@@ -388,7 +388,107 @@ router.post('/confirm-by-session/:sessionId', async (req, res) => {
   }
 });
 
-// ✅ Verify payment link (for balance payments)
+// ✅ SAFETY NET 2: Confirm by Booking ID
+// Called by PaymentSuccess.jsx on page load using booking_id from the success URL.
+// Looks up the booking's stored checkoutSessionId, verifies with PayMongo, then updates status.
+// This is the PRIMARY fallback when the webhook doesn't fire — guaranteed to work.
+router.post('/confirm-by-booking/:bookingId', async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    console.log('📋 Confirm-by-booking request for:', bookingId);
+
+    // 1. Find the booking
+    let booking = null;
+    try {
+      booking = await Booking.findById(bookingId);
+    } catch (idErr) {
+      return res.status(400).json({ success: false, message: 'Invalid booking ID format' });
+    }
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // Already confirmed — idempotent, safe to call multiple times
+    if (booking.status === 'confirmed' || booking.status === 'partial_paid') {
+      console.log('✅ Booking already updated:', booking.status);
+      return res.json({ success: true, message: 'Booking already updated', status: booking.status });
+    }
+
+    if (!booking.checkoutSessionId) {
+      return res.status(400).json({ success: false, message: 'No checkout session found for this booking' });
+    }
+
+    // 2. Verify payment status directly with PayMongo
+    const pmResponse = await axios.get(`https://api.paymongo.com/v1/checkout_sessions/${booking.checkoutSessionId}`, {
+      headers: { 'Authorization': `Basic ${authHeader}` }
+    });
+
+    const session = pmResponse.data.data;
+    const sessionStatus = session.attributes.payment_intent?.attributes?.status
+      || session.attributes.status;
+
+    console.log('📋 Confirm-by-booking — PayMongo session status:', sessionStatus);
+
+    const isPaid = sessionStatus === 'succeeded' || sessionStatus === 'paid'
+      || session.attributes.payments?.some(p => p.attributes?.status === 'paid');
+
+    if (!isPaid) {
+      return res.json({ success: false, message: 'Payment not yet confirmed by PayMongo', status: sessionStatus });
+    }
+
+    // 3. Same status logic as webhook and confirm-by-session
+    const metadata = session.attributes.payments?.[0]?.attributes?.metadata
+                  || session.attributes.metadata
+                  || {};
+
+    const paymentType = metadata?.payment_type || booking.paymentType || 'full';
+    const isInitialPayment = metadata?.is_initial_payment === true
+                          || metadata?.is_initial_payment === 'true'
+                          || metadata?.is_initial_payment === 1;
+
+    console.log('🔍 Payment metadata (confirm-by-booking):', { paymentType, isInitialPayment });
+
+    if (paymentType === 'partial' && isInitialPayment) {
+      booking.status = 'partial_paid';
+      booking.initialPaymentPaid = true;
+      booking.initialPaymentPaidAt = new Date();
+      console.log('✅ Updated to PARTIAL_PAID');
+    } else {
+      booking.status = 'confirmed';
+      booking.fullyPaid = true;
+      booking.fullyPaidAt = new Date();
+      booking.initialPaymentPaid = true;
+      booking.initialPaymentPaidAt = new Date();
+      console.log('✅ Updated to CONFIRMED (Full Payment)');
+    }
+
+    booking.paidAt = new Date();
+    booking.updatedAt = new Date();
+    booking.abandonedAt = null;
+    booking.followUpCount = 0;
+
+    await booking.save();
+
+    console.log(`✅ FINAL STATUS: ${booking.status} for booking ${booking._id}`);
+
+    // Notify GHL (non-fatal)
+    notifyGHLPaymentConfirmed(booking.email, booking._id).catch(() => {});
+
+    return res.json({
+      success: true,
+      message: 'Booking confirmed',
+      bookingId: booking._id,
+      status: booking.status
+    });
+
+  } catch (error) {
+    console.error('❌ Confirm-by-booking error:', error.response?.data || error.message);
+    res.status(500).json({ success: false, message: 'Confirm-by-booking failed', error: error.message });
+  }
+});
+
+
 router.get('/verify-link/:linkId', async (req, res) => {
   try {
     const { linkId } = req.params;
