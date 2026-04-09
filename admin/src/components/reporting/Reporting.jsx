@@ -259,14 +259,22 @@ const Reporting = () => {
   const [recentActiveBookings, setRecentActiveBookings] = useState([]);
   const [pvLoading, setPvLoading] = useState(true);
 
+  // ── Site visit (social referral) state ────────────────────────────────────
+  const [siteVisitStats, setSiteVisitStats] = useState({
+    recentVisits: [],
+    byPlatform: { facebook: 0, instagram: 0, tiktok: 0 },
+  });
+  const [svLoading, setSvLoading] = useState(true);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [pvRes, bookRes] = await Promise.all([
+        const [pvRes, bookRes, svRes] = await Promise.all([
           fetch('/api/page-views/stats'),
           fetch('/api/bookings/active'),
+          fetch('/api/site-visits/stats'),
         ]);
-        const [pvJson, bookJson] = await Promise.all([pvRes.json(), bookRes.json()]);
+        const [pvJson, bookJson, svJson] = await Promise.all([pvRes.json(), bookRes.json(), svRes.json()]);
 
         if (pvJson.status === 'ok') {
           const d = pvJson.data;
@@ -284,10 +292,18 @@ const Reporting = () => {
         if (bookJson.success) {
           setRecentActiveBookings(bookJson.bookings || []);
         }
+
+        if (svJson.status === 'ok') {
+          setSiteVisitStats({
+            recentVisits: svJson.data.recentVisits || [],
+            byPlatform:   svJson.data.byPlatform   || { facebook: 0, instagram: 0, tiktok: 0 },
+          });
+        }
       } catch (err) {
         console.error('Failed to fetch reporting stats:', err);
       } finally {
         setPvLoading(false);
+        setSvLoading(false);
       }
     };
     fetchStats();
@@ -358,6 +374,23 @@ const Reporting = () => {
     return { totalConfirmedBookings: filtered.length };
   }, [recentActiveBookings, analyticsDateWindow]);
 
+  // ── Filtered social (site-visit) counts — date-range aware ───────────────
+  const filteredSocialVisits = useMemo(() => {
+    const { start, end } = analyticsDateWindow;
+    const all = siteVisitStats.recentVisits;
+
+    const inRange = all.filter(v => {
+      const d = new Date(v.createdAt);
+      return d >= start && d <= end;
+    });
+
+    return {
+      facebook:  inRange.filter(v => v.platform === 'facebook').length,
+      instagram: inRange.filter(v => v.platform === 'instagram').length,
+      tiktok:    inRange.filter(v => v.platform === 'tiktok').length,
+    };
+  }, [siteVisitStats.recentVisits, analyticsDateWindow]);
+
   // ── View-to-Book rate ─────────────────────────────────────────────────────
   const viewToBookRate = useMemo(() => {
     const { bookingPageViews } = filteredPageViewStats;
@@ -379,25 +412,25 @@ const Reporting = () => {
     },
     {
       label:    'Facebook → Website',
-      value:    SOCIAL_MOCK.facebook.value,
-      change:   SOCIAL_MOCK.facebook.change,
-      positive: SOCIAL_MOCK.facebook.positive,
+      value:    svLoading ? '…' : formatCount(filteredSocialVisits.facebook),
+      change:   null,
+      positive: true,
       icon:     Facebook,
       image:    STAT_IMAGES.facebook,
     },
     {
       label:    'Instagram → Website',
-      value:    SOCIAL_MOCK.instagram.value,
-      change:   SOCIAL_MOCK.instagram.change,
-      positive: SOCIAL_MOCK.instagram.positive,
+      value:    svLoading ? '…' : formatCount(filteredSocialVisits.instagram),
+      change:   null,
+      positive: true,
       icon:     Instagram,
       image:    STAT_IMAGES.instagram,
     },
     {
       label:    'TikTok → Website',
-      value:    SOCIAL_MOCK.tiktok.value,
-      change:   SOCIAL_MOCK.tiktok.change,
-      positive: SOCIAL_MOCK.tiktok.positive,
+      value:    svLoading ? '…' : formatCount(filteredSocialVisits.tiktok),
+      change:   null,
+      positive: true,
       icon:     null,
       image:    STAT_IMAGES.tiktok,
     },
