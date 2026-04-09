@@ -80,56 +80,70 @@ router.post('/webhook', async (req, res) => {
       console.log('Checkout Session ID:', checkoutSessionId);
       console.log('Metadata:', metadata);
 
-      // ✅ FIX: Try finding booking by referenceNumber first, then fallback to checkoutSessionId
-      // This handles edge cases where reference_number lookup fails
+      // ✅ IMPROVED LOOKUP — Priority order na mas reliable
+      // Priority 1: checkoutSessionId (pinaka-reliable, direct match sa booking document)
+      // Priority 2: metadata.booking_id (MongoDB _id na explicitly nasa metadata)
+      // Priority 3: referenceNumber (last resort — madalas hindi ito ang MongoDB _id)
       let booking = null;
-      
-      try {
-        booking = await Booking.findById(referenceNumber);
-      } catch (idErr) {
-        console.warn('⚠️ findById with referenceNumber failed (non-fatal), trying checkoutSessionId...', idErr.message);
-      }
 
-      // Fallback: find by checkoutSessionId stored on the booking document
-      if (!booking) {
+      if (checkoutSessionId) {
         booking = await Booking.findOne({ checkoutSessionId: checkoutSessionId });
-        if (booking) {
-          console.log('✅ Booking found via checkoutSessionId fallback:', booking._id);
-        }
+        if (booking) console.log('✅ Booking found via checkoutSessionId:', booking._id);
       }
 
-      // Another fallback: find via metadata.booking_id
       if (!booking && metadata?.booking_id) {
         try {
           booking = await Booking.findById(metadata.booking_id);
-          if (booking) {
-            console.log('✅ Booking found via metadata.booking_id fallback:', booking._id);
-          }
+          if (booking) console.log('✅ Booking found via metadata.booking_id:', booking._id);
         } catch (metaErr) {
           console.warn('⚠️ metadata.booking_id lookup failed:', metaErr.message);
         }
       }
+
+      if (!booking && referenceNumber) {
+        try {
+          booking = await Booking.findById(referenceNumber);
+          if (booking) console.log('✅ Booking found via referenceNumber:', booking._id);
+        } catch (idErr) {
+          console.warn('⚠️ findById with referenceNumber failed (non-fatal):', idErr.message);
+        }
+      }
+
+      if (!booking) {
+        console.error('❌ No booking found — checkoutSessionId:', checkoutSessionId, '| ref:', referenceNumber, '| metadata.booking_id:', metadata?.booking_id);
+      }
       
       if (booking) {
         console.log('Booking found for checkout session');
-        console.log('✅ Booking found:', booking._id, '| Email:', booking.email);
-        
-        const paymentType = metadata?.payment_type || 'full';
-        const isInitialPayment = metadata?.is_initial_payment === true || metadata?.is_initial_payment === 'true';
 
+        const metadata = session.attributes.payments?.[0]?.attributes?.metadata || session.attributes.metadata || {};
+        const paymentType = metadata?.payment_type || 'full';
+        const isInitialPayment = metadata?.is_initial_payment === true ||
+                                 metadata?.is_initial_payment === 'true' ||
+                                 metadata?.is_initial_payment === 1;
+
+        console.log('Payment metadata detected:', {
+          paymentType,
+          isInitialPayment,
+          rawMetadata: metadata
+        });
+
+        // ────── FIXED STATUS LOGIC ──────
         if (paymentType === 'partial' && isInitialPayment) {
-          // Partial initial payment → partial_paid (shows as pending until balance is settled)
-          booking.status = 'partial_paid'; // ✅ FIXED: was 'confirmed', now correctly 'partial_paid'
+          booking.status = 'partial_paid';
           booking.initialPaymentPaid = true;
           booking.initialPaymentPaidAt = new Date();
+          console.log('✅ Set as PARTIAL_PAID (initial payment)');
         } else {
-          // Full payment → confirmed immediately
+          // Full payment o balance payment
           booking.status = 'confirmed';
           booking.fullyPaid = true;
           booking.fullyPaidAt = new Date();
-          booking.initialPaymentPaid = true; // ✅ Also mark this so isFullyPaid() returns true
+          booking.initialPaymentPaid = true;
           booking.initialPaymentPaidAt = new Date();
+          console.log('✅ Set as CONFIRMED (full payment)');
         }
+        // ─────────────────────────────────
 
         booking.paidAt = new Date();
         booking.updatedAt = new Date();
@@ -137,10 +151,10 @@ router.post('/webhook', async (req, res) => {
         // ✅ Reset abandoned booking tracking — payment was received, no more follow-ups needed
         booking.abandonedAt = null;
         booking.followUpCount = 0;
-        
+
         await booking.save();
-        
-        console.log('✅ Booking updated successfully via webhook — status:', booking.status);
+
+        console.log(`✅ Booking ${booking._id} updated to status: ${booking.status}`);
 
         // ✅ Notify GHL that payment is confirmed
         notifyGHLPaymentConfirmed(booking.email, booking._id).catch(() => {});
@@ -298,13 +312,30 @@ router.post('/confirm-by-session/:sessionId', async (req, res) => {
       return res.json({ success: false, message: 'Payment not yet confirmed by PayMongo', status: sessionStatus });
     }
 
-    // 2. Find the booking
+    // 2. Find the booking — same priority order as webhook
+    // Priority 1: checkoutSessionId
     let booking = await Booking.findOne({ checkoutSessionId: sessionId });
+    if (booking) console.log('✅ Manual confirm — found via checkoutSessionId:', booking._id);
 
+    // Priority 2: metadata.booking_id
     if (!booking) {
-      // Fallback: try reference_number field
+      const metaBookingId = session.attributes.payments?.[0]?.attributes?.metadata?.booking_id
+        || session.attributes.metadata?.booking_id;
+      if (metaBookingId) {
+        try {
+          booking = await Booking.findById(metaBookingId);
+          if (booking) console.log('✅ Manual confirm — found via metadata.booking_id:', booking._id);
+        } catch (_) {}
+      }
+    }
+
+    // Priority 3: reference_number (last resort)
+    if (!booking) {
       const refNumber = session.attributes.reference_number;
-      try { booking = await Booking.findById(refNumber); } catch (_) {}
+      if (refNumber) {
+        try { booking = await Booking.findById(refNumber); } catch (_) {}
+        if (booking) console.log('✅ Manual confirm — found via referenceNumber:', booking._id);
+      }
     }
 
     if (!booking) {
@@ -316,21 +347,25 @@ router.post('/confirm-by-session/:sessionId', async (req, res) => {
       return res.json({ success: true, message: 'Booking already confirmed', status: booking.status });
     }
 
-    const metadata = session.attributes.payments?.[0]?.attributes?.metadata || session.attributes.metadata;
+    const metadata = session.attributes.payments?.[0]?.attributes?.metadata || session.attributes.metadata || {};
     const paymentType = metadata?.payment_type || 'full';
-    const isInitialPayment = metadata?.is_initial_payment === true || metadata?.is_initial_payment === 'true';
+    const isInitialPayment = metadata?.is_initial_payment === true ||
+                             metadata?.is_initial_payment === 'true' ||
+                             metadata?.is_initial_payment === 1;
 
+    // ────── FIXED STATUS LOGIC (same as webhook) ──────
     if (paymentType === 'partial' && isInitialPayment) {
-      booking.status = 'partial_paid'; // ✅ FIXED: was 'confirmed', now correctly 'partial_paid'
+      booking.status = 'partial_paid';
       booking.initialPaymentPaid = true;
       booking.initialPaymentPaidAt = new Date();
     } else {
-      booking.status = 'confirmed'; // Full payment → confirmed immediately
+      booking.status = 'confirmed';
       booking.fullyPaid = true;
       booking.fullyPaidAt = new Date();
       booking.initialPaymentPaid = true;
       booking.initialPaymentPaidAt = new Date();
     }
+    // ─────────────────────────────────────────────────
 
     booking.paidAt = new Date();
     booking.updatedAt = new Date();
