@@ -309,6 +309,60 @@ router.post('/:id/archive', async (req, res) => {
     }
 });
 
+// ============================================
+// GET /check-voucher-usage
+// ✅ Checks if a logged-in user already has any booking using a specific voucher.
+// Includes pending — blocks re-use before payment is even completed.
+// Called by frontend BEFORE the promo validate API call.
+// ⚠️ IMPORTANT: Must be declared BEFORE router.get('/:id') to prevent Express
+//    from treating "check-voucher-usage" as an ObjectId for the :id param.
+// ============================================
+router.get('/check-voucher-usage', async (req, res) => {
+  try {
+    const { email, promoCode } = req.query;
+
+    if (!email || !promoCode) {
+      return res.status(400).json({ success: false, message: 'email and promoCode are required.' });
+    }
+
+    const promo = await Promo.findOne({
+      code: promoCode.trim().toUpperCase(),
+      isArchive: 'No'
+    }).lean();
+
+    if (!promo) {
+      return res.status(200).json({ success: true, hasUsed: false });
+    }
+
+    if (promo.promoType !== 'voucher') {
+      return res.status(200).json({ success: true, hasUsed: false });
+    }
+
+    // ✅ Case-insensitive email, includes pending, checks both promoId and promoCode fields
+    const safeEmail = email.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const existingUsage = await Booking.findOne({
+      $or: [
+        { promoId: promo._id },
+        { promoCode: promo.code }
+      ],
+      email: { $regex: new RegExp(`^${safeEmail}$`, 'i') },
+      status: { $in: ['pending', 'confirmed', 'fully_paid', 'partial_paid'] }
+    }).lean();
+
+    console.log(`🎫 Voucher usage check — ${email} / ${promoCode}: ${existingUsage ? 'ALREADY USED (status: ' + existingUsage.status + ')' : 'NOT USED'}`);
+
+    return res.status(200).json({
+      success: true,
+      hasUsed: !!existingUsage,
+      bookingStatus: existingUsage ? existingUsage.status : null
+    });
+
+  } catch (error) {
+    console.error('❌ Error checking voucher usage:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)

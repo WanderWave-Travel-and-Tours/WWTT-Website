@@ -20,7 +20,7 @@
     width: 100%; 
     border-collapse: collapse; 
     /* ✅ FIXED MIN-WIDTH: Critical for preserving button layout */
-    min-width: 1200px; 
+    min-width: 1320px; 
 }
 
 /* HEADER STYLES */
@@ -38,6 +38,7 @@
 
 /* COLUMN WIDTHS */
 .prt-col-code { width: 180px; }
+.prt-col-type { width: 120px; }
 .prt-col-category { width: 150px; }
 .prt-col-discount { width: 140px; }
 .prt-col-date { width: 160px; }
@@ -120,6 +121,10 @@
 }
 .prt-badge-active { background: #10b981; color: white; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4); }
 .prt-badge-expired { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+/* ✅ NEW: Promo Type Badges */
+.prt-badge-promo  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; text-transform: none; font-size: 12px; }
+.prt-badge-voucher { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; text-transform: none; font-size: 12px; }
 
 /* Description Cell (Truncated) */
 .prt-desc-cell { display: flex; align-items: center; gap: 8px; max-width: 250px; }

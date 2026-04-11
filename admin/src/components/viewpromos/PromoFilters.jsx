@@ -11,18 +11,35 @@ const PromoFilters = ({
     dateStart,
     setDateStart,
     dateEnd,
-    setDateEnd
+    setDateEnd,
+    filterType,
+    setFilterType
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+
+    const typeOptions = ['ALL', 'promo', 'voucher'];
 
     const handleStatusSelect = (status) => {
         setFilterStatus(status);
         setIsDropdownOpen(false);
     };
 
+    const handleTypeSelect = (type) => {
+        setFilterType(type);
+        setIsTypeDropdownOpen(false);
+    };
+
     const getSelectedLabel = () => {
         if (filterStatus === 'ALL') return 'All Promos';
         return filterStatus;
+    };
+
+    const getTypeLabel = () => {
+        if (!filterType || filterType === 'ALL') return 'All Types';
+        if (filterType === 'promo') return '🎟️ Promo';
+        if (filterType === 'voucher') return '🎫 Voucher';
+        return filterType;
     };
 
     return (
@@ -77,6 +94,50 @@ const PromoFilters = ({
                                                         {status === 'ALL' ? 'All Promos' : status}
                                                     </span>
                                                     {filterStatus === status && (
+                                                        <span className="promo-dropdown-check">✓</span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ✅ NEW: Type Dropdown (Promo vs Voucher) */}
+                        <div className="promo-filter-item">
+                            <label>Type:</label>
+                            <div className="promo-select-wrapper">
+                                <button
+                                    className="promo-select-btn"
+                                    onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
+                                >
+                                    <span className="promo-select-label">{getTypeLabel()}</span>
+                                    <ChevronDown
+                                        size={14}
+                                        className={`promo-select-icon ${isTypeDropdownOpen ? 'promo-select-icon--open' : ''}`}
+                                    />
+                                </button>
+
+                                {isTypeDropdownOpen && (
+                                    <>
+                                        <div
+                                            className="promo-dropdown-overlay"
+                                            onClick={() => setIsTypeDropdownOpen(false)}
+                                        />
+                                        <div className="promo-dropdown-menu">
+                                            {typeOptions.map((type) => (
+                                                <button
+                                                    key={type}
+                                                    className={`promo-dropdown-item ${
+                                                        (filterType || 'ALL') === type ? 'promo-dropdown-item--active' : ''
+                                                    }`}
+                                                    onClick={() => handleTypeSelect(type)}
+                                                >
+                                                    <span className="promo-dropdown-label">
+                                                        {type === 'ALL' ? 'All Types' : type === 'promo' ? '🎟️ Promo' : '🎫 Voucher'}
+                                                    </span>
+                                                    {(filterType || 'ALL') === type && (
                                                         <span className="promo-dropdown-check">✓</span>
                                                     )}
                                                 </button>

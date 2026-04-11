@@ -37,6 +37,7 @@ const PromosTable = ({
                     <thead>
                         <tr>
                             <th className="prt-col-code">CODE</th>
+                            <th className="prt-col-type">TYPE</th>
                             <th className="prt-col-category">CATEGORY</th>
                             <th className="prt-col-discount">PRICE</th>
                             <th className="prt-col-date">VALID UNTIL</th>
@@ -57,6 +58,15 @@ const PromosTable = ({
                                         <div className="prt-code-cell">
                                             <span className="prt-code-badge">{promo.code}</span>
                                         </div>
+                                    </td>
+
+                                    {/* TYPE */}
+                                    <td>
+                                        {(promo.promoType || 'promo') === 'voucher' ? (
+                                            <span className="prt-badge prt-badge-voucher">🎫 Voucher</span>
+                                        ) : (
+                                            <span className="prt-badge prt-badge-promo">🎟️ Promo</span>
+                                        )}
                                     </td>
 
                                     {/* CATEGORY */}
@@ -147,7 +157,7 @@ const PromosTable = ({
                         {/* Empty State */}
                         {promos.length === 0 && (
                             <tr>
-                                <td colSpan="7" className="prt-empty-cell">
+                                <td colSpan="8" className="prt-empty-cell">
                                     No promo codes found.
                                 </td>
                             </tr>

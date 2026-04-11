@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Promo = require('../models/promo'); 
-const Package = require('../models/package'); // ✅ ADDED: Import Package model
+const Package = require('../models/package');
+const Booking = require('../models/booking');
 const ActivityLog = require('../models/ActivityLog');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
@@ -71,7 +72,8 @@ router.post('/add', upload.single('image'), async (req, res) => {
             code, description, category, discountType,
             durationType, startDate, validUntil, usageLimit,
             localPrice, internationalPrice,
-            targetPackages
+            targetPackages,
+            promoType = 'promo'
         } = req.body;
         const logUserId = getValidAdminId(adminId);
 
@@ -97,6 +99,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
                 isArchive: "No",
                 image: imageUrl,
                 imagePublicId: imagePublicId,
+                promoType,
                 pricing: {
                     local: Number(localPrice),
                     international: 0
@@ -118,6 +121,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
                 isArchive: "No",
                 image: imageUrl,
                 imagePublicId: imagePublicId,
+                promoType,
                 pricing: {
                     local: 0,
                     international: Number(internationalPrice)
@@ -194,10 +198,10 @@ router.get('/all', async (req, res) => {
     }
 });
 
-// 3. GET ALL ACTIVE PROMOS (isArchive: "No")
+// 3. GET ALL ACTIVE PROMOS (isArchive: "No") — excludes vouchers (hidden from public carousel)
 router.get('/', async (req, res) => {
     try {
-        const promos = await Promo.find({ isArchive: "No" })
+        const promos = await Promo.find({ isArchive: "No", promoType: { $ne: 'voucher' } })
             .populate('targetPackages', 'title destination category')
             .sort({ createdAt: -1 });
         res.status(200).json(promos);
@@ -480,6 +484,7 @@ router.get('/validate/:code', async (req, res) => {
                 discountType: promo.discountType,
                 // ✅ UPDATED: Return pricing object instead of discountValue
                 pricing: promo.pricing,
+                promoType: promo.promoType,
                 usageLimit: promo.usageLimit,
                 usedCount: promo.usedCount,
                 targetPackages: promo.targetPackages
@@ -549,7 +554,38 @@ router.get('/validate/:code', async (req, res) => {
             });
         }
 
-        // ✅ FIXED: Check if promo applies to specific package
+        // ✅ VOUCHER: One-time use per logged-in user (per specific voucher code only)
+        if (promo.promoType === 'voucher') {
+            const userEmail = req.query.userEmail || req.query.email;
+
+            if (!userEmail) {
+                console.log('❌ Voucher requires logged-in user but no email provided');
+                return res.status(400).json({
+                    valid: false,
+                    message: 'This voucher requires a logged-in account. Please log in first.'
+                });
+            }
+
+            // ✅ Case-insensitive email, includes pending, checks both promoId and promoCode
+            const existingUsage = await Booking.findOne({
+                $or: [
+                    { promoId: promo._id },
+                    { promoCode: promo.code }
+                ],
+                email: { $regex: new RegExp(`^${userEmail.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+                status: { $in: ['pending', 'confirmed', 'fully_paid', 'partial_paid'] }
+            });
+
+            if (existingUsage) {
+                console.log('❌ Voucher already used by this user — booking status:', existingUsage.status);
+                return res.status(400).json({
+                    valid: false,
+                    message: 'You have already used this voucher. It can only be used once per account.'
+                });
+            }
+
+            console.log('✅ Voucher check passed for user:', userEmail);
+        }
         if (promo.targetPackages && promo.targetPackages.length > 0) {
             console.log('🔍 Promo has target packages. Validating...');
             
@@ -629,6 +665,7 @@ router.get('/validate/:code', async (req, res) => {
                 discountType: promo.discountType,
                 // ✅ UPDATED: Return pricing object instead of discountValue
                 pricing: promo.pricing,
+                promoType: promo.promoType,
                 usageLimit: promo.usageLimit,
                 usedCount: promo.usedCount,
                 targetPackages: promo.targetPackages
