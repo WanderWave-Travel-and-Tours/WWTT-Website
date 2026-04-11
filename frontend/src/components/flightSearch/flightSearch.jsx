@@ -30,7 +30,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
 
   // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
   useGHLTrigger({
-    enabled: true,
+    enabled: !sessionStorage.getItem('ww_exit_shown'),
     delayMinutes: 1,
     triggerOnExit: true
   });

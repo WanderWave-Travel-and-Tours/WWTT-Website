@@ -10,7 +10,8 @@ function PackageBooking({
   pkg, 
   onGoBack, 
   currency = 'PHP', 
-  exchangeRate = 58 
+  exchangeRate = 58,
+  currentUser = null
 }) {
   const [customizationData, setCustomizationData] = useState(null);
   const [paxCount, setPaxCount] = useState(1); // ✅ Lifted pax state — synced from BookingRightForm via onPaxChange
@@ -47,7 +48,7 @@ function PackageBooking({
 
   // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
   useGHLTrigger({
-    enabled: true,
+    enabled: !sessionStorage.getItem('ww_exit_shown'),
     delayMinutes: 1,
     triggerOnExit: true
   });
@@ -279,7 +280,8 @@ function PackageBooking({
               timerExpired={timerExpired}
               onPaxChange={setPaxCount}
               onFlightChange={setSelectedFlight}
-              initialPaxFromFunnel={pkg.initialPaxFromFunnel}   // ← Ito ang tamang paraan
+              initialPaxFromFunnel={pkg.initialPaxFromFunnel}
+              currentUser={currentUser}
             />
           </div>
         </div>

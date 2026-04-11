@@ -58,7 +58,11 @@ function PromoSection({ onBookNow }) {
         const data = await res.json();
         if (Array.isArray(data)) {
           const today  = new Date();
-          const active = data.filter(p => new Date(p.validUntil) >= today);
+          const active = data.filter(p =>
+            new Date(p.validUntil) >= today &&
+            p.promoType !== 'voucher' &&
+            p.isArchive !== 'Yes'
+          );
           const mapped = active.map(p => ({
             id: p._id, isComingSoon: false,
             type: p.durationType, code: p.code,

@@ -56,7 +56,8 @@ const AddPromo = () => {
         internationalPrice: '',
         durationType: 'Weekly',
         startDate: '',
-        usageLimit: ''
+        usageLimit: '',
+        promoType: 'promo'
     });
 
     // Image State
@@ -223,7 +224,8 @@ const AddPromo = () => {
             internationalPrice: data.internationalPrice || '',
             durationType: data.durationType || 'Weekly',
             startDate: data.startDate || '',
-            usageLimit: data.usageLimit || ''
+            usageLimit: data.usageLimit || '',
+            promoType: data.promoType || 'promo'
         });
 
         setIsOtherCategory(!!data.isOtherCategory);
@@ -412,6 +414,7 @@ const AddPromo = () => {
 
             // ✅ Add target packages as JSON string
             formData.append('targetPackages', JSON.stringify(selectedPackages.map(pkg => pkg._id)));
+            formData.append('promoType', promoDetails.promoType);
 
             const adminData = JSON.parse(localStorage.getItem('adminData'));
             if (adminData) {
@@ -644,6 +647,23 @@ const AddPromo = () => {
                                                 className="promo-input-custom"
                                                 autoFocus
                                             />
+                                        )}
+                                    </div>
+
+                                    <div className="promo-field">
+                                        <label>Promo Type</label>
+                                        <select
+                                            name="promoType"
+                                            value={promoDetails.promoType}
+                                            onChange={handleChange}
+                                        >
+                                            <option value="promo">🎟️ Promo (Public)</option>
+                                            <option value="voucher">🎫 Voucher (One-time per logged-in user)</option>
+                                        </select>
+                                        {promoDetails.promoType === 'voucher' && (
+                                            <small style={{ fontSize: '11px', color: '#FF8C42', display: 'block', marginTop: '4px' }}>
+                                                One-time use only per user • Requires customer login • Hidden from public promo carousel
+                                            </small>
                                         )}
                                     </div>
 

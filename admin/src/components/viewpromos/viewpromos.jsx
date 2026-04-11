@@ -23,6 +23,7 @@ const ViewPromos = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
+    const [filterType, setFilterType] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -48,13 +49,14 @@ const ViewPromos = () => {
     const fetchPromos = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://wanderwaveph.onrender.com/api/promos');
+            // ✅ FIXED: Use /all to include vouchers (GET / excludes vouchers for public carousel only)
+            const response = await fetch('https://wanderwaveph.onrender.com/api/promos/all');
             if (!response.ok) {
                 throw new Error('Failed to fetch promos');
             }
             const data = await response.json();
             
-            // Filter non-archived promos
+            // Filter non-archived promos (client-side)
             const nonArchivedPromos = data.filter(promo => promo.isArchive === "No");
             
             setPromos(nonArchivedPromos);
@@ -86,10 +88,16 @@ const ViewPromos = () => {
         const { id, code } = confirmModal;
         
         try {
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}`, {
-                method: 'PUT',
+            // ✅ FIXED: Use dedicated archive toggle endpoint instead of PUT
+            // PUT route does NOT handle isArchive — it rebuilds updateData from specific fields only
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}/archive`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isArchive: 'Yes' }),
+                body: JSON.stringify({
+                    userEmail: adminData.email || adminData.username || 'System Admin',
+                    adminId: adminData._id || adminData.id || null
+                }),
             });
 
             if (response.ok) {
@@ -124,7 +132,9 @@ const ViewPromos = () => {
                             promo.description.toLowerCase().includes(searchTerm.toLowerCase());
         const promoStatus = getStatus(promo.validUntil);
         const matchesStatus = filterStatus === 'ALL' || promoStatus === filterStatus;
-        return matchesSearch && matchesStatus;
+        // ✅ NEW: Filter by type (Promo vs Voucher)
+        const matchesType = filterType === 'ALL' || (promo.promoType || 'promo') === filterType.toLowerCase();
+        return matchesSearch && matchesStatus && matchesType;
     });
 
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -160,6 +170,7 @@ const ViewPromos = () => {
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
                         filterStatus={filterStatus} setFilterStatus={setFilterStatus}
                         statusOptions={statusOptions} getFilterClassName={getFilterClassName}
+                        filterType={filterType} setFilterType={setFilterType}
                     />
                     
                     {loading ? (

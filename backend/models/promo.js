@@ -1,49 +1,55 @@
 const mongoose = require('mongoose');
 
-// ✅ NEW SCHEMA: Pricing breakdown for Local and International
-const PromoPriceSchema = new mongoose.Schema({
-    local: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 0
-    },
-    international: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 0
-    }
-}, { _id: false });
-
-const PromoSchema = new mongoose.Schema({
+const promoSchema = new mongoose.Schema({
     code: {
         type: String,
         required: true,
         unique: true,
-        uppercase: true,
-        trim: true
+        trim: true,
+        uppercase: true
     },
-    description: { type: String, required: true },
-    category: { type: String, required: true },
-    discountType: { type: String, required: true },
-    // ✅ REPLACED: discountValue → pricing (local + international)
-    pricing: {
-        type: PromoPriceSchema,
+    description: {
+        type: String,
+        default: ''
+    },
+    category: {
+        type: String,
+        default: ''
+    },
+    discountType: {
+        type: String,
+        enum: ['Fixed Amount (Peso)', 'Percentage'],
+        default: 'Fixed Amount (Peso)'
+    },
+    durationType: {
+        type: String,
+        enum: ['Weekly', 'Monthly', 'Yearly'],
+        default: 'Weekly'
+    },
+    startDate: {
+        type: String,
+        default: null
+    },
+    validUntil: {
+        type: String,
         required: true
     },
-    startDate: { 
-        type: Date, 
-        required: true 
+    usageLimit: {
+        type: Number,
+        default: null
     },
-    durationType: { 
-        type: String, 
-        enum: ['Weekly', 'Monthly', 'Yearly'], 
-        required: true 
+    usedCount: {
+        type: Number,
+        default: 0
     },
-    validUntil: { 
-        type: Date, 
-        required: true 
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    isArchive: {
+        type: String,
+        enum: ['Yes', 'No'],
+        default: 'No'
     },
     image: {
         type: String,
@@ -53,28 +59,28 @@ const PromoSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    usageLimit: {
-        type: Number,
-        default: null, 
-        min: 0,
+    pricing: {
+        local: { type: Number, default: 0 },
+        international: { type: Number, default: 0 }
+    },
+    targetPackages: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'packages'
+        }
+    ],
+
+    // ✅ NEW: Promo Type
+    // 'promo'   → regular public promo, appears in PromoSection carousel
+    // 'voucher' → one-time use per logged-in user, NEVER appears in public carousel
+    promoType: {
+        type: String,
+        enum: ['promo', 'voucher'],
+        default: 'promo',
         required: true
-    },
-    usedCount: {
-        type: Number,
-        default: 0,
-        min: 0
-    },
-    isActive: { type: Boolean, default: true },
-    isArchive: { 
-        type: String, 
-        enum: ['No', 'Yes'], 
-        default: 'No' 
-    },
-    // ✅ Target Packages
-    targetPackages: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'packages'
-    }]
+    }
+
 }, { timestamps: true });
 
-module.exports = mongoose.model('Promo', PromoSchema);
+const Promo = mongoose.model('Promo', promoSchema);
+module.exports = Promo;

@@ -24,7 +24,8 @@ const BookingRightForm = ({
   timerExpired: timerExpiredFromParent = false,
   onPaxChange = null,
   onFlightChange = null,
-  initialPaxFromFunnel = null,          // ← IDAGDAG ITO
+  initialPaxFromFunnel = null,
+  currentUser = null,          // ✅ Logged-in customer passed from packageDeals
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
@@ -684,8 +685,60 @@ const handleApplyPromo = async () => {
 
     try {
       const packageId = pkg._id || pkg.id;
-      
-      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
+
+      // ✅ Get logged-in customer email
+      // Priority: currentUser prop (passed from packageDeals) > wanderwave_user localStorage
+      let loggedInUserEmail = '';
+      if (currentUser?.email) {
+        loggedInUserEmail = currentUser.email.trim().toLowerCase();
+      } else {
+        try {
+          const rawUser = localStorage.getItem('wanderwave_user');
+          if (rawUser) {
+            const parsedUser = JSON.parse(rawUser);
+            loggedInUserEmail = (parsedUser?.email || '').trim().toLowerCase();
+          }
+        } catch (_) {}
+      }
+
+      // ── LAYER 1: localStorage instant check ──────────────────────────────
+      if (loggedInUserEmail) {
+        try {
+          const usedVouchersKey = `usedVouchers_${loggedInUserEmail}`;
+          const usedVouchers = JSON.parse(localStorage.getItem(usedVouchersKey) || '[]');
+          if (usedVouchers.includes(promoCode.trim().toUpperCase())) {
+            const errMsg = 'You have already used this voucher. It can only be used once per account.';
+            setPromoError(errMsg);
+            setAppliedPromo(null);
+            toast.error(errMsg);
+            setIsCheckingPromo(false);
+            return;
+          }
+        } catch (_) {}
+      }
+
+      // ── LAYER 2: Database check — catches cross-device usage ─────────────
+      if (loggedInUserEmail) {
+        try {
+          const usageRes = await fetch(
+            `https://wanderwaveph.onrender.com/api/bookings/check-voucher-usage?email=${encodeURIComponent(loggedInUserEmail)}&promoCode=${encodeURIComponent(promoCode.trim().toUpperCase())}`
+          );
+          const usageData = await usageRes.json();
+          if (usageData.success && usageData.hasUsed) {
+            const errMsg = 'You have already used this voucher. It can only be used once per account.';
+            setPromoError(errMsg);
+            setAppliedPromo(null);
+            toast.error(errMsg);
+            setIsCheckingPromo(false);
+            return;
+          }
+        } catch (_) {
+          console.warn('⚠️ Voucher DB pre-check failed (non-fatal):', _);
+        }
+      }
+
+      // ── LAYER 3: Promo validate endpoint (final backend defense) ─────────
+      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.trim().toUpperCase()}?packageId=${packageId}${loggedInUserEmail ? `&userEmail=${encodeURIComponent(loggedInUserEmail)}` : ''}`;
       
       const response = await fetch(url);
       
@@ -754,6 +807,7 @@ const handleApplyPromo = async () => {
           discountType: promo.discountType,
           pricing: promo.pricing,  // ✅ UPDATED: store pricing (local + international) instead of discountValue
           promoId: promo._id,
+          promoType: promo.promoType || 'promo', // ✅ Store promoType for voucher identification
           packageId: packageId,
           maxUsesPerBooking: promo.maxUsesPerBooking || null,
           // ✅ Store remaining uses info for discount calculation
@@ -763,6 +817,30 @@ const handleApplyPromo = async () => {
         };
 
         setAppliedPromo(appliedPromoData);
+
+        // ✅ VOUCHER: I-record sa localStorage agad na ginamit na ng user ito.
+        if (promo.promoType === 'voucher') {
+          try {
+            let emailForStorage = '';
+            if (currentUser?.email) {
+              emailForStorage = currentUser.email.trim().toLowerCase();
+            } else {
+              const rawUser = localStorage.getItem('wanderwave_user');
+              if (rawUser) {
+                const parsedUser = JSON.parse(rawUser);
+                emailForStorage = (parsedUser?.email || '').trim().toLowerCase();
+              }
+            }
+            if (emailForStorage) {
+              const usedVouchersKey = `usedVouchers_${emailForStorage}`;
+              const usedVouchers = JSON.parse(localStorage.getItem(usedVouchersKey) || '[]');
+              if (!usedVouchers.includes(promo.code.toUpperCase())) {
+                usedVouchers.push(promo.code.toUpperCase());
+                localStorage.setItem(usedVouchersKey, JSON.stringify(usedVouchers));
+              }
+            }
+          } catch (_) {}
+        }
 
         if (hasUsageLimit && remainingUses < currentPax) {
           toast.warning(
