@@ -14,10 +14,10 @@ import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestination, prefilledPassengers }) {
   const location = useLocation();
   const navigate = useNavigate();
-
+const packageData = location.state?.packageData || null;
   const context = BookingStateManager.getFlightSearchContext();
   const isFromBooking = location.state?.fromBooking || false;
-  const packageData = location.state?.packageData || null;
+const isFromTour    = location.state?.isTour || false;   // ← bagong flag
   
   useEffect(() => {
     if (!isFromBooking && !packageData) {
@@ -340,19 +340,15 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     parseInt(searchParams.adults) + parseInt(searchParams.children) + parseInt(searchParams.infants);
 
   const handleFlightSelectFromBooking = (flight) => {
-    const bookingData = JSON.parse(sessionStorage.getItem('pendingBookingData') || '{}');
-    bookingData.selectedFlight = flight;
-    sessionStorage.setItem('pendingBookingData', JSON.stringify(bookingData));
-    const returnPath = bookingData.returnPath;
-    navigate(returnPath, {
-      state: { 
-        selectedFlight: flight,
-        packageData: bookingData.packageData, 
-        fromFlightSearch: true 
-      },
-      replace: false
-    });
-  };
+  const bookingData = JSON.parse(sessionStorage.getItem('pendingBookingData') || '{}');
+  
+  bookingData.selectedFlight = flight;
+  sessionStorage.setItem('pendingBookingData', JSON.stringify(bookingData));
+
+  // Ito ang magti-trigger ng pagbalik sa TourBooking view
+  const returnPath = bookingData.returnPath || '/tour-packages';
+  navigate(returnPath, { replace: true });
+};
 
   // ── ROUND-TRIP: Step 1 → outbound selected, trigger return search ──
   const handleOutboundSelect = (flight) => {
@@ -577,13 +573,15 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   return (
     <div className="flight-search-container">
       {shouldShowBackButton && (
-        <div className="back-button-wrapper">
-          <button className="back-button" onClick={handleBackToBooking}>
-            <ChevronLeft size={20} strokeWidth={2.5} />
-            <span>Back to Package Booking</span>
-          </button>
-        </div>
-      )}
+  <div className="back-button-wrapper">
+    <button className="back-button" onClick={handleBackToBooking}>
+      <ChevronLeft size={20} strokeWidth={2.5} />
+      <span>
+        Back to {location.state?.packageData?.isTour ? 'Tour Booking' : 'Package Booking'}
+      </span>
+    </button>
+  </div>
+)}
 
       <FlightSearchForm
         searchParams={searchParams}
@@ -634,8 +632,21 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
         roundTripStep={roundTripStep}
         selectedOutbound={selectedOutbound}
         onOutboundSelect={handleOutboundSelect}
-        onReturnSelect={handleReturnSelect}
-        onOneWayBook={(flight) => setBookingModalFlight(flight)}
+        onOneWayBook={(flight) => {
+    if (isFromBooking) {
+      handleFlightSelectFromBooking(flight);   // ← diretso balik
+    } else {
+      setBookingModalFlight(flight);           // ← normal flight booking lang
+    }
+  }}
+  onReturnSelect={(returnFlight) => {
+    if (isFromBooking) {
+      handleFlightSelectFromBooking(returnFlight);
+    } else {
+      // keep your existing handleReturnSelect logic
+      handleReturnSelect(returnFlight);
+    }
+  }}
       />
 
       {/* Single booking modal entry point for all journey types.

@@ -23,6 +23,7 @@ const TourPreviewModal = ({
   paxCount                  = null,
   timerExpired: timerExpiredProp = null,
   selectedFlight            = null,
+  selectedRoomType = null,        // ← ADD THIS
 }) => {
   const [activeTab,          setActiveTab]          = useState('overview');
   const [expandedDay,        setExpandedDay]        = useState(null);
@@ -75,6 +76,12 @@ const TourPreviewModal = ({
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice   = (p) => currency === 'PHP' ? p : (p / exchangeRate) * 1.30;
+    // ✅ Final displayed price (tour + hotel + airfare)
+  const finalTotal = (() => {
+    let total = computedFinalPackageTotal || computedPackageTotal || 0;
+    if (selectedFlight) total += selectedFlight.price?.amount || 0;
+    return total;
+  })();
   const basePrice      = pkg.price || 0;
   const markupPrice    = Math.round(basePrice * 1.10);
 
@@ -299,7 +306,10 @@ const TourPreviewModal = ({
                 <span className="ppm-price-original">{currencySymbol}{formatPrice(originalPrice)}</span>
               )}
               <span className={`ppm-price-main ${!timerExpired ? 'discounted' : ''}`}>
-                {currencySymbol}{formatPrice(displayPrice)}
+                {currencySymbol}{finalTotal.toLocaleString(undefined, {
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0
+                })}
               </span>
               {!timerExpired && discountPct > 0 && <span className="ppm-price-save">Save {discountPct}%</span>}
             </div>
