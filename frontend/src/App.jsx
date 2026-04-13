@@ -20,7 +20,7 @@ import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 import UserDashboard from './components/userDashboard/userDashboard.jsx';
 import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
 import TourPackages from './components/TourPackages/tourPackages.jsx';
-import TransferPackages from './components/Transfers/transferPackages.jsx';
+import TransferPackages from './components/transfers/transferPackages.jsx';
 
 // --- NEW FEEDBACK COMPONENT ---
 import FeedbackWidget from './components/FeedbackWidget/FeedbackWidget.jsx';
