@@ -925,6 +925,119 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 /* ========================================
+   SITE VISIT ANALYTICS SECTION (rp-sv-)
+   ======================================== */
+
+.rp-section-subtitle-inline {
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0;
+}
+
+/* Two-column chart row */
+.rp-sv-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* Pie card */
+.rp-sv-pie-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.rp-sv-pie-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Pie legend */
+.rp-sv-pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px 8px;
+}
+
+.rp-sv-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.rp-sv-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rp-sv-legend-name {
+  flex: 1;
+  color: #475569;
+  font-weight: 600;
+}
+
+.rp-sv-legend-val {
+  font-weight: 700;
+  color: #0f172a;
+  min-width: 48px;
+  text-align: right;
+}
+
+.rp-sv-legend-pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Line card */
+.rp-sv-line-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Platform toggle tabs (inside line chart header) */
+.rp-sv-platform-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rp-sv-platform-tab {
+  padding: 5px 13px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rp-sv-platform-tab:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.rp-sv-platform-tab.active {
+  color: #ffffff;
+}
+
+/* ========================================
    RESPONSIVE BREAKPOINTS
    ======================================== */
 
@@ -952,6 +1065,10 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
   .rp-ps-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rp-sv-charts-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1076,5 +1193,238 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
   .rp-container {
     gap: 16px;
+  }
+}
+/* ========================================
+   PAGE VIEW ANALYTICS (rp-pv-)
+   New clean layout matching Reporting UI
+   ======================================== */
+
+.rp-pv-section {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.rp-pv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rp-pv-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rp-pv-icon {
+  color: #6366f1;
+}
+
+.rp-pv-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.rp-pv-period {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.rp-pv-live-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 99px;
+  padding: 3px 10px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Stat cards grid ── */
+.rp-pv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.rp-pv-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  transition: box-shadow 0.15s;
+}
+
+.rp-pv-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.rp-pv-card--tours-highlight {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.rp-pv-card-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rp-pv-icon--total    { background: #eff6ff; color: #3b82f6; }
+.rp-pv-icon--packages { background: #fef9c3; color: #ca8a04; }
+.rp-pv-icon--booking  { background: #f0fdf4; color: #16a34a; }
+.rp-pv-icon--flights  { background: #fdf4ff; color: #a855f7; }
+.rp-pv-icon--services { background: #fff1f2; color: #e11d48; }
+.rp-pv-icon--tours    { background: #fff7ed; color: #ea580c; }
+.rp-pv-icon--rate     { background: #fdf4ff; color: #a855f7; }
+
+.rp-pv-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rp-pv-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.rp-pv-card-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.rp-pv-rate-value {
+  color: #a855f7;
+}
+
+.rp-pv-card-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* ── Top Packages ── */
+.rp-pv-top-packages {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 18px;
+}
+
+.rp-pv-sub-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px;
+}
+
+.rp-pv-pkg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rp-pv-pkg-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rp-pv-pkg-rank {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.rp-pv-pkg-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rp-pv-pkg-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rp-pv-pkg-bar-wrap {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.rp-pv-pkg-bar {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.rp-pv-pkg-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6366f1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .rp-pv-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .rp-pv-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .rp-pv-grid {
+    grid-template-columns: 1fr;
   }
 }

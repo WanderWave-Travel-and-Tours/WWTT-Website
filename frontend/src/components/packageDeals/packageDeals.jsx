@@ -47,16 +47,45 @@ function PackageDealsContent() {
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
 
+  // ── GHL session guard — computed once per session mount ──────────
+  // useState lazy init reads sessionStorage exactly once so the value
+  // stays stable for the lifetime of this component instance.
+  const [ghlEnabled] = useState(() => !sessionStorage.getItem('ww_exit_shown'));
+
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
   usePageTracker({ page: 'packages', path: '/packages', label: 'Package Deals Page' });
 
   // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
   useGHLTrigger({ 
-    enabled: !sessionStorage.getItem('ww_exit_shown'), 
+    enabled: ghlEnabled, 
     delayMinutes: 1,     // 1 minute
     triggerOnExit: true 
   });
+
+  // ── Stamp sessionStorage the moment the GHL form would appear ───
+  // Mirrors the hook's own delay + exit-intent conditions so that any
+  // subsequent page load or reload within the same browser session
+  // sees ww_exit_shown = 'true' and keeps the form hidden.
+  useEffect(() => {
+    if (!ghlEnabled) return;
+
+    const markShown = () => sessionStorage.setItem('ww_exit_shown', 'true');
+
+    // Match the 1-minute delay used by useGHLTrigger
+    const timer = setTimeout(markShown, 60 * 1000);
+
+    // Match the exit-intent trigger used by useGHLTrigger
+    const handleExitIntent = (e) => {
+      if (e.clientY <= 0) markShown();
+    };
+    document.addEventListener('mouseleave', handleExitIntent);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mouseleave', handleExitIntent);
+    };
+  }, [ghlEnabled]);
 
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);

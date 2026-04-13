@@ -41,6 +41,7 @@ export const exportReportingToPDF = ({
     viewToBookRate        = '0.0',
     activePeriod          = 'weekly',
     periodLabel           = 'All Time',
+    svPieData             = [],
 }) => {
     try {
         const doc       = new jsPDF();
@@ -92,11 +93,11 @@ export const exportReportingToPDF = ({
 
         let yPos = 42;
 
-        // ── HELPER: section heading (mirrors pdfExport.js style) ──────────
+        // ── HELPER: section heading ────────────────────────────────────────
         const drawSectionHeader = (number, title, y) => {
             doc.setFillColor(245, 247, 250);
             doc.rect(14, y, pageWidth - 28, 8, 'F');
-            doc.setFillColor(255, 140, 66);    // orange accent
+            doc.setFillColor(255, 140, 66);
             doc.rect(14, y, 3, 8, 'F');
             doc.setTextColor(0, 31, 63);
             doc.setFontSize(12);
@@ -114,173 +115,9 @@ export const exportReportingToPDF = ({
         };
 
         // ══════════════════════════════════════════════════════════════════
-        // 1. QUICK STATS OVERVIEW
+        // 1. PAGE VIEW ANALYTICS
         // ══════════════════════════════════════════════════════════════════
-        drawSectionHeader(1, 'QUICK STATS OVERVIEW', yPos);
-        yPos += 12;
-
-        const statsBody = quickStats.map(s => [
-            sanitize(s.label),
-            sanitize(s.value),
-            sanitize(s.change  || '--'),
-            sanitize(s.sub     || '--'),
-        ]);
-
-        autoTable(doc, {
-            startY:   yPos,
-            head:     [['Metric', 'Value', 'Change', 'Detail']],
-            body:     statsBody,
-            theme:    'plain',
-            margin:   { left: 14, right: 14 },
-            headStyles: {
-                fillColor:  [0, 31, 63],
-                textColor:  [255, 255, 255],
-                fontSize:   10,
-                fontStyle:  'bold',
-            },
-            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
-            alternateRowStyles: { fillColor: [250, 250, 250] },
-            columnStyles: {
-                0: { cellWidth: 'auto', fontStyle: 'bold' },
-                1: { halign: 'center', cellWidth: 25, fontStyle: 'bold', textColor: [0, 31, 63] },
-                2: { halign: 'center', cellWidth: 28 },
-                3: { cellWidth: 'auto', textColor: [100, 100, 100], fontSize: 8 },
-            },
-            didParseCell: (data) => {
-                if (data.section !== 'body') return;
-                const change   = quickStats[data.row.index]?.change;
-                const positive = quickStats[data.row.index]?.positive;
-                if (data.column.index === 2 && change && change !== '—') {
-                    data.cell.styles.textColor = positive
-                        ? [22, 163, 74]    // green
-                        : [220, 38, 38];   // red
-                }
-            },
-        });
-
-        yPos = doc.lastAutoTable.finalY + 15;
-
-        // ══════════════════════════════════════════════════════════════════
-        // 2. PLATFORM SUMMARY
-        // ══════════════════════════════════════════════════════════════════
-        checkPageBreak(80);
-        drawSectionHeader(2, 'PLATFORM SUMMARY', yPos);
-        yPos += 12;
-
-        const platformBody = platformSummary.map(p => [
-            sanitize(p.platform),
-            sanitize(p.followers),
-            sanitize(p.reach),
-            sanitize(p.engagement),
-            sanitize(p.rate),
-        ]);
-
-        // Platform color map for cell styling
-        const PLATFORM_COLORS = {
-            Facebook:  [24, 119, 242],
-            Instagram: [225, 48,  108],
-            TikTok:    [1,   1,   1  ],
-        };
-
-        autoTable(doc, {
-            startY:   yPos,
-            head:     [['Platform', 'Followers', 'Reach', 'Engagement', 'Eng. Rate']],
-            body:     platformBody,
-            theme:    'plain',
-            margin:   { left: 14, right: 14 },
-            headStyles: {
-                fillColor: [0, 31, 63],
-                textColor: [255, 255, 255],
-                fontSize:  10,
-                fontStyle: 'bold',
-            },
-            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
-            alternateRowStyles: { fillColor: [250, 250, 250] },
-            columnStyles: {
-                0: { cellWidth: 35, fontStyle: 'bold' },
-                1: { halign: 'center', cellWidth: 35 },
-                2: { halign: 'center', cellWidth: 35 },
-                3: { halign: 'center', cellWidth: 35 },
-                4: { halign: 'center', cellWidth: 35, fontStyle: 'bold' },
-            },
-            didParseCell: (data) => {
-                if (data.section !== 'body') return;
-                const platformName = platformSummary[data.row.index]?.platform;
-                const color        = PLATFORM_COLORS[platformName];
-                if (data.column.index === 0 && color) {
-                    data.cell.styles.textColor = color;
-                }
-                if (data.column.index === 4 && color) {
-                    data.cell.styles.textColor = color;
-                }
-            },
-        });
-
-        yPos = doc.lastAutoTable.finalY + 15;
-
-        // ══════════════════════════════════════════════════════════════════
-        // 3. MONTHLY REACH DATA (Chart Data)
-        // ══════════════════════════════════════════════════════════════════
-        checkPageBreak(80);
-        drawSectionHeader(3, 'MONTHLY REACH PERFORMANCE', yPos);
-        yPos += 12;
-
-        if (chartData.length > 0) {
-            const reachBody = chartData.map(row => [
-                row.month           || '—',
-                (row.Facebook  || 0).toLocaleString(),
-                (row.Instagram || 0).toLocaleString(),
-                (row.TikTok    || 0).toLocaleString(),
-                ((row.Facebook || 0) + (row.Instagram || 0) + (row.TikTok || 0)).toLocaleString(),
-            ]);
-
-            autoTable(doc, {
-                startY:   yPos,
-                head:     [['Month', 'Facebook', 'Instagram', 'TikTok', 'Combined']],
-                body:     reachBody,
-                theme:    'plain',
-                margin:   { left: 14, right: 14 },
-                headStyles: {
-                    fillColor: [0, 31, 63],
-                    textColor: [255, 255, 255],
-                    fontSize:  10,
-                    fontStyle: 'bold',
-                },
-                bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
-                alternateRowStyles: { fillColor: [250, 250, 250] },
-                columnStyles: {
-                    0: { cellWidth: 22, fontStyle: 'bold' },
-                    1: { halign: 'right', cellWidth: 38, textColor: [24, 119, 242] },
-                    2: { halign: 'right', cellWidth: 38, textColor: [225, 48, 108] },
-                    3: { halign: 'right', cellWidth: 38, textColor: [1, 1, 1] },
-                    4: { halign: 'right', cellWidth: 38, fontStyle: 'bold', textColor: [0, 31, 63] },
-                },
-            });
-
-            yPos = doc.lastAutoTable.finalY + 8;
-
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'italic');
-            doc.setTextColor(100, 100, 100);
-            doc.text(
-                'Reach figures represent estimated organic + paid monthly reach per platform.',
-                14, yPos,
-            );
-
-            yPos += 14;
-        } else {
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100, 100, 100);
-            doc.text('No chart data available for the selected period.', 14, yPos + 6);
-            yPos += 18;
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // 4. PAGE VIEW ANALYTICS
-        // ══════════════════════════════════════════════════════════════════
-        checkPageBreak(80);
-        drawSectionHeader(4, 'PAGE VIEW ANALYTICS', yPos);
+        drawSectionHeader(1, 'PAGE VIEW ANALYTICS', yPos);
         yPos += 12;
 
         const pv            = filteredPageViewStats;
@@ -289,7 +126,7 @@ export const exportReportingToPDF = ({
         const pvBooking     = pv.bookingPageViews   || 0;
         const pvFlights     = pv.flightsPageViews   || 0;
         const pvServices    = pv.servicesPageViews  || 0;
-        const pvOther       = Math.max(0, pvTotal - pvPackages - pvBooking - pvFlights - pvServices);
+        const pvTours       = pv.toursPageViews     || 0;
 
         const shareOf = (n) => pvTotal > 0 ? ((n / pvTotal) * 100).toFixed(1) + '%' : '0.0%';
 
@@ -301,7 +138,7 @@ export const exportReportingToPDF = ({
                 ['Booking Page (/booking)',     String(pvBooking),  shareOf(pvBooking) ],
                 ['Flight Search (/flights)',    String(pvFlights),  shareOf(pvFlights) ],
                 ['Other Services (/services)', String(pvServices), shareOf(pvServices)],
-                ['Other Pages',                String(pvOther),    shareOf(pvOther)   ],
+                ['Tour Packages (/tours)',      String(pvTours),    shareOf(pvTours)   ],
                 ['TOTAL ALL PAGES',            String(pvTotal),    '100%'             ],
             ],
             theme:  'plain',
@@ -332,104 +169,102 @@ export const exportReportingToPDF = ({
 
         yPos = doc.lastAutoTable.finalY + 10;
 
-        // ── View-to-Book conversion rate ───────────────────────────────────
+        // View-to-Book rate line
         const confirmedBookings = filteredBookingCounts.totalConfirmedBookings || 0;
-
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 60, 60);
-        doc.text(
-            'View-to-Book Rate (Confirmed Bookings / Booking Page Views):',
-            14, yPos,
-        );
+        doc.text('View-to-Book Rate (Confirmed Bookings / Booking Page Views):', 14, yPos);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(139, 92, 246);
         doc.text(viewToBookRate + '%', 133, yPos);
-
         yPos += 7;
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text(
-            confirmedBookings + ' confirmed booking(s) out of ' + pvBooking + ' Booking Page Views.',
-            14, yPos,
-        );
-
+        doc.text(confirmedBookings + ' confirmed booking(s) out of ' + pvBooking + ' Booking Page Views.', 14, yPos);
         yPos += 14;
 
-        // ══════════════════════════════════════════════════════════════════
-        // 5. SOCIAL REFERRAL SUMMARY
-        // ══════════════════════════════════════════════════════════════════
-        checkPageBreak(80);
-        drawSectionHeader(5, 'SOCIAL REFERRAL SUMMARY', yPos);
-        yPos += 12;
+        // Most Viewed Packages
+        if (pv.topViewedPackages && pv.topViewedPackages.length > 0) {
+            checkPageBreak(60);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 31, 63);
+            doc.text('Most Viewed Packages', 14, yPos);
+            yPos += 6;
 
-        // Pull social referral data from quickStats (indices 1-3 are FB, IG, TikTok)
-        const socialStats = quickStats.filter(s =>
-            ['Facebook → Website', 'Instagram → Website', 'TikTok → Website'].includes(s.label)
-        );
-
-        if (socialStats.length > 0) {
-            const socialBody = socialStats.map(s => [
-                sanitize(s.label),
-                sanitize(s.value),
-                sanitize(s.change   || '--'),
-                s.positive ? 'Positive' : 'Negative',
+            const pkgBody = pv.topViewedPackages.slice(0, 5).map((pkg, i) => [
+                '#' + (i + 1),
+                sanitize(pkg.displayName || pkg.packageName || 'Unknown'),
+                String(pkg.views || 0),
             ]);
 
             autoTable(doc, {
                 startY:   yPos,
-                head:     [['Source', 'Referral Clicks', 'MoM Change', 'Trend']],
-                body:     socialBody,
+                head:     [['Rank', 'Package Name', 'Views']],
+                body:     pkgBody,
                 theme:    'plain',
                 margin:   { left: 14, right: 14 },
-                headStyles: {
-                    fillColor: [0, 31, 63],
-                    textColor: [255, 255, 255],
-                    fontSize:  10,
-                    fontStyle: 'bold',
-                },
+                headStyles: { fillColor: [0, 31, 63], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
                 bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
                 alternateRowStyles: { fillColor: [250, 250, 250] },
                 columnStyles: {
-                    0: { cellWidth: 'auto', fontStyle: 'bold' },
-                    1: { halign: 'center', cellWidth: 32, fontStyle: 'bold', textColor: [0, 31, 63] },
-                    2: { halign: 'center', cellWidth: 30 },
-                    3: { halign: 'center', cellWidth: 28 },
-                },
-                didParseCell: (data) => {
-                    if (data.section !== 'body') return;
-                    const isPositive = socialStats[data.row.index]?.positive;
-                    if (data.column.index === 2) {
-                        data.cell.styles.textColor = isPositive
-                            ? [22,  163, 74]
-                            : [220, 38,  38];
-                    }
-                    if (data.column.index === 3) {
-                        data.cell.styles.textColor = isPositive
-                            ? [22,  163, 74]
-                            : [220, 38,  38];
-                    }
+                    0: { cellWidth: 15, halign: 'center', fontStyle: 'bold', textColor: [0, 31, 63] },
+                    1: { cellWidth: 'auto' },
+                    2: { cellWidth: 25, halign: 'center', fontStyle: 'bold', textColor: [99, 102, 241] },
                 },
             });
-
-            yPos = doc.lastAutoTable.finalY + 8;
-        } else {
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100, 100, 100);
-            doc.text('No social referral data available.', 14, yPos + 6);
-            yPos += 18;
+            yPos = doc.lastAutoTable.finalY + 15;
         }
 
-        // ── Period note ────────────────────────────────────────────────────
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(100, 100, 100);
-        doc.text(
-            'Note: Referral click data is sourced from social analytics integrations and may be approximate.',
-            14, yPos,
-        );
+        // ══════════════════════════════════════════════════════════════════
+        // 2. SITE VISIT OVERVIEW (Pie Chart Data — Overall)
+        // ══════════════════════════════════════════════════════════════════
+        checkPageBreak(80);
+        drawSectionHeader(2, 'SITE VISIT OVERVIEW — Social Referral Traffic', yPos);
+        yPos += 12;
+
+        const svTotal = svPieData.reduce((a, b) => a + (b.value || 0), 0);
+
+        autoTable(doc, {
+            startY: yPos,
+            head:   [['Platform', 'Visits', 'Share']],
+            body:   [
+                ...svPieData.map(d => [
+                    sanitize(d.name),
+                    String(d.value || 0),
+                    svTotal > 0 ? ((d.value / svTotal) * 100).toFixed(1) + '%' : '0.0%',
+                ]),
+                ['TOTAL', String(svTotal), '100%'],
+            ],
+            theme:  'plain',
+            margin: { left: 14, right: 14 },
+            headStyles: { fillColor: [0, 31, 63], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            columnStyles: {
+                0: { cellWidth: 'auto', fontStyle: 'bold' },
+                1: { halign: 'center', cellWidth: 30, fontStyle: 'bold', textColor: [0, 31, 63] },
+                2: { halign: 'center', cellWidth: 30 },
+            },
+            didParseCell: (data) => {
+                if (data.section !== 'body') return;
+                const PLATFORM_COLORS = { Facebook: [24, 119, 242], Instagram: [225, 48, 108], TikTok: [1, 1, 1] };
+                const name = svPieData[data.row.index]?.name;
+                const color = PLATFORM_COLORS[name];
+                if (data.column.index === 0 && color) data.cell.styles.textColor = color;
+                // Last row (TOTAL) bold
+                if (data.row.index === svPieData.length) {
+                    data.cell.styles.fillColor = [245, 247, 250];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 15;
+
+
 
         // ══════════════════════════════════════════════════════════════════
         // FOOTER (last page)

@@ -19,6 +19,10 @@ import {
   Eye,
   Heart,
   Zap,
+  ShoppingBag,
+  Package,
+  Map,
+  Activity,
 } from 'lucide-react';
 import {
   BarChart,
@@ -30,8 +34,15 @@ import {
   Legend,
   ResponsiveContainer,
   LabelList,          // ← NEW: para sa numbers on top ng bars
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
 } from 'recharts';
 import { exportReportingToPDF } from './utils/reportingPdfExport';
+import VisitorJourney from '../dashboard/components/VisitorJourney';
+import '../dashboard/components/RevenueAnalytics.css';
 import './Reporting.css';
 
 
@@ -228,6 +239,34 @@ const Reporting = () => {
   );
   const [customDates, setCustomDates] = useState({ start: '', end: '' });
 
+  // ── Site Visit Section — own period/platform state ────────────────────────
+  const [svActivePeriod, setSvActivePeriod] = useState('weekly');
+  const [svActivePlatform, setSvActivePlatform] = useState('facebook');
+  const [svIsDailyOpen,   setSvIsDailyOpen]   = useState(false);
+  const [svIsMonthlyOpen, setSvIsMonthlyOpen] = useState(false);
+  const [svIsCustomOpen,  setSvIsCustomOpen]  = useState(false);
+  const [svSelectedDailyDate, setSvSelectedDailyDate] = useState(
+    new Date().toISOString().split('T')[0]
+  );
+  const [svSelectedMonth, setSvSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7)
+  );
+  const [svCustomDates, setSvCustomDates] = useState({ start: '', end: '' });
+
+  const svDailyRef   = useRef(null);
+  const svMonthlyRef = useRef(null);
+  const svCustomRef  = useRef(null);
+
+  // Close sv dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (svDailyRef.current   && !svDailyRef.current.contains(e.target))   setSvIsDailyOpen(false);
+      if (svMonthlyRef.current && !svMonthlyRef.current.contains(e.target)) setSvIsMonthlyOpen(false);
+      if (svCustomRef.current  && !svCustomRef.current.contains(e.target))  setSvIsCustomOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
   const dailyRef   = useRef(null);
   const monthlyRef = useRef(null);
   const customRef  = useRef(null);
@@ -341,15 +380,68 @@ const Reporting = () => {
     return { start: new Date(0), end: new Date() };
   }, [activePeriod, selectedDailyDate, selectedMonth, customDates]);
 
-  // ── Filtered page view stats (same logic as RevenueAnalytics) ────────────
+  // ── Site Visit date window — shared with Page View Analytics ─────────────
+  const svDateWindow = useMemo(() => {
+    const now = new Date();
+    if (svActivePeriod === 'daily') {
+      const start = new Date(svSelectedDailyDate); start.setHours(0, 0, 0, 0);
+      const end   = new Date(svSelectedDailyDate); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (svActivePeriod === 'weekly') {
+      const start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0);
+      const end   = new Date(now); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (svActivePeriod === 'monthly') {
+      const [year, month] = svSelectedMonth.split('-');
+      const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+      const end   = new Date(year, month, 0, 23, 59, 59, 999);
+      return { start, end };
+    }
+    if (svActivePeriod === '6months') {
+      const start = new Date(now.getFullYear(), now.getMonth() - 5, 1, 0, 0, 0, 0);
+      const end   = new Date(now); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (svActivePeriod === 'custom' && svCustomDates.start && svCustomDates.end) {
+      const start = new Date(svCustomDates.start); start.setHours(0, 0, 0, 0);
+      const end   = new Date(svCustomDates.end);   end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    return { start: new Date(0), end: new Date() };
+  }, [svActivePeriod, svSelectedDailyDate, svSelectedMonth, svCustomDates]);
+
+  // ── Filtered page view stats — driven by the shared sv date toggle ────────
   const filteredPageViewStats = useMemo(() => {
     const allViews = pageViewStats.recentViews || [];
-    const { start, end } = analyticsDateWindow;
+    const { start, end } = svDateWindow;
 
     const filtered = allViews.filter(v => {
       const d = new Date(v.createdAt);
       return d >= start && d <= end;
     });
+
+    // Stage breakdown
+    const stageOrder = ['awareness', 'interest', 'consideration', 'intent', 'conversion'];
+    const stageCounts = {};
+    stageOrder.forEach(s => { stageCounts[s] = 0; });
+    filtered.forEach(v => {
+      if (v.stage && stageCounts[v.stage] !== undefined) stageCounts[v.stage]++;
+    });
+    const stageBreakdown = stageOrder.map(stage => ({ stage, count: stageCounts[stage] }));
+
+    // Top viewed packages
+    const pkgCounts = {};
+    filtered.filter(v => v.page === 'booking' && v.packageName).forEach(v => {
+      const key = v.packageName;
+      if (!pkgCounts[key]) pkgCounts[key] = { count: 0 };
+      pkgCounts[key].count += 1;
+    });
+    const topViewedPackages = Object.entries(pkgCounts)
+      .map(([packageName, data]) => ({ packageName, views: data.count, displayName: packageName }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 5);
 
     return {
       totalViews:        filtered.length,
@@ -357,14 +449,17 @@ const Reporting = () => {
       bookingPageViews:  filtered.filter(v => v.page === 'booking').length,
       flightsPageViews:  filtered.filter(v => v.page === 'flights').length,
       servicesPageViews: filtered.filter(v => v.page === 'services').length,
+      toursPageViews:    filtered.filter(v => v.page === 'tours').length,
+      stageBreakdown,
+      topViewedPackages,
     };
-  }, [analyticsDateWindow, pageViewStats.recentViews]);
+  }, [svDateWindow, pageViewStats.recentViews]);
 
   // Filtered booking counts — sourced from actual Booking records.
   // recentActiveBookings comes from /api/bookings/active (isArchive !== 'Yes'),
   // so this always matches exactly what the admin sees in the Bookings table.
   const filteredBookingCounts = useMemo(() => {
-    const { start, end } = analyticsDateWindow;
+    const { start, end } = svDateWindow;
 
     const filtered = recentActiveBookings.filter(b => {
       const d = new Date(b.createdAt);
@@ -372,11 +467,11 @@ const Reporting = () => {
     });
 
     return { totalConfirmedBookings: filtered.length };
-  }, [recentActiveBookings, analyticsDateWindow]);
+  }, [recentActiveBookings, svDateWindow]);
 
   // ── Filtered social (site-visit) counts — date-range aware ───────────────
   const filteredSocialVisits = useMemo(() => {
-    const { start, end } = analyticsDateWindow;
+    const { start, end } = svDateWindow;
     const all = siteVisitStats.recentVisits;
 
     const inRange = all.filter(v => {
@@ -389,9 +484,77 @@ const Reporting = () => {
       instagram: inRange.filter(v => v.platform === 'instagram').length,
       tiktok:    inRange.filter(v => v.platform === 'tiktok').length,
     };
-  }, [siteVisitStats.recentVisits, analyticsDateWindow]);
+  }, [siteVisitStats.recentVisits, svDateWindow]);
 
-  // ── View-to-Book rate ─────────────────────────────────────────────────────
+  // ── Pie chart data — filtered by sv period ───────────────────────────────
+  const svPieData = useMemo(() => {
+    const { start, end } = svDateWindow;
+    const all = siteVisitStats.recentVisits;
+    const inRange = all.filter(v => {
+      const d = new Date(v.createdAt);
+      return d >= start && d <= end;
+    });
+    const fb = inRange.filter(v => v.platform === 'facebook').length;
+    const ig = inRange.filter(v => v.platform === 'instagram').length;
+    const tt = inRange.filter(v => v.platform === 'tiktok').length;
+    return [
+      { name: 'Facebook',  value: fb, color: '#1877F2' },
+      { name: 'Instagram', value: ig, color: '#E1306C' },
+      { name: 'TikTok',    value: tt, color: '#010101' },
+    ];
+  }, [siteVisitStats.recentVisits, svDateWindow]);
+
+  // ── Line graph data — per-platform over time ──────────────────────────────
+  const svLineData = useMemo(() => {
+    const { start, end } = svDateWindow;
+    const all = siteVisitStats.recentVisits;
+    const inRange = all.filter(v => {
+      const d = new Date(v.createdAt);
+      return d >= start && d <= end;
+    }).filter(v => v.platform === svActivePlatform);
+
+    if (inRange.length === 0) return [];
+
+    // bucket by day
+    const buckets = {};
+    inRange.forEach(v => {
+      const day = new Date(v.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      buckets[day] = (buckets[day] || 0) + 1;
+    });
+
+    // build sorted array from start to end, filling 0 for missing days
+    const days = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      const label = cur.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      days.push({ date: label, visits: buckets[label] || 0 });
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    // For 6months / custom long ranges, bucket by week or month to keep readable
+    if (days.length > 60) {
+      // monthly buckets
+      const monthly = {};
+      inRange.forEach(v => {
+        const key = new Date(v.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        monthly[key] = (monthly[key] || 0) + 1;
+      });
+      return Object.entries(monthly).map(([date, visits]) => ({ date, visits }));
+    }
+    if (days.length > 14) {
+      // weekly buckets
+      const weekly = {};
+      inRange.forEach(v => {
+        const d = new Date(v.createdAt);
+        const weekStart = new Date(d); weekStart.setDate(d.getDate() - d.getDay());
+        const key = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        weekly[key] = (weekly[key] || 0) + 1;
+      });
+      return Object.entries(weekly).map(([date, visits]) => ({ date, visits }));
+    }
+
+    return days;
+  }, [siteVisitStats.recentVisits, svDateWindow, svActivePlatform]);
   const viewToBookRate = useMemo(() => {
     const { bookingPageViews } = filteredPageViewStats;
     const { totalConfirmedBookings } = filteredBookingCounts;
@@ -471,32 +634,32 @@ const Reporting = () => {
     return ALL_MONTHLY_REACH.slice(0, currentMonthIdx + 1).slice(-count);
   };
 
-  // ── Period label (for PDF header & badge) ────────────────────────────────
+  // ── Period label (for PDF header & badge) — driven by the sv date toggle ──
   const periodLabel = useMemo(() => {
-    if (activePeriod === 'daily') {
-      const d = new Date(selectedDailyDate + 'T00:00:00');
+    if (svActivePeriod === 'daily') {
+      const d = new Date(svSelectedDailyDate + 'T00:00:00');
       return 'Daily: ' + d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
-    if (activePeriod === 'weekly') {
+    if (svActivePeriod === 'weekly') {
       const now   = new Date();
       const start = new Date(now); start.setDate(start.getDate() - 6);
       const fmt   = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       return `Weekly: ${fmt(start)} – ${fmt(now)}`;
     }
-    if (activePeriod === 'monthly') {
-      const [year, month] = selectedMonth.split('-');
+    if (svActivePeriod === 'monthly') {
+      const [year, month] = svSelectedMonth.split('-');
       const d = new Date(year, month - 1, 1);
       return 'Monthly: ' + d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
-    if (activePeriod === 'trend') {
+    if (svActivePeriod === '6months') {
       return 'Trend: Last 6 Months';
     }
-    if (activePeriod === 'custom' && customDates.start && customDates.end) {
+    if (svActivePeriod === 'custom' && svCustomDates.start && svCustomDates.end) {
       const fmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      return `Custom: ${fmt(customDates.start)} – ${fmt(customDates.end)}`;
+      return `Custom: ${fmt(svCustomDates.start)} – ${fmt(svCustomDates.end)}`;
     }
     return 'All Time';
-  }, [activePeriod, selectedDailyDate, selectedMonth, customDates]);
+  }, [svActivePeriod, svSelectedDailyDate, svSelectedMonth, svCustomDates]);
 
   // ── PDF Export ────────────────────────────────────────────────────────────
   const handleExportPDF = () => {
@@ -509,6 +672,7 @@ const Reporting = () => {
       viewToBookRate,
       activePeriod,
       periodLabel,
+      svPieData,
     });
   };
 
@@ -589,256 +753,97 @@ const Reporting = () => {
           </div>
         </section>
 
-        {/* ── PLATFORM SUMMARY — DARK COMMAND CENTER DESIGN ── */}
+        {/* ── SITE VISIT ANALYTICS — Social Referral Traffic ── */}
         <section className="rp-section">
-          <h2 className="rp-section-title">Platform Summary</h2>
+          <h2 className="rp-section-title">Site Visit Analytics <span className="rp-section-subtitle-inline">— Social Referral Traffic</span></h2>
 
-          <div className="rp-ps-grid">
-            {PLATFORM_SUMMARY.map((p) => {
-              const Icon = p.icon;
-              const gradientMap = {
-                Facebook: 'linear-gradient(135deg, #1877F2 0%, #0d5ed9 60%, #0a4ab5 100%)',
-                Instagram: 'linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%)',
-                TikTok: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-              };
-              return (
-                <div
-                  className="rp-ps-card"
-                  key={p.platform}
-                  style={{ '--pc': p.color }}
-                >
-                  {/* Colored gradient header band */}
-                  <div
-                    className="rp-ps-header-band"
-                    style={{ background: gradientMap[p.platform] }}
-                  >
-                    {/* Top row: icon + name + engagement ring */}
-                    <div className="rp-ps-top">
-                      <div className="rp-ps-identity">
-                        <div className="rp-ps-icon-wrap">
-                          {p.platform === 'TikTok'
-                            ? <TikTokIcon size={22} color="#ffffff" />
-                            : <Icon size={22} color="#ffffff" />}
-                        </div>
-                        <div>
-                          <div className="rp-ps-name">{p.platform}</div>
-                          <div className="rp-ps-sub">Performance Overview</div>
-                        </div>
-                      </div>
-
-                      <EngagementRing rate={p.rateNum} color="rgba(255,255,255,0.9)" />
-                    </div>
-                  </div>
-
-                  {/* White card body */}
-                  <div className="rp-ps-body">
-                    {/* Divider line */}
-                    <div className="rp-ps-divider" />
-
-                    {/* Stats row */}
-                    <div className="rp-ps-stats">
-                      <div className="rp-ps-stat">
-                        <div className="rp-ps-stat-icon" style={{ color: p.color }}>
-                          <Users size={13} />
-                        </div>
-                        <div className="rp-ps-stat-label">Followers</div>
-                        <div className="rp-ps-stat-value">{p.followers}</div>
-                        <div className="rp-ps-bar">
-                          <div className="rp-ps-bar-fill" style={{ background: p.color, width: '48%' }} />
-                        </div>
-                      </div>
-
-                      <div className="rp-ps-stat-sep" />
-
-                      <div className="rp-ps-stat">
-                        <div className="rp-ps-stat-icon" style={{ color: p.color }}>
-                          <Eye size={13} />
-                        </div>
-                        <div className="rp-ps-stat-label">Reach</div>
-                        <div className="rp-ps-stat-value">{p.reach}</div>
-                        <div className="rp-ps-bar">
-                          <div className="rp-ps-bar-fill" style={{ background: p.color, width: '72%' }} />
-                        </div>
-                      </div>
-
-                      <div className="rp-ps-stat-sep" />
-
-                      <div className="rp-ps-stat">
-                        <div className="rp-ps-stat-icon" style={{ color: p.color }}>
-                          <Heart size={13} />
-                        </div>
-                        <div className="rp-ps-stat-label">Engagement</div>
-                        <div className="rp-ps-stat-value">{p.engagement}</div>
-                        <div className="rp-ps-bar">
-                          <div className="rp-ps-bar-fill" style={{ background: p.color, width: '60%' }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom sparkline bars */}
-                  <div className="rp-ps-spark">
-                    {[40, 55, 45, 70, 60, 80, 65, 90, 75, 85, 70, 95].map((h, i) => (
-                      <div
-                        key={i}
-                        className="rp-ps-spark-bar"
-                        style={{ height: `${h}%`, background: i >= 9 ? p.color : `${p.color}44` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* BAR CHARTS SECTION */}
-        <section className="rp-section">
-
+          {/* Controls: period toggles */}
           <div className="rp-chart-controls">
-            {/* SOCIAL MEDIA FILTER TABS */}
-            <div className="rp-chart-tabs">
-              {PLATFORM_TABS.map((pt) => (
-                <button
-                  key={pt.key}
-                  className={`rp-chart-tab ${activePlatform === pt.key ? 'active' : ''}`}
-                  onClick={() => setActivePlatform(pt.key)}
-                  style={
-                    activePlatform === pt.key
-                      ? { background: pt.color, borderColor: pt.color, color: '#fff' }
-                      : {}
-                  }
-                >
-                  {pt.key === 'TikTok' ? (
-                    <TikTokIcon size={13} color={activePlatform === pt.key ? '#fff' : '#64748b'} />
-                  ) : (
-                    <pt.Icon size={13} color={activePlatform === pt.key ? '#fff' : '#64748b'} />
-                  )}
-                  {pt.label}
-                </button>
-              ))}
-            </div>
-
-            {/* PERIOD BUTTONS — #001f3f theme */}
+            <span className="rp-sv-controls-label">Period</span>
             <div className="rp-period-bar">
-              {/* ── DAILY DROPDOWN ── */}
-              <div className="rp-period-dropdown" ref={dailyRef}>
+              {/* DAILY */}
+              <div className="rp-period-dropdown" ref={svDailyRef}>
                 <button
-                  className={`rp-period-btn ${activePeriod === 'daily' ? 'active' : ''}`}
-                  style={activePeriod === 'daily' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                  onClick={() => { setIsDailyOpen(o => !o); setIsMonthlyOpen(false); setIsCustomOpen(false); }}
+                  className={`rp-period-btn ${svActivePeriod === 'daily' ? 'active' : ''}`}
+                  style={svActivePeriod === 'daily' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
+                  onClick={() => { setSvIsDailyOpen(o => !o); setSvIsMonthlyOpen(false); setSvIsCustomOpen(false); }}
                 >
-                  <Clock size={14} />
-                  Daily
-                  <ChevronDown size={13} className={isDailyOpen ? 'rp-chevron-open' : ''} />
+                  <Clock size={14} /> Daily <ChevronDown size={13} className={svIsDailyOpen ? 'rp-chevron-open' : ''} />
                 </button>
-                {isDailyOpen && (
+                {svIsDailyOpen && (
                   <div className="rp-period-menu">
                     <p className="rp-period-menu-title">Select Day</p>
-                    <input
-                      type="date"
-                      className="rp-period-date-input"
-                      value={selectedDailyDate}
+                    <input type="date" className="rp-period-date-input" value={svSelectedDailyDate}
                       max={new Date().toISOString().split('T')[0]}
-                      onChange={e => {
-                        setSelectedDailyDate(e.target.value);
-                        setActivePeriod('daily');
-                        setIsDailyOpen(false);
-                      }}
-                    />
+                      onChange={e => { setSvSelectedDailyDate(e.target.value); setSvActivePeriod('daily'); setSvIsDailyOpen(false); }} />
                   </div>
                 )}
               </div>
 
-              {/* ── WEEKLY (no dropdown) ── */}
+              {/* WEEKLY */}
               <button
-                className={`rp-period-btn ${activePeriod === 'weekly' ? 'active' : ''}`}
-                style={activePeriod === 'weekly' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                onClick={() => setActivePeriod('weekly')}
+                className={`rp-period-btn ${svActivePeriod === 'weekly' ? 'active' : ''}`}
+                style={svActivePeriod === 'weekly' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
+                onClick={() => setSvActivePeriod('weekly')}
               >
-                <Calendar size={14} />
-                Weekly
+                <Calendar size={14} /> Weekly
               </button>
 
-              {/* ── MONTHLY DROPDOWN ── */}
-              <div className="rp-period-dropdown" ref={monthlyRef}>
+              {/* MONTHLY */}
+              <div className="rp-period-dropdown" ref={svMonthlyRef}>
                 <button
-                  className={`rp-period-btn ${activePeriod === 'monthly' ? 'active' : ''}`}
-                  style={activePeriod === 'monthly' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                  onClick={() => { setIsMonthlyOpen(o => !o); setIsDailyOpen(false); setIsCustomOpen(false); }}
+                  className={`rp-period-btn ${svActivePeriod === 'monthly' ? 'active' : ''}`}
+                  style={svActivePeriod === 'monthly' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
+                  onClick={() => { setSvIsMonthlyOpen(o => !o); setSvIsDailyOpen(false); setSvIsCustomOpen(false); }}
                 >
-                  <CalendarDays size={14} />
-                  Monthly
-                  <ChevronDown size={13} className={isMonthlyOpen ? 'rp-chevron-open' : ''} />
+                  <CalendarDays size={14} /> Monthly <ChevronDown size={13} className={svIsMonthlyOpen ? 'rp-chevron-open' : ''} />
                 </button>
-                {isMonthlyOpen && (
+                {svIsMonthlyOpen && (
                   <div className="rp-period-menu">
                     <p className="rp-period-menu-title">Select Month</p>
-                    <input
-                      type="month"
-                      className="rp-period-date-input"
-                      value={selectedMonth}
+                    <input type="month" className="rp-period-date-input" value={svSelectedMonth}
                       max={new Date().toISOString().slice(0, 7)}
-                      onChange={e => {
-                        setSelectedMonth(e.target.value);
-                        setActivePeriod('monthly');
-                        setIsMonthlyOpen(false);
-                      }}
-                    />
+                      onChange={e => { setSvSelectedMonth(e.target.value); setSvActivePeriod('monthly'); setSvIsMonthlyOpen(false); }} />
                   </div>
                 )}
               </div>
 
-              {/* ── TREND (no dropdown) ── */}
+              {/* 6 MONTHS */}
               <button
-                className={`rp-period-btn ${activePeriod === 'trend' ? 'active' : ''}`}
-                style={activePeriod === 'trend' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                onClick={() => setActivePeriod('trend')}
+                className={`rp-period-btn ${svActivePeriod === '6months' ? 'active' : ''}`}
+                style={svActivePeriod === '6months' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
+                onClick={() => setSvActivePeriod('6months')}
               >
-                <TrendingUp size={14} />
-                Trend (6 Mo)
+                <TrendingUp size={14} /> 6 Months
               </button>
 
-              {/* ── CUSTOM RANGE DROPDOWN ── */}
-              <div className="rp-period-dropdown" ref={customRef}>
+              {/* CUSTOM RANGE */}
+              <div className="rp-period-dropdown" ref={svCustomRef}>
                 <button
-                  className={`rp-period-btn ${activePeriod === 'custom' ? 'active' : ''}`}
-                  style={activePeriod === 'custom' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                  onClick={() => { setIsCustomOpen(o => !o); setIsDailyOpen(false); setIsMonthlyOpen(false); }}
+                  className={`rp-period-btn ${svActivePeriod === 'custom' ? 'active' : ''}`}
+                  style={svActivePeriod === 'custom' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
+                  onClick={() => { setSvIsCustomOpen(o => !o); setSvIsDailyOpen(false); setSvIsMonthlyOpen(false); }}
                 >
-                  <SlidersHorizontal size={14} />
-                  Custom Range
-                  <ChevronDown size={13} className={isCustomOpen ? 'rp-chevron-open' : ''} />
+                  <SlidersHorizontal size={14} /> Custom Range <ChevronDown size={13} className={svIsCustomOpen ? 'rp-chevron-open' : ''} />
                 </button>
-                {isCustomOpen && (
+                {svIsCustomOpen && (
                   <div className="rp-period-menu rp-period-menu--wide">
                     <p className="rp-period-menu-title">Custom Range</p>
                     <div className="rp-period-range-row">
                       <div className="rp-period-range-field">
                         <label>Start</label>
-                        <input
-                          type="date"
-                          className="rp-period-date-input"
-                          value={customDates.start}
-                          max={customDates.end || new Date().toISOString().split('T')[0]}
-                          onChange={e => setCustomDates(d => ({ ...d, start: e.target.value }))}
-                        />
+                        <input type="date" className="rp-period-date-input" value={svCustomDates.start}
+                          max={svCustomDates.end || new Date().toISOString().split('T')[0]}
+                          onChange={e => setSvCustomDates(d => ({ ...d, start: e.target.value }))} />
                       </div>
                       <div className="rp-period-range-field">
                         <label>End</label>
-                        <input
-                          type="date"
-                          className="rp-period-date-input"
-                          value={customDates.end}
-                          min={customDates.start}
-                          max={new Date().toISOString().split('T')[0]}
-                          onChange={e => setCustomDates(d => ({ ...d, end: e.target.value }))}
-                        />
+                        <input type="date" className="rp-period-date-input" value={svCustomDates.end}
+                          min={svCustomDates.start} max={new Date().toISOString().split('T')[0]}
+                          onChange={e => setSvCustomDates(d => ({ ...d, end: e.target.value }))} />
                       </div>
-                      <button
-                        className="rp-period-apply"
-                        onClick={() => { setActivePeriod('custom'); setIsCustomOpen(false); }}
-                      >
+                      <button className="rp-period-apply"
+                        onClick={() => { setSvActivePeriod('custom'); setSvIsCustomOpen(false); }}>
                         Apply
                       </button>
                     </div>
@@ -848,152 +853,260 @@ const Reporting = () => {
             </div>
           </div>
 
-          {/* KEY METRICS CARD */}
-          {activePlatformSummary && (
-            <div 
-              className="rp-key-metrics-card" 
-              style={{ 
-                '--platform-color': activePlatformConfig.color, 
-                '--platform-bg': activePlatformConfig.bg 
-              }}
-            >
-              <div className="rp-key-metrics-header">
-                <div className="rp-key-metrics-badge" style={{ background: activePlatformConfig.bg }}>
-                  {activePlatform === 'TikTok' ? (
-                    <TikTokIcon size={15} color={activePlatformConfig.color} />
-                  ) : (
-                    <activePlatformConfig.Icon size={15} color={activePlatformConfig.color} />
-                  )}
-                  <span style={{ color: activePlatformConfig.color }}>{activePlatform}</span>
+          {/* Charts row: Pie + Line side by side */}
+          <div className="rp-sv-charts-row">
+
+            {/* PIE CHART — platform share comparison */}
+            <div className="rp-chart-card rp-sv-pie-card">
+              <div className="rp-chart-card-header">
+                <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6' }}>
+                  <BarChart2 size={16} color="#001f3f" />
+                  <span style={{ color: '#001f3f' }}>Platform Share</span>
                 </div>
-                <span className="rp-key-metrics-eyebrow">KEY METRICS</span>
+                <p className="rp-chart-card-subtitle">Which platform drives the most visits</p>
               </div>
-
-              <div className="rp-key-metrics-grid">
-                <div className="rp-km-tile">
-                  <div className="rp-km-top">
-                    <div className="rp-km-icon-wrap" style={{ background: activePlatformConfig.bg }}>
-                      <Users size={15} color={activePlatformConfig.color} />
-                    </div>
-                    <span className="rp-km-label">FOLLOWERS</span>
+              {svLoading ? (
+                <div className="rp-loading"><div className="rp-spinner" /><p className="rp-loading-text">Loading…</p></div>
+              ) : svPieData.every(d => d.value === 0) ? (
+                <div className="rp-empty"><p>No visits recorded for this period.</p></div>
+              ) : (
+                <div className="rp-sv-pie-wrap">
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={svPieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={3}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {svPieData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value, name) => [value.toLocaleString() + ' visits', name]}
+                        contentStyle={{ fontFamily: 'Plus Jakarta Sans, sans-serif', borderRadius: 8 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Legend */}
+                  <div className="rp-sv-pie-legend">
+                    {svPieData.map(d => {
+                      const total = svPieData.reduce((a, b) => a + b.value, 0);
+                      const pct = total ? ((d.value / total) * 100).toFixed(1) : '0.0';
+                      return (
+                        <div key={d.name} className="rp-sv-legend-item">
+                          <span className="rp-sv-legend-dot" style={{ background: d.color }} />
+                          <span className="rp-sv-legend-name">{d.name}</span>
+                          <span className="rp-sv-legend-val">{d.value.toLocaleString()}</span>
+                          <span className="rp-sv-legend-pct">{pct}%</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span className="rp-km-value">{activePlatformSummary.followers}</span>
-                  <div className="rp-km-accent-bar" style={{ background: activePlatformConfig.color }} />
                 </div>
-
-                <div className="rp-km-tile">
-                  <div className="rp-km-top">
-                    <div className="rp-km-icon-wrap" style={{ background: activePlatformConfig.bg }}>
-                      <Eye size={15} color={activePlatformConfig.color} />
-                    </div>
-                    <span className="rp-km-label">REACH</span>
-                  </div>
-                  <span className="rp-km-value">{activePlatformSummary.reach}</span>
-                  <div className="rp-km-accent-bar" style={{ background: activePlatformConfig.color }} />
-                </div>
-
-                <div className="rp-km-tile">
-                  <div className="rp-km-top">
-                    <div className="rp-km-icon-wrap" style={{ background: activePlatformConfig.bg }}>
-                      <Heart size={15} color={activePlatformConfig.color} />
-                    </div>
-                    <span className="rp-km-label">ENGAGEMENT</span>
-                  </div>
-                  <span className="rp-km-value">{activePlatformSummary.engagement}</span>
-                  <div className="rp-km-accent-bar" style={{ background: activePlatformConfig.color }} />
-                </div>
-
-                <div className="rp-km-tile rp-km-tile--highlight" style={{ '--tile-color': activePlatformConfig.color, '--tile-bg': activePlatformConfig.bg }}>
-                  <div className="rp-km-top">
-                    <div className="rp-km-icon-wrap" style={{ background: 'rgba(255,255,255,0.65)' }}>
-                      <Zap size={15} color={activePlatformConfig.color} />
-                    </div>
-                    <span className="rp-km-label" style={{ color: activePlatformConfig.color, opacity: 0.75 }}>ENG. RATE</span>
-                  </div>
-                  <span className="rp-km-value rp-km-value--rate" style={{ color: activePlatformConfig.color }}>
-                    {activePlatformSummary.rate}
-                  </span>
-                  <div className="rp-km-accent-bar" style={{ background: activePlatformConfig.color }} />
-                </div>
-              </div>
+              )}
             </div>
-          )}
 
-          {/* SINGLE PLATFORM CHART (with nice labels) - ONE ONLY */}
-          <div className="rp-chart-card">
-            <div className="rp-chart-card-header">
-              <div className="rp-chart-platform-badge" style={{ background: activePlatformConfig.bg }}>
-                {activePlatform === 'TikTok' ? (
-                  <TikTokIcon size={16} color={activePlatformConfig.color} />
-                ) : (
-                  <activePlatformConfig.Icon size={16} color={activePlatformConfig.color} />
-                )}
-                <span style={{ color: activePlatformConfig.color }}>{activePlatform}</span>
+            {/* LINE GRAPH — per-platform traffic trend */}
+            <div className="rp-chart-card rp-sv-line-card">
+              <div className="rp-chart-card-header">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6', alignSelf: 'flex-start' }}>
+                    <TrendingUp size={16} color="#001f3f" />
+                    <span style={{ color: '#001f3f' }}>Traffic Trend</span>
+                  </div>
+                  {/* Platform toggle buttons */}
+                  <div className="rp-sv-platform-tabs">
+                    {[
+                      { key: 'facebook',  label: 'Facebook',  color: '#1877F2', bg: '#e7f0fd', Icon: Facebook },
+                      { key: 'instagram', label: 'Instagram', color: '#E1306C', bg: '#fde8ef', Icon: Instagram },
+                      { key: 'tiktok',    label: 'TikTok',    color: '#010101', bg: '#f0f0f0', Icon: null },
+                    ].map(pt => (
+                      <button
+                        key={pt.key}
+                        className={`rp-sv-platform-tab ${svActivePlatform === pt.key ? 'active' : ''}`}
+                        onClick={() => setSvActivePlatform(pt.key)}
+                        style={svActivePlatform === pt.key ? { background: pt.color, borderColor: pt.color, color: '#fff' } : {}}
+                      >
+                        {pt.key === 'tiktok'
+                          ? <TikTokIcon size={13} color={svActivePlatform === pt.key ? '#fff' : '#64748b'} />
+                          : <pt.Icon size={13} color={svActivePlatform === pt.key ? '#fff' : '#64748b'} />}
+                        {pt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="rp-chart-card-subtitle">Site visits over time</p>
               </div>
-              <p className="rp-chart-card-subtitle">Monthly reach performance</p>
+              {svLoading ? (
+                <div className="rp-loading"><div className="rp-spinner" /><p className="rp-loading-text">Loading…</p></div>
+              ) : svLineData.length === 0 ? (
+                <div className="rp-empty"><p>No data for selected platform and period.</p></div>
+              ) : (
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={svLineData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        const platformColors = { facebook: '#1877F2', instagram: '#E1306C', tiktok: '#010101' };
+                        return (
+                          <div className="rp-tooltip">
+                            <p className="rp-tooltip-label">{label}</p>
+                            <p className="rp-tooltip-item">
+                              <span className="rp-tooltip-dot" style={{ background: platformColors[svActivePlatform] }} />
+                              {svActivePlatform.charAt(0).toUpperCase() + svActivePlatform.slice(1)}: <strong>{payload[0].value}</strong>
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="visits"
+                      stroke={svActivePlatform === 'facebook' ? '#1877F2' : svActivePlatform === 'instagram' ? '#E1306C' : '#010101'}
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: svActivePlatform === 'facebook' ? '#1877F2' : svActivePlatform === 'instagram' ? '#E1306C' : '#010101' }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
-            
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart 
-                data={getSingleChartData()} 
-                margin={{ top: 40, right: 30, left: 10, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} 
-                />
-                <YAxis 
-                  tick={{ fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} 
-                  tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} 
-                />
-                <Tooltip content={<CustomTooltip />} />
-                
-                <Bar 
-                  dataKey={activePlatform} 
-                  fill={activePlatformConfig.color} 
-                  radius={[8, 8, 0, 0]} 
-                  maxBarSize={58}
-                  isAnimationActive={true}
-                >
-                  <LabelList 
-                    dataKey={activePlatform} 
-                    position="top" 
-                    fill="#001f3f" 
-                    fontSize={13} 
-                    fontWeight={700}
-                    formatter={formatCount}
-                    offset={10}
-                  />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+
           </div>
-
-          {/* COMBINED CHART */}
-          <div className="rp-chart-card rp-chart-card--combined">
-            <div className="rp-chart-card-header">
-              <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6' }}>
-                <BarChart2 size={16} color="#001f3f" />
-                <span style={{ color: '#001f3f' }}>All Platforms Combined</span>
-              </div>
-              <p className="rp-chart-card-subtitle">Side-by-side comparison</p>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getChartData()} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '12px' }} />
-                <Bar dataKey="Facebook" fill="#1877F2" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                <Bar dataKey="Instagram" fill="#E1306C" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                <Bar dataKey="TikTok" fill="#010101" radius={[4, 4, 0, 0]} maxBarSize={32} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
         </section>
+
+
+        {/* ── PAGE VIEW ANALYTICS ── */}
+        <section className="rp-section">
+          <div className="rp-pv-section">
+            <div className="rp-pv-header">
+              <div className="rp-pv-title-wrap">
+                <Eye size={18} className="rp-pv-icon" />
+                <h3 className="rp-pv-title">
+                  PAGE VIEW ANALYTICS
+                  <span className="rp-pv-period"> — {periodLabel}</span>
+                </h3>
+              </div>
+              <span className="rp-pv-live-badge">● LIVE TRACKING</span>
+            </div>
+
+            {/* Stat cards grid */}
+            <div className="rp-pv-grid">
+              <div className="rp-pv-card">
+                <div className="rp-pv-card-icon-wrap rp-pv-icon--total"><BarChart2 size={20} /></div>
+                <div className="rp-pv-card-body">
+                  <span className="rp-pv-card-label">TOTAL PAGE VIEWS</span>
+                  <span className="rp-pv-card-value">{(filteredPageViewStats.totalViews || 0).toLocaleString()}</span>
+                  <span className="rp-pv-card-sub">All pages combined</span>
+                </div>
+              </div>
+
+              <div className="rp-pv-card">
+                <div className="rp-pv-card-icon-wrap rp-pv-icon--packages"><ShoppingBag size={20} /></div>
+                <div className="rp-pv-card-body">
+                  <span className="rp-pv-card-label">PACKAGE DEALS PAGE</span>
+                  <span className="rp-pv-card-value">{(filteredPageViewStats.packagesPageViews || 0).toLocaleString()}</span>
+                  <span className="rp-pv-card-sub">Packages Visits</span>
+                </div>
+              </div>
+
+              <div className="rp-pv-card">
+                <div className="rp-pv-card-icon-wrap rp-pv-icon--booking"><Package size={20} /></div>
+                <div className="rp-pv-card-body">
+                  <span className="rp-pv-card-label">BOOKING PAGE</span>
+                  <span className="rp-pv-card-value">{(filteredPageViewStats.bookingPageViews || 0).toLocaleString()}</span>
+                  <span className="rp-pv-card-sub">Package Booking Views</span>
+                </div>
+              </div>
+
+              <div className="rp-pv-card">
+                <div className="rp-pv-card-icon-wrap rp-pv-icon--flights"><Eye size={20} /></div>
+                <div className="rp-pv-card-body">
+                  <span className="rp-pv-card-label">FLIGHT SEARCH</span>
+                  <span className="rp-pv-card-value">{(filteredPageViewStats.flightsPageViews || 0).toLocaleString()}</span>
+                  <span className="rp-pv-card-sub">Flights Visits</span>
+                </div>
+              </div>
+
+              <div className="rp-pv-card">
+                <div className="rp-pv-card-icon-wrap rp-pv-icon--services"><Activity size={20} /></div>
+                <div className="rp-pv-card-body">
+                  <span className="rp-pv-card-label">OTHER SERVICES</span>
+                  <span className="rp-pv-card-value">{(filteredPageViewStats.servicesPageViews || 0).toLocaleString()}</span>
+                  <span className="rp-pv-card-sub">Other Services Visits</span>
+                </div>
+              </div>
+
+              <div className="rp-pv-card rp-pv-card--tours-highlight">
+                <div className="rp-pv-card-icon-wrap rp-pv-icon--tours"><Map size={20} /></div>
+                <div className="rp-pv-card-body">
+                  <span className="rp-pv-card-label">TOUR PACKAGES</span>
+                  <span className="rp-pv-card-value">{(filteredPageViewStats.toursPageViews || 0).toLocaleString()}</span>
+                  <span className="rp-pv-card-sub">Tour Page Visits</span>
+                </div>
+              </div>
+
+              <div className="rp-pv-card">
+                <div className="rp-pv-card-icon-wrap rp-pv-icon--rate"><TrendingUp size={20} /></div>
+                <div className="rp-pv-card-body">
+                  <span className="rp-pv-card-label">VIEW-TO-BOOK RATE</span>
+                  <span className="rp-pv-card-value rp-pv-rate-value">
+                    {filteredPageViewStats.bookingPageViews > 0
+                      ? ((filteredBookingCounts.totalConfirmedBookings / filteredPageViewStats.bookingPageViews) * 100).toFixed(1)
+                      : '0.0'}%
+                  </span>
+                  <span className="rp-pv-card-sub">
+                    {filteredBookingCounts.totalConfirmedBookings} Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Viewed Packages */}
+            {filteredPageViewStats.topViewedPackages && filteredPageViewStats.topViewedPackages.length > 0 && (
+              <div className="rp-pv-top-packages">
+                <h4 className="rp-pv-sub-title">
+                  <Eye size={14} /> MOST VIEWED PACKAGES
+                </h4>
+                <div className="rp-pv-pkg-list">
+                  {filteredPageViewStats.topViewedPackages.slice(0, 5).map((pkg, idx) => {
+                    const maxViews = filteredPageViewStats.topViewedPackages[0]?.views || 1;
+                    const barWidth = Math.max(8, Math.round((pkg.views / maxViews) * 100));
+                    return (
+                      <div key={idx} className="rp-pv-pkg-row">
+                        <span className="rp-pv-pkg-rank">#{idx + 1}</span>
+                        <div className="rp-pv-pkg-info">
+                          <span className="rp-pv-pkg-name">{pkg.displayName || pkg.packageName || 'Unknown'}</span>
+                          <div className="rp-pv-pkg-bar-wrap">
+                            <div className="rp-pv-pkg-bar" style={{ width: `${barWidth}%` }} />
+                          </div>
+                        </div>
+                        <span className="rp-pv-pkg-count">{(pkg.views || 0).toLocaleString()} views</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+
+        {/* ── VISITOR JOURNEY TRACKER ── */}
+        <section className="rp-section">
+          <VisitorJourney recentViews={pageViewStats.recentViews} />
+        </section>
+
         </div>{/* end rp-container */}
       </main>
     </div>
