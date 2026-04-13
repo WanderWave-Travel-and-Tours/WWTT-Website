@@ -2,6 +2,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AllTransfers from './allTransfers';
+import TransferBooking from './TransferBooking';
 import './transferPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import MascotGif from '../MascotGif/MascotGif';
@@ -25,6 +26,9 @@ function TransferPackagesContent() {
   const [selectedDestinations, setSelectedDestinations] = useState([]);
   const [currency, setCurrency] = useState('PHP');
   const exchangeRate = 58;
+
+  // ── Currently selected transfer for the booking view ────────────────────
+  const [selectedTransfer, setSelectedTransfer] = useState(null);
 
   // ============================================================
   // FETCH TRANSFERS FROM SELLER RATES (activity contains "transfer")
@@ -94,31 +98,9 @@ function TransferPackagesContent() {
   // ============================================================
   // DERIVED FILTER OPTIONS
   // ============================================================
-
-  // Helper: extract destination name from activity string
-  // e.g. "Siargao Airport Transfer" → "Siargao"
-  //      "El Nido Transfer to Hotel" → "El Nido"
-  const extractDestination = (activity) => {
-    if (!activity) return null;
-    // Remove common suffixes after the place name
-    const cleaned = activity
-      .replace(/\s*(airport|transfer|to hotel|to port|to pier|to resort|private|van|bus|boat|shared|one.?way|round.?trip|\(.*?\))/gi, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    // Return first meaningful words (up to 3 words max)
-    const words = cleaned.split(' ').filter(Boolean);
-    return words.slice(0, 3).join(' ') || activity;
-  };
-
   const allDestinations = useMemo(() => {
     const destinations = new Set();
-    transfers.forEach(t => {
-      // Prefer t.destination if it's a short clean name (≤ 30 chars), else extract from activity
-      const raw = t.destination && t.destination.length <= 30
-        ? t.destination
-        : extractDestination(t.activity);
-      if (raw) destinations.add(raw);
-    });
+    transfers.forEach(t => { if (t.destination) destinations.add(t.destination); });
     return Array.from(destinations).sort();
   }, [transfers]);
 
@@ -146,22 +128,24 @@ function TransferPackagesContent() {
 
     // Destination checkboxes
     if (selectedDestinations.length > 0) {
-      result = result.filter(t => {
-        const dest = t.destination && t.destination.length <= 30
-          ? t.destination
-          : extractDestination(t.activity);
-        return selectedDestinations.includes(dest);
-      });
+      result = result.filter(t => selectedDestinations.includes(t.destination));
     }
 
     return result;
   }, [transfers, searchQuery, priceRange, selectedDestinations]);
 
   // ============================================================
-  // INQUIRE HANDLER — navigate to services/contact page
+  // INQUIRE HANDLER — open TransferBooking view with selected transfer
   // ============================================================
   const handleInquire = (transfer) => {
-    navigate('/other-services', { state: { selectedTransfer: transfer } });
+    setSelectedTransfer(transfer);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ── Go Back from booking — return to the transfers listing ──────────────
+  const handleGoBack = () => {
+    setSelectedTransfer(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const openGHLChat = () => {
@@ -169,6 +153,21 @@ function TransferPackagesContent() {
       window.openGHLChat();
     }
   };
+
+  // ============================================================
+  // RENDER — Booking view takes over the whole page when active
+  // ============================================================
+  if (selectedTransfer) {
+    return (
+      <TransferBooking
+        transfer={selectedTransfer}
+        onGoBack={handleGoBack}
+        currency={currency}
+        exchangeRate={exchangeRate}
+        currentUser={null}
+      />
+    );
+  }
 
   return (
     <div className="transfer-packages-page">

@@ -1,0 +1,1246 @@
+/* BookingFormModal.css - FULLY RESPONSIVE & IMPROVED CALENDAR WITH DROPDOWNS */
+
+/* ============================================
+   BASE STYLES (Desktop First)
+   ============================================ */
+
+.bfm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  /* Top padding clears the fixed site navbar (orange bar ~40px + white nav ~90px = ~130px) */
+  padding: 140px 20px 20px 20px;
+  animation: bfmFadeIn 0.2s ease-out;
+  overflow-y: auto;
+}
+
+@keyframes bfmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bfm-modal-card {
+  background: white;
+  width: 100%;
+  max-width: 700px;
+  border-radius: 16px;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  height: auto;
+  /* Max height = viewport minus navbar (~130px) minus top/bottom padding (20px each) */
+  max-height: calc(100vh - 170px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+@keyframes bfmSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- Close Button --- */
+.bfm-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: white;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  z-index: 30; 
+  backdrop-filter: blur(4px);
+  padding: 0;
+}
+
+.bfm-close-btn:hover {
+  background: rgba(239, 68, 68, 0.9);
+  border-color: #ef4444;
+  transform: rotate(90deg);
+}
+
+/* --- Header Section --- */
+.bfm-modal-header {
+  background-color: #1e3a5f;
+  background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80');
+  background-size: cover;
+  background-position: center;
+  padding: 20px 24px; 
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0; 
+}
+
+.bfm-modal-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 95, 0.95) 100%);
+  z-index: 1;
+}
+
+.bfm-modal-logo,
+.bfm-modal-title,
+.bfm-modal-subtitle,
+.bfm-trip-summary,
+.bfm-doc-req-box {
+  position: relative;
+  z-index: 2;
+}
+
+.bfm-modal-logo {
+  display: block;
+  height: 28px; 
+  margin: 0 auto 10px auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.bfm-modal-title {
+  font-size: 1.25rem; 
+  font-weight: 800;
+  color: white;
+  text-align: center;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.bfm-modal-subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  display: block;
+}
+
+/* --- Trip Summary --- */
+.bfm-trip-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1); 
+  backdrop-filter: blur(8px);
+  padding: 8px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.bfm-summary-item { 
+  flex: 1;
+  min-width: 100px;
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.95); 
+  border-radius: 8px;
+}
+
+.bfm-summary-label { 
+  font-size: 0.55rem; 
+  text-transform: uppercase; 
+  color: #64748b; 
+  font-weight: 700;
+}
+
+.bfm-summary-value { 
+  font-size: 0.8rem; 
+  font-weight: 700; 
+  color: #1e3a5f;
+  white-space: nowrap;
+}
+
+.bfm-summary-subtext {
+  font-size: 0.6rem;
+  color: #64748b;
+}
+
+.bfm-price { color: #10b981; font-size: 0.95rem; }
+.bfm-accent-color { color: #fc9c1b; }
+
+.bfm-grand-total {
+  background: #fff7ed;
+  border: 1px solid #fc9c1b;
+}
+
+.bfm-grand-total-value {
+  font-size: 1rem;
+  color: #ea580c;
+}
+
+/* --- Document Requirements --- */
+.bfm-doc-req-box {
+  background: rgba(239, 246, 255, 0.95); 
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  color: #1e40af;
+  font-weight: 600;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.bfm-doc-req-box.bfm-domestic {
+  background: rgba(254, 243, 199, 0.95);
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+/* --- Scrollable Form Area --- */
+.bfm-form-wrapper {
+  flex: 1; 
+  overflow-y: auto; 
+  overscroll-behavior: contain; 
+  padding: 20px 24px;
+  background: #f8fafc;
+}
+
+/* Custom Scrollbar */
+.bfm-form-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* --- Progress Section --- */
+.bfm-progress-section {
+  margin-bottom: 16px;
+}
+
+.bfm-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.bfm-progress-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bfm-primary-badge {
+  background: #f97316;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.bfm-progress-percent {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.bfm-progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bfm-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fc9c1b, #f97316);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+/* --- Passenger Title --- */
+.bfm-passenger-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Form Row (2-column grid) --- */
+.bfm-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* --- Form Label --- */
+.bfm-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* --- Form Input --- */
+.bfm-form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #fff;
+  color: #1e293b;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.bfm-form-input:focus {
+  border-color: #fc9c1b;
+  box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.12);
+  background: #fffbf5;
+}
+
+.bfm-form-input:hover:not(:focus) {
+  border-color: #cbd5e1;
+}
+
+/* Select styling */
+.bfm-form-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.bfm-form-input::-webkit-outer-spin-button,
+.bfm-form-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+/* --- Form Group (single field wrapper) --- */
+.bfm-form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+
+/* Upload label */
+.bfm-upload-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.bfm-upload-label:hover {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+  color: #ea8c0d;
+}
+
+/* Uploaded file display */
+.bfm-uploaded-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #166534;
+}
+
+.bfm-uploaded-file span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bfm-remove-file {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.bfm-remove-file:hover {
+  color: #991b1b;
+}
+
+/* --- Form (the <form> tag itself) --- */
+.bfm-form {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.bfm-form::-webkit-scrollbar {
+  width: 5px;
+}
+
+.bfm-form::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.bfm-form::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.bfm-form::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* --- Form Body inner padding --- */
+.bfm-form-body {
+  padding: 20px 24px 8px 24px;
+}
+
+/* --- Progress section --- */
+.bfm-progress-section {
+  padding: 12px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.bfm-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.bfm-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fc9c1b, #f97316);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.bfm-progress-text {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  margin: 0;
+  text-align: right;
+}
+
+/* --- Form Inputs --- */
+.bfm-form-section-header {
+  color: #1e3a5f;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bfm-passenger-badge {
+  background: #1e3a5f;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.bfm-primary-contact-label { 
+  font-size: 0.7rem; 
+  color: #f97316; 
+  font-weight: 700; 
+}
+
+.bfm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.bfm-form-group { 
+  margin-bottom: 0; 
+}
+
+.bfm-form-group.bfm-full-width { 
+  grid-column: 1 / -1; 
+}
+
+.bfm-form-group label { 
+  display: block; 
+  font-size: 0.7rem; 
+  font-weight: 700; 
+  color: #475569; 
+  margin-bottom: 4px; 
+}
+
+.bfm-form-group input, 
+.bfm-form-group select {
+  width: 100%; 
+  padding: 8px 10px; 
+  border: 1px solid #cbd5e1; 
+  border-radius: 8px; 
+  font-size: 0.85rem;
+  background-color: white; 
+  color: #334155; 
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.bfm-form-group input:focus, 
+.bfm-form-group select:focus { 
+  outline: none; 
+  border-color: #fc9c1b; 
+  box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
+}
+
+.bfm-required { 
+  color: #ef4444; 
+  margin-left: 2px; 
+}
+
+.bfm-upload-hint {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+/* =======================================================
+   ✅ CUSTOM DATE PICKER STYLES - WORKS ON ALL PLATFORMS
+   ======================================================= */
+
+.bfm-date-picker-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.bfm-calendar-trigger {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.bfm-calendar-trigger:hover {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+}
+
+.bfm-date-value {
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.bfm-date-placeholder {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.bfm-trigger-icon {
+  color: #64748b;
+  transition: transform 0.2s;
+}
+
+.bfm-calendar-trigger:hover .bfm-trigger-icon {
+  color: #fc9c1b;
+  transform: scale(1.1);
+}
+
+/* Calendar Popup Container */
+.bfm-custom-calendar {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 300px;
+  max-width: 90vw;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  z-index: 100;
+  margin-top: 6px;
+  animation: calendarSlideDown 0.2s ease-out;
+}
+
+@keyframes calendarSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ✅ Calendar Header with Navigation and Dropdowns */
+.bfm-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.bfm-cal-nav-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #475569;
+  padding: 0;
+}
+
+.bfm-cal-nav-btn:hover {
+  background: #fc9c1b;
+  border-color: #fc9c1b;
+  color: white;
+  transform: scale(1.05);
+}
+
+.bfm-cal-nav-btn:active {
+  transform: scale(0.95);
+}
+
+/* ✅ Dropdown Selectors Container */
+.bfm-calendar-selectors {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.bfm-month-select,
+.bfm-year-select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding-right: 24px;
+}
+
+.bfm-month-select:hover,
+.bfm-year-select:hover {
+  border-color: #fc9c1b;
+  background-color: #fffbf5;
+}
+
+.bfm-month-select:focus,
+.bfm-year-select:focus {
+  outline: none;
+  border-color: #fc9c1b;
+  box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
+}
+
+.bfm-month-select {
+  flex: 1.2;
+}
+
+.bfm-year-select {
+  flex: 0.8;
+}
+
+/* Weekday Headers */
+.bfm-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.bfm-cal-weekday {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+
+/* Calendar Days Grid */
+.bfm-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.bfm-cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #334155;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: white;
+  border: 1px solid transparent;
+}
+
+.bfm-cal-day:not(.empty):not(.disabled):hover {
+  background-color: #fff7ed;
+  border-color: #fc9c1b;
+  transform: scale(1.05);
+  font-weight: 600;
+}
+
+.bfm-cal-day.selected {
+  background: linear-gradient(135deg, #fc9c1b, #f97316);
+  color: white;
+  font-weight: 700;
+  border-color: #ea8c0d;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.3);
+}
+
+.bfm-cal-day.empty {
+  cursor: default;
+  background: transparent;
+  border: none;
+}
+
+.bfm-cal-day.disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.bfm-cal-day.disabled:hover {
+  background: #f8fafc;
+  border-color: transparent;
+  transform: none;
+}
+
+/* --- File Upload --- */
+.bfm-file-upload-box {
+  width: 100%;
+}
+
+.bfm-file-upload-label {
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 4px;
+  padding: 12px; 
+  border: 2px dashed #cbd5e1; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  background: white; 
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.bfm-file-upload-label:hover {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+}
+
+.bfm-upload-text { 
+  font-weight: 600; 
+  color: #475569; 
+  font-size: 0.8rem; 
+}
+
+.bfm-upload-subtext { 
+  font-size: 0.65rem; 
+  color: #94a3b8; 
+}
+
+.bfm-file-uploaded {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 6px 10px; 
+  background: #f0fdf4; 
+  border: 1px solid #86efac; 
+  border-radius: 8px;
+}
+
+.bfm-file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bfm-file-name { 
+  font-size: 0.75rem; 
+  font-weight: 600; 
+  color: #166534; 
+}
+
+.bfm-remove-file-btn {
+  background: #fff; 
+  color: #dc2626; 
+  border: 1px solid #fecaca; 
+  padding: 2px 8px; 
+  border-radius: 4px; 
+  font-size: 0.65rem; 
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bfm-remove-file-btn:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+/* --- Payment Section --- */
+.bfm-payment-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.bfm-payment-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: #1e3a5f;
+}
+
+.bfm-payment-header h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.bfm-payment-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bfm-payment-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.bfm-payment-card:hover {
+  border-color: #fc9c1b;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.15);
+}
+
+.bfm-payment-card.active {
+  border-color: #fc9c1b;
+  background: linear-gradient(to bottom, #fffbf5, white);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.2);
+}
+
+.bfm-payment-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bfm-payment-radio {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bfm-payment-card.active .bfm-payment-radio {
+  border-color: #fc9c1b;
+}
+
+.bfm-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.bfm-radio-dot.active {
+  background: #fc9c1b;
+}
+
+.bfm-payment-card-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.bfm-recommended-badge {
+  background: #10b981;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.bfm-flexible-badge {
+  background: #3b82f6;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.bfm-payment-card-body {
+  padding-left: 26px;
+}
+
+.bfm-payment-amount {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fc9c1b;
+  margin-bottom: 4px;
+}
+
+.bfm-payment-percentage {
+  display: block;
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.bfm-payment-description {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.bfm-payment-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.7rem;
+  color: #475569;
+}
+
+.bfm-payment-benefits li {
+  padding: 2px 0;
+}
+
+.bfm-payment-breakdown {
+  margin-top: 6px;
+  padding: 6px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+.bfm-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #64748b;
+  padding: 2px 0;
+}
+
+.bfm-breakdown-row strong {
+  color: #1e3a5f;
+  font-weight: 700;
+}
+
+.bfm-payment-summary {
+  background: #fff7ed;
+  border: 2px solid #fc9c1b;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.bfm-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.bfm-summary-row.bfm-remaining {
+  border-top: 1px dashed #fcd34d;
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.bfm-amount-highlight {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ea580c;
+}
+
+/* --- Footer Actions (sticky bottom) --- */
+.bfm-actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 24px 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.bfm-back-btn, .bfm-submit-btn {
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.bfm-back-btn { 
+  flex: 1; 
+  background: #e2e8f0; 
+  color: #475569; 
+}
+
+.bfm-back-btn:hover {
+  background: #cbd5e1;
+}
+
+.bfm-submit-btn { 
+  flex: 2; 
+  background: #fc9c1b; 
+  color: white; 
+}
+
+.bfm-submit-btn:hover:not(:disabled) {
+  background: #ea8c0d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+}
+
+.bfm-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   TABLET (641px - 1024px)
+   ============================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .bfm-overlay {
+    padding: 130px 16px 16px 16px;
+  }
+
+  .bfm-modal-card {
+    max-width: 600px;
+    max-height: calc(100vh - 160px);
+  }
+
+  .bfm-payment-options {
+    gap: 8px;
+  }
+
+  .bfm-custom-calendar {
+    width: 280px;
+  }
+}
+
+/* ============================================
+   MOBILE (Max width: 640px)
+   ============================================ */
+
+@media (max-width: 640px) {
+  .bfm-overlay {
+    padding: 0;
+    align-items: flex-end;
+    overflow-y: auto;
+  }
+
+  .bfm-modal-card {
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    height: auto;
+    /* Leave room for mobile navbar (~110px) at top */
+    max-height: calc(100vh - 110px);
+    max-width: 100%;
+    flex-shrink: 0;
+  }
+
+  .bfm-modal-header {
+    padding: 16px;
+  }
+
+  .bfm-trip-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  
+  .bfm-summary-item { 
+    min-width: auto; 
+  }
+
+  .bfm-summary-value { 
+    font-size: 0.75rem;
+    white-space: normal;
+  }
+
+  .bfm-form-wrapper {
+    padding: 16px;
+    padding-bottom: 40px;
+  }
+
+  /* Single Column Form on Mobile */
+  .bfm-form-grid {
+    grid-template-columns: 1fr; 
+    gap: 10px;
+  }
+
+  .bfm-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .bfm-form-body {
+    padding: 16px 16px 8px 16px;
+  }
+
+  .bfm-progress-section {
+    padding: 10px 16px;
+  }
+
+  /* ✅ Mobile Calendar Adjustments */
+  .bfm-custom-calendar {
+    width: 280px;
+    max-width: calc(100vw - 32px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .bfm-month-select,
+  .bfm-year-select {
+    font-size: 0.75rem;
+    padding: 5px 6px;
+    padding-right: 22px;
+  }
+
+  .bfm-cal-nav-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .bfm-cal-day {
+    font-size: 0.75rem;
+  }
+
+  /* Payment Section Mobile */
+  .bfm-payment-options {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .bfm-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .bfm-back-btn, .bfm-submit-btn {
+    width: 100%;
+    padding: 12px;
+  }
+}

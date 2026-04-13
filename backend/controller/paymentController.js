@@ -2,6 +2,8 @@ const axios = require('axios');
 const Inquiry = require('../models/inquiry');
 const Payment = require('../models/payment');
 const Booking = require('../models/booking');
+const TourBooking = require('../models/tourBooking'); // ✅ FIX: needed for tour payment lookup
+const TransferBooking = require('../models/transferBooking'); // ✅ needed for transfer payment lookup
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
@@ -135,10 +137,18 @@ const createBookingPaymentIntent = async (req, res) => {
     console.log('Payment Method:', method);
 
     console.log('Searching for booking in database...');
-    const booking = await Booking.findById(bookingId);
-    
+    // ✅ FIX: Check Booking (packages), TourBooking, and TransferBooking collections
+    let booking = await Booking.findById(bookingId);
     if (!booking) {
-      console.error('Booking not found in database');
+      console.log('Not found in Booking collection, trying TourBooking...');
+      booking = await TourBooking.findById(bookingId);
+    }
+    if (!booking) {
+      console.log('Not found in TourBooking collection, trying TransferBooking...');
+      booking = await TransferBooking.findById(bookingId);
+    }
+    if (!booking) {
+      console.error('Booking not found in database (checked both Booking and TourBooking)');
       return res.status(404).json({
         success: false,
         message: 'Booking not found',

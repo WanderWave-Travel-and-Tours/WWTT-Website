@@ -1,0 +1,553 @@
+/* BookingLeftColumn.css */
+
+/* --- Main Container --- */
+.blc-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* --- Go Back Button (UPDATED UI) --- */
+.blc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* Color matched to screenshot style (slate blue/gray) */
+  color: #536279; 
+  font-weight: 600;
+  background: transparent; /* Ensure no background */
+  border: none; /* Ensure no border */
+  cursor: pointer;
+  margin-bottom: 24px;
+  font-size: 1rem;
+  padding: 0;
+  width: fit-content;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.blc-back-btn:hover {
+  color: #f97316; /* Orange on hover */
+  transform: translateX(-4px);
+}
+
+.blc-back-btn:focus {
+  outline: none;
+}
+
+/* --- Image Section --- */
+.blc-image-wrapper {
+  border-radius: 16px;
+  /* ✅ overflow:visible so absolute-positioned badges (stamp, offer) are never clipped */
+  overflow: visible;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+  width: 100%;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  background-color: #e2e8f0;
+}
+
+/* ✅ Inner div handles image clipping — keeps border-radius on the photo */
+.blc-image-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.blc-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.blc-image-wrapper:hover .blc-main-image {
+  transform: scale(1.03); 
+}
+
+/* --- BADGE OVERLAY STYLE --- */
+.blc-offer-badge-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #ffedd5;
+  z-index: 10;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Header Info --- */
+.blc-header-section {
+  margin-bottom: 32px;
+}
+
+/* --- Title Badge Row: badge left, title+price stacked right --- */
+.blc-title-badge-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.blc-duration-calendar-badge {
+  display: inline-flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.blc-duration-calendar-svg {
+  width: 80px;
+  height: 80px;
+  display: block;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.22));
+}
+
+/* Right column: title on top, price below */
+.blc-badge-right-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.blc-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  word-wrap: break-word;
+}
+
+/* /pax label next to price */
+.blc-price-pax {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-left: 2px;
+  align-self: flex-end;
+  padding-bottom: 4px;
+}
+
+/* --- Price Section --- */
+.blc-price-timer-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap; 
+  gap: 10px;
+}
+
+.blc-price-section {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.blc-price-original {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.blc-price {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* --- Meta and Other Sections --- */
+.blc-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: #475569;
+  font-size: 0.95rem;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+.blc-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.blc-icons-row {
+  display: flex;
+  gap: 20px;
+  padding: 20px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+
+.blc-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.blc-icon--active {
+  color: #f97316;
+}
+
+/* --- Content Cards --- */
+.blc-card {
+  background: white;
+  padding: 0; 
+  border: none;
+  margin-bottom: 32px;
+}
+
+.blc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.blc-card-header:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.blc-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blc-chevron {
+  color: #64748b;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.blc-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.blc-collapsible {
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  max-height: 0;
+}
+
+.blc-collapsible.open {
+  opacity: 1;
+  max-height: 2000px;
+}
+
+.blc-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.blc-list-item {
+  display: flex;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: #334155;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+/* --- Itinerary Timeline --- */
+.blc-timeline-container {
+  position: relative;
+  padding-left: 10px;
+}
+
+.blc-timeline-line {
+  position: absolute;
+  top: 10px;
+  bottom: 30px;
+  left: 7px;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.blc-timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+  padding-left: 24px;
+}
+
+.blc-timeline-dot {
+  position: absolute;
+  left: 3px;
+  top: 18px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  border: 4px solid white;
+  box-shadow: 0 0 0 1px #cbd5e1;
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.blc-timeline-dot.active {
+  background: #f97316;
+  box-shadow: 0 0 0 1px #f97316;
+}
+
+.blc-day-card {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.blc-day-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.blc-day-card.active {
+  border-color: #f97316;
+  background-color: #fff7ed;
+}
+
+.blc-day-title {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
+  margin: 0;
+  flex: 1;
+}
+
+.blc-day-content {
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 0;
+  opacity: 0;
+}
+
+.blc-day-content.open {
+  max-height: 1000px;
+  opacity: 1;
+  padding-top: 12px;
+}
+
+.blc-day-inner {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.blc-expand-btn-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.blc-expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 10px 24px;
+  border-radius: 30px;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.blc-expand-btn:hover {
+  border-color: #f97316;
+  color: #c2410c;
+  background: #fff7ed;
+}
+
+.blc-customized-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 20px;
+  margin-left: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.blc-customizer-section {
+  margin-bottom: 24px;
+}
+
+.blc-customizer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  background: white;
+  border: 2px solid #f97316;
+  border-radius: 12px;
+  color: #f97316;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.blc-customizer-toggle:hover {
+  background: #fff7ed;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+}
+
+.blc-customizer-toggle.active {
+  background: #f97316;
+  color: white;
+}
+
+/* =========================================
+   RESPONSIVE MEDIA QUERIES
+   ========================================= */
+
+@media (max-width: 768px) {
+  .blc-title {
+    font-size: 1.5rem;
+  }
+  .blc-price {
+    font-size: 1.75rem;
+  }
+  .blc-price-original {
+    font-size: 1rem;
+  }
+  
+  /* Make the badge smaller on tablet/mobile */
+  .blc-offer-badge-overlay {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    top: 12px;
+    right: 12px;
+  }
+  
+  .blc-customized-badge {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .blc-icons-row {
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .blc-duration-calendar-svg {
+    width: 68px;
+    height: 68px;
+  }
+}
+
+@media (max-width: 480px) {
+  .blc-title {
+    font-size: 1.25rem;
+  }
+  .blc-price {
+    font-size: 1.5rem;
+  }
+  .blc-offer-badge-overlay {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+
+  .blc-duration-calendar-svg {
+    width: 58px;
+    height: 58px;
+  }
+}
+/* ================== RUBBER STAMP OVERLAY (no-duration titles) ================== */
+
+.blc-title-stamp-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.blc-rubber-stamp-svg {
+  display: block;
+  width: 130px;
+  height: 130px;
+  transform: rotate(-15deg);
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.7));
+}
+
+.blc-image-wrapper:hover .blc-rubber-stamp-svg {
+  transform: rotate(0deg);
+}
+
+@media (max-width: 768px) {
+  .blc-rubber-stamp-svg {
+    width: 90px;
+    height: 90px;
+  }
+}
+
+@media (max-width: 480px) {
+  .blc-rubber-stamp-svg {
+    width: 75px;
+    height: 75px;
+  }
+}

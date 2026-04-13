@@ -28,6 +28,7 @@ import EditPackage from './components/viewpackages/EditPackage.jsx';
 import AddTour from './components/addtours/addtours.jsx';
 import ViewTours from './components/viewtours/viewtours.jsx';
 import EditTour from './components/viewtours/EditTour.jsx';
+import TourBookingDashboard from './components/tourbooking/tourBooking.jsx'; // ✅ Tour Booking Dashboard
 
 // Promos & Posters
 import AddPromo from './components/addpromo/addpromo.jsx';
@@ -122,6 +123,7 @@ const VALID_PROTECTED_ROUTES = [
   '/services/passport',
   '/services/airlinebooking',
   '/services/hotelbooking',
+  '/tour-booking',
   '/services/tourarrangements',
   '/services/ferrybooking',
   '/services/marriagecert',
@@ -548,7 +550,8 @@ function App() {
           <Route path="/EditPassport/:id" element={<ProtectedRoute><EditPassport /></ProtectedRoute>} />
           <Route path="/EditPSA/:id" element={<ProtectedRoute><EditPSA /></ProtectedRoute>} />
           <Route path="/services/hotelbooking" element={<ProtectedRoute><HotelBooking /></ProtectedRoute>} />
-          <Route path="/services/tourarrangements" element={<ProtectedRoute><TourArrangements /></ProtectedRoute>} />
+          <Route path="/tour-booking" element={<ProtectedRoute><TourBookingDashboard /></ProtectedRoute>} />
+          <Route path="/services/tourarrangements" element={<ProtectedRoute><TourBookingDashboard /></ProtectedRoute>} />
           <Route path="/services/ferrybooking" element={<ProtectedRoute><FerryBooking /></ProtectedRoute>} />
           <Route path="/services/marriagecert" element={<ProtectedRoute><MarriageCertificate /></ProtectedRoute>} />
           <Route path="/services/travelinsurance" element={<ProtectedRoute><TravelInsurance /></ProtectedRoute>} />
