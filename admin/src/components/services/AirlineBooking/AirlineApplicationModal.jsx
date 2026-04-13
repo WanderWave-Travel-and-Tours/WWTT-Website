@@ -6,72 +6,101 @@ import { X, CheckCircle, Plane, Users, Trash2, User, Mail } from "lucide-react";
 const AirlineApplicationModal = ({ isOpen, onClose, refreshData }) => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
-    fullName: "", email: "", contactNumber: "", estimatedPrice: "",
-    flightDetails: { origin: "", destination: "", departureDate: "", airline: "", flightNumber: "" },
-    passengers: [{ firstName: "", lastName: "", type: "Adult", age: "" }]
+    fullName: "", 
+    email: "", 
+    contactNumber: "", 
+    estimatedPrice: "",
+    flightDetails: { 
+      origin: "", 
+      destination: "", 
+      departureDate: "", 
+      airline: "", 
+      flightNumber: "" 
+    },
+    passengers: [{ 
+      firstName: "", 
+      lastName: "", 
+      type: "Adult", 
+      age: "" 
+    }]
   });
 
   if (!isOpen) return null;
 
-  const handleInputChange = (e) => setFormData({...formData, [e.target.name]: e.target.value});
-  const handleFlightChange = (e) => setFormData({...formData, flightDetails: {...formData.flightDetails, [e.target.name]: e.target.value}});
-  
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFlightChange = (e) => {
+    setFormData({
+      ...formData,
+      flightDetails: { ...formData.flightDetails, [e.target.name]: e.target.value }
+    });
+  };
+
   const handlePassengerChange = (index, field, value) => {
     const updated = [...formData.passengers];
     updated[index][field] = value;
-    setFormData({...formData, passengers: updated});
+    setFormData({ ...formData, passengers: updated });
   };
 
-  const addPassenger = () => setFormData({...formData, passengers: [...formData.passengers, { firstName: "", lastName: "", type: "Adult", age: "" }]});
-  
+  const addPassenger = () => {
+    setFormData({
+      ...formData,
+      passengers: [...formData.passengers, { firstName: "", lastName: "", type: "Adult", age: "" }]
+    });
+  };
+
   const removePassenger = (index) => {
-    if(formData.passengers.length > 1) {
-        setFormData({...formData, passengers: formData.passengers.filter((_, i) => i !== index)});
+    if (formData.passengers.length > 1) {
+      setFormData({
+        ...formData,
+        passengers: formData.passengers.filter((_, i) => i !== index)
+      });
     }
   };
 
   const submitBooking = async () => {
     if (!formData.email || !formData.fullName || !formData.flightDetails.destination) {
-        alert("Please fill in Client Name, Email, and Destination.");
-        return;
+      alert("Please fill in Client Name, Email, and Destination.");
+      return;
     }
+
     setIsLoading(true);
+
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const payload = {
+      ...formData,
+      serviceName: "Airline Booking",
+      inquiryType: "FLIGHT_BOOKING",
+      message: `Walk-in Booking: ${formData.flightDetails.origin} → ${formData.flightDetails.destination}`,
+      userEmail: adminData.email || 'Unknown Admin',
+      adminId: adminData._id || null
+    };
+
     try {
-      // ✅ GET ADMIN DATA FROM LOCALSTORAGE FOR ACTIVITY LOG
-      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-      const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown Admin';
-      const activeId = adminData.id || adminData._id || null;
-
-      const payload = {
-        ...formData, 
-        serviceName: "Airline Booking", 
-        inquiryType: "FLIGHT_BOOKING",
-        message: `Walk-in Booking: ${formData.flightDetails.origin} to ${formData.flightDetails.destination}`,
-        // ✅ SEND ADMIN INFO FOR ACTIVITY LOG
-        userEmail: activeUser,
-        adminId: activeId
-      };
-
-      console.log("📤 Submitting Walk-in Booking by:", activeUser);
-
       const res = await axios.post('https://wanderwaveph.onrender.com/api/inquiries', payload);
-      if (res.data.success) { 
-        setStep(2); 
-        if (refreshData) refreshData(); 
+      if (res.data.success) {
+        setStep(2);
+        if (refreshData) refreshData();
       }
-    } catch (error) { 
-      console.error("❌ Failed to save booking:", error);
-      alert("Failed to save."); 
-    } finally { 
-      setIsLoading(false); 
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save booking.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const resetAndClose = () => {
     setStep(1);
-    setFormData({ fullName: "", email: "", contactNumber: "", estimatedPrice: "", flightDetails: { origin: "", destination: "", departureDate: "", airline: "", flightNumber: "" }, passengers: [{ firstName: "", lastName: "", type: "Adult", age: "" }] });
+    setFormData({
+      fullName: "", email: "", contactNumber: "", estimatedPrice: "",
+      flightDetails: { origin: "", destination: "", departureDate: "", airline: "", flightNumber: "" },
+      passengers: [{ firstName: "", lastName: "", type: "Adult", age: "" }]
+    });
     onClose();
   };
 

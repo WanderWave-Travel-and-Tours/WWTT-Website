@@ -614,7 +614,12 @@ const updateInquiry = async (req, res) => {
               age: p.age ? parseInt(p.age) : 0,
               email: String(p.email || '').trim(),
               contactNumber: String(p.contactNumber || '').trim(),
-              type: ['Adult', 'Child', 'Infant'].includes(p.type) ? p.type : 'Adult'
+              type: (() => {
+                const rawType = String(p.type || 'Adult').toLowerCase();
+                if (rawType.includes('child')) return 'Child';
+                if (rawType.includes('infant')) return 'Infant';
+                return 'Adult'; // catches "Adult", "Adult (Primary)", etc.
+              })()
             };
             
             console.log(`✅ Cleaned passenger ${idx}:`, cleanPassenger);
@@ -653,93 +658,121 @@ const updateInquiry = async (req, res) => {
       }];
     }
 
-    // Build update object
-    const updateData = {
-      fullName: req.body.fullName || existingInquiry.fullName,
-      email: req.body.email || existingInquiry.email,
-      contactNumber: req.body.contactNumber || existingInquiry.contactNumber,
-      serviceName: req.body.serviceName || existingInquiry.serviceName,
-      inquiryType: req.body.inquiryType || existingInquiry.inquiryType,
-      cenomarDocument: req.body.cenomarDocument || existingInquiry.cenomarDocument,
-      psaDocument: req.body.psaDocument || existingInquiry.psaDocument,
-      message: req.body.message || existingInquiry.message,
-      adminRemarks: req.body.adminRemarks || existingInquiry.adminRemarks,
-      estimatedPrice: parseFloat(req.body.estimatedPrice) || existingInquiry.estimatedPrice,
-      
-      // 🔥 CRITICAL: Passengers as proper array
-      passengers: updatedPassengers,
-      
-      // Update flight details
-      flightDetails: {
-        origin: req.body.origin || existingInquiry.flightDetails?.origin || '',
-        destination: req.body.destination || existingInquiry.flightDetails?.destination || '',
-        departureDate: req.body.departureDate || existingInquiry.flightDetails?.departureDate || null,
-        airline: req.body.airline || existingInquiry.flightDetails?.airline || '',
-        flightNumber: req.body.flightNumber || existingInquiry.flightDetails?.flightNumber || ''
-      },
-      
-      travelDate: req.body.travelDate || req.body.departureDate || existingInquiry.travelDate,
-      lengthOfStay: req.body.lengthOfStay || existingInquiry.lengthOfStay,
-      status: req.body.status || existingInquiry.status,
-      updatedAt: Date.now()
-    };
-   
-    // Check for name change
-    const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
-    if (newFullName && newFullName !== "" && newFullName !== existingInquiry.fullName) {
-      changes.push(`Name changed from "${existingInquiry.fullName}" to "${newFullName}"`);
-      updateData.fullName = newFullName;
+   // === BUILD UPDATE DATA — preserve all existing fields, only overwrite what's sent ===
+const updateData = {
+  fullName: req.body.fullName || existingInquiry.fullName,
+  email: req.body.email || existingInquiry.email,
+  contactNumber: req.body.contactNumber !== undefined ? req.body.contactNumber : existingInquiry.contactNumber,
+  estimatedPrice: req.body.estimatedPrice !== undefined ? (parseFloat(req.body.estimatedPrice) || existingInquiry.estimatedPrice || 0) : existingInquiry.estimatedPrice,
+  message: req.body.message || existingInquiry.message,
+  // Preserve all fields not touched by this update
+  serviceName: existingInquiry.serviceName,
+  inquiryType: existingInquiry.inquiryType,
+  address: existingInquiry.address,
+  visaCountry: existingInquiry.visaCountry,
+  visaId: existingInquiry.visaId,
+  psaDocument: existingInquiry.psaDocument,
+  psaId: existingInquiry.psaId,
+  cenomarDocument: existingInquiry.cenomarDocument,
+  cenomarId: existingInquiry.cenomarId,
+  travelDate: existingInquiry.travelDate,
+  lengthOfStay: existingInquiry.lengthOfStay,
+  passportDetails: existingInquiry.passportDetails,
+  status: existingInquiry.status,
+  isArchive: existingInquiry.isArchive,
+  remarks: existingInquiry.remarks,
+  evidenceUrl: existingInquiry.evidenceUrl,
+  evidenceName: existingInquiry.evidenceName,
+  adminNotes: existingInquiry.adminNotes,
+  contactedAt: existingInquiry.contactedAt,
+  contactedBy: existingInquiry.contactedBy,
+  paymentConfirmedAt: existingInquiry.paymentConfirmedAt,
+  paymentConfirmedBy: existingInquiry.paymentConfirmedBy,
+  deliveredDocuments: existingInquiry.deliveredDocuments,
+  documentsDeliveredAt: existingInquiry.documentsDeliveredAt,
+  updatedAt: Date.now()
+};
+
+// 🔥 FLIGHT DETAILS — deep-merge so no existing sub-fields are lost
+if (req.body.flightDetails) {
+  try {
+    let incomingFlight = req.body.flightDetails;
+
+    // Parse if it's a string (galing sa FormData)
+    if (typeof incomingFlight === 'string') {
+      incomingFlight = JSON.parse(incomingFlight);
     }
 
-    // 🔥 DOCUMENT HANDLING
-    const documentMap = new Map();
-    
-    if (existingInquiry.deliveredDocuments && Array.isArray(existingInquiry.deliveredDocuments)) {
-      existingInquiry.deliveredDocuments.forEach(doc => {
-        const separatorIndex = doc.fileName.indexOf(' - ');
-        if (separatorIndex !== -1) {
-            const fieldKey = doc.fileName.substring(0, separatorIndex).trim();
-            if (remainingFilesList.includes(fieldKey)) {
-                documentMap.set(fieldKey, doc);
-            }
-        }
-      });
+    console.log("📥 Incoming flightDetails from frontend:", incomingFlight);
+
+    const existingFlight = existingInquiry.flightDetails || {};
+
+    // Round-trip: deep-merge each leg with existing data
+    if (incomingFlight.type === 'round-trip' || incomingFlight.outbound) {
+      const existingOutbound = existingFlight.outbound || {};
+      const existingReturn = existingFlight.return || {};
+      const incomingOutbound = incomingFlight.outbound || {};
+      const incomingReturn = incomingFlight.return || {};
+
+      updateData.flightDetails = {
+        type: "round-trip",
+        outbound: {
+          origin: incomingOutbound.origin ?? existingOutbound.origin ?? "",
+          destination: incomingOutbound.destination ?? existingOutbound.destination ?? "",
+          departureDate: incomingOutbound.departureDate ?? existingOutbound.departureDate ?? "",
+          arrivalDate: incomingOutbound.arrivalDate ?? existingOutbound.arrivalDate ?? "",
+          airline: incomingOutbound.airline ?? existingOutbound.airline ?? "",
+          flightNumber: incomingOutbound.flightNumber ?? existingOutbound.flightNumber ?? "",
+          duration: incomingOutbound.duration ?? existingOutbound.duration ?? "",
+          stops: incomingOutbound.stops ?? existingOutbound.stops ?? 0,
+          price: parseFloat(incomingOutbound.price ?? existingOutbound.price) || 0
+        },
+        return: {
+          origin: incomingReturn.origin ?? existingReturn.origin ?? "",
+          destination: incomingReturn.destination ?? existingReturn.destination ?? "",
+          departureDate: incomingReturn.departureDate ?? existingReturn.departureDate ?? "",
+          arrivalDate: incomingReturn.arrivalDate ?? existingReturn.arrivalDate ?? "",
+          airline: incomingReturn.airline ?? existingReturn.airline ?? "",
+          flightNumber: incomingReturn.flightNumber ?? existingReturn.flightNumber ?? "",
+          duration: incomingReturn.duration ?? existingReturn.duration ?? "",
+          stops: incomingReturn.stops ?? existingReturn.stops ?? 0,
+          price: parseFloat(incomingReturn.price ?? existingReturn.price) || 0
+        },
+        totalAmount: parseFloat(incomingFlight.totalAmount) ||
+                     (parseFloat(incomingOutbound.price || existingOutbound.price || 0) +
+                      parseFloat(incomingReturn.price || existingReturn.price || 0)),
+        cabinClass: incomingFlight.cabinClass || existingFlight.cabinClass || "Economy"
+      };
+    }
+    // One-way: merge with existing
+    else {
+      updateData.flightDetails = {
+        type: incomingFlight.type || existingFlight.type || "one-way",
+        origin: incomingFlight.origin ?? existingFlight.origin ?? "",
+        destination: incomingFlight.destination ?? existingFlight.destination ?? "",
+        departureDate: incomingFlight.departureDate ?? existingFlight.departureDate ?? "",
+        arrivalDate: incomingFlight.arrivalDate ?? existingFlight.arrivalDate ?? "",
+        airline: incomingFlight.airline ?? existingFlight.airline ?? "",
+        flightNumber: incomingFlight.flightNumber ?? existingFlight.flightNumber ?? "",
+        duration: incomingFlight.duration ?? existingFlight.duration ?? "",
+        stops: incomingFlight.stops ?? existingFlight.stops ?? 0,
+        cabinClass: incomingFlight.cabinClass || existingFlight.cabinClass || "Economy"
+      };
     }
 
-    if (req.body.hasExistingEvidence === 'false') {
-        updateData.evidenceUrl = '';
-        updateData.evidenceName = '';
-    } else {
-        updateData.evidenceUrl = existingInquiry.evidenceUrl;
-        updateData.evidenceName = existingInquiry.evidenceName;
-    }
+    console.log("✅ FlightDetails successfully saved as:", updateData.flightDetails);
+  } catch (e) {
+    console.error("❌ Error parsing flightDetails:", e);
+    updateData.flightDetails = existingInquiry.flightDetails; // fallback to existing
+  }
+} else {
+  // No flightDetails sent — keep existing completely
+  updateData.flightDetails = existingInquiry.flightDetails;
+}
 
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        const fieldKey = file.fieldname;
-        const fileUrl = `/uploads/documents/${file.filename}`;
-        
-        if (fieldKey === 'evidence' || fieldKey === 'requirement' || fieldKey === 'walkInDoc') {
-            updateData.evidenceUrl = fileUrl;
-            updateData.evidenceName = file.originalname;
-        }
-       
-        documentMap.set(fieldKey, {
-          fileName: `${fieldKey} - ${file.originalname}`,
-          fileUrl: fileUrl,
-          uploadedAt: Date.now()
-        });
-      });
-    }
 
-    updateData.deliveredDocuments = Array.from(documentMap.values());
-
-    console.log("📤 FINAL UPDATE DATA:", {
-      passengersCount: updateData.passengers.length,
-      passengersType: typeof updateData.passengers,
-      isArray: Array.isArray(updateData.passengers),
-      sample: updateData.passengers[0]
-    });
+// 🔥 USE THE ALREADY-CLEANED updatedPassengers (processed above) — DO NOT re-parse
+updateData.passengers = updatedPassengers;
 
     // 🔥 UPDATE DATABASE - Let Mongoose handle the schema validation
     const updatedInquiry = await Inquiry.findByIdAndUpdate(
