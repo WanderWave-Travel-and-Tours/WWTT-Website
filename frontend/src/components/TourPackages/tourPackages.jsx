@@ -2,12 +2,11 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AllTours from './allTours';
+import TourBooking from './tourBooking';
 import './tourPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
-import { usePageTracker } from '../../hooks/usePageTracker';
-import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -20,6 +19,9 @@ function TourPackagesContent() {
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // ── Currently selected tour for the booking view ────────────────
+  const [selectedTour, setSelectedTour] = useState(null);
 
   const [scopeFilter, setScopeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,39 +59,6 @@ function TourPackagesContent() {
     fetchTours();
   }, []);
 
-  // ── Page View Tracker ────────────────────────────────────────────
-  // Fires once on mount — permanent dedup per visitor IP.
-  usePageTracker({ page: 'tours', path: '/tours', label: 'Tour Packages Page' });
-
-  // ── GHL session guard — computed once per session mount ──────────
-  const [ghlEnabled] = useState(() => !sessionStorage.getItem('ww_exit_shown'));
-
-  // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
-  useGHLTrigger({ 
-    enabled: ghlEnabled, 
-    delayMinutes: 1,     // 1 minute
-    triggerOnExit: true 
-  });
-
-  // ── Stamp sessionStorage the moment the GHL form would appear ───
-  useEffect(() => {
-    if (!ghlEnabled) return;
-
-    const markShown = () => sessionStorage.setItem('ww_exit_shown', 'true');
-
-    const timer = setTimeout(markShown, 60 * 1000);
-
-    const handleExitIntent = (e) => {
-      if (e.clientY <= 0) markShown();
-    };
-    document.addEventListener('mouseleave', handleExitIntent);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mouseleave', handleExitIntent);
-    };
-  }, [ghlEnabled]);
-
   // ============================================================
   // DERIVED FILTER OPTIONS
   // ============================================================
@@ -111,7 +80,6 @@ function TourPackagesContent() {
   const filteredTours = useMemo(() => {
     let result = [...tours];
 
-    // Scope filter
     if (scopeFilter === 'local') {
       result = result.filter(t => t.category === 'Local');
     } else if (scopeFilter === 'international') {
@@ -122,7 +90,6 @@ function TourPackagesContent() {
       result = result.filter(t => t.tourType === 'joiners');
     }
 
-    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(t =>
@@ -132,18 +99,15 @@ function TourPackagesContent() {
       );
     }
 
-    // Price range
     const min = parseFloat(priceRange.min);
     const max = parseFloat(priceRange.max);
     if (!isNaN(min)) result = result.filter(t => (t.price || 0) >= min);
     if (!isNaN(max)) result = result.filter(t => (t.price || 0) <= max);
 
-    // Duration
     if (selectedDuration) {
       result = result.filter(t => t.duration === selectedDuration);
     }
 
-    // Destinations (checkbox)
     if (selectedDestinations.length > 0) {
       result = result.filter(t => selectedDestinations.includes(t.destination));
     }
@@ -152,12 +116,17 @@ function TourPackagesContent() {
   }, [tours, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations]);
 
   // ============================================================
-  // BOOK NOW HANDLER — navigate to services page or open inquiry
+  // BOOK NOW — open TourBooking view with the selected tour
   // ============================================================
   const handleBookNow = (tour) => {
-    // Navigate to services/contact page with tour pre-selected
-    // or you can open a booking modal here — adjust to your routing
-    navigate('/services', { state: { selectedTour: tour } });
+    setSelectedTour(tour);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ── Go Back from booking — return to the tours listing ──────────
+  const handleGoBack = () => {
+    setSelectedTour(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const openGHLChat = () => {
@@ -166,10 +135,25 @@ function TourPackagesContent() {
     }
   };
 
+  // ============================================================
+  // RENDER — Booking view takes over the whole page when active
+  // ============================================================
+  if (selectedTour) {
+    return (
+      <TourBooking
+        pkg={selectedTour}
+        onGoBack={handleGoBack}
+        currency={currency}
+        exchangeRate={exchangeRate}
+        currentUser={null}
+      />
+    );
+  }
+
   return (
     <div className="tour-packages-page">
 
-      {/* ── Hero section (matches top-section-bg style) ── */}
+      {/* ── Hero section ────────────────────────────────────────────── */}
       <section className="tours-top-section-bg">
         <div className="tours-content-container">
           {loading ? (
@@ -208,7 +192,7 @@ function TourPackagesContent() {
         </div>
       </section>
 
-      {/* ── Scrolling location bar (matches packageDeals divider) ── */}
+      {/* ── Scrolling location bar ───────────────────────────────────── */}
       <div className="tours-section-divider">
         <div className="tours-divider-airplane-container">
           <img
