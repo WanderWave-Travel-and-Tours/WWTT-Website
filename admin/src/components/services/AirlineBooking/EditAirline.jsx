@@ -49,18 +49,46 @@ const EditAirline = () => {
   }]);
 
   // FORM DATA
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    contactNumber: "",
-    estimatedPrice: "",
-    message: "",
+  // UPDATED FORM DATA - SUPPORTS ROUND-TRIP
+const [formData, setFormData] = useState({
+  fullName: "",
+  email: "",
+  contactNumber: "",
+  estimatedPrice: "",
+  message: "",
+  journeyType: "round-trip",        // ← NEW
+  origin: "",
+  destination: "",
+  departureDate: "",
+  airline: "",
+  flightNumber: "",
+
+  // Round-trip specific fields
+  outbound: {
     origin: "",
     destination: "",
     departureDate: "",
+    arrivalDate: "",
     airline: "",
     flightNumber: "",
-  });
+    duration: "",
+    stops: 0,
+    price: 0
+  },
+  return: {
+    origin: "",
+    destination: "",
+    departureDate: "",
+    arrivalDate: "",
+    airline: "",
+    flightNumber: "",
+    duration: "",
+    stops: 0,
+    price: 0
+  },
+  totalAmount: 0,
+  cabinClass: "Economy"
+});
 
   const API_BASE_URL = "https://wanderwaveph.onrender.com/api/inquiries"; 
 
@@ -69,74 +97,136 @@ const EditAirline = () => {
   const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
   // FETCH DATA
-  useEffect(() => {
-    const fetchAirlineDetails = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/${airlineId}`);
-        
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        
-        const result = await res.json();
-        
-        if (!result.success || !result.data) throw new Error("Invalid response format");
-        
-        const data = result.data;
-        
-        setFormData({
-          fullName: data.fullName || "",
-          email: data.email || "",
-          contactNumber: data.contactNumber || "",
-          estimatedPrice: data.estimatedPrice || "",
-          message: data.message || "",
-          origin: data.flightDetails?.origin || "",
-          destination: data.flightDetails?.destination || "",
-          departureDate: data.flightDetails?.departureDate 
-            ? new Date(data.flightDetails.departureDate).toISOString().split("T")[0] 
-            : "",
-          airline: data.flightDetails?.airline || "",
-          flightNumber: data.flightDetails?.flightNumber || "",
-        });
+  // FETCH DATA - UPDATED (Step 1)
+useEffect(() => {
+  const fetchAirlineDetails = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${airlineId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        let processedPassengers = [];
-        if (Array.isArray(data.passengers) && data.passengers.length > 0) {
-          processedPassengers = data.passengers.map((p) => ({
-            firstName: p.firstName || "",
-            lastName: p.lastName || "",
-            type: p.type || "Adult",
-            age: p.age || 0,
-            nationality: p.nationality || "Filipino",
-            email: p.email || "",
-            contactNumber: p.contactNumber || ""
-          }));
-        } else {
-          processedPassengers = [{
-            firstName: "",
-            lastName: "",
-            type: "Adult",
-            age: 0,
-            nationality: "Filipino",
-            email: "",
-            contactNumber: ""
-          }];
-        }
-        setPassengers(processedPassengers);
-        
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast.error(`Failed to load booking: ${err.message}`); 
-      } finally {
-        setLoading(false);
+      const result = await res.json();
+      if (!result.success || !result.data) throw new Error("Invalid response format");
+
+      // === UPDATED FETCH LOGIC FOR ROUND-TRIP ===
+const data = result.data;
+
+setFormData({
+  fullName: data.fullName || "",
+  email: data.email || "",
+  contactNumber: data.contactNumber || "",
+  estimatedPrice: data.flightDetails?.totalAmount || data.estimatedPrice || "",
+  message: data.message || "",
+  
+  // Journey Type
+  journeyType: data.flightDetails?.type || "one-way",
+
+  // Legacy fallback (for old one-way)
+  origin: data.flightDetails?.origin || data.flightDetails?.outbound?.origin || "",
+  destination: data.flightDetails?.destination || data.flightDetails?.outbound?.destination || "",
+  departureDate: data.flightDetails?.departureDate || data.flightDetails?.outbound?.departureDate || "",
+
+  // ROUND-TRIP STRUCTURE — preserve all fields from DB
+  outbound: data.flightDetails?.outbound ? {
+    origin: data.flightDetails.outbound.origin || "",
+    destination: data.flightDetails.outbound.destination || "",
+    departureDate: data.flightDetails.outbound.departureDate || "",
+    arrivalDate: data.flightDetails.outbound.arrivalDate || "",
+    airline: data.flightDetails.outbound.airline || "",
+    flightNumber: data.flightDetails.outbound.flightNumber || "",
+    duration: data.flightDetails.outbound.duration || "",
+    stops: data.flightDetails.outbound.stops ?? 0,
+    price: data.flightDetails.outbound.price || 0
+  } : {
+    origin: "",
+    destination: "",
+    departureDate: "",
+    arrivalDate: "",
+    airline: "",
+    flightNumber: "",
+    duration: "",
+    stops: 0,
+    price: 0
+  },
+  return: data.flightDetails?.return ? {
+    origin: data.flightDetails.return.origin || "",
+    destination: data.flightDetails.return.destination || "",
+    departureDate: data.flightDetails.return.departureDate || "",
+    arrivalDate: data.flightDetails.return.arrivalDate || "",
+    airline: data.flightDetails.return.airline || "",
+    flightNumber: data.flightDetails.return.flightNumber || "",
+    duration: data.flightDetails.return.duration || "",
+    stops: data.flightDetails.return.stops ?? 0,
+    price: data.flightDetails.return.price || 0
+  } : {
+    origin: "",
+    destination: "",
+    departureDate: "",
+    arrivalDate: "",
+    airline: "",
+    flightNumber: "",
+    duration: "",
+    stops: 0,
+    price: 0
+  },
+  totalAmount: data.flightDetails?.totalAmount || data.estimatedPrice || 0,
+  cabinClass: data.flightDetails?.cabinClass || "Economy",
+  airline: data.flightDetails?.outbound?.airline || data.flightDetails?.airline || "",
+  flightNumber: data.flightDetails?.outbound?.flightNumber || ""
+});
+
+      // === PASSENGERS - FIXED PARSING (very important) ===
+      let processedPassengers = [];
+
+      if (Array.isArray(data.passengers) && data.passengers.length > 0) {
+        processedPassengers = data.passengers.map(p => ({
+          firstName: p.firstName || "",
+          lastName: p.lastName || "",
+          type: p.type || "Adult",
+          age: p.age || 0,
+          nationality: p.nationality || "Filipino",
+          email: p.email || "",
+          contactNumber: p.contactNumber || ""
+        }));
+      } 
+      // Fallback kung walang passengers
+      else {
+        processedPassengers = [{
+          firstName: "",
+          lastName: "",
+          type: "Adult",
+          age: 0,
+          nationality: "Filipino",
+          email: "",
+          contactNumber: ""
+        }];
       }
-    };
 
-    if (airlineId) fetchAirlineDetails();
-    else setLoading(false);
-  }, [airlineId, toast]);
+      setPassengers(processedPassengers);
+
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast.error(`Failed to load booking: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (airlineId) fetchAirlineDetails();
+  else setLoading(false);
+}, [airlineId, toast]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const { name, value } = e.target;
+  setFormData((prev) => ({ ...prev, [name]: value }));
+};
+
+// NEW HELPER: Para sa outbound at return fields
+const handleNestedChange = (leg, field, value) => {
+  setFormData(prev => ({
+    ...prev,
+    [leg]: { ...prev[leg], [field]: value }
+  }));
+};
 
   const handlePassengerChange = (index, field, value) => {
     setPassengers((prev) => {
@@ -214,62 +304,104 @@ const EditAirline = () => {
     });
   };
 
-  const processSubmit = async () => {
-    setSubmitting(true);
-    const { userEmail, adminId } = getAdminData();
+const processSubmit = async () => {
+  setSubmitting(true);
+  const { userEmail, adminId } = getAdminData();
 
-    const validPassengers = passengers
-      .filter(p => (p.firstName && p.firstName.trim()) || (p.lastName && p.lastName.trim()))
-      .map(p => ({
-        firstName: String(p.firstName || "").trim(),
-        lastName: String(p.lastName || "").trim(),
-        type: p.type || "Adult",
-        age: p.age ? parseInt(p.age) : 0,
-        nationality: String(p.nationality || "Filipino").trim(),
-        email: String(p.email || "").trim(),
-        contactNumber: String(p.contactNumber || "").trim()
-      }));
+  const validPassengers = passengers
+    .filter(p => (p.firstName && p.firstName.trim()) || (p.lastName && p.lastName.trim()))
+    .map(p => ({
+      firstName: String(p.firstName || "").trim(),
+      lastName: String(p.lastName || "").trim(),
+      type: p.type || "Adult",
+      age: p.age ? parseInt(p.age) : 0,
+      nationality: String(p.nationality || "Filipino").trim(),
+      email: String(p.email || "").trim(),
+      contactNumber: String(p.contactNumber || "").trim()
+    }));
 
-    if (validPassengers.length === 0) {
-      toast.error("Please add at least one passenger with a name."); 
-      setSubmitting(false);
-      return;
+  if (validPassengers.length === 0) {
+    toast.error("Please add at least one passenger with a name.");
+    setSubmitting(false);
+    return;
+  }
+
+  // === BUILD FLIGHT DETAILS (Round-trip safe) ===
+  let flightDetailsPayload = {};
+
+  if (formData.journeyType === 'round-trip') {
+    flightDetailsPayload = {
+      type: "round-trip",
+      outbound: {
+        origin: formData.outbound.origin || "",
+        destination: formData.outbound.destination || "",
+        departureDate: formData.outbound.departureDate || "",
+        arrivalDate: formData.outbound.arrivalDate || "",
+        airline: formData.outbound.airline || "",
+        flightNumber: formData.outbound.flightNumber || "",
+        duration: formData.outbound.duration || "",
+        stops: parseInt(formData.outbound.stops) || 0,
+        price: parseFloat(formData.outbound.price) || 0
+      },
+      return: {
+        origin: formData.return.origin || "",
+        destination: formData.return.destination || "",
+        departureDate: formData.return.departureDate || "",
+        arrivalDate: formData.return.arrivalDate || "",
+        airline: formData.return.airline || "",
+        flightNumber: formData.return.flightNumber || "",
+        duration: formData.return.duration || "",
+        stops: parseInt(formData.return.stops) || 0,
+        price: parseFloat(formData.return.price) || 0
+      },
+      totalAmount: parseFloat(formData.totalAmount) || 
+                   (parseFloat(formData.outbound.price || 0) + parseFloat(formData.return.price || 0)),
+      cabinClass: formData.cabinClass || "Economy"
+    };
+  } else {
+    flightDetailsPayload = {
+      type: formData.journeyType || "one-way",
+      origin: formData.origin || "",
+      destination: formData.destination || "",
+      departureDate: formData.departureDate || "",
+      airline: formData.airline || "",
+      flightNumber: formData.flightNumber || "",
+      cabinClass: formData.cabinClass || "Economy"
+    };
+  }
+
+  const data = new FormData();
+  data.append("fullName", formData.fullName);
+  data.append("email", formData.email);
+  data.append("contactNumber", formData.contactNumber);
+  data.append("estimatedPrice", formData.totalAmount || formData.estimatedPrice || 0);
+  data.append("message", formData.message || "");
+  data.append("flightDetails", JSON.stringify(flightDetailsPayload));   // ← CRITICAL
+  data.append("passengers", JSON.stringify(validPassengers));
+  data.append("userEmail", userEmail);
+  data.append("adminId", adminId);
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/update/${airlineId}`, {
+      method: "PUT",
+      body: data,
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      toast.success("Booking Updated Successfully!");
+      navigate("/services/airlinebooking");
+    } else {
+      toast.error(`Error: ${result.message || 'Failed to update'}`);
     }
-
-    const data = new FormData();
-    data.append("fullName", formData.fullName);
-    data.append("email", formData.email);
-    data.append("contactNumber", formData.contactNumber);
-    data.append("estimatedPrice", formData.estimatedPrice);
-    data.append("message", formData.message);
-    data.append("origin", formData.origin);
-    data.append("destination", formData.destination);
-    data.append("departureDate", formData.departureDate);
-    data.append("airline", formData.airline);
-    data.append("flightNumber", formData.flightNumber);
-    data.append("passengers", JSON.stringify(validPassengers));
-    data.append("userEmail", userEmail);
-    data.append("adminId", adminId);
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/update/${airlineId}`, {
-        method: "PUT",
-        body: data,
-      });
-      const result = await res.json();
-      
-      if (result.success) {
-        toast.success("Booking Updated Successfully!"); 
-        navigate("/services/airlinebooking");
-      } else {
-        toast.error(`Error: ${result.message}`); 
-      }
-    } catch (err) {
-      toast.error("Server Error: Connection Failed"); 
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Server Error: Connection Failed");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (loading) return (
     <div className="ea-page">
@@ -356,55 +488,113 @@ const EditAirline = () => {
                   </div>
                 </section>
 
-                <section className="ea-section">
-                  <div className="ea-section-header">
-                    <Plane size={20} className="ea-section-icon" />
-                    <h3>Flight Details</h3>
-                  </div>
-                  <div className="ea-fields-grid">
-                    <div className="ea-input-group">
-                      <label>Origin</label>
-                      <input 
-                        type="text" 
-                        name="origin" 
-                        value={formData.origin} 
-                        onChange={handleInputChange} 
-                        className="ea-input" 
-                      />
-                    </div>
-                    <div className="ea-input-group">
-                      <label>Destination</label>
-                      <input 
-                        type="text" 
-                        name="destination" 
-                        value={formData.destination} 
-                        onChange={handleInputChange} 
-                        className="ea-input" 
-                      />
-                    </div>
-                    <div className="ea-input-group">
-                      <label>Departure Date</label>
-                      <input 
-                        type="date" 
-                        name="departureDate" 
-                        value={formData.departureDate} 
-                        onChange={handleInputChange} 
-                        className="ea-input" 
-                      />
-                    </div>
-                    <div className="ea-input-group">
-                      <label>Airline / Flight No.</label>
-                      <input 
-                        type="text" 
-                        name="airline" 
-                        value={formData.airline} 
-                        onChange={handleInputChange} 
-                        className="ea-input" 
-                        placeholder="e.g. Cebu Pacific 5J-123"
-                      />
-                    </div>
-                  </div>
-                </section>
+                {/* FLIGHT DETAILS SECTION - UPDATED WITH ROUND-TRIP UI */}
+{/* FLIGHT DETAILS - FIXED FOR ROUND-TRIP */}
+<section className="ea-section">
+  <div className="ea-section-header">
+    <Plane size={20} className="ea-section-icon" />
+    <h3>
+      Flight Details 
+      <span style={{marginLeft:'12px', fontSize:'13px', padding:'4px 12px', borderRadius:'20px', background:'#fff7ed', color:'#f59e0b', fontWeight:'700'}}>
+        {formData.journeyType === 'round-trip' ? 'ROUND-TRIP' : 'ONE-WAY'}
+      </span>
+    </h3>
+  </div>
+
+  {formData.journeyType === 'round-trip' ? (
+    <>
+      {/* OUTBOUND LEG */}
+      <div style={{marginBottom: '24px', padding: '16px', background:'#f8fafc', borderRadius:'10px', border:'1px solid #fed7aa'}}>
+        <div style={{fontWeight:'800', color:'#f59e0b', marginBottom:'10px'}}>DEPARTURE (Outbound)</div>
+        <div className="ea-fields-grid">
+          <div className="ea-input-group">
+            <label>Origin</label>
+            <input type="text" value={formData.outbound.origin} 
+              onChange={(e) => handleNestedChange('outbound', 'origin', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Destination</label>
+            <input type="text" value={formData.outbound.destination} 
+              onChange={(e) => handleNestedChange('outbound', 'destination', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Departure Time/Date</label>
+            <input type="text" value={formData.outbound.departureDate} 
+              onChange={(e) => handleNestedChange('outbound', 'departureDate', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Airline</label>
+            <input type="text" value={formData.outbound.airline} 
+              onChange={(e) => handleNestedChange('outbound', 'airline', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Price (₱)</label>
+            <input type="number" value={formData.outbound.price} 
+              onChange={(e) => handleNestedChange('outbound', 'price', e.target.value)} className="ea-input" />
+          </div>
+        </div>
+      </div>
+
+      {/* RETURN LEG */}
+      <div style={{padding: '16px', background:'#f8fafc', borderRadius:'10px', border:'1px solid #a3e4b8'}}>
+        <div style={{fontWeight:'800', color:'#10b981', marginBottom:'10px'}}>RETURN</div>
+        <div className="ea-fields-grid">
+          <div className="ea-input-group">
+            <label>Origin</label>
+            <input type="text" value={formData.return.origin} 
+              onChange={(e) => handleNestedChange('return', 'origin', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Destination</label>
+            <input type="text" value={formData.return.destination} 
+              onChange={(e) => handleNestedChange('return', 'destination', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Departure Time/Date</label>
+            <input type="text" value={formData.return.departureDate} 
+              onChange={(e) => handleNestedChange('return', 'departureDate', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Airline</label>
+            <input type="text" value={formData.return.airline} 
+              onChange={(e) => handleNestedChange('return', 'airline', e.target.value)} className="ea-input" />
+          </div>
+          <div className="ea-input-group">
+            <label>Price (₱)</label>
+            <input type="number" value={formData.return.price} 
+              onChange={(e) => handleNestedChange('return', 'price', e.target.value)} className="ea-input" />
+          </div>
+        </div>
+      </div>
+
+      {/* TOTAL */}
+      <div style={{marginTop:'20px', padding:'16px', background:'#fffbeb', borderRadius:'10px', border:'2px solid #fcd34d', fontSize:'18px', fontWeight:'800', display:'flex', justifyContent:'space-between'}}>
+        <span>TOTAL ROUND-TRIP</span>
+        <span style={{color:'#f59e0b'}}>₱{(formData.totalAmount || formData.estimatedPrice || 0).toLocaleString()}</span>
+      </div>
+    </>
+  ) : (
+    /* ONE-WAY FALLBACK */
+    <div className="ea-fields-grid">
+      <div className="ea-input-group">
+        <label>Origin</label>
+        <input type="text" name="origin" value={formData.origin} onChange={handleInputChange} className="ea-input" />
+      </div>
+      <div className="ea-input-group">
+        <label>Destination</label>
+        <input type="text" name="destination" value={formData.destination} onChange={handleInputChange} className="ea-input" />
+      </div>
+      <div className="ea-input-group">
+        <label>Departure Date</label>
+        <input type="date" name="departureDate" value={formData.departureDate} onChange={handleInputChange} className="ea-input" />
+      </div>
+      <div className="ea-input-group">
+        <label>Airline</label>
+        <input type="text" name="airline" value={formData.airline} onChange={handleInputChange} className="ea-input" />
+      </div>
+    </div>
+  )}
+</section>
 
                 <section className="ea-section">
                   <div className="ea-section-header row-between">

@@ -20,6 +20,7 @@ import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 import UserDashboard from './components/userDashboard/userDashboard.jsx';
 import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
 import TourPackages from './components/TourPackages/tourPackages.jsx';
+import TransferPackages from './components/Transfers/transferPackages.jsx';
 
 // --- NEW FEEDBACK COMPONENT ---
 import FeedbackWidget from './components/FeedbackWidget/FeedbackWidget.jsx';
@@ -729,6 +730,8 @@ function MainLayout() {
           <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
           {/* ✅ TOURS ROUTE — para mag-redirect ng tama mula sa Tour Arrangements */}
           <Route path="/tours" element={<TourPackages />} />
+          {/* ✅ TRANSFERS ROUTE — Tourist Transfers from Seller Rates */}
+          <Route path="/transfers" element={<TransferPackages />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/help" element={<Help />} />
           <Route path="/payment" element={<Payment />} />

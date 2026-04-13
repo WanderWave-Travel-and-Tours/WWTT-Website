@@ -1,0 +1,208 @@
+/* transferPackages.css */
+
+.transfer-packages-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background-color: #f1f5f9;
+}
+
+/* ── Hero / Top Section (matches tourPackages top-section-bg) ── */
+.transfers-top-section-bg {
+  width: 100%;
+  background:
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.60), rgba(15, 23, 42, 0.30)),
+    url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=2074&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 0;
+  padding-top: 130px;
+}
+
+/* ── Content container ── */
+.transfers-content-container {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0 16px 60px;
+  box-sizing: border-box;
+  /* Critical: prevent children from overflowing */
+  overflow: hidden;
+}
+
+/* ── Loading / Error states ── */
+.transfers-loading-state,
+.transfers-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 20px;
+  color: #fff;
+  text-align: center;
+  gap: 16px;
+}
+
+.transfers-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #FF8C00;
+  border-radius: 50%;
+  animation: transfersSpin 0.8s linear infinite;
+}
+
+@keyframes transfersSpin {
+  to { transform: rotate(360deg); }
+}
+
+.transfers-loading-state p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.transfers-error-state h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.transfers-error-state p {
+  font-size: 1rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.transfers-error-state button {
+  background: #FF8C00;
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.transfers-error-state button:hover {
+  background: #c2410c;
+}
+
+/* ── Section divider (scrolling bar + vehicle — matches tourPackages) ── */
+.transfers-section-divider {
+  width: 100%;
+  background: none;
+  background-color: transparent;
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+}
+
+.transfers-divider-airplane-container {
+  position: absolute;
+  top: 0;
+  left: -280px;
+  transform: translateY(-75%);
+  z-index: 10;
+  pointer-events: none;
+  animation: transfersFlyAcross 14s linear infinite;
+  animation-delay: 2s;
+}
+
+.transfers-divider-airplane {
+  display: block;
+  width: 300px;
+  height: auto;
+}
+
+@keyframes transfersFlyAcross {
+  from { left: -280px; }
+  to   { left: calc(100vw + 280px); }
+}
+
+.transfers-divider-bar {
+  width: 100%;
+  background-color: #0d233e;
+  padding: 16px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  z-index: 5;
+}
+
+.transfers-divider-wrapper {
+  display: inline-flex;
+  width: max-content;
+  animation: transfersScrollBar 40s linear infinite;
+  will-change: transform;
+}
+
+.transfers-divider-group {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 15px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.transfers-divider-group span {
+  margin: 0 8px;
+}
+
+.transfers-divider-label {
+  color: #fc9c1b !important;
+  margin-right: 10px !important;
+}
+
+@keyframes transfersScrollBar {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .transfers-content-container {
+    padding: 0 16px;
+    max-width: 100%;
+  }
+  .transfers-top-section-bg {
+    padding-top: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .transfers-top-section-bg {
+    padding-top: 120px;
+    padding-bottom: 0;
+  }
+
+  .transfers-divider-bar { padding: 12px 0; }
+  .transfers-divider-group { font-size: 11px; }
+  .transfers-divider-airplane-container { transform: translateY(-80%); }
+  .transfers-divider-airplane { width: 180px; }
+}
+
+@media (max-width: 480px) {
+  .transfers-top-section-bg {
+    padding-top: 100px;
+    padding-bottom: 0;
+  }
+
+  .transfers-divider-bar { padding: 10px 0; }
+  .transfers-divider-group { font-size: 10px; }
+  .transfers-divider-airplane { width: 150px; }
+}

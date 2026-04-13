@@ -297,6 +297,15 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
+    // ── Tourist Transfers: redirect to dedicated transfers page ──────────────
+    if (
+      item.title === "Tourist Transfers" ||
+      item.title.toLowerCase().includes("transfer")
+    ) {
+      navigate("/transfers");
+      return;
+    }
+
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
       setIsPSAService(false);

@@ -139,7 +139,9 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
                     <div className="air-icon-yellow"><DollarSign size={20}/></div>
                     <div>
                         <label>AMOUNT</label>
-                        <div className="air-val air-price">₱{(inquiry.estimatedPrice || 0).toLocaleString()}</div>
+                        <div className="air-val air-price">
+  ₱{(inquiry.flightDetails?.totalAmount || inquiry.estimatedPrice || 0).toLocaleString()}
+</div>
                     </div>
                 </div>
                 <div className="air-client-row">
@@ -153,27 +155,71 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
           </div>
 
           {/* ZONE 3: Flight Details */}
-          <div className="air-section-card">
-            <h3 className="air-section-label">FLIGHT DETAILS</h3>
-            <div className="air-flight-details">
-                <div className="air-flight-row">
-                    <span className="lbl">Route:</span>
-                    <span className="val">{inquiry.flightDetails?.origin} ➝ {inquiry.flightDetails?.destination}</span>
-                </div>
-                <div className="air-flight-row">
-                    <span className="lbl">Departure:</span>
-                    <span className="val">{formatDate(inquiry.flightDetails?.departureDate)}</span>
-                </div>
-                <div className="air-flight-row">
-                    <span className="lbl">Airline:</span>
-                    <span className="val">{inquiry.flightDetails?.airline || 'Any Airline'}</span>
-                </div>
-                <div className="air-flight-row">
-                    <span className="lbl">Pax:</span>
-                    <span className="val">{inquiry.passengers?.length || 1} Passenger(s)</span>
-                </div>
-            </div>
-          </div>
+          {/* ZONE 3: Flight Details — UPDATED FOR ROUND-TRIP SUPPORT */}
+{/* FLIGHT DETAILS - FIXED ROUND-TRIP DISPLAY */}
+<div className="air-section-card">
+  <h3 className="air-section-label">FLIGHT DETAILS</h3>
+  
+  {inquiry.flightDetails?.type === 'round-trip' ? (
+    <>
+      <div className="air-flight-row" style={{marginBottom:'12px'}}>
+        <span className="lbl" style={{color:'#f59e0b'}}>DEPARTURE</span>
+        <span className="val">{inquiry.flightDetails.outbound?.origin} → {inquiry.flightDetails.outbound?.destination}</span>
+      </div>
+      <div className="air-flight-row">
+        <span className="lbl">Airline:</span>
+        <span className="val">{inquiry.flightDetails.outbound?.airline}</span>
+      </div>
+      <div className="air-flight-row">
+        <span className="lbl">Time:</span>
+        <span className="val">{inquiry.flightDetails.outbound?.departureDate}</span>
+      </div>
+      <div className="air-flight-row">
+        <span className="lbl">Price:</span>
+        <span className="val">₱{(inquiry.flightDetails.outbound?.price || 0).toLocaleString()}</span>
+      </div>
+
+      <div className="air-flight-row" style={{marginTop:'20px', marginBottom:'12px'}}>
+        <span className="lbl" style={{color:'#10b981'}}>RETURN</span>
+        <span className="val">{inquiry.flightDetails.return?.origin} → {inquiry.flightDetails.return?.destination}</span>
+      </div>
+      <div className="air-flight-row">
+        <span className="lbl">Airline:</span>
+        <span className="val">{inquiry.flightDetails.return?.airline}</span>
+      </div>
+      <div className="air-flight-row">
+        <span className="lbl">Time:</span>
+        <span className="val">{inquiry.flightDetails.return?.departureDate}</span>
+      </div>
+      <div className="air-flight-row">
+        <span className="lbl">Price:</span>
+        <span className="val">₱{(inquiry.flightDetails.return?.price || 0).toLocaleString()}</span>
+      </div>
+
+      <div style={{marginTop:'20px', paddingTop:'16px', borderTop:'2px solid #e2e8f0', fontWeight:'800', fontSize:'17px', display:'flex', justifyContent:'space-between'}}>
+        <span>Total Round-Trip</span>
+        <span style={{color:'#f59e0b'}}>₱{(inquiry.flightDetails?.totalAmount || inquiry.estimatedPrice || 0).toLocaleString()}</span>
+      </div>
+    </>
+  ) : (
+    /* ONE-WAY */
+    <div className="air-flight-details">
+      <div className="air-flight-row">
+        <span className="lbl">Route:</span>
+        <span className="val">{inquiry.flightDetails?.origin} → {inquiry.flightDetails?.destination}</span>
+      </div>
+      <div className="air-flight-row">
+        <span className="lbl">Airline:</span>
+        <span className="val">{inquiry.flightDetails?.airline || 'Any Airline'}</span>
+      </div>
+    </div>
+  )}
+
+  <div className="air-flight-row">
+    <span className="lbl">Pax:</span>
+    <span className="val">{inquiry.passengers?.length || 1} Passenger(s)</span>
+  </div>
+</div>
 
           {/* ZONE 4: Request Message */}
           <div className="air-section-card">
