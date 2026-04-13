@@ -47,11 +47,33 @@ function PackageBooking({
   });
 
   // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
+  // ── GHL session guard — computed once per session mount ──────────
+  const [ghlEnabled] = useState(() => !sessionStorage.getItem('ww_exit_shown'));
+
   useGHLTrigger({
-    enabled: !sessionStorage.getItem('ww_exit_shown'),
+    enabled: ghlEnabled,
     delayMinutes: 1,
     triggerOnExit: true
   });
+
+  // ── Stamp sessionStorage the moment the GHL form would appear ───
+  useEffect(() => {
+    if (!ghlEnabled) return;
+
+    const markShown = () => sessionStorage.setItem('ww_exit_shown', 'true');
+
+    const timer = setTimeout(markShown, 60 * 1000);
+
+    const handleExitIntent = (e) => {
+      if (e.clientY <= 0) markShown();
+    };
+    document.addEventListener('mouseleave', handleExitIntent);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mouseleave', handleExitIntent);
+    };
+  }, [ghlEnabled]);
 
   // ============================================
   // PREVENT BACK NAVIGATION FROM BOOKING PAGE

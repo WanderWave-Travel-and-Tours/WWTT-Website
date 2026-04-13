@@ -18,7 +18,7 @@ import './VisitorJourney.css';
 // ── Constants ─────────────────────────────────────────────────────────────
 const API_STATS    = 'https://wanderwaveph.onrender.com/api/page-views/stats';
 const AUTO_MS      = 30_000;
-const DISPLAY_LIMIT = 5;   // how many visitor cards to show before "Show more"
+const DISPLAY_LIMIT = 7;   // max visitor cards shown
 
 const STAGE_ORDER = ['awareness', 'interest', 'consideration', 'intent', 'conversion'];
 
@@ -111,7 +111,6 @@ const VisitorJourney = ({ recentViews: seedViews }) => {
   const [expandedId,    setExpanded]   = useState(null);
   const [pageFilter,    setPage]       = useState('all');
   const [showActive,    setShowActive] = useState(false);
-  const [showAll,       setShowAll]    = useState(false);   // "Show more" toggle
   const [notifications, setNotifs]     = useState([]);
   const prevStoppedRef = useRef({});
 
@@ -245,9 +244,7 @@ const VisitorJourney = ({ recentViews: seedViews }) => {
     return matchPage && matchSearch;
   }), [visitors, pageFilter, search, showActive]);
 
-  // ── Paginated slice — show only DISPLAY_LIMIT unless showAll ─────────
-  const displayed    = showAll ? filtered : filtered.slice(0, DISPLAY_LIMIT);
-  const hiddenCount  = filtered.length - DISPLAY_LIMIT;
+  const displayed    = filtered.slice(0, DISPLAY_LIMIT);
 
   const toggleExpand = id => setExpanded(prev => prev === id ? null : id);
   const isBusy       = loading || refreshing;
@@ -567,26 +564,7 @@ const VisitorJourney = ({ recentViews: seedViews }) => {
             })}
           </div>
 
-          {/* Show more / Show less button — only visible when there are more than 5 */}
-          {filtered.length > DISPLAY_LIMIT && (
-            <button
-              onClick={() => setShowAll(p => !p)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: '6px', width: '100%', marginTop: '12px',
-                padding: '9px 0', borderRadius: '10px',
-                border: '1px dashed #c7d2fe',
-                background: showAll ? '#f8fafc' : '#eef2ff',
-                color: '#6366f1', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}
-            >
-              {showAll
-                ? <><ChevronUp size={15} /> Show less</>
-                : <><ChevronDown size={15} /> Show {hiddenCount} more visitor{hiddenCount !== 1 ? 's' : ''}</>
-              }
-            </button>
-          )}
+
         </>
       )}
     </div>
