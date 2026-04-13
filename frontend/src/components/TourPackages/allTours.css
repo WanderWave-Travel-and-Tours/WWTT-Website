@@ -349,6 +349,7 @@
   gap: 24px;
   width: 100%;
   align-items: stretch;
+  align-content: start;
 }
 
 .tours-no-results {

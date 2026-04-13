@@ -31,6 +31,24 @@ function TourPackagesContent() {
   const [currency, setCurrency] = useState('PHP');
   const exchangeRate = 58;
 
+
+  // ================================================
+// RESTORE SPECIFIC TOUR AFTER FLIGHT SEARCH
+// ================================================
+useEffect(() => {
+  const pendingTourId = sessionStorage.getItem('pendingTourBookingId');
+  if (!pendingTourId || tours.length === 0) return;
+
+  const matchingTour = tours.find(t => 
+    String(t._id || t.id) === String(pendingTourId)
+  );
+
+  if (matchingTour) {
+    setSelectedTour(matchingTour);
+    sessionStorage.removeItem('pendingTourBookingId'); // clear na
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}, [tours]); // important: kapag may data na ang tours
   // ============================================================
   // FETCH TOURS
   // ============================================================

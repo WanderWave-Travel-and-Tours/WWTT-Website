@@ -10,6 +10,7 @@ import TourBookingFormModal from './TourBookingFormModal';
 import TourPreviewModal from './TourPreviewModal';
 import './tourBookingRightForm.css'; // ✅ Reuse same styles
 import { BookingStateManager } from '../../utils/bookingStateManager';
+import HotelRoomSelector from './hotelRoomSelector';   // ← ADD THIS
 
 const TourBookingRightForm = ({
   pkg,
@@ -64,7 +65,9 @@ const TourBookingRightForm = ({
   const [paymentType,           setPaymentType]          = useState('full');
   const [hasOTCAccess,          setHasOTCAccess]         = useState(false);
   const [checkingOTCAccess,     setCheckingOTCAccess]    = useState(true);
-
+const [selectedRoomType,      setSelectedRoomType]     = useState(null);
+  const [hotelData,             setHotelData]            = useState(null);
+  const [loadingHotelData,      setLoadingHotelData]     = useState(false);
   const durationDays   = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1);
   const totalPassengers = quantities.adult || 1;
@@ -117,28 +120,64 @@ const TourBookingRightForm = ({
       if (savedState.formData.appliedPromo) setAppliedPromo(savedState.formData.appliedPromo);
       if (savedState.formData.paymentType) setPaymentType(savedState.formData.paymentType);
       if (savedState.formData.passengers?.length > 0) setPassengers(savedState.formData.passengers);
+            if (savedState.formData.selectedRoomType) {
+        setSelectedRoomType(savedState.formData.selectedRoomType);
+      }
     }
   }, [code]); // ← only depends on code
 
-  // ── Save state on changes ─────────────────────────────────────────────────
+  // ── Fetch Hotel Data for this tour destination (same as BookingRightForm) ──
   useEffect(() => {
-    if (selectedDate || quantities.adult > 1 || selectedFlight || appliedPromo) {
-      const stateToSave = {
-        selectedDate,
-        quantities: isSoloJoiners ? { adult: 1 } : quantities,
-        currentMonth: currentMonth.toISOString(),
-        selectedFlight: selectedFlight
-          ? { ...selectedFlight, _savedForPackage: (pkg._id || pkg.id || '').toString() }
-          : null,
-        // ✅ FIX: Strip File objects before saving to localStorage to prevent call stack overflow
-        passengers: passengers.map(({ idFile, passportFile, ...rest }) => rest),
-        appliedPromo,
-        paymentType
-      };
-      BookingStateManager.saveBookingState(code, stateToSave, null);
-    }
-  }, [selectedDate, quantities, selectedFlight, passengers, appliedPromo, paymentType, currentMonth]); // eslint-disable-line react-hooks/exhaustive-deps
+    const fetchHotelData = async () => {
+      const destination = pkg.destination || pkg.location;
+      if (!destination) return;
 
+      try {
+        setLoadingHotelData(true);
+        const city = destination.split(',')[0].trim();
+        const response = await fetch(`https://wanderwaveph.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const data = await response.json();
+
+        if (data.success && data.data && data.data.length > 0) {
+          const roomTypes = data.data;
+          setHotelData({ name: `${city} Hotels`, location: city, roomTypes });
+
+          // Auto-select Budget (or cheapest)
+          const budgetRoom = roomTypes.find(r => r.type?.toUpperCase().includes('BUDGET'));
+          if (budgetRoom) {
+            setSelectedRoomType(budgetRoom);
+          } else {
+            const sorted = [...roomTypes].sort((a, b) => a.price - b.price);
+            setSelectedRoomType(sorted[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Hotel data fetch error (tour):', err);
+      } finally {
+        setLoadingHotelData(false);
+      }
+    };
+
+    fetchHotelData();
+  }, [pkg.destination, pkg.location]);
+
+  // ── Save state on changes ─────────────────────────────────────────────────
+   // ── Save state on changes ─────────────────────────────────────────────────
+  useEffect(() => {
+    const stateToSave = {
+      selectedDate,
+      quantities: isSoloJoiners ? { adult: 1 } : quantities,
+      currentMonth: currentMonth.toISOString(),
+      selectedFlight: selectedFlight
+        ? { ...selectedFlight, _savedForPackage: (pkg._id || pkg.id || '').toString() }
+        : null,
+      selectedRoomType,                    // ← ADD THIS
+      passengers: passengers.map(({ idFile, passportFile, ...rest }) => rest),
+      appliedPromo,
+      paymentType
+    };
+    BookingStateManager.saveBookingState(code, stateToSave, null);
+  }, [selectedDate, quantities, selectedFlight, selectedRoomType, passengers, appliedPromo, paymentType, currentMonth]); // ← added selectedRoomType
   // ── Restore flight from sessionStorage (after flight search) ────────────
   useEffect(() => {
     const bookingData = sessionStorage.getItem('pendingBookingData');
@@ -196,13 +235,38 @@ const TourBookingRightForm = ({
   }, [quantities.adult]);
 
   // ── Price calculations ───────────────────────────────────────────────────
-  const calculateBasePackageTotal = () => {
-    const bp  = isSoloPkg ? 1 : (quantities.adult || 1);
+    const calculateBasePackageTotal = () => {
+    const basePax = isSoloPkg ? 1 : (quantities.adult || 1);
     const basePrice = pkg.price || 0;
-    if (isMinTwoPkg) return basePrice + Math.max(0, bp - 2) * (basePrice / 2);
-    return basePrice * bp;
-  };
 
+    let packagePrice = isMinTwoPkg 
+      ? basePrice + Math.max(0, basePax - 2) * (basePrice / 2)
+      : basePrice * basePax;
+
+    if (!selectedRoomType) return packagePrice;
+
+    const roomTypeStr = selectedRoomType.type?.toUpperCase() || '';
+    const capacity = selectedRoomType.capacity || 4;
+    const roomsNeeded = Math.ceil(basePax / capacity);
+
+    let pricePerNight = 0;
+    if (roomTypeStr.includes('5')) pricePerNight = 2500;
+    else if (roomTypeStr.includes('4')) pricePerNight = 1660;
+
+    const hotelTotal = pricePerNight * durationNights * roomsNeeded;
+    return packagePrice + hotelTotal;
+  };
+// Add this helper para sa hotel total display (para consistent)
+const getCategoryHotelTotal = (roomType) => {
+  if (!roomType) return 0;
+  const roomTypeStr = roomType.type?.toUpperCase() || '';
+  const capacity = roomType.capacity || 4;
+  const roomsNeeded = Math.ceil(basePax / capacity);
+  let pricePerNight = 0;
+  if (roomTypeStr.includes('5')) pricePerNight = 2500;
+  else if (roomTypeStr.includes('4')) pricePerNight = 1660;
+  return pricePerNight * durationNights * roomsNeeded;
+};
   const calculateDiscount = () => {
     if (!appliedPromo) return 0;
     let maxPaxCovered = basePax;
@@ -385,42 +449,55 @@ const TourBookingRightForm = ({
     setShowPreviewModal(false); setBookingWithAirfare(false); setPassengerStep(1); setShowModal(true);
   };
 
-  const handleBookWithAirfare = () => {
-    if (!selectedDate) { toast.error('Please select a travel date first!'); return; }
-    const { start, end } = getCalculatedDates();
-    const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const completeState = {
-      selectedDate, quantities, currentMonth: currentMonth.toISOString(),
-      selectedFlight: selectedFlight ? { ...selectedFlight, _savedForPackage: (pkg._id || pkg.id || '').toString() } : null,
-      passengers, appliedPromo, paymentType
-    };
-    BookingStateManager.saveBookingState(code, completeState, null);
-    const bookingData = {
-      packageId: pkg._id || pkg.id, packageName: pkg.title || pkg.name, packageData: pkg,
-      sellerPrice: pkg.sellerPrice || 0, markup: pkg.markup || 0, price: pkg.price,
-      selectedDate, quantities, currentMonth: currentMonth.toISOString(),
-      destination: pkg.location || pkg.destination,
-      departureDate: fmt(start), returnToBooking: true, returnPath: `/tours`
-    };
-    sessionStorage.setItem('pendingBookingData', JSON.stringify(bookingData));
-    BookingStateManager.setFlightSearchContext(code, pkg);
-    navigate('/flights', {
-      state: {
-        fromBooking: true,
-        packageData: {
-          packageId: pkg._id || pkg.id, packageName: pkg.title || pkg.name,
-          departureDate: fmt(start), returnDate: fmt(end),
-          destination: pkg.location || pkg.destination,
-          passengers: { adults: quantities.adult || 1, children: 0, infants: 0 }
-        }
-      }
-    });
+  // ─────────────────────────────────────────────────────────────
+// ADD AIRFARE → FLIGHT SEARCH (same pattern as BookingRightForm)
+// ─────────────────────────────────────────────────────────────
+// ==================== ADD AIRFARE HANDLER (TOUR VERSION) ====================
+// ==================== ADD AIRFARE HANDLER (TOUR VERSION) ====================
+const handleBookWithAirfare = () => {
+  if (!selectedDate) {
+    toast.error('Please select a travel date first before adding airfare!');
+    return;
+  }
+
+  const tourId = pkg._id || pkg.id;
+
+  // 1. I-save ang lahat ng kailangan para bumalik sa EXACT same tour booking
+  const pendingData = {
+    packageId: tourId,
+    returnPath: window.location.pathname,     // ← ito ang magbabalik sa /tour-packages
+    selectedDate: selectedDate,
+    quantities: quantities,
+    currentMonth: currentMonth.toISOString(),
+    isTour: true,
   };
 
-  const handleRemoveFlight = () => {
-    setSelectedFlight(null); if (onFlightChange) onFlightChange(null); setBookingWithAirfare(false);
-    toast.success('Flight removed from package');
-  };
+  sessionStorage.setItem('pendingBookingData', JSON.stringify(pendingData));
+
+  // 2. Extra safety — markahan natin na itong specific tour ang babalikan
+  if (tourId) {
+    sessionStorage.setItem('pendingTourBookingId', tourId.toString());
+  }
+
+  // 3. Go to flight search
+  navigate('/flights', {
+    state: {
+      fromBooking: true,
+      isTour: true,
+      packageData: pkg
+    }
+  });
+};
+
+// ─────────────────────────────────────────────────────────────
+// REMOVE FLIGHT (already referenced in your JSX)
+// ─────────────────────────────────────────────────────────────
+const handleRemoveFlight = () => {
+  setSelectedFlight(null);
+  if (onFlightChange) onFlightChange(null);
+  setBookingWithAirfare(false);
+  toast.success('Flight removed from booking');
+};
 
   const handleContactSales = () => { if (typeof window.openGHLChat === 'function') window.openGHLChat(); };
 
@@ -688,6 +765,17 @@ const TourBookingRightForm = ({
         </div>
       )}
 
+      {/* ── HOTEL ROOM SELECTOR (same as BookingRightForm) ── */}
+      {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
+        <HotelRoomSelector
+          roomTypes={hotelData.roomTypes}
+          selectedRoomType={selectedRoomType}
+          onRoomTypeChange={setSelectedRoomType}
+          durationNights={durationNights}
+          numberOfPax={totalPassengers}
+        />
+      )}
+
       {/* ── Selected Flight display ───────────────────────────────────────── */}
       {selectedFlight && (
         <div style={{ background: '#fff7ed', border: '2px solid #fc9c1b', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
@@ -754,46 +842,52 @@ const TourBookingRightForm = ({
       </div>
 
       {/* ── Price Summary + CTA ───────────────────────────────────────────── */}
-      <div className="brf-booking-footer">
-        <div className="brf-total-row">
-          <span className="brf-total-label">Package Total</span>
-          <span className="brf-total-amount" style={{ color: '#10b981' }}>
-            {currencySymbol}{convertedPackageTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
-          </span>
-        </div>
+<div className="brf-booking-footer">
+  <div className="brf-total-row">
+    <span className="brf-total-label">Package Total</span>
+    <span className="brf-total-amount" style={{ color: '#10b981' }}>
+      {currencySymbol}{convertedPackageTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
+    </span>
+  </div>
 
-        {appliedPromo && (
-          <div className="brf-total-row" style={{ color: '#10b981', fontSize: '0.9rem' }}>
-            <span>- Promo Discount ({appliedPromo.code})</span>
-            <span style={{ fontWeight: '700' }}>
-              -{currencySymbol}{convertedDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
-            </span>
-          </div>
-        )}
+  {/* NEW: Hotel Accommodation line (ito ang kulang mo) */}
+  {selectedRoomType && (
+    <div className="brf-total-row" style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+      <span>+ Hotel Accommodation ({selectedRoomType.type})</span>
+      <span style={{ fontWeight: '700', color: '#fc9c1b' }}>
+        {currencySymbol}{convertPrice(getCategoryHotelTotal(selectedRoomType)).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
+      </span>
+    </div>
+  )}
 
-        {appliedPromo && (
-          <div className="brf-total-row" style={{ fontSize: '0.95rem', color: '#374151' }}>
-            <span>Discounted Package Total</span>
-            <span style={{ fontWeight: '700', color: '#fc9c1b' }}>
-              {currencySymbol}{convertedFinalPackageTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
-            </span>
-          </div>
-        )}
+  {appliedPromo && (
+    <div className="brf-total-row" style={{ color: '#10b981', fontSize: '0.9rem' }}>
+      <span>- Promo Discount ({appliedPromo.code})</span>
+      <span style={{ fontWeight: '700' }}>
+        -{currencySymbol}{convertedDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
+      </span>
+    </div>
+  )}
 
-        {selectedFlight && (
-          <>
-            <div className="brf-total-row" style={{ fontSize: '0.9rem', color: '#6b7280' }}>
-              <span>+ Airfare</span>
-              <span>{currencySymbol}{convertedAirfareTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}</span>
-            </div>
-            <div className="brf-total-row" style={{ borderTop: '2px solid #fc9c1b', paddingTop: '12px', marginTop: '8px', fontSize: '1.1rem', fontWeight: '800', color: '#1f2937' }}>
-              <span>TOTAL AMOUNT</span>
-              <span style={{ color: '#fc9c1b' }}>
-                {currencySymbol}{convertedFinalTotalAmount.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
-              </span>
-            </div>
-          </>
-        )}
+  {selectedFlight && (
+    <>
+      <div className="brf-total-row" style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+        <span>+ Airfare</span>
+        <span>{currencySymbol}{convertedAirfareTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}</span>
+      </div>
+    </>
+  )}
+
+  <div className="brf-total-row" style={{ borderTop: '2px solid #fc9c1b', paddingTop: '12px', marginTop: '8px', fontSize: '1.1rem', fontWeight: '800', color: '#1f2937' }}>
+    <span>TOTAL AMOUNT</span>
+    <span style={{ color: '#fc9c1b' }}>
+      {currencySymbol}{convertedFinalTotalAmount.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
+    </span>
+  </div>
+
+
+
+  {/* ... rest ng buttons mo (book now, add airfare, etc.) ... */}
 
         {!selectedFlight && (
           <div className="brf-total-row" style={{ borderTop: '2px solid #fc9c1b', paddingTop: '12px', marginTop: '8px', fontSize: '1.1rem', fontWeight: '800', color: '#1f2937' }}>
@@ -857,6 +951,7 @@ const TourBookingRightForm = ({
         paxCount={totalPassengers}
         timerExpired={false}
         selectedFlight={selectedFlight}
+        selectedRoomType={selectedRoomType}   // ← ADD THIS
       />
 
       <TourBookingFormModal

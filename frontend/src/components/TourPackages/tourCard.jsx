@@ -98,29 +98,21 @@ const InclusionsList = ({ inclusions = [] }) => {
   );
 };
 
-// ── Tour Type Badge ────────────────────────────────────────────────────────────
-const TourTypeBadge = ({ tourType }) => {
+// ── Tour Type Badge (image overlay) ──────────────────────────────────────────
+const TourTypeBadge = ({ tourType, minPax }) => {
   const isJoiners = tourType === 'joiners';
   return (
-    <span
-      className="tour-type-badge"
-      style={{
-        background: isJoiners ? '#0f766e' : '#1d4ed8',
-        color: '#fff',
-        fontSize: '0.68rem',
-        fontWeight: '800',
-        padding: '3px 10px',
-        borderRadius: '20px',
-        letterSpacing: '0.5px',
-        textTransform: 'uppercase',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-      }}
-    >
-      <Users size={10} />
-      {isJoiners ? 'Joiners' : 'Private'}
-    </span>
+    <>
+      <span className="tour-type-badge-img">
+        <Users size={11} />
+        {isJoiners ? 'Joiners' : 'Private'}
+      </span>
+      {isJoiners && minPax && (
+        <span className="tour-minpax-badge-img">
+          Min. {minPax} pax
+        </span>
+      )}
+    </>
   );
 };
 
@@ -158,10 +150,13 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58 }) {
           onError={() => setImgError(true)}
         />
 
-        {/* Category badge */}
-        <span className={`tour-category-badge ${tour.category === 'International' ? 'intl' : 'local'}`}>
-          {tour.category}
-        </span>
+        {/* Single top row: LOCAL · JOINERS · Min. X pax */}
+        <div className="tour-image-top-row">
+          <span className={`tour-category-badge ${tour.category === 'International' ? 'intl' : 'local'}`}>
+            {tour.category}
+          </span>
+          <TourTypeBadge tourType={tour.tourType} minPax={tour.minPax} />
+        </div>
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
@@ -192,16 +187,6 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58 }) {
               <Clock className="tour-detail-icon" />
               <span className="tour-detail-text">{tour.duration}</span>
             </div>
-          </div>
-
-          {/* Tour type + minPax */}
-          <div className="tour-type-row">
-            <TourTypeBadge tourType={tour.tourType} />
-            {tour.tourType === 'joiners' && tour.minPax && (
-              <span className="tour-minpax-text">
-                Min. {tour.minPax} pax
-              </span>
-            )}
           </div>
 
           {/* Inclusions */}

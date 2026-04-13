@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
@@ -6,41 +6,42 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import './TourBookingFormModal.css';
 import '../packageDeals/PaymentOption.css';
 
-// ── Custom Date Picker (copied verbatim from BookingFormModal) ────────────────
+// ── Custom Date Picker — Month/Year dropdowns + day grid ─────────────────────
 const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(value || '');
-  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
-  const [viewYear, setViewYear]   = useState(new Date().getFullYear());
-  const calendarRef = useRef(null);
+  const today = new Date();
+  const maxDateObj = maxDate ? new Date(maxDate) : today;
+  const maxYear = maxDateObj.getFullYear();
+  const minYear = maxYear - 100;
 
-  const parseDate = (dateStr) => {
-    if (!dateStr) return null;
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return { year, month: month - 1, day };
+  const parseValue = (v) => {
+    if (!v) return null;
+    const [y, m, d] = v.split('-').map(Number);
+    return { year: y, month: m - 1, day: d };
   };
 
-  const currentDate = parseDate(selectedDate);
-  const maxYear  = maxDate ? new Date(maxDate).getFullYear() : new Date().getFullYear();
-  const minYear  = maxYear - 100;
-  const years    = [];
-  for (let y = maxYear; y >= minYear; y--) years.push(y);
+  const parsed = parseValue(value);
+  const [isOpen, setIsOpen]     = useState(false);
+  const [viewMonth, setViewMonth] = useState(parsed?.month ?? today.getMonth());
+  const [viewYear, setViewYear]   = useState(parsed?.year ?? maxYear);
 
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const weekDays   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
-  const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-  const getFirstDay    = (month, year) => new Date(year, month, 1).getDay();
-  const formatDate     = (year, month, day) => `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  const formatDisplay  = (dateStr) => {
-    if (!dateStr) return '';
-    const [y, m, d] = dateStr.split('-');
+  const years = [];
+  for (let y = maxYear; y >= minYear; y--) years.push(y);
+
+  const getDaysInMonth = (m, y) => new Date(y, m + 1, 0).getDate();
+  const getFirstDay    = (m, y) => new Date(y, m, 1).getDay();
+
+  const formatDate    = (y, m, d) => `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const formatDisplay = (v) => {
+    if (!v) return '';
+    const [y, m, d] = v.split('-');
     return `${monthNames[parseInt(m) - 1]} ${parseInt(d)}, ${y}`;
   };
 
   const handleDayClick = (day) => {
     const formatted = formatDate(viewYear, viewMonth, day);
-    setSelectedDate(formatted);
     onChange(formatted);
     setIsOpen(false);
   };
@@ -48,39 +49,89 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
   const daysInMonth = getDaysInMonth(viewMonth, viewYear);
   const firstDay    = getFirstDay(viewMonth, viewYear);
 
+  // Close on outside click
+  const wrapperRef = useRef(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isOpen]);
+
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={wrapperRef} style={{ position: 'relative' }}>
+      {/* Trigger */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: selectedDate ? '#1f2937' : '#9ca3af' }}
+        onClick={() => setIsOpen(o => !o)}
+        className="bfm-calendar-trigger"
       >
-        <CalendarIcon size={16} color="#fc9c1b" />
-        {selectedDate ? formatDisplay(selectedDate) : placeholder || 'Select date'}
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CalendarIcon size={16} color="#fc9c1b" />
+          <span className={value ? 'bfm-date-value' : 'bfm-date-placeholder'}>
+            {value ? formatDisplay(value) : placeholder || 'Select date'}
+          </span>
+        </span>
+        <ChevronRight size={14} className="bfm-trigger-icon" style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
       </button>
 
+      {/* Calendar popup */}
       {isOpen && (
-        <div ref={calendarRef} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 9999, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.12)', padding: '16px', minWidth: '280px', marginTop: '4px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <button type="button" onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><ChevronLeft size={18} /></button>
-            <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{monthNames[viewMonth]} {viewYear}</span>
-            <button type="button" onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><ChevronRight size={18} /></button>
+        <div className="bfm-custom-calendar" style={{ minWidth: '300px' }}>
+          {/* Month + Year dropdowns */}
+          <div className="bfm-calendar-header">
+            <div className="bfm-calendar-selectors">
+              <select
+                className="bfm-month-select"
+                value={viewMonth}
+                onChange={e => setViewMonth(Number(e.target.value))}
+              >
+                {monthNames.map((name, idx) => (
+                  <option key={idx} value={idx}>{name}</option>
+                ))}
+              </select>
+              <select
+                className="bfm-year-select"
+                value={viewYear}
+                onChange={e => setViewYear(Number(e.target.value))}
+              >
+                {years.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '8px' }}>
-            {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', color: '#9ca3af', padding: '4px' }}>{d}</div>)}
+
+          {/* Weekday headers */}
+          <div className="bfm-calendar-weekdays">
+            {weekDays.map(d => (
+              <div key={d} className="bfm-cal-weekday">{d}</div>
+            ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-            {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} />)}
+
+          {/* Days grid */}
+          <div className="bfm-calendar-days">
+            {[...Array(firstDay)].map((_, i) => (
+              <div key={`e-${i}`} className="bfm-cal-day empty" />
+            ))}
             {[...Array(daysInMonth)].map((_, i) => {
               const day  = i + 1;
               const dStr = formatDate(viewYear, viewMonth, day);
-              const isSelected = dStr === selectedDate;
+              const isSelected = dStr === value;
               const isDisabled = maxDate && dStr > maxDate;
               return (
                 <button
-                  key={day} type="button" onClick={() => !isDisabled && handleDayClick(day)} disabled={isDisabled}
-                  style={{ padding: '6px 2px', borderRadius: '6px', border: 'none', background: isSelected ? '#fc9c1b' : 'transparent', color: isSelected ? '#fff' : isDisabled ? '#d1d5db' : '#374151', fontWeight: isSelected ? '700' : '400', fontSize: '0.85rem', cursor: isDisabled ? 'not-allowed' : 'pointer', textAlign: 'center' }}
-                >{day}</button>
+                  key={day}
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => !isDisabled && handleDayClick(day)}
+                  className={`bfm-cal-day${isSelected ? ' selected' : ''}${isDisabled ? ' disabled' : ''}`}
+                >
+                  {day}
+                </button>
               );
             })}
           </div>
