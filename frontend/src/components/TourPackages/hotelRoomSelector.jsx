@@ -18,39 +18,68 @@ const shuffleArray = (array) => {
 // ✨ HELPER: Get all images from all hotels in a category and randomize them
 const getAllCategoryImages = (hotels) => {
   const allImages = [];
-
-  hotels.forEach((hotel) => {
-    // Mas maraming posibleng field names mula sa API
-    const possibleFields = [
-      'hotelImages', 'images', 'image', 'hotelImage', 'photos', 
-      'pictures', 'gallery', 'media', 'photoUrls', 'img'
+  
+  console.log('🏨 Getting images for hotels:', hotels);
+  console.log('📊 Total hotels to process:', hotels.length);
+  
+  hotels.forEach((hotel, idx) => {
+    console.log(`\n--- Hotel ${idx} ---`);
+    console.log('Full hotel object:', hotel);
+    console.log('Hotel keys:', Object.keys(hotel));
+    
+    // Try multiple possible image field names
+    const possibleImageFields = [
+      'hotelImages',
+      'images', 
+      'image',
+      'hotelImage',
+      'photos',
+      'pictures',
+      'gallery'
     ];
-
-    for (const field of possibleFields) {
-      const value = hotel[field];
-      if (!value) continue;
-
-      if (Array.isArray(value) && value.length > 0) {
-        allImages.push(...value);
-        break;
-      }
-      if (typeof value === 'string' && value.trim()) {
-        allImages.push(value);
-        break;
+    
+    let foundImages = false;
+    
+    // Check each possible field
+    for (const field of possibleImageFields) {
+      if (hotel[field]) {
+        console.log(`  ✅ Found ${field}:`, hotel[field]);
+        
+        // If it's an array
+        if (Array.isArray(hotel[field]) && hotel[field].length > 0) {
+          console.log(`    Adding ${hotel[field].length} images from ${field}`);
+          allImages.push(...hotel[field]);
+          foundImages = true;
+          break;
+        }
+        // If it's a single string/URL
+        else if (typeof hotel[field] === 'string') {
+          console.log(`    Adding single image from ${field}`);
+          allImages.push(hotel[field]);
+          foundImages = true;
+          break;
+        }
       }
     }
+    
+    if (!foundImages) {
+      console.log(`  ⚠️ No images found for hotel: ${hotel.hotelName || hotel.name || 'Unknown'}`);
+    }
   });
-
-  // Kung walang images, gumamit ng magandang placeholder
+  
+  console.log('\n📸 Total images collected:', allImages.length);
+  console.log('Images array:', allImages);
+  
+  // If no images found, use placeholder
   if (allImages.length === 0) {
-    return [
-      'https://picsum.photos/id/1015/800/600',
-      'https://picsum.photos/id/133/800/600',
-      'https://picsum.photos/id/201/800/600'
-    ];
+    console.log('⚠️ No images found, using placeholder');
+    return ['https://placehold.co/800x600?text=No+Image'];
   }
-
-  return shuffleArray(allImages);
+  
+  // Randomize the images
+  const shuffled = shuffleArray(allImages);
+  console.log('🔀 Images shuffled, returning:', shuffled.length, 'images');
+  return shuffled;
 };
 
 
@@ -161,15 +190,11 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
           {/* ENHANCED GALLERY SECTION */}
           <div className="hrs-gallery-section">
             <div className="hrs-main-stage">
-             <img 
-  src={safeImages[activeImgIndex]} 
-  alt="Hotel Sample View" 
-  className="hrs-main-img"
-  onError={(e) => {
-    e.target.onerror = null;
-    e.target.src = 'https://picsum.photos/id/1015/800/600';
-  }}
-/>
+              <img 
+                src={safeImages[activeImgIndex]} 
+                alt="Hotel Sample View" 
+                className="hrs-main-img"
+              />
               
               {/* ✨ NAVIGATION ARROWS */}
               {safeImages.length > 1 && (
@@ -262,7 +287,7 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
   );
 };
 
-const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, durationNights = 1, numberOfPax = 1 }) => {
+const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, durationNights = 1, numberOfPax = 1, onHotelTotalChange = null }) => {
   const [lightboxState, setLightboxState] = useState({
     isOpen: false,
     categoryName: '',
@@ -365,9 +390,15 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
     });
   };
 
-  // ✅ Handle category selection — triggered only on double-click
+  // ✅ Handle category selection — reports hotel total back to parent via callback
   const handleCategorySelect = (roomType, firstHotel) => {
     onRoomTypeChange(firstHotel);
+    // ✅ Fire callback so parent can add hotel cost to its total without re-implementing logic
+    if (onHotelTotalChange) {
+      const group = groupedRoomTypes[roomType];
+      const hotelTotal = getCategoryHotelTotal(roomType, group);
+      onHotelTotalChange(hotelTotal, firstHotel);
+    }
   };
 
   if (!roomTypes || roomTypes.length === 0) return null;
@@ -408,12 +439,16 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
 
           const categoryName = getCategoryDisplayName(roomType);
 
+          // ✅ Compute hotel cost for this category for card display
+          const categoryHotelTotal = getCategoryHotelTotal(roomType, group);
+
           return (
             <div 
               key={roomType}
               className={`hrs-card hrs-category-card ${isSelected ? 'hrs-selected' : ''}`}
               onClick={() => handleCategorySelect(roomType, group.hotels[0])}
             >
+              {/* ✅ Checkmark stays OUTSIDE the card — no badge inside */}
               {isSelected && (
                 <div className="hrs-checkmark">
                   <Check size={16} color="#fff" strokeWidth={3} />
@@ -429,10 +464,18 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
                       {group.hotels.length} partner hotel{group.hotels.length !== 1 ? 's' : ''} available
                     </span>
                   </div>
-
                 </div>
-                <div className="hrs-category-right" style={{flexDirection: 'column', alignItems: 'flex-end'}}>
-                  {isSelected && <div className="hrs-badge-selected">✓ SELECTED</div>}
+
+                {/* ✅ Price column — always rendered, no layout shift on select */}
+                <div className="hrs-category-right">
+                  <span className="hrs-price-tier-label">Price</span>
+                  {categoryHotelTotal === 0 ? (
+                    <span className="hrs-price-included-text">Included<br />in package</span>
+                  ) : (
+                    <span className="hrs-price-upgrade-text">
+                      +₱{categoryHotelTotal.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
 

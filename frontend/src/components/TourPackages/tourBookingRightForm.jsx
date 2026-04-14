@@ -234,39 +234,52 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     });
   }, [quantities.adult]);
 
-  // ── Price calculations ───────────────────────────────────────────────────
-    const calculateBasePackageTotal = () => {
+  // ── Price calculations (same pattern as bookingRightForm) ──────────────
+  // ✅ Hotel cost is INCLUDED inside calculateBasePackageTotal — same as bookingRightForm
+  const calculateBasePackageTotal = () => {
     const basePax = isSoloPkg ? 1 : (quantities.adult || 1);
     const basePrice = pkg.price || 0;
 
-    let packagePrice = isMinTwoPkg 
-      ? basePrice + Math.max(0, basePax - 2) * (basePrice / 2)
-      : basePrice * basePax;
+    let basePackagePrice;
+    if (isMinTwoPkg) {
+      basePackagePrice = basePrice + Math.max(0, basePax - 2) * (basePrice / 2);
+    } else {
+      basePackagePrice = basePrice * basePax;
+    }
 
-    if (!selectedRoomType) return packagePrice;
+    if (basePackagePrice <= 0) return 0;
+    if (!selectedRoomType) return basePackagePrice;
 
-    const roomTypeStr = selectedRoomType.type?.toUpperCase() || '';
-    const capacity = selectedRoomType.capacity || 4;
-    const roomsNeeded = Math.ceil(basePax / capacity);
+    // ✅ Copied from bookingRightForm — hotel cost added inside base total
+    const roomType = selectedRoomType.type?.toUpperCase() || '';
+    const roomCapacity = selectedRoomType.capacity || 4;
+    const rooms = Math.ceil(basePax / roomCapacity);
 
     let pricePerNight = 0;
-    if (roomTypeStr.includes('5')) pricePerNight = 2500;
-    else if (roomTypeStr.includes('4')) pricePerNight = 1660;
+    if (roomType.includes('4')) pricePerNight = 1660;
+    else if (roomType.includes('5')) pricePerNight = 2500;
+    // Standard / Budget: pricePerNight stays 0 — no additional cost
 
-    const hotelTotal = pricePerNight * durationNights * roomsNeeded;
-    return packagePrice + hotelTotal;
+    const hotelCost = pricePerNight * durationNights * rooms;
+    return basePackagePrice + hotelCost;
   };
-// Add this helper para sa hotel total display (para consistent)
-const getCategoryHotelTotal = (roomType) => {
-  if (!roomType) return 0;
-  const roomTypeStr = roomType.type?.toUpperCase() || '';
-  const capacity = roomType.capacity || 4;
-  const roomsNeeded = Math.ceil(basePax / capacity);
-  let pricePerNight = 0;
-  if (roomTypeStr.includes('5')) pricePerNight = 2500;
-  else if (roomTypeStr.includes('4')) pricePerNight = 1660;
-  return pricePerNight * durationNights * roomsNeeded;
-};
+
+  // ✅ Separate helper for hotel display line item — same as bookingRightForm's calculateHotelTotal
+  const calculateHotelTotal = () => {
+    if (!selectedRoomType) return 0;
+    const roomType = selectedRoomType.type?.toUpperCase() || '';
+    const roomCapacity = selectedRoomType.capacity || 4;
+    const rooms = Math.ceil(basePax / roomCapacity);
+    let pricePerNight = 0;
+    if (roomType.includes('4')) pricePerNight = 1660;
+    else if (roomType.includes('5')) pricePerNight = 2500;
+    return pricePerNight * durationNights * rooms;
+  };
+
+  const calculateRoomsNeeded = () => {
+    if (!selectedRoomType) return 1;
+    return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
+  };
   const calculateDiscount = () => {
     if (!appliedPromo) return 0;
     let maxPaxCovered = basePax;
@@ -319,20 +332,23 @@ const getCategoryHotelTotal = (roomType) => {
     return d >= start && d <= end;
   };
 
-  const basePackageTotal        = calculateBasePackageTotal();
+  const basePackageTotal        = calculateBasePackageTotal(); // ✅ includes hotel cost
   const packageTotal            = basePackageTotal;
   const discountAmount          = calculateDiscount();
   const finalPackageTotal       = Math.max(0, packageTotal - discountAmount);
   const airfareTotal            = selectedFlight ? selectedFlight.price.amount : 0;
-  const finalTotalAmount        = finalPackageTotal + airfareTotal;
+  const finalTotalAmount        = finalPackageTotal + airfareTotal; // ✅ hotel already inside packageTotal
   const partialAmount           = calculatePartialAmount();
   const hasValidPackageTotal    = finalPackageTotal > 0;
+  const numberOfRooms           = calculateRoomsNeeded();
+  const hotelAccommodationTotal = calculateHotelTotal(); // ✅ for display line item only
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay    = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  const convertedPackageTotal          = convertPrice(packageTotal);
+  const convertedPackageTotal          = convertPrice(packageTotal); // ✅ now includes hotel
+  const convertedHotelTotal            = convertPrice(hotelAccommodationTotal); // for display line
   const convertedFinalPackageTotal     = convertPrice(finalPackageTotal);
   const convertedDiscountAmount        = convertPrice(discountAmount);
   const convertedAirfareTotal          = convertPrice(airfareTotal);
@@ -438,6 +454,21 @@ const getCategoryHotelTotal = (roomType) => {
       }
       return updated;
     });
+  };
+
+  // ✅ Same as bookingRightForm — shows user-friendly category name in toast
+  const handleRoomTypeChange = (roomType) => {
+    setSelectedRoomType(roomType);
+    const rawType = roomType.type || '';
+    const displayName =
+      rawType.toLowerCase().includes('budget') || rawType.toLowerCase().includes('standard')
+        ? 'Budget Accommodations'
+        : rawType.toLowerCase().includes('4')
+        ? 'Mid Range Hotels'
+        : rawType.toLowerCase().includes('5')
+        ? 'Premium Hotels'
+        : rawType;
+    toast.success(`${displayName} selected!`);
   };
 
   const handleBookClick = () => {
@@ -572,6 +603,8 @@ const handleRemoveFlight = () => {
         } : null,
         airfareTotal,
         totalAmount:             finalTotalAmount,
+        hotelTotal:              hotelAccommodationTotal,  // ✅ hotel cost for booking record
+        hotelRoomType:           selectedRoomType ? selectedRoomType.type : null,
         paymentType:             paymentType || 'full',
         initialPaymentAmount:    paymentType === 'partial' ? partialAmount : finalTotalAmount,
         remainingBalance:        paymentType === 'partial' ? (finalTotalAmount - partialAmount) : 0,
@@ -765,15 +798,31 @@ const handleRemoveFlight = () => {
         </div>
       )}
 
-      {/* ── HOTEL ROOM SELECTOR (same as BookingRightForm) ── */}
+      {/* ── HOTEL ROOM SELECTOR ── */}
       {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
         <HotelRoomSelector
           roomTypes={hotelData.roomTypes}
           selectedRoomType={selectedRoomType}
-          onRoomTypeChange={setSelectedRoomType}
+          onRoomTypeChange={handleRoomTypeChange}
           durationNights={durationNights}
           numberOfPax={totalPassengers}
         />
+      )}
+
+      {/* ✅ "Prefer a specific hotel?" notice — same as bookingRightForm */}
+      {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
+        <div style={{
+          background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px',
+          padding: '12px 16px', marginTop: '16px', marginBottom: '20px',
+          display: 'flex', alignItems: 'flex-start', gap: '10px',
+          fontSize: '0.875rem', color: '#166534', lineHeight: '1.5'
+        }}>
+          <span style={{ fontSize: '1.1rem', marginTop: '1px' }}>💬</span>
+          <span>
+            <strong>Prefer a specific hotel?</strong> The accommodation listed above is our standard inclusion, but you're welcome to request your preferred hotel.{' '}
+            Just <strong>contact us</strong> after booking and we'll do our best to arrange it for you.
+          </span>
+        </div>
       )}
 
       {/* ── Selected Flight display ───────────────────────────────────────── */}
@@ -850,13 +899,25 @@ const handleRemoveFlight = () => {
     </span>
   </div>
 
-  {/* NEW: Hotel Accommodation line (ito ang kulang mo) */}
-  {selectedRoomType && (
-    <div className="brf-total-row" style={{ fontSize: '0.9rem', color: '#6b7280' }}>
-      <span>+ Hotel Accommodation ({selectedRoomType.type})</span>
-      <span style={{ fontWeight: '700', color: '#fc9c1b' }}>
-        {currencySymbol}{convertPrice(getCategoryHotelTotal(selectedRoomType)).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
+  {/* ✅ Hotel accommodation line — same as bookingRightForm */}
+  {selectedRoomType && hotelAccommodationTotal > 0 && (
+    <div className="brf-total-row" style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '4px' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        🏨 Hotel
+        <span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '5px', padding: '1px 7px', fontSize: '0.78rem', color: '#475569', fontWeight: '600' }}>
+          {selectedRoomType.type}
+        </span>
+        · {durationNights} night{durationNights !== 1 ? 's' : ''} × {numberOfRooms} room{numberOfRooms !== 1 ? 's' : ''}
       </span>
+      <span style={{ fontWeight: '600', color: '#475569' }}>
+        {currencySymbol}{convertPrice(hotelAccommodationTotal).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })} <span style={{ fontWeight: '400', fontSize: '0.75rem' }}>incl.</span>
+      </span>
+    </div>
+  )}
+  {selectedRoomType && hotelAccommodationTotal === 0 && (
+    <div className="brf-total-row" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+      <span>🏨 Hotel ({selectedRoomType.type})</span>
+      <span style={{ fontWeight: '600', color: '#10b981' }}>Included</span>
     </div>
   )}
 
@@ -878,6 +939,7 @@ const handleRemoveFlight = () => {
     </>
   )}
 
+  {/* ✅ FIX: Single TOTAL AMOUNT row — no duplicate */}
   <div className="brf-total-row" style={{ borderTop: '2px solid #fc9c1b', paddingTop: '12px', marginTop: '8px', fontSize: '1.1rem', fontWeight: '800', color: '#1f2937' }}>
     <span>TOTAL AMOUNT</span>
     <span style={{ color: '#fc9c1b' }}>
@@ -885,18 +947,7 @@ const handleRemoveFlight = () => {
     </span>
   </div>
 
-
-
   {/* ... rest ng buttons mo (book now, add airfare, etc.) ... */}
-
-        {!selectedFlight && (
-          <div className="brf-total-row" style={{ borderTop: '2px solid #fc9c1b', paddingTop: '12px', marginTop: '8px', fontSize: '1.1rem', fontWeight: '800', color: '#1f2937' }}>
-            <span>TOTAL AMOUNT</span>
-            <span style={{ color: '#fc9c1b' }}>
-              {currencySymbol}{convertedFinalPackageTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
-            </span>
-          </div>
-        )}
 
         <button className="brf-book-now-btn" onClick={handleBookClick} disabled={!hasValidPackageTotal}>
           {selectedFlight ? '🎫 Book Package + Flight' : 'Book This Tour'}

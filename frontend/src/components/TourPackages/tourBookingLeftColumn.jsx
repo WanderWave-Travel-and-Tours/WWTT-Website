@@ -182,18 +182,11 @@ const TourBookingLeftColumn = ({
 
       {/* ── Image ────────────────────────────────────────────────────────── */}
       <div className="blc-image-wrapper">
-        <div className="blc-image-inner">
-          <img
-            src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'}
-            alt={pkg.title || pkg.name}
-            className="blc-main-image"
-          />
-        </div>
-        {!duration && (
-          <div className="blc-title-stamp-overlay">
-            <RubberStamp text={pkg.title || pkg.name} />
-          </div>
-        )}
+        <img
+          src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'}
+          alt={pkg.title || pkg.name}
+          className="blc-main-image"
+        />
       </div>
 
       {/* ── Header Info ──────────────────────────────────────────────────── */}
