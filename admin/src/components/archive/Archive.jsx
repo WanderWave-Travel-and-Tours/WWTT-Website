@@ -26,6 +26,7 @@ import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'
 import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; 
 import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
 import { fetchArchivedHotels, restoreHotel } from './archiveFunctions/hotelService';
+import { fetchArchivedTourBookings, restoreTourBooking } from './archiveFunctions/tourBookingService';
 
 // --- Custom Confirmation Modal ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -97,6 +98,7 @@ const SERVICE_SUBTYPES_LIST = [
     'Passport Appt', 
     'Airline Booking', 
     'Hotel Booking',
+    'Tour Booking',           // ← Added
     'Tour Arrangements',
     'Ferry Booking',
     'Marriage Cert',
@@ -202,13 +204,14 @@ const ArchiveComponent = () => {
         fetchArchivedBlogs(), 
         fetchArchivedImages(), 
         fetchArchivedUsers(),
-        fetchArchivedHotels()
+        fetchArchivedHotels(),
+        fetchArchivedTourBookings(),
       ]);
       
       console.log('📊 All fetch results:', results);
       
       results.forEach((result, index) => {
-        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels'];
+        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'TourBookings'];
         if (result.status === 'fulfilled') {
           console.log(`✅ ${names[index]}: ${result.value.length} items`);
           if (names[index] === 'Packages' && result.value.length > 0) {
@@ -374,8 +377,8 @@ const ArchiveComponent = () => {
         console.log('📦 Package restore result:', restored);
       } else if (item.type === 'Booking') {
         restored = await restoreBooking(id);
-      } else if (item.type === 'Tour') {
-        restored = await restoreTour(id);
+      } else if (item.type === 'Tour' || item.type === 'Tour Booking') {
+        restored = await restoreTourBooking(id);
       } else if (item.type === 'Testimonial') {
         restored = await restoreTestimonial(id);
       } else if (item.type === 'Promo') {
@@ -444,7 +447,7 @@ const ArchiveComponent = () => {
               if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(id);
               else if (item.type === 'Package') restored = await restorePackage(id);
               else if (item.type === 'Booking') restored = await restoreBooking(id);
-              else if (item.type === 'Tour') restored = await restoreTour(id);
+              else if (item.type === 'Tour' || item.type === 'Tour Booking') restored = await restoreTourBooking(id);
               else if (item.type === 'Testimonial') restored = await restoreTestimonial(id);
               else if (item.type === 'Promo') restored = await restorePromo(id);
               else if (item.type === 'Poster') restored = await restorePoster(id);

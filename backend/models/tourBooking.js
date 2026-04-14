@@ -110,6 +110,18 @@ const TourBookingSchema = new mongoose.Schema({
     default: 'pending',
   },
 
+  // ── ARCHIVE FIELDS (exact copy from hotel model) ──────────────────
+  isArchive: {
+    type: String,
+    enum: ['No', 'Yes'],
+    default: 'No'
+  },
+  archivedAt: {
+    type: Date,
+    default: null
+  },
+  // ─────────────────────────────────────────────────────────────────
+
   // ── Timestamps ────────────────────────────────────────────────────
   cancelledAt: { type: Date, default: null },
   updatedAt:   { type: Date, default: null },

@@ -159,6 +159,28 @@ router.get('/', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/tour-bookings/archived
+// Get all archived tour bookings
+// ⚠️ IMPORTANT: This route MUST be defined BEFORE /:id to avoid Express
+//    treating the string "archived" as a MongoDB ObjectId parameter.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/archived', async (req, res) => {
+  try {
+    const archivedBookings = await TourBooking.find({ isArchive: 'Yes' })
+      .sort({ archivedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: archivedBookings.length,
+      data: archivedBookings,
+    });
+  } catch (err) {
+    console.error('❌ Error fetching archived tour bookings:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/tour-bookings/:id
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
@@ -237,5 +259,64 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// ====================== ARCHIVE ROUTES FOR TOUR BOOKINGS ======================
+
+// ARCHIVE A TOUR BOOKING
+router.put('/archive/:id', async (req, res) => {
+  try {
+    const booking = await TourBooking.findByIdAndUpdate(
+      req.params.id,
+      {
+        isArchive: 'Yes',
+        archivedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Tour booking not found' });
+    }
+
+    console.log(`📦 Tour booking archived: ${booking._id}`);
+    res.status(200).json({
+      success: true,
+      message: 'Tour booking moved to archive successfully',
+      data: booking,
+    });
+  } catch (err) {
+    console.error('❌ Error archiving tour booking:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// RESTORE TOUR BOOKING FROM ARCHIVE
+router.put('/restore/:id', async (req, res) => {
+  try {
+    const booking = await TourBooking.findByIdAndUpdate(
+      req.params.id,
+      {
+        isArchive: 'No',
+        archivedAt: null,
+      },
+      { new: true }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Tour booking not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Tour booking restored successfully',
+      data: booking,
+    });
+  } catch (err) {
+    console.error('❌ Error restoring tour booking:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ================================================================================
 
 module.exports = router;

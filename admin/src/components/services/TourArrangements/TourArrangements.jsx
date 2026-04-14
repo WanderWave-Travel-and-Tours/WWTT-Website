@@ -209,7 +209,7 @@ const TourTable = ({ loading, filteredToursCount, currentTours, handleViewTour, 
                             <button 
                                 className="tour-action-btn tour-archive-btn" 
                                 onClick={() => handleArchiveTour(row.id)}
-                                title="Archive Tour"
+                                title="Archive Tour Booking"
                             >
                                 <Archive size={16} /> Archive
                             </button>
@@ -357,13 +357,31 @@ const TourArrangements = () => {
         handleCloseTourModal();
     };
 
-    const handleArchiveTour = (id) => {
-        if (!window.confirm("Are you sure you want to archive this tour package?")) return;
+    const handleArchiveTour = async (id) => {
+        if (!window.confirm("Are you sure you want to archive this tour booking?")) return;
         
-        setAllTours(prev => prev.filter(t => t.id !== id));
-        alert("Tour package archived successfully!");
-        
-        if (isTourModalOpen) handleCloseTourModal();
+        try {
+            const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/archive/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert("✅ Tour booking archived successfully!");
+                // Remove from current table
+                setAllTours(prev => prev.filter(t => t.id !== id));
+                
+                // Optional: Close modal if open
+                if (isTourModalOpen) handleCloseTourModal();
+            } else {
+                alert("❌ Failed to archive tour booking");
+            }
+        } catch (err) {
+            console.error("Archive error:", err);
+            alert("❌ Error archiving tour booking");
+        }
     };
 
     const refreshData = () => {
