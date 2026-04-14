@@ -387,6 +387,67 @@ const generateVoucherData = async (booking) => {
                             </div>
                         </div>
 
+                        {/* PASSENGER DETAILS */}
+                        {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
+                            <div className="cnm-card">
+                                <div className="cnm-card-header">
+                                    <h3 className="cnm-card-title">Passenger Details</h3>
+                                    <span className="cnm-badge cnm-badge-amber">
+                                        {selectedBooking.passengers.length} Passenger{selectedBooking.passengers.length !== 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                                <div className="cnm-passenger-list">
+                                    {selectedBooking.passengers.map((passenger, index) => (
+                                        <div key={index} className="cnm-passenger-card">
+                                            <div className="cnm-passenger-header">
+                                                <div className="cnm-passenger-avatar">
+                                                    <User size={18} />
+                                                </div>
+                                                <div className="cnm-passenger-name-group">
+                                                    <span className="cnm-passenger-name">
+                                                        {passenger.firstName} {passenger.lastName}
+                                                    </span>
+                                                    <span className="cnm-passenger-number">Passenger #{passenger.passengerNumber || index + 1}</span>
+                                                </div>
+                                                <div className="cnm-passenger-badges">
+                                                    <span className="cnm-pax-badge gender">{passenger.gender}</span>
+                                                    <span className="cnm-pax-badge age">{passenger.age} yrs</span>
+                                                </div>
+                                            </div>
+                                            <div className="cnm-passenger-details">
+                                                <div className="cnm-passenger-details-row">
+                                                    <div className="cnm-passenger-detail-item">
+                                                        <span className="cnm-passenger-detail-label">✉ Email Address</span>
+                                                        <span className="cnm-passenger-detail-value">{passenger.email}</span>
+                                                    </div>
+                                                    <div className="cnm-passenger-detail-item">
+                                                        <span className="cnm-passenger-detail-label">📞 Phone Number</span>
+                                                        <span className="cnm-passenger-detail-value">{passenger.phone}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="cnm-passenger-details-row">
+                                                    <div className="cnm-passenger-detail-item">
+                                                        <span className="cnm-passenger-detail-label">🎂 Date of Birth</span>
+                                                        <span className="cnm-passenger-detail-value">{formatDate(passenger.dateOfBirth)}</span>
+                                                    </div>
+                                                    <div className="cnm-passenger-detail-item">
+                                                        <span className="cnm-passenger-detail-label">🌏 Nationality</span>
+                                                        <span className="cnm-passenger-detail-value">{passenger.nationality}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="cnm-passenger-details-row cnm-passenger-details-row-full">
+                                                    <div className="cnm-passenger-detail-item">
+                                                        <span className="cnm-passenger-detail-label">📍 Address</span>
+                                                        <span className="cnm-passenger-detail-value">{passenger.address}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* ENHANCED PAYMENT DETAILS SECTION */}
                         <div className="cnm-payment-card">
                             <div className="cnm-payment-header">

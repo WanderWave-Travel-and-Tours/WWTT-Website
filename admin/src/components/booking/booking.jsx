@@ -96,6 +96,7 @@ const Booking = () => {
             balancePaidAmount: isWalkin ? b.totalAmount : (b.balancePaidAmount || 0),
             balancePaidAt: b.balancePaidAt,
             isWalkin: isWalkin,
+            passengers: b.passengers || [],
             rawData: b,
             isArchive: b.isArchive || 'No'
           };

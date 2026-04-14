@@ -585,45 +585,89 @@ app.get('/api/admin/statistics', async (req, res) => {
 // ⭐ FAVORITES / WISHLIST ROUTES
 // ============================================================
 
+// GET USER WISHLIST - FIXED (returns full package data)
 app.get('/api/favorites/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).select('favorites');
+
+    const user = await User.findById(userId)
+      .populate({
+        path: 'favorites',
+        model: 'packages',
+        select: '_id title name destination location price image duration soloPaxPrice multiplePaxPrice inclusions rating reviews package_code'
+      });
 
     if (!user) {
       return res.status(404).json({ status: 'error', message: 'User not found' });
     }
 
-    res.status(200).json({ status: 'ok', data: user.favorites || [] });
+    const wishlistItems = user.favorites.map(pkg => ({
+      promo_id: pkg._id.toString(),
+      package_title: pkg.title || pkg.name || 'Untitled Package',
+      package_location: pkg.destination || pkg.location || 'Unknown',
+      packageDetails: pkg.toObject()
+    }));
+
+    console.log(`✅ Wishlist fetched → ${wishlistItems.length} items for user ${userId}`);
+
+    res.status(200).json({ 
+      status: 'ok', 
+      data: wishlistItems 
+    });
+
   } catch (error) {
-    console.error('❌ Error fetching favorites:', error);
+    console.error('❌ Error fetching wishlist:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
-app.post('/api/favorites/:userId/add', async (req, res) => {
+// ==============================================
+// FAVORITES / WISHLIST - FIXED (matches current frontend)
+// ==============================================
+app.post('/api/favorites', async (req, res) => {
   try {
-    const { userId } = req.params;
-    const { packageId } = req.body;
+    const { promo_id, user_id, package_title, package_location } = req.body;
 
-    if (!packageId) {
-      return res.status(400).json({ status: 'error', message: 'packageId is required' });
+    // Accept either "promo_id" or "packageId"
+    const packageId = promo_id || req.body.packageId;
+    const userId    = user_id    || req.body.userId;
+
+    if (!userId || !packageId) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'userId and packageId (or promo_id / user_id) are required' 
+      });
     }
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $addToSet: { favorites: packageId } },
-      { new: true }
-    ).select('favorites');
-
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ status: 'error', message: 'User not found' });
     }
 
-    console.log(`✅ Added package ${packageId} to favorites for user ${userId}`);
-    res.status(200).json({ status: 'ok', data: user.favorites });
+    const isFavorited = user.favorites && 
+      user.favorites.some(id => id.toString() === packageId);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      isFavorited 
+        ? { $pull: { favorites: packageId } }
+        : { $addToSet: { favorites: packageId } },
+      { new: true }
+    );
+
+    console.log(`✅ Wishlist toggle success → ${isFavorited ? 'REMOVED' : 'ADDED'} ${packageId} for user ${userId}`);
+
+    // Optional: return extra info for WishlistDropdown
+    res.status(200).json({
+      status: 'ok',
+      isFavorited: !isFavorited,
+      data: updatedUser.favorites,
+      package_title: package_title,
+      package_location: package_location
+    });
+
   } catch (error) {
-    console.error('❌ Error adding favorite:', error);
+    console.error('❌ Toggle favorite error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });

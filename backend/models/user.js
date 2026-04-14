@@ -54,7 +54,12 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'packages',
+    default: []
+  }],
 });
 
 // Pre-save hook to hash the password before saving

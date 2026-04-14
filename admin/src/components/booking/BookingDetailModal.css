@@ -371,6 +371,148 @@
   border-top: 1px solid #e2e8f0;
 }
 
+/* ===== PASSENGER DETAILS (CENOMAR UI) ===== */
+.cnm-passenger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cnm-passenger-card {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.cnm-passenger-card:hover {
+  border-color: #fde68a;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.08);
+}
+
+/* --- Header --- */
+.cnm-passenger-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border-bottom: 1.5px solid #fde68a;
+}
+
+.cnm-passenger-avatar {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.cnm-passenger-name-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cnm-passenger-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cnm-passenger-number {
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cnm-passenger-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cnm-pax-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cnm-pax-badge.gender {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cnm-pax-badge.age {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* --- Details Body --- */
+.cnm-passenger-details {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0 8px 0;
+}
+
+.cnm-passenger-details-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cnm-passenger-details-row:last-child {
+  border-bottom: none;
+}
+
+.cnm-passenger-details-row-full {
+  grid-template-columns: 1fr;
+}
+
+.cnm-passenger-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 20px;
+  border-right: 1px solid #f1f5f9;
+}
+
+.cnm-passenger-detail-item:last-child {
+  border-right: none;
+}
+
+.cnm-passenger-detail-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.cnm-passenger-detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
 /* ===== FOOTER (CENOMAR UI) ===== */
 .modal-footer {
   padding: 24px 32px;
@@ -465,6 +607,11 @@
 
   /* Single Column Grid for Information */
   .cnm-grid { grid-template-columns: 1fr; gap: 16px; }
+
+  /* Passenger details: stack to single column on small mobile */
+  .cnm-passenger-details-row { grid-template-columns: 1fr; }
+  .cnm-passenger-header { gap: 10px; }
+  .cnm-passenger-badges { gap: 4px; }
 
   /* Header Simplification */
   .modal-header { padding: 16px; }
