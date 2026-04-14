@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Calendar, Users, Eye, CheckCircle, XCircle, AlertCircle, Mail,
-  Check, X, ChevronLeft, ChevronRight, FileText, CreditCard,
-  Wallet, Map, Plane
+  Calendar, Users, Eye, CheckCircle, AlertCircle, Mail,
+  ChevronLeft, ChevronRight, FileText, CreditCard,
+  Wallet, Map, Plane, Archive
 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import BookingStats from '../booking/BookingStats';
@@ -95,7 +95,10 @@ const TourBookingDashboard = () => {
       const raw = json.data || json.bookings || [];
       const total = json.total || raw.length;
 
-      const formatted = raw.map((b, i) => ({
+      // ── Only display bookings where isArchive !== 'Yes' ──
+      const activeRaw = raw.filter(b => b.isArchive !== 'Yes');
+
+      const formatted = activeRaw.map((b, i) => ({
         id:              `TB${String(total - i).padStart(4, '0')}`,
         mongoId:         b._id,
         customerName:    b.fullName || 'N/A',
@@ -237,6 +240,36 @@ const TourBookingDashboard = () => {
     );
 
   const handleViewDetails = (booking) => { setSelected(booking); setShowModal(true); };
+
+  // ── Archive handler ───────────────────────────────────────────────────────
+  const handleArchive = (booking) => {
+    askConfirmation(
+      'Archive Tour Booking',
+      `Archive booking ${booking.id} for ${booking.customerName}? It will be moved to the Archive section.`,
+      async () => {
+        setActionLoading(true);
+        try {
+          const res = await fetch(`${BASE_URL}/api/tour-bookings/archive/${booking.mongoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.message || `Server returned ${res.status}`);
+          await fetchBookings();
+          toast.success(
+            `Tour booking ${booking.id} for ${booking.customerName} has been archived.`,
+            'Booking Archived',
+            4000
+          );
+        } catch (err) {
+          toast.error(err.message || 'Archive failed', 'Error', 5000);
+        } finally {
+          setActionLoading(false);
+        }
+      },
+      'danger'
+    );
+  };
 
   // ── Filters config ────────────────────────────────────────────────────────
   const statusOptions = useMemo(() => {
@@ -444,29 +477,14 @@ const TourBookingDashboard = () => {
                             >
                               <Eye size={16} /> View
                             </button>
-
-                            {booking.status === 'pending' && (
-                              <button
-                                className="bkm-action-btn"
-                                style={{ background: '#f0fdf4', borderColor: '#a7f3d0', color: '#16a34a' }}
-                                onClick={() => handleConfirm(booking)}
-                                disabled={actionLoading}
-                                title="Confirm booking"
-                              >
-                                <Check size={16} />
-                              </button>
-                            )}
-
-                            {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                              <button
-                                className="bkm-action-btn bkm-archive-icon-btn"
-                                onClick={() => handleCancel(booking)}
-                                disabled={actionLoading}
-                                title="Cancel booking"
-                              >
-                                <X size={16} />
-                              </button>
-                            )}
+                            <button
+                              className="bkm-action-btn bkm-archive-btn"
+                              onClick={() => handleArchive(booking)}
+                              disabled={actionLoading}
+                              title="Archive Booking"
+                            >
+                              <Archive size={16} /> Archive
+                            </button>
                           </div>
                         </td>
                       </tr>

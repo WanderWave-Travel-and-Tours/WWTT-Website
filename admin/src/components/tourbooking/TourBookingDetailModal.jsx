@@ -2,23 +2,50 @@ import React, { useState } from 'react';
 import {
   X, CheckCircle, AlertCircle, XCircle, Check,
   User, Mail, Calendar, Users, MapPin, Clock,
-  CreditCard, Wallet, Plane, Map, Tag, PhoneCall
+  CreditCard, Wallet, Plane, Tag, FileText, PhoneCall
 } from 'lucide-react';
 import './TourBookingDetailModal.css';
+import VoucherPreviewModal from '../booking/VoucherPreviewModal';
 
 const formatDate = (d) => {
   if (!d) return 'N/A';
   return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
+const buildItinerary = (startDate, endDate, duration) => {
+  if (!startDate) return [];
+  const start = new Date(startDate);
+  let days = 1;
+  if (endDate) {
+    const end = new Date(endDate);
+    days = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  } else if (duration) {
+    const match = duration.match(/(\d+)\s*[Dd]/);
+    if (match) days = parseInt(match[1]);
+  }
+  if (days < 1) days = 1;
+  return Array.from({ length: days }, (_, i) => {
+    const date = new Date(start);
+    date.setDate(date.getDate() + i);
+    let activity = `Day ${i + 1} Activities`;
+    if (i === 0) activity = 'Arrival, Airport Pickup & Hotel Check-in';
+    if (i === days - 1 && days > 1) activity = 'Hotel Check-out & Transfer to Airport – End of Service';
+    return {
+      day: i + 1,
+      date: date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      activity,
+    };
+  });
+};
+
 const getStatusConfig = (status) => {
-  const map = {
-    PENDING:   { color: 'amber', Icon: AlertCircle, label: 'Pending Review',  desc: 'Awaiting confirmation' },
-    CONFIRMED: { color: 'green', Icon: CheckCircle, label: 'Confirmed',        desc: 'Booking is active'     },
-    CANCELLED: { color: 'red',   Icon: XCircle,     label: 'Cancelled',        desc: 'Booking was cancelled' },
-    COMPLETED: { color: 'blue',  Icon: CheckCircle, label: 'Completed',        desc: 'Tour completed'        },
+  const configs = {
+    PENDING:   { color: 'amber', Icon: AlertCircle, label: 'Pending Review',  description: 'Awaiting confirmation' },
+    CONFIRMED: { color: 'green', Icon: CheckCircle, label: 'Confirmed',        description: 'Booking is active'     },
+    CANCELLED: { color: 'red',   Icon: XCircle,     label: 'Cancelled',        description: 'Booking was cancelled' },
+    COMPLETED: { color: 'blue',  Icon: CheckCircle, label: 'Completed',        description: 'Tour completed'        },
   };
-  return map[(status || 'PENDING').toUpperCase()] || map.PENDING;
+  return configs[(status || 'PENDING').toUpperCase()] || configs.PENDING;
 };
 
 const TourBookingDetailModal = ({
@@ -29,360 +56,497 @@ const TourBookingDetailModal = ({
   handleCancel,
   actionLoading,
 }) => {
+  const [showVoucherPreview, setShowVoucherPreview] = useState(false);
+  const [voucherData, setVoucherData] = useState(null);
+  const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
+
   if (!showModal || !selectedBooking) return null;
 
   const b      = selectedBooking;
   const raw    = b.rawData || {};
   const status = (b.status || 'pending').toUpperCase();
-  const { color, Icon: StatusIcon, label: statusLabel, desc: statusDesc } = getStatusConfig(status);
+  const statusConfig = getStatusConfig(status);
+  const StatusIcon   = statusConfig.Icon;
 
   // Payment
-  const isPartial       = b.paymentType === 'partial';
-  const totalAmount     = b.totalAmount || 0;
-  const remainingBal    = b.remainingBalance || 0;
-  const initialPaid     = totalAmount - remainingBal;
-  const isFullyPaid     = remainingBal <= 0;
-  const partialPct      = raw.includesAirfare ? '85%' : '50%';
+  const isPartialPayment = b.paymentType === 'partial';
+  const totalAmount      = b.totalAmount || 0;
+  const remainingBalance = b.remainingBalance || 0;
+  const initialPaid      = totalAmount - remainingBalance;
+  const isFullyPaid      = remainingBalance <= 0 && initialPaid > 0;
+  const isPendingPayment = !isPartialPayment && status === 'PENDING';
+  const partialPct       = raw.includesAirfare ? '85%' : '50%';
 
-  // Passengers
+  // Tour info
   const passengers = Array.isArray(raw.passengers) ? raw.passengers : [];
   const tourType   = (raw.tourType || '').toLowerCase();
   const category   = raw.category || '';
-
-  // Flight
   const hasAirfare = raw.includesAirfare;
   const flight     = raw.flightDetails || null;
 
   const closeModal = () => setShowModal(false);
 
+  // ── Voucher Generation ──────────────────────────────────────────────
+  const generateVoucherData = async () => {
+    setIsGeneratingVoucher(true);
+    try {
+      const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${b.mongoId}`);
+      if (!res.ok) throw new Error(`Failed to fetch booking: ${res.status}`);
+      const json = await res.json();
+      const fullBooking = json.data || json;
+
+      let guestList = [];
+      if (Array.isArray(fullBooking.passengers) && fullBooking.passengers.length > 0) {
+        guestList = fullBooking.passengers.map(p => ({
+          name: `${p.firstName || ''} ${p.lastName || ''}`.trim() || b.customerName,
+          age: p.age ?? 'N/A',
+          nationality: p.nationality || 'Filipino',
+        }));
+      }
+      if (guestList.length === 0) {
+        guestList = [{ name: b.customerName, age: 'N/A', nationality: 'Filipino' }];
+      }
+
+      const itinerary  = buildItinerary(fullBooking.startDate, fullBooking.endDate, fullBooking.duration);
+      const paxAdult   = fullBooking.pax?.adult || b.guests || 1;
+      const total      = fullBooking.totalAmount || totalAmount;
+      const remBal     = fullBooking.remainingBalance || remainingBalance;
+
+      const voucher = {
+        clientName:      fullBooking.fullName || b.customerName,
+        clientEmail:     fullBooking.email    || b.email,
+        clientPhone:     fullBooking.primaryContact?.phone || 'N/A',
+        travelDate:      formatDate(fullBooking.startDate) || b.travelDate,
+        packageName:     fullBooking.packageName || b.packageName,
+        packageRate:     paxAdult > 0 ? total / paxAdult : total,
+        numberOfGuests:  paxAdult,
+        guestList,
+        inclusions:      Array.isArray(fullBooking.customizedInclusions) && fullBooking.customizedInclusions.length > 0
+          ? fullBooking.customizedInclusions
+          : ['Package inclusions not specified. Please contact the agency.'],
+        exclusions:      ['Snorkeling Gears', 'Other Entrance fees not included', 'Travel Insurance'],
+        amenities:       { amenities: ['Free Wi-Fi'], facilities: ['Air conditioning'] },
+        itinerary,
+        totalAmount:     total,
+        downPayment:     total - remBal,
+        amountDue:       remBal,
+        referenceNumber: fullBooking.referenceNumber || b.mongoId,
+      };
+
+      setVoucherData(voucher);
+      setShowVoucherPreview(true);
+    } catch (err) {
+      console.error('❌ Error generating tour voucher:', err);
+      alert('May error sa pag-load ng voucher data. Please try again.');
+    } finally {
+      setIsGeneratingVoucher(false);
+    }
+  };
+
   return (
-    <div className="tbm-overlay" onClick={closeModal}>
-      <div className="tbm-modal" onClick={e => e.stopPropagation()}>
+    <>
+      <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-content" onClick={e => e.stopPropagation()}>
 
-        {/* ── HEADER ─────────────────────────────────────────────── */}
-        <div className="tbm-header">
-          <div className="tbm-header-left">
-            <h2 className="tbm-header-title">Tour Booking Details</h2>
-            <div className="tbm-header-meta">
-              <span className="tbm-header-id">ID: #{b.id}</span>
-              <span className="tbm-header-dot">•</span>
-              <span>Booked: {formatDate(b.bookingDate)}</span>
-            </div>
-          </div>
-
-          <div className={`tbm-status-badge ${color}`}>
-            <div className="tbm-status-icon"><StatusIcon size={16} /></div>
-            <div>
-              <span className="tbm-status-label">{statusLabel}</span>
-              <span className="tbm-status-desc">{statusDesc}</span>
-            </div>
-          </div>
-
-          <button className="tbm-close-btn" onClick={closeModal} aria-label="Close">
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* ── BODY ───────────────────────────────────────────────── */}
-        <div className="tbm-body">
-
-          {/* Tour Hero Strip */}
-          <div className="tbm-tour-hero">
-            {raw.image && <img src={raw.image} alt="" className="tbm-tour-hero-img" />}
-            <div className="tbm-tour-hero-content">
-              <div className="tbm-tour-hero-icon">🏝️</div>
-              <div className="tbm-tour-hero-info">
-                <p className="tbm-tour-hero-name">{b.packageName}</p>
-                <div className="tbm-tour-hero-tags">
-                  {tourType && (
-                    <span className={`tbm-hero-tag ${tourType === 'private' ? 'private' : 'joiners'}`}>
-                      {tourType === 'private' ? '🔒 Private' : '👥 Joiners'}
-                    </span>
-                  )}
-                  {category && <span className="tbm-hero-tag category">{category}</span>}
-                  {hasAirfare && <span className="tbm-hero-tag airfare">✈️ With Airfare</span>}
+          {/* ── HEADER ──────────────────────────────────────────── */}
+          <div className="modal-header">
+            <div className="cnm-header-content">
+              <div className="cnm-title-group">
+                <h2>Tour Booking Details</h2>
+                <div className="cnm-meta">
+                  <span className="cnm-ref">ID: #{b.id}</span>
+                  <span className="cnm-divider">•</span>
+                  <span className="cnm-date">Booked: {formatDate(b.bookingDate)}</span>
+                </div>
+              </div>
+              <div className={`cnm-status-badge cnm-status-${statusConfig.color}`}>
+                <div className="cnm-status-icon"><StatusIcon size={16} /></div>
+                <div className="cnm-status-content">
+                  <span className="cnm-status-label">{statusConfig.label}</span>
+                  <span className="cnm-status-desc">{statusConfig.description}</span>
                 </div>
               </div>
             </div>
+            <button className="modal-close" onClick={closeModal} aria-label="Close modal">
+              <X size={20} />
+            </button>
           </div>
 
-          {/* Booking Info */}
-          <div className="tbm-card">
-            <div className="tbm-card-header">
-              <Calendar size={15} color="#64748b" />
-              <span className="tbm-card-title">Booking Information</span>
+          {/* ── BODY ────────────────────────────────────────────── */}
+          <div className="modal-body">
+
+            {/* Tour Hero Strip */}
+            <div className="cnm-tour-hero" style={{ marginBottom: '15px' }}>
+              {raw.image && <img src={raw.image} alt="" className="cnm-tour-hero-img" />}
+              <div className="cnm-tour-hero-content">
+                <div className="cnm-tour-hero-icon">🏝️</div>
+                <div className="cnm-tour-hero-info">
+                  <p className="cnm-tour-hero-name">{b.packageName}</p>
+                  <div className="cnm-tour-hero-tags">
+                    {tourType && (
+                      <span className={`cnm-hero-tag ${tourType === 'private' ? 'private' : 'joiners'}`}>
+                        {tourType === 'private' ? '🔒 Private' : '👥 Joiners'}
+                      </span>
+                    )}
+                    {category && <span className="cnm-hero-tag category">{category}</span>}
+                    {hasAirfare && <span className="cnm-hero-tag airfare">✈️ With Airfare</span>}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="tbm-card-body">
-              <div className="tbm-grid">
-                <div className="tbm-info-item">
-                  <div className="tbm-info-icon"><User size={16} /></div>
-                  <div className="tbm-info-content">
-                    <span className="tbm-info-label">Customer</span>
-                    <span className="tbm-info-value">{b.customerName}</span>
+
+            {/* BOOKING INFORMATION */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Booking Information</h3>
+              </div>
+              <div className="cnm-grid">
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><User size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">Customer</label>
+                    <span className="cnm-info-value">{b.customerName}</span>
                   </div>
                 </div>
-                <div className="tbm-info-item">
-                  <div className="tbm-info-icon"><Mail size={16} /></div>
-                  <div className="tbm-info-content">
-                    <span className="tbm-info-label">Email</span>
-                    <span className="tbm-info-value">{b.email}</span>
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><Mail size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">Email Address</label>
+                    <span className="cnm-info-value">{b.email}</span>
                   </div>
                 </div>
-                <div className="tbm-info-item">
-                  <div className="tbm-info-icon"><MapPin size={16} /></div>
-                  <div className="tbm-info-content">
-                    <span className="tbm-info-label">Destination</span>
-                    <span className="tbm-info-value">{b.destination || raw.destination || '—'}</span>
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><Calendar size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">Travel Date</label>
+                    <span className="cnm-info-value">{b.travelDate}</span>
                   </div>
                 </div>
-                <div className="tbm-info-item">
-                  <div className="tbm-info-icon"><Clock size={16} /></div>
-                  <div className="tbm-info-content">
-                    <span className="tbm-info-label">Duration</span>
-                    <span className="tbm-info-value">{b.duration || '—'}</span>
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><Calendar size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">End Date</label>
+                    <span className="cnm-info-value">{b.endDate ? formatDate(b.endDate) : '—'}</span>
                   </div>
                 </div>
-                <div className="tbm-info-item">
-                  <div className="tbm-info-icon"><Calendar size={16} /></div>
-                  <div className="tbm-info-content">
-                    <span className="tbm-info-label">Travel Date</span>
-                    <span className="tbm-info-value">{b.travelDate}</span>
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><MapPin size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">Destination</label>
+                    <span className="cnm-info-value">{b.destination || raw.destination || '—'}</span>
                   </div>
                 </div>
-                <div className="tbm-info-item">
-                  <div className="tbm-info-icon"><Calendar size={16} /></div>
-                  <div className="tbm-info-content">
-                    <span className="tbm-info-label">End Date</span>
-                    <span className="tbm-info-value">{b.endDate ? formatDate(b.endDate) : '—'}</span>
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><Clock size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">Duration</label>
+                    <span className="cnm-info-value">{b.duration || '—'}</span>
                   </div>
                 </div>
-                <div className="tbm-info-item">
-                  <div className="tbm-info-icon"><Users size={16} /></div>
-                  <div className="tbm-info-content">
-                    <span className="tbm-info-label">Guests</span>
-                    <span className="tbm-info-value">
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><Users size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">Guests</label>
+                    <span className="cnm-info-value">
                       {b.guests} Adult{b.guests !== 1 ? 's' : ''}
                       {(raw.pax?.children || 0) > 0 && ` · ${raw.pax.children} Child`}
                       {(raw.pax?.infants  || 0) > 0 && ` · ${raw.pax.infants} Infant`}
                     </span>
                   </div>
                 </div>
+                <div className="cnm-info-item">
+                  <div className="cnm-info-icon"><Wallet size={18} /></div>
+                  <div className="cnm-info-content">
+                    <label className="cnm-info-label">Total Amount</label>
+                    <span className="cnm-info-value cnm-val-amount">₱{totalAmount.toLocaleString()}</span>
+                  </div>
+                </div>
                 {b.promoCode && (
-                  <div className="tbm-info-item">
-                    <div className="tbm-info-icon"><Tag size={16} /></div>
-                    <div className="tbm-info-content">
-                      <span className="tbm-info-label">Promo Code</span>
-                      <span className="tbm-info-value" style={{ color: '#059669' }}>🏷️ {b.promoCode}</span>
+                  <div className="cnm-info-item">
+                    <div className="cnm-info-icon"><Tag size={18} /></div>
+                    <div className="cnm-info-content">
+                      <label className="cnm-info-label">Promo Code</label>
+                      <span className="cnm-info-value" style={{ color: '#059669' }}>🏷️ {b.promoCode}</span>
                     </div>
                   </div>
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Passengers */}
-          <div className="tbm-card">
-            <div className="tbm-card-header">
-              <Users size={15} color="#64748b" />
-              <span className="tbm-card-title">Passenger Details ({passengers.length})</span>
+            {/* PAYMENT DETAILS */}
+            <div className="cnm-payment-card">
+              <div className="cnm-payment-header">
+                <div className="cnm-payment-title">
+                  <CreditCard size={18} />
+                  PAYMENT DETAILS
+                </div>
+                <div className={`cnm-payment-badge ${isPartialPayment ? 'partial' : 'full'}`}>
+                  {isPartialPayment ? `PARTIAL PAYMENT (${partialPct})` : 'FULL PAYMENT'}
+                </div>
+              </div>
+
+              <div className="cnm-payment-body">
+                <div className="cnm-payment-section">
+                  <div className="cnm-payment-row">
+                    <span className="cnm-payment-label">Payment Type:</span>
+                    <span className="cnm-payment-value">{isPartialPayment ? 'Pay in Partial' : 'Pay in Full'}</span>
+                  </div>
+                  <div className="cnm-payment-row">
+                    <span className="cnm-payment-label">Total Booking Amount:</span>
+                    <span className="cnm-payment-value">₱{totalAmount.toLocaleString()}</span>
+                  </div>
+                  {b.discountAmount > 0 && (
+                    <div className="cnm-payment-row">
+                      <span className="cnm-payment-label">Promo Discount:</span>
+                      <span className="cnm-payment-value" style={{ color: '#16a34a' }}>
+                        - ₱{b.discountAmount.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {hasAirfare && (
+                    <div className="cnm-payment-row">
+                      <span className="cnm-payment-label">+ Airfare:</span>
+                      <span className="cnm-payment-value">₱{(b.airfareTotal || 0).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Partial Payment Breakdown */}
+                {isPartialPayment && (
+                  <>
+                    <div className="cnm-payment-divider" />
+                    <div className="cnm-payment-section">
+                      <div className="cnm-payment-row">
+                        <span className="cnm-payment-label">
+                          <CheckCircle size={16} style={{ color: '#16a34a' }} />
+                          Initial Payment:
+                        </span>
+                        <span className="cnm-payment-value" style={{ color: '#16a34a' }}>
+                          ₱{initialPaid.toLocaleString()}
+                        </span>
+                      </div>
+                      {remainingBalance > 0 && (
+                        <div className="cnm-payment-row">
+                          <span className="cnm-payment-label">
+                            <AlertCircle size={16} style={{ color: '#d97706' }} />
+                            Remaining Balance:
+                          </span>
+                          <span className="cnm-payment-value" style={{ color: '#d97706' }}>
+                            ₱{remainingBalance.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {remainingBalance > 0 ? (
+                      <div className="cnm-payment-status-box pending">
+                        <div className="cnm-payment-status-left">
+                          <div className="cnm-payment-status-title">
+                            <AlertCircle size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            BALANCE DUE
+                          </div>
+                          <div className="cnm-payment-status-amount">₱{remainingBalance.toLocaleString()}</div>
+                        </div>
+                        <div className="cnm-payment-status-icon">
+                          <AlertCircle size={24} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="cnm-payment-status-box paid">
+                        <div className="cnm-payment-status-left">
+                          <div className="cnm-payment-status-title">
+                            <CheckCircle size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            FULLY PAID
+                          </div>
+                          <div className="cnm-payment-status-amount">₱{totalAmount.toLocaleString()}</div>
+                        </div>
+                        <div className="cnm-payment-status-icon">
+                          <CheckCircle size={24} />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Full Payment Status */}
+                {!isPartialPayment && (
+                  <>
+                    <div className="cnm-payment-divider" />
+                    {isPendingPayment ? (
+                      <div className="cnm-payment-status-box pending">
+                        <div className="cnm-payment-status-left">
+                          <div className="cnm-payment-status-title">
+                            <AlertCircle size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            PENDING PAYMENT
+                          </div>
+                          <div className="cnm-payment-status-amount">₱{totalAmount.toLocaleString()}</div>
+                        </div>
+                        <div className="cnm-payment-status-icon">
+                          <AlertCircle size={24} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="cnm-payment-status-box paid">
+                        <div className="cnm-payment-status-left">
+                          <div className="cnm-payment-status-title">
+                            <CheckCircle size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            FULLY PAID
+                          </div>
+                          <div className="cnm-payment-status-amount">₱{totalAmount.toLocaleString()}</div>
+                        </div>
+                        <div className="cnm-payment-status-icon">
+                          <CheckCircle size={24} />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-            <div className="tbm-card-body" style={{ padding: 0 }}>
+
+            {/* PASSENGER DETAILS */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Passenger Details</h3>
+                <span className="cnm-badge cnm-badge-blue">{passengers.length} PAX</span>
+              </div>
               {passengers.length === 0 ? (
-                <div className="tbm-no-passengers">No passenger details provided.</div>
+                <div className="cnm-no-passengers">No passenger details provided.</div>
               ) : (
-                <table className="tbm-passengers-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Full Name</th>
-                      <th>Email</th>
-                      <th>Age</th>
-                      <th>Gender</th>
-                      <th>Nationality</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {passengers.map((p, i) => (
-                      <tr key={i}>
-                        <td><span className="tbm-pax-number">{i + 1}</span></td>
-                        <td style={{ fontWeight: 600 }}>
-                          {`${p.firstName || ''} ${p.lastName || ''}`.trim() || '—'}
-                        </td>
-                        <td>{p.email || '—'}</td>
-                        <td>{p.age || '—'}</td>
-                        <td>{p.gender || '—'}</td>
-                        <td>{p.nationality || 'Filipino'}</td>
+                <div className="cnm-table-wrapper">
+                  <table className="cnm-passengers-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Date of Birth</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Nationality</th>
+                        <th>Address</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {passengers.map((p, i) => (
+                        <tr key={i}>
+                          <td><span className="cnm-pax-number">{i + 1}</span></td>
+                          <td style={{ fontWeight: 600 }}>
+                            {`${p.firstName || ''} ${p.lastName || ''}`.trim() || '—'}
+                          </td>
+                          <td>{p.email || '—'}</td>
+                          <td>{p.phone || '—'}</td>
+                          <td>{p.dateOfBirth || '—'}</td>
+                          <td>{p.age || '—'}</td>
+                          <td>{p.gender || '—'}</td>
+                          <td>{p.nationality || 'Filipino'}</td>
+                          <td>{p.address || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Flight Details (if airfare included) */}
-          {hasAirfare && flight && (
-            <div className="tbm-card">
-              <div className="tbm-card-header">
-                <Plane size={15} color="#64748b" />
-                <span className="tbm-card-title">Flight Details</span>
-              </div>
-              <div className="tbm-card-body">
-                <div className="tbm-flight-row">
-                  <div className="tbm-flight-icon"><Plane size={18} /></div>
-                  <div className="tbm-flight-info">
-                    <div className="tbm-flight-route">
+            {/* FLIGHT DETAILS (if airfare included) */}
+            {hasAirfare && flight && (
+              <div className="cnm-card">
+                <div className="cnm-card-header">
+                  <h3 className="cnm-card-title">Flight Details</h3>
+                  <span className="cnm-badge cnm-badge-blue">✈️ With Airfare</span>
+                </div>
+                <div className="cnm-flight-row">
+                  <div className="cnm-flight-icon"><Plane size={20} /></div>
+                  <div className="cnm-flight-info">
+                    <div className="cnm-flight-route">
                       {flight.airline || '—'}
                       {flight.flightNumber && ` · ${flight.flightNumber}`}
                     </div>
-                    <div className="tbm-flight-detail">
+                    <div className="cnm-flight-detail">
                       {flight.route ||
                         (flight.departure?.iataCode && flight.arrival?.iataCode
                           ? `${flight.departure.iataCode} → ${flight.arrival.iataCode}`
-                          : '—')
-                      }
+                          : '—')}
                       {flight.isInternational && ' · International'}
                     </div>
                     {(flight.departureTime || flight.departure?.at) && (
-                      <div className="tbm-flight-detail">
+                      <div className="cnm-flight-detail">
                         Departure: {formatDate(flight.departureTime || flight.departure?.at)}
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Payment Details */}
-          <div className="tbm-payment-card">
-            <div className="tbm-payment-header">
-              <span className="tbm-payment-title">
-                <CreditCard size={15} />
-                Payment Details
-              </span>
-              <span className={`tbm-payment-type-badge ${isPartial ? 'partial' : 'full'}`}>
-                {isPartial ? `Partial Payment (${partialPct})` : 'Full Payment'}
-              </span>
-            </div>
-            <div className="tbm-payment-body">
-              {isPartial ? (
-                <>
-                  <div className="tbm-payment-row">
-                    <span className="tbm-payment-lbl">Package Total</span>
-                    <span className="tbm-payment-val">₱{totalAmount.toLocaleString()}</span>
-                  </div>
-                  {b.discountAmount > 0 && (
-                    <div className="tbm-payment-row">
-                      <span className="tbm-payment-lbl">Promo Discount</span>
-                      <span className="tbm-payment-val green">- ₱{b.discountAmount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {hasAirfare && (
-                    <div className="tbm-payment-row">
-                      <span className="tbm-payment-lbl">+ Airfare</span>
-                      <span className="tbm-payment-val">₱{(b.airfareTotal || 0).toLocaleString()}</span>
-                    </div>
-                  )}
-                  <div className="tbm-payment-divider" />
-                  <div className="tbm-payment-row">
-                    <span className="tbm-payment-lbl" style={{ fontWeight: 700, color: '#334155' }}>Total Amount</span>
-                    <span className="tbm-payment-val total">₱{totalAmount.toLocaleString()}</span>
-                  </div>
-                  <div className="tbm-payment-row">
-                    <span className="tbm-payment-lbl">Initial Payment Paid</span>
-                    <span className="tbm-payment-val green">₱{initialPaid.toLocaleString()}</span>
-                  </div>
-                  <div className="tbm-payment-row">
-                    <span className="tbm-payment-lbl">Remaining Balance</span>
-                    <span className={`tbm-payment-val ${remainingBal > 0 ? 'amber' : 'green'}`}>
-                      ₱{remainingBal.toLocaleString()}
-                    </span>
-                  </div>
-                  {isFullyPaid ? (
-                    <div className="tbm-fully-paid-banner">
-                      <CheckCircle size={18} /> Fully Paid — No remaining balance
-                    </div>
-                  ) : (
-                    <div className="tbm-pending-balance-banner">
-                      <Wallet size={18} /> ₱{remainingBal.toLocaleString()} balance due before trip
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="tbm-payment-row">
-                    <span className="tbm-payment-lbl">Package Total</span>
-                    <span className="tbm-payment-val">₱{totalAmount.toLocaleString()}</span>
-                  </div>
-                  {b.discountAmount > 0 && (
-                    <div className="tbm-payment-row">
-                      <span className="tbm-payment-lbl">Promo Discount</span>
-                      <span className="tbm-payment-val green">- ₱{b.discountAmount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {hasAirfare && (
-                    <div className="tbm-payment-row">
-                      <span className="tbm-payment-lbl">+ Airfare</span>
-                      <span className="tbm-payment-val">₱{(b.airfareTotal || 0).toLocaleString()}</span>
-                    </div>
-                  )}
-                  <div className="tbm-payment-divider" />
-                  <div className="tbm-payment-row">
-                    <span className="tbm-payment-lbl" style={{ fontWeight: 700, color: '#334155' }}>Total Amount</span>
-                    <span className="tbm-payment-val total">₱{totalAmount.toLocaleString()}</span>
-                  </div>
-                  {status === 'CONFIRMED' && (
-                    <div className="tbm-fully-paid-banner">
-                      <CheckCircle size={18} /> Payment Confirmed — Fully Paid
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            {/* SPECIAL REQUESTS / MESSAGE */}
+            {raw.message && (
+              <div className="cnm-card">
+                <div className="cnm-card-header">
+                  <h3 className="cnm-card-title">Special Requests / Notes</h3>
+                </div>
+                <div className="cnm-message-box">{raw.message}</div>
+              </div>
+            )}
+
           </div>
 
-        </div>
+          {/* ── FOOTER ──────────────────────────────────────────── */}
+          <div className="modal-footer">
+            <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
 
-        {/* ── FOOTER ─────────────────────────────────────────────── */}
-        <div className="tbm-footer">
-          <button className="tbm-btn tbm-btn-ghost" onClick={closeModal}>Close</button>
-
-          {status === 'PENDING' && (
-            <>
+            {/* View Voucher — confirmed only */}
+            {status === 'CONFIRMED' && (
               <button
-                className="tbm-btn tbm-btn-success"
-                onClick={() => { handleConfirm(selectedBooking); closeModal(); }}
-                disabled={actionLoading}
+                className="cnm-btn cnm-btn-voucher cnm-btn-left"
+                onClick={generateVoucherData}
+                disabled={isGeneratingVoucher}
               >
-                {actionLoading
-                  ? <><span className="tbm-spinner" /> Processing...</>
-                  : <><Check size={16} /> Confirm Booking</>
-                }
+                <FileText size={16} />
+                {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
               </button>
+            )}
+
+            {/* Cancel — pending or confirmed */}
+            {(status === 'PENDING' || status === 'CONFIRMED') && (
               <button
-                className="tbm-btn tbm-btn-danger"
-                onClick={() => { handleCancel(selectedBooking); closeModal(); }}
+                className="cnm-btn cnm-btn-danger cnm-btn-outline"
+                onClick={() => handleCancel(selectedBooking)}
                 disabled={actionLoading}
               >
                 <X size={16} /> Cancel Booking
               </button>
-            </>
-          )}
+            )}
 
-          {status === 'CONFIRMED' && (
-            <button
-              className="tbm-btn tbm-btn-danger"
-              onClick={() => { handleCancel(selectedBooking); closeModal(); }}
-              disabled={actionLoading}
-            >
-              <X size={16} /> Cancel Booking
-            </button>
-          )}
+            {/* Confirm — pending only */}
+            {status === 'PENDING' && (
+              <button
+                className="cnm-btn cnm-btn-success"
+                onClick={() => handleConfirm(selectedBooking)}
+                disabled={actionLoading}
+              >
+                {actionLoading
+                  ? <><span className="cnm-spinner" /> Processing...</>
+                  : <><Check size={16} /> Confirm Booking</>
+                }
+              </button>
+            )}
+          </div>
+
         </div>
-
       </div>
-    </div>
+
+      {/* Voucher Preview Modal */}
+      {showVoucherPreview && voucherData && (
+        <VoucherPreviewModal
+          voucherData={voucherData}
+          onClose={() => setShowVoucherPreview(false)}
+          onEdit={(updatedData) => setVoucherData(updatedData)}
+        />
+      )}
+    </>
   );
 };
 
