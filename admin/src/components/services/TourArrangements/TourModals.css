@@ -630,6 +630,21 @@
   transform: translateY(-2px);
 }
 
+/* Archive Action — orange */
+.tur-action-archive {
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+.tur-action-archive .tur-action-icon {
+  background: linear-gradient(135deg, #ffedd5, #fed7aa);
+  color: #ea580c;
+}
+.tur-action-archive:hover {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border-color: #fb923c;
+  transform: translateY(-2px);
+}
+
 /* ===== FORM ELEMENTS ===== */
 .tur-form-section {
   margin-bottom: 32px;
@@ -784,4 +799,163 @@ textarea.tur-input {
     font-size: 13px;
     padding: 10px 16px;
   }
+}
+
+/* ===== PAYMENT CARD (mirrors BookingDetailModal) ===== */
+.tur-payment-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0;
+  margin-bottom: 15px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.tur-payment-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.tur-payment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-bottom: 2px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tur-payment-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0;
+}
+
+.tur-payment-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+.tur-payment-badge.full {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.tur-payment-badge.partial {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+}
+
+.tur-payment-body {
+  padding: 24px 28px;
+}
+
+.tur-payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 15px;
+}
+
+.tur-payment-row:last-child {
+  border-bottom: none;
+}
+
+.tur-payment-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.tur-payment-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: right;
+}
+
+.tur-payment-status-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-radius: 12px;
+  border: 2px solid;
+  margin-top: 16px;
+  gap: 15px;
+}
+
+.tur-payment-status-box.paid {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-color: #86efac;
+}
+
+.tur-payment-status-box.pending {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border-color: #fca5a5;
+}
+
+.tur-payment-status-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.tur-payment-status-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tur-payment-status-box.paid .tur-payment-status-title { color: #166534; }
+.tur-payment-status-box.pending .tur-payment-status-title { color: #991b1b; }
+
+.tur-payment-status-amount {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.tur-payment-status-box.paid .tur-payment-status-amount { color: #15803d; }
+.tur-payment-status-box.pending .tur-payment-status-amount { color: #dc2626; }
+
+.tur-payment-status-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tur-payment-status-box.paid .tur-payment-status-icon { background: #86efac; color: #15803d; }
+.tur-payment-status-box.pending .tur-payment-status-icon { background: #fca5a5; color: #dc2626; }
+
+@media (max-width: 576px) {
+  .tur-payment-body { padding: 16px; }
+  .tur-payment-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .tur-payment-value { text-align: left; }
+  .tur-payment-status-box { flex-direction: column; text-align: center; padding: 16px; }
+  .tur-payment-status-left { align-items: center; }
 }

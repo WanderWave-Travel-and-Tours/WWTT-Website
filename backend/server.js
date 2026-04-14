@@ -20,15 +20,15 @@ app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 const corsOptions = {
   origin: [
     'https://wanderwaveph.com',
-    'https://app.gohighlevel.com',           // Main GHL domain
-    'https://*.gohighlevel.com',             // All GHL subdomains
+    'https://app.gohighlevel.com',
+    'https://*.gohighlevel.com',
     'http://localhost:3000',
-    'http://localhost:3001',                 // Local development
+    'http://localhost:3001',
     'http://127.0.0.1:3000',
-    'https://checkout.paymongo.com',         // PayMongo checkout
+    'https://checkout.paymongo.com',
   ],
-  credentials: true,                        // Allow cookies/auth if needed
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // ✅ FIX: Added PATCH
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
@@ -44,7 +44,35 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// 4. Webhook request logger — confirms webhook is actually reaching the server
+// ====================== 🔍 GLOBAL REQUEST LOGGER ======================
+// Logs every incoming request so we can identify exactly what's hitting the server
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  // Skip logging for static file requests to keep logs clean
+  if (req.path.startsWith('/uploads')) return next();
+
+  console.log(`\n📥 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log(`   Origin: ${req.headers.origin || 'N/A'}`);
+  console.log(`   Content-Type: ${req.headers['content-type'] || 'N/A'}`);
+
+  // Log request body for POST/PUT/PATCH (but skip file uploads)
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.headers['content-type']?.includes('application/json')) {
+    console.log(`   Body: ${JSON.stringify(req.body)}`);
+  }
+
+  // Log response when it finishes
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const statusIcon = res.statusCode >= 400 ? '❌' : '✅';
+    console.log(`   ${statusIcon} Response: ${res.statusCode} (${duration}ms)`);
+  });
+
+  next();
+});
+// ======================================================================
+
+// 4. Webhook request logger
 app.use((req, res, next) => {
   if (req.path === '/api/payment/webhook') {
     console.log('🔥 WEBHOOK REQUEST RECEIVED - Path:', req.path);
@@ -117,7 +145,7 @@ const passportRoutes = require('./routes/passportRoute');
 const inquiryRoutes = require('./routes/inquiryRoute');
 const uploadRoutes = require('./routes/uploadRoute');
 const hotelRoutes = require('./routes/hotelRoute');
-const imagesRoutes = require('./routes/imagesRoute'); // ✅ ADD THIS LINE
+const imagesRoutes = require('./routes/imagesRoute');
 const sellerRateRoutes = require('./routes/sellerRoute');
 const pageViewRoutes = require('./routes/pageViewRoute');
 const siteVisitRoutes = require('./routes/siteVisitRoute');
@@ -279,7 +307,7 @@ app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/documents', require('./routes/documentRoute'));
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/hotels', hotelRoutes);
-app.use('/api/images', imagesRoutes); // ✅ ADD THIS LINE
+app.use('/api/images', imagesRoutes);
 app.use('/api/seller-rates', sellerRateRoutes);
 app.use('/api/page-views', pageViewRoutes);
 app.use('/api/site-visits', siteVisitRoutes);
@@ -557,7 +585,6 @@ app.get('/api/admin/statistics', async (req, res) => {
 // ⭐ FAVORITES / WISHLIST ROUTES
 // ============================================================
 
-// GET /api/favorites/:userId — fetch all favorites for a user
 app.get('/api/favorites/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -574,7 +601,6 @@ app.get('/api/favorites/:userId', async (req, res) => {
   }
 });
 
-// POST /api/favorites/:userId/add — add a package to favorites
 app.post('/api/favorites/:userId/add', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -602,7 +628,6 @@ app.post('/api/favorites/:userId/add', async (req, res) => {
   }
 });
 
-// DELETE /api/favorites/:userId/remove — remove a package from favorites
 app.delete('/api/favorites/:userId/remove', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -630,7 +655,6 @@ app.delete('/api/favorites/:userId/remove', async (req, res) => {
   }
 });
 
-// POST /api/favorites/:userId/toggle — toggle a package in/out of favorites
 app.post('/api/favorites/:userId/toggle', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -672,13 +696,6 @@ app.post('/api/favorites/:userId/toggle', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCIAL MEDIA REDIRECT ROUTES
-// Logs a SiteVisit record then redirects to the landing page with ?source=
-// so the Reporting dashboard can count per-platform clicks.
-//
-// Routes:
-//   GET /fb  →  logs 'facebook'   → redirects to wanderwaveph.com?source=facebook
-//   GET /ig  →  logs 'instagram'  → redirects to wanderwaveph.com?source=instagram
-//   GET /tt  →  logs 'tiktok'     → redirects to wanderwaveph.com?source=tiktok
 // ─────────────────────────────────────────────────────────────────────────────
 const SOCIAL_REDIRECTS = {
   fb: {
@@ -704,7 +721,6 @@ Object.entries(SOCIAL_REDIRECTS).forEach(([slug, { platform, url }]) => {
       console.log(`✅ Social visit logged — platform: ${platform}`);
     } catch (err) {
       console.error(`❌ Failed to log visit for /${slug}:`, err.message);
-      // Still redirect even if DB logging fails
     }
     res.redirect(302, url);
   });

@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Sidebar from '../../sidebar/sidebar';
-import Maintenance from '../../maintenance/Maintenance'; // Import Maintenance Component
-import { Plus, Palmtree, Map, Users, CheckSquare, ChevronLeft, ChevronRight, Search, Eye, UserPlus, Archive } from 'lucide-react';
+import Maintenance from '../../maintenance/Maintenance';
+import { Plus, Palmtree, Map, Users, CheckSquare, ChevronLeft, ChevronRight, Search, Eye, UserPlus } from 'lucide-react';
 import { TourModal } from './TourModals';
 import { TourApplicationModal } from './TourApplicationModal';
 import './TourArrangements.css';
@@ -81,10 +81,7 @@ const TourPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange })
 
 // Stats Component
 const TourStats = ({ stats }) => {
-    const getStatClass = (label) => {
-        return label.toLowerCase().replace(/ /g, '-');
-    }
-    
+    const getStatClass = (label) => label.toLowerCase().replace(/ /g, '-');
     return (
         <div className="tour-stats-grid">
             {stats.map((s, i) => (
@@ -112,7 +109,6 @@ const TourFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus,
         <div className="tour-brand-label">
             TOUR <span>FILTERS</span>
         </div>
-        
         <div className="tour-filter-buttons">
           {statusOptions.map(status => (
             <button
@@ -124,7 +120,6 @@ const TourFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus,
             </button>
           ))}
         </div>
-        
         <div className="tour-search-box">
           <Search size={18} className="tour-search-icon" /> 
           <input
@@ -141,14 +136,13 @@ const TourFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus,
 };
 
 // Table Component
-const TourTable = ({ loading, filteredToursCount, currentTours, handleViewTour, handleArchiveTour, startIndex }) => {
+const TourTable = ({ loading, filteredToursCount, currentTours, handleViewTour, startIndex }) => {
     const getStatusBadgeClass = (status) => {
-        const normalizedStatus = (status || 'Pending').toLowerCase();
-        switch (normalizedStatus) {
+        switch ((status || 'Pending').toLowerCase()) {
             case 'confirmed': return 'tour-badge-confirmed';
-            case 'pending': return 'tour-badge-pending';
+            case 'pending':   return 'tour-badge-pending';
             case 'cancelled': return 'tour-badge-cancelled';
-            default: return 'tour-badge-pending';
+            default:          return 'tour-badge-pending';
         }
     };
 
@@ -156,7 +150,7 @@ const TourTable = ({ loading, filteredToursCount, currentTours, handleViewTour, 
         return (
             <tbody>
                 <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                         Loading tour packages...
                     </td>
                 </tr>
@@ -168,7 +162,7 @@ const TourTable = ({ loading, filteredToursCount, currentTours, handleViewTour, 
         return (
             <tbody>
                 <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                         No tour packages found
                     </td>
                 </tr>
@@ -206,13 +200,6 @@ const TourTable = ({ loading, filteredToursCount, currentTours, handleViewTour, 
                             >
                                 <Eye size={16} /> View
                             </button>
-                            <button 
-                                className="tour-action-btn tour-archive-btn" 
-                                onClick={() => handleArchiveTour(row.id)}
-                                title="Archive Tour Booking"
-                            >
-                                <Archive size={16} /> Archive
-                            </button>
                         </div>
                     </td>
                 </tr>
@@ -221,18 +208,15 @@ const TourTable = ({ loading, filteredToursCount, currentTours, handleViewTour, 
     );
 };
 
-// Main Component
+// ─── Main Component ───────────────────────────────────────────────────────────
 const TourArrangements = () => {
-    // --- MAINTENANCE MODE TOGGLE ---
-    // Change this to 'false' to show the actual system
-    const MAINTENANCE_MODE = true;
+    // Set to true to enable maintenance page
+    const MAINTENANCE_MODE = false;
 
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("All"); 
-    
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -241,35 +225,66 @@ const TourArrangements = () => {
     const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
     const [selectedTour, setSelectedTour] = useState(null);
 
-    const [allTours, setAllTours] = useState([
-        { id: 'TR-55', client: 'Family Cruz', package: 'El Nido Island Hopping', pax: '5 Adults, 2 Kids', travelDate: 'Jan 15-18, 2026', status: 'Confirmed' },
-        { id: 'TR-54', client: 'Mr. John Smith', package: 'Bohol Countryside Tour', pax: '2 Adults', travelDate: 'Feb 01-03, 2026', status: 'Pending' },
-        { id: 'TR-53', client: 'Ms. Alice Johnson', package: 'Coron Wreck Diving', pax: '1 Adult', travelDate: 'Mar 10-14, 2026', status: 'Confirmed' },
-        { id: 'TR-52', client: 'Group Lee', package: 'Siargao Surfing Camp', pax: '10 Adults', travelDate: 'Apr 05-12, 2026', status: 'Cancelled' },
-        { id: 'TR-51', client: 'The Kim Family', package: 'Cebu City Heritage', pax: '4 Adults, 1 Kid', travelDate: 'May 20-22, 2026', status: 'Confirmed' },
-        { id: 'TR-50', client: 'Mr. David Brown', package: 'Sagada Adventures', pax: '3 Adults', travelDate: 'Jun 1-4, 2026', status: 'Confirmed' },
-        { id: 'TR-49', client: 'Mrs. Emily White', package: 'Batanes Scenic Route', pax: '2 Adults', travelDate: 'Jul 15-19, 2026', status: 'Confirmed' },
-        { id: 'TR-48', client: 'Student Group Manila', package: 'Vigan Historical Tour', pax: '25 Adults', travelDate: 'Aug 01-02, 2026', status: 'Pending' },
-        { id: 'TR-47', client: 'Mr. Michael Green', package: 'Puerto Galera Beach', pax: '4 Adults', travelDate: 'Sep 10-13, 2026', status: 'Confirmed' },
-        { id: 'TR-46', client: 'Couple Tan', package: 'Palawan Underground River', pax: '2 Adults', travelDate: 'Oct 25-27, 2026', status: 'Confirmed' },
-        { id: 'TR-45', client: 'Family Garcia', package: 'Iloilo Culinary Tour', pax: '6 Adults, 3 Kids', travelDate: 'Nov 05-08, 2026', status: 'Pending' },
-        { id: 'TR-44', client: 'Mr. Chris Evans', package: 'Davao Durian Experience', pax: '1 Adult', travelDate: 'Dec 12-14, 2026', status: 'Confirmed' },
-    ]);
+    const [allTours, setAllTours] = useState([]);
 
-    // Reset page when filters change
+    // ================== FETCH REAL TOURS ==================
+    const fetchTours = async () => {
+        try {
+            setIsLoading(true);
+            const res = await fetch('https://wanderwaveph.onrender.com/api/tour-bookings');
+            if (!res.ok) throw new Error('Failed to fetch tours');
+
+            const data = await res.json();
+            const toursArray = data.data || data;
+
+            const formatted = toursArray
+                .filter(t => t.isArchive !== 'Yes')
+                .map(t => ({
+                    id: t._id,
+                    mongoId: t._id,
+                    client: t.fullName || t.primaryContact?.fullName || 'N/A',
+                    email: t.email || t.primaryContact?.email || '',
+                    package: t.packageName,
+                    pax: `${t.pax?.adult || 0} Adults${t.pax?.children ? `, ${t.pax.children} Kids` : ''}`,
+                    travelDate: t.startDate && t.endDate 
+                        ? `${t.startDate} - ${t.endDate}` 
+                        : t.startDate || 'N/A',
+                    startDate: t.startDate || '',
+                    endDate: t.endDate || '',
+                    duration: t.duration || '',
+                    destination: t.destination || '',
+                    totalAmount: t.totalAmount || 0,
+                    notes: t.message || '',
+                    status: t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : 'Pending',
+                }));
+
+            setAllTours(formatted);
+        } catch (err) {
+            console.error('❌ Fetch tours error:', err);
+            alert('Failed to load tour bookings');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTours();
+    }, []);
+
+    // Refresh after creating new tour
+    const refreshData = () => fetchTours();
+
     React.useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, filterStatus]);
 
-    // --- FILTERING LOGIC ---
+    // ================== FILTERING & PAGINATION ==================
     const filteredTours = useMemo(() => {
         let list = allTours;
         const lowerSearchTerm = searchTerm.toLowerCase();
-
         if (filterStatus !== "All") {
             list = list.filter(tour => tour.status === filterStatus);
         }
-
         if (lowerSearchTerm) {
             list = list.filter(tour =>
                 tour.id.toLowerCase().includes(lowerSearchTerm) ||
@@ -277,51 +292,28 @@ const TourArrangements = () => {
                 tour.package.toLowerCase().includes(lowerSearchTerm)
             );
         }
-        
         return list;
     }, [allTours, searchTerm, filterStatus]);
 
     const stats = useMemo(() => [
-        { 
-            label: "Active Tours", 
-            value: allTours.filter(t => t.status === 'Confirmed').length, 
-            icon: <Palmtree size={24} />, 
-            image: TOUR_STAT_IMAGES.ACTIVE_TOURS 
-        },
-        { 
-            label: "Upcoming", 
-            value: allTours.filter(t => t.status === 'Pending').length, 
-            icon: <Map size={24} />, 
-            image: TOUR_STAT_IMAGES.UPCOMING 
-        },
-        { 
-            label: "Completed", 
-            value: '89', 
-            icon: <CheckSquare size={24} />, 
-            image: TOUR_STAT_IMAGES.COMPLETED 
-        },
-        { 
-            label: "Inquiries", 
-            value: '12', 
-            icon: <Users size={24} />, 
-            image: TOUR_STAT_IMAGES.INQUIRIES 
-        },
+        { label: "Active Tours", value: allTours.filter(t => t.status === 'Confirmed').length, icon: <Palmtree size={24} />, image: TOUR_STAT_IMAGES.ACTIVE_TOURS },
+        { label: "Upcoming",     value: allTours.filter(t => t.status === 'Pending').length,   icon: <Map size={24} />,     image: TOUR_STAT_IMAGES.UPCOMING },
+        { label: "Completed",    value: '89',                                                   icon: <CheckSquare size={24} />, image: TOUR_STAT_IMAGES.COMPLETED },
+        { label: "Inquiries",    value: '12',                                                   icon: <Users size={24} />,   image: TOUR_STAT_IMAGES.INQUIRIES },
     ], [allTours]);
 
-    const getFilterClassName = (status) => {
-        return status === filterStatus ? 'tour-active-navy' : '';
-    }
+    const getFilterClassName = (status) => status === filterStatus ? 'tour-active-navy' : '';
 
     const statusOptions = useMemo(() => {
         const statuses = new Set(allTours.map(t => t.status)); 
         return ['All', ...Array.from(statuses)];
     }, [allTours]);
 
-    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfLastItem  = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentTours = filteredTours.slice(indexOfFirstItem, indexOfLastItem);
-    const totalItems = filteredTours.length;
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentTours     = filteredTours.slice(indexOfFirstItem, indexOfLastItem);
+    const totalItems       = filteredTours.length;
+    const startIndex       = (currentPage - 1) * itemsPerPage;
 
     const handleViewTour = (tour) => {
         setSelectedTour(tour);
@@ -333,30 +325,54 @@ const TourArrangements = () => {
         setTimeout(() => setSelectedTour(null), 200);
     };
 
-    const handleConfirmTour = () => {
+    // ================== CONFIRM / CANCEL (REAL BACKEND) ==================
+    const handleConfirmTour = async () => {
         if (!selectedTour) return;
-        
-        setAllTours(prev => 
-            prev.map(t => t.id === selectedTour.id ? { ...t, status: 'Confirmed' } : t)
-        );
-        
-        alert(`Tour ${selectedTour.id} confirmed!`);
-        handleCloseTourModal();
+        try {
+            const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${selectedTour.mongoId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'confirmed' })
+            });
+
+            if (!res.ok) throw new Error();
+
+            const updatedStatus = 'Confirmed';
+            setAllTours(prev => prev.map(t => 
+                t.id === selectedTour.id ? { ...t, status: updatedStatus } : t
+            ));
+            // Update selectedTour so the modal immediately reflects the new status
+            setSelectedTour(prev => prev ? { ...prev, status: updatedStatus } : prev);
+        } catch (err) {
+            alert("❌ Failed to confirm tour");
+        }
     };
 
-    const handleCancelTour = () => {
+    const handleCancelTour = async () => {
         if (!selectedTour) return;
-        
         if (!window.confirm(`Cancel tour for ${selectedTour.client}?`)) return;
-        
-        setAllTours(prev => 
-            prev.map(t => t.id === selectedTour.id ? { ...t, status: 'Cancelled' } : t)
-        );
-        
-        alert(`Tour ${selectedTour.id} cancelled!`);
-        handleCloseTourModal();
+
+        try {
+            const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${selectedTour.mongoId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'cancelled' })
+            });
+
+            if (!res.ok) throw new Error();
+
+            const updatedStatus = 'Cancelled';
+            setAllTours(prev => prev.map(t => 
+                t.id === selectedTour.id ? { ...t, status: updatedStatus } : t
+            ));
+            // Update selectedTour so the modal immediately reflects cancelled status
+            setSelectedTour(prev => prev ? { ...prev, status: updatedStatus } : prev);
+        } catch (err) {
+            alert("❌ Failed to cancel tour");
+        }
     };
 
+    // ================== ARCHIVE (REAL BACKEND) ==================
     const handleArchiveTour = async (id) => {
         if (!window.confirm("Are you sure you want to archive this tour booking?")) return;
         
@@ -370,10 +386,7 @@ const TourArrangements = () => {
 
             if (data.success) {
                 alert("✅ Tour booking archived successfully!");
-                // Remove from current table
-                setAllTours(prev => prev.filter(t => t.id !== id));
-                
-                // Optional: Close modal if open
+                setAllTours(prev => prev.filter(t => t.mongoId !== id));
                 if (isTourModalOpen) handleCloseTourModal();
             } else {
                 alert("❌ Failed to archive tour booking");
@@ -384,14 +397,7 @@ const TourArrangements = () => {
         }
     };
 
-    const refreshData = () => {
-        // Refresh function for when new tour is added
-        console.log('Refreshing tour data...');
-    };
-
     // --- RENDER LOGIC ---
-
-    // 1. KUNG NAKA MAINTENANCE MODE
     if (MAINTENANCE_MODE) {
         return (
             <div className="tour-page">
@@ -403,7 +409,6 @@ const TourArrangements = () => {
         );
     }
 
-    // 2. KUNG LIVE NA ANG SYSTEM (Normal View)
     return (
         <div className="tour-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
@@ -459,7 +464,6 @@ const TourArrangements = () => {
                                 filteredToursCount={filteredTours.length}
                                 currentTours={currentTours}
                                 handleViewTour={handleViewTour}
-                                handleArchiveTour={handleArchiveTour}
                                 startIndex={startIndex}
                             />
                         </table>
@@ -476,13 +480,14 @@ const TourArrangements = () => {
                 </div>
             </main>
 
-            {/* MODALS - Hidden during maintenance */}
+            {/* MODALS */}
             {isTourModalOpen && selectedTour && (
                 <TourModal
                     tour={selectedTour}
                     onClose={handleCloseTourModal}
                     onConfirm={handleConfirmTour}
                     onCancel={handleCancelTour}
+                    onArchive={() => handleArchiveTour(selectedTour.mongoId)}
                 />
             )}
 

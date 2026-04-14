@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, CheckCircle, User, Mail, MapPin, Calendar, Users, Phone } from "lucide-react";
+import { X, CheckCircle } from "lucide-react";
 import "./TourModals.css";
 
 export const TourApplicationModal = ({ isOpen, onClose, refreshData }) => {
@@ -33,13 +33,40 @@ export const TourApplicationModal = ({ isOpen, onClose, refreshData }) => {
     }
 
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setStep(2);
+
+    try {
+      const payload = {
+        packageName: formData.packageName,
+        fullName: formData.clientName,
+        email: formData.email,
+        phone: formData.phone || '',
+        startDate: formData.travelDate,
+        endDate: formData.returnDate,
+        pax: {
+          adult: parseInt(formData.adults) || 1,
+          children: parseInt(formData.children) || 0,
+        },
+        message: formData.specialRequests || '',
+      };
+
+      const res = await fetch('https://wanderwaveph.onrender.com/api/tour-bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setStep(2);
+        if (refreshData) refreshData();
+      } else {
+        alert('Failed to create tour booking');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error creating tour booking');
+    } finally {
       setIsLoading(false);
-      if (refreshData) refreshData();
-    }, 1500);
+    }
   };
 
   const resetAndClose = () => {

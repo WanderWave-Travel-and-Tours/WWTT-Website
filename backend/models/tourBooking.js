@@ -29,10 +29,14 @@ const FlightDetailsSchema = new mongoose.Schema({
 
 const TourBookingSchema = new mongoose.Schema({
   // ── Tour reference ─────────────────────────────────────────────────
-  tourId:          { type: mongoose.Schema.Types.ObjectId, ref: 'Tour', required: true },
+  tourId:          { type: mongoose.Schema.Types.ObjectId, ref: 'Tour', required: false }, // optional for walk-in/manual
   packageId:       { type: mongoose.Schema.Types.ObjectId, ref: 'Tour' }, // alias kept for compat
   packageName:     { type: String, required: true },
   bookingType:     { type: String, default: 'tour' },
+
+  // ── Manual / Walk-in flags ─────────────────────────────────────────
+  isManual:        { type: Boolean, default: false },
+  bookingSource:   { type: String, enum: ['online', 'walkin', 'manual'], default: 'online' },
 
   // ── Dates & Duration ──────────────────────────────────────────────
   startDate:       { type: String },
