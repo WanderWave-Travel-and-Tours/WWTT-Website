@@ -309,6 +309,16 @@ const BookingFormModal = ({
 }) => {
   const toast = useToast();
   const [localLoading, setLocalLoading] = useState(false);
+  const overlayRef = useRef(null);
+
+  // ✅ FIX: Force the overlay to scroll on mouse wheel. This is needed because
+  // parent containers (e.g. .pb-unified-card) have overflow:hidden which
+  // swallows wheel events before they reach the fixed overlay.
+  const handleOverlayWheel = (e) => {
+    if (overlayRef.current) {
+      overlayRef.current.scrollTop += e.deltaY;
+    }
+  };
 
   // ============================================
   // CONFIRMATION MODAL STATE
@@ -595,7 +605,7 @@ const BookingFormModal = ({
   };
 
   return (
-    <div className="bfm-overlay">
+    <div className="bfm-overlay" ref={overlayRef} onWheel={handleOverlayWheel}>
       <div className="bfm-modal-card">
         
         {/* Updated Close Button with X Icon */}
