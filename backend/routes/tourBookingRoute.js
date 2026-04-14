@@ -4,6 +4,7 @@ const router     = express.Router();
 const multer     = require('multer');
 const path       = require('path');
 const fs         = require('fs');
+const axios      = require('axios');
 const TourBooking = require('../models/tourBooking');
 
 // ── Multer setup ─────────────────────────────────────────────────────────────
@@ -357,6 +358,84 @@ router.delete('/:id', async (req, res) => {
   } catch (err) {
     console.error('   ❌ Delete error:', err.message);
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ============================================
+// POST /abandoned — ABANDONED BOOKING + GHL WEBHOOK (Tour version)
+// ============================================
+router.post('/abandoned', async (req, res) => {
+  try {
+    const {
+      existingBookingId,
+      checkoutUrl,
+      email,
+      fullName,
+      packageName,
+      totalAmount,
+      startDate,
+      endDate,
+      pax,
+      paymentType,
+    } = req.body;
+
+    if (!existingBookingId) {
+      return res.status(400).json({ success: false, message: 'existingBookingId is required.' });
+    }
+
+    const targetBooking = await TourBooking.findByIdAndUpdate(
+      existingBookingId,
+      { $set: { abandonedAt: new Date(), followUpCount: 0, lastFollowUpAt: null } },
+      { new: true }
+    );
+
+    if (!targetBooking) {
+      return res.status(404).json({ success: false, message: 'Tour booking not found.' });
+    }
+
+    const GHL_ABANDONED_WEBHOOK_URL = process.env.GHL_ABANDONED_BOOKING_WEBHOOK_URL;
+
+    if (GHL_ABANDONED_WEBHOOK_URL) {
+      const nameParts = (fullName || targetBooking.fullName || "").trim().split(" ");
+      const firstName = nameParts[0] || "Guest";
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "User";
+
+      const ghlPayload = {
+        type: 'ABANDONED_BOOKING',
+        event: 'booking_form_submitted',
+        bookingId: targetBooking._id.toString(),
+        first_name: firstName,
+        last_name: lastName,
+        email: email || targetBooking.email || "",
+        phone: targetBooking.phone || "",
+        packageName: packageName || targetBooking.packageName,
+        totalAmount: totalAmount || targetBooking.totalAmount,
+        startDate: startDate || targetBooking.startDate,
+        endDate: endDate || targetBooking.endDate,
+        pax: pax || targetBooking.pax?.adult || 1,
+        paymentLink: checkoutUrl || '',
+        paymentType: paymentType || (targetBooking.paymentType === 'partial' ? 'Partial Payment' : 'Full Payment'),
+        timestamp: new Date().toISOString(),
+        source: 'WanderWave Tour Booking Form',
+      };
+
+      await axios.post(GHL_ABANDONED_WEBHOOK_URL, ghlPayload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000,
+      }).catch(err => console.error('⚠️ GHL abandoned webhook failed:', err.message));
+
+      console.log('✅ GHL abandoned webhook fired for tour booking:', targetBooking._id);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Tour abandoned booking tracked and GHL notified.',
+      bookingId: targetBooking._id,
+    });
+
+  } catch (error) {
+    console.error('❌ Tour abandoned booking error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

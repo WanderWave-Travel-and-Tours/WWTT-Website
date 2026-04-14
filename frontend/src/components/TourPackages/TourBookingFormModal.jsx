@@ -210,7 +210,7 @@ const TourBookingFormModal = ({
 
   const handleFormSubmit = (e) => { e.preventDefault(); handleNextPassenger(e); };
 
-  // ── Confirm booking → POST to /api/bookings ──────────────────────────────
+  // ── Confirm booking → POST to /api/tour-bookings ─────────────────────────
   const handleConfirmBooking = async () => {
     setShowConfirmModal(false); setPendingSubmit(false); setLocalLoading(true);
     try {
@@ -269,7 +269,8 @@ const TourBookingFormModal = ({
       toast.info('Connecting to server, please wait...');
       try { await axios.get(RENDER_BASE, { timeout: 25000 }); } catch (_) {}
 
-      const postBooking = () => axios.post(`${RENDER_BASE}/api/bookings`, formData, {
+      // ✅ NOW USING TOUR BOOKING ROUTE
+      const postBooking = () => axios.post(`${RENDER_BASE}/api/tour-bookings`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }, timeout: 90000
       });
 
@@ -281,7 +282,7 @@ const TourBookingFormModal = ({
         else throw firstErr;
       }
 
-      if (!bookingRes.data?.success) throw new Error(bookingRes.data?.message || 'Failed to create booking');
+      if (!bookingRes.data?.success) throw new Error(bookingRes.data?.message || 'Failed to create tour booking');
       const bookingId = bookingRes.data.bookingId || bookingRes.data.data?._id;
       if (!bookingId) throw new Error('Booking was created but no booking ID was returned. Please contact support.');
 

@@ -121,7 +121,9 @@ const PaymentSuccess = () => {
             remainingBalance: booking.remainingBalance,
             email: booking.email,
             dateLabel: "Travel Dates",
-            dateValue: `${booking.startDate} - ${booking.endDate}`,
+            dateValue: `${booking.startDate} - ${booking.endDate}`,   // ← pinanatili para sa UI at receipt
+            startDate: booking.startDate,          // ← BAGONG FIELD (para sa webhook)
+            endDate: booking.endDate,              // ← BAGONG FIELD (para sa webhook)
             status: booking.status,
             isPartial: isPartialPayment,
             paymentType: booking.paymentType,
@@ -162,6 +164,8 @@ const PaymentSuccess = () => {
                 email: inquiry.email,
                 dateLabel: "Date Submitted",
                 dateValue: new Date(inquiry.createdAt).toLocaleDateString(),
+                startDate: null,      // inquiry walang travel date
+                endDate: null,
                 status: inquiry.status,
                 isPartial: false,
                 fullName: inquiry.fullName,
@@ -175,12 +179,36 @@ const PaymentSuccess = () => {
     }
   };
 
+  // ✅ REUSABLE WEBHOOK TRIGGER (gamitin sa lahat ng buttons)
+  const triggerWebhook = async (eventName) => {
+    if (!details) return;
+
+    try {
+      await fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/2537b614-8763-4705-8aa7-295d73a6bdf5', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: eventName,                    // ← magkakaiba na ang event name
+          timestamp: new Date().toISOString(),
+          user: user || null,
+          details: details,                    // ← may startDate at endDate na
+          type: type || null
+        })
+      });
+      console.log(`✅ Webhook triggered: ${eventName}`);
+    } catch (err) {
+      console.error('Webhook error:', err);
+    }
+  };
+
   // ✅ DOWNLOAD RECEIPT FUNCTION
-  const handleDownloadReceipt = () => {
+  const handleDownloadReceipt = async () => {
     if (!details) {
       alert('No transaction details available');
       return;
     }
+
+    await triggerWebhook('download_receipt_clicked');   // ← bagong event
 
     // Generate HTML receipt
     const receiptHTML = `
@@ -358,30 +386,21 @@ const PaymentSuccess = () => {
   };
 
   // ✅ HANDLE DASHBOARD NAVIGATION - Auto login if user exists
-  const handleGoToDashboard = () => {
+  const handleGoToDashboard = async () => {
+    await triggerWebhook('go_to_dashboard_clicked');   // ← bagong event
+
     if (user) {
-      // User session exists, go directly to dashboard
       navigate('/dashboard');
     } else {
-      // No user session, redirect to login
       alert('Please login to view your dashboard');
       navigate('/login');
     }
   };
  
   // ✅ BACK TO HOME WITH WEBHOOK TRIGGER
-  const handleBackToHome = () => {
-    fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/2537b614-8763-4705-8aa7-295d73a6bdf5', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'back_to_home_clicked',
-        timestamp: new Date().toISOString(),
-        user: user || null,
-        details: details || null,
-        type: type || null
-      })
-    }).catch(err => console.error('Webhook error:', err));
+  const handleBackToHome = async () => {
+    await triggerWebhook('back_to_home_clicked');      // ← pinanatili ang event name
+
     navigate('/');
   };
 

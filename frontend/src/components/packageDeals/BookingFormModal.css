@@ -10,12 +10,14 @@
   background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 99999;
   padding: 20px;
-  padding-top: 50px;
-  overflow-y: auto;
+  /* ✅ FIX: overflow-y scroll on overlay allows mouse wheel to scroll
+     the entire modal when content is taller than the viewport */
+  overflow-y: scroll;
+  overscroll-behavior: contain;
   animation: bfmFadeIn 0.2s ease-out;
 }
 
@@ -33,10 +35,12 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   height: auto;
-  max-height: calc(100vh - 80px);
+  /* ✅ FIX: Remove max-height and overflow:hidden so the card grows to
+     fit all content. Scrolling is handled by the overlay instead, which
+     lets the mouse wheel work naturally everywhere on the modal. */
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* ✅ FIX: auto margins centre the card inside the flex column */
   margin: auto;
 }
 
@@ -205,30 +209,31 @@
 
 /* --- Scrollable Form Area --- */
 .bfm-form-wrapper {
-  flex: 1; 
-  overflow-y: auto; 
-  overscroll-behavior: contain; 
+  flex: 1;
+  /* ✅ FIX: The overlay now handles all scrolling, so this wrapper
+     just renders its full content naturally. */
+  overscroll-behavior: contain;
   padding: 20px 24px;
   background: #f8fafc;
 }
 
-/* Custom Scrollbar */
-.bfm-form-wrapper::-webkit-scrollbar {
+/* Scrollbar for the overlay */
+.bfm-overlay::-webkit-scrollbar {
   width: 6px;
 }
 
-.bfm-form-wrapper::-webkit-scrollbar-track {
-  background: #e2e8f0;
+.bfm-overlay::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 }
 
-.bfm-form-wrapper::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+.bfm-overlay::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
 
-.bfm-form-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.bfm-overlay::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* --- Progress Section --- */
@@ -926,7 +931,6 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .bfm-overlay {
     padding: 16px;
-    padding-top: 50px;
   }
 
   .bfm-modal-card {
@@ -957,9 +961,9 @@
     border-radius: 12px 12px 0 0;
     width: 100%;
     height: auto;
-    max-height: calc(100vh - 40px);
     max-width: 100%;
     margin-top: 0;
+    /* ✅ FIX: No max-height restriction on mobile either — overlay scrolls */
   }
 
   .bfm-modal-header {
