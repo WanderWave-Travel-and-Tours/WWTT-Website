@@ -3,253 +3,267 @@ import axios from 'axios';
 import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-import './TourBookingFormModal.css';
+// Import the same CSS files as BookingFormModal
+import '../packagedeals/BookingFormModal.css';
 import '../packageDeals/PaymentOption.css';
 
-// ── Custom Date Picker — Month/Year dropdowns + day grid ─────────────────────
+// ✅ CUSTOM DATE PICKER COMPONENT - WORKS ON ALL PLATFORMS
 const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) => {
-  const today = new Date();
-  const maxDateObj = maxDate ? new Date(maxDate) : today;
-  const maxYear = maxDateObj.getFullYear();
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(value || '');
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const calendarRef = useRef(null);
+
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return { year, month: month - 1, day };
+  };
+
+  const currentDate = parseDate(selectedDate);
+
+  const maxYear = maxDate ? new Date(maxDate).getFullYear() : new Date().getFullYear();
   const minYear = maxYear - 100;
-
-  const parseValue = (v) => {
-    if (!v) return null;
-    const [y, m, d] = v.split('-').map(Number);
-    return { year: y, month: m - 1, day: d };
-  };
-
-  const parsed = parseValue(value);
-  const [isOpen, setIsOpen]       = useState(false);
-  const [viewMonth, setViewMonth] = useState(parsed?.month ?? today.getMonth());
-  const [viewYear, setViewYear]   = useState(parsed?.year ?? maxYear);
-  // ✅ Fixed: track trigger position so calendar renders via fixed positioning (avoids overflow clipping)
-  const [calendarPos, setCalendarPos] = useState({ top: 0, left: 0, width: 0 });
-
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const weekDays   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-
   const years = [];
-  for (let y = maxYear; y >= minYear; y--) years.push(y);
+  for (let y = maxYear; y >= minYear; y--) {
+    years.push(y);
+  }
 
-  const getDaysInMonth = (m, y) => new Date(y, m + 1, 0).getDate();
-  const getFirstDay    = (m, y) => new Date(y, m, 1).getDay();
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'];
 
-  const formatDate    = (y, m, d) => `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const formatDisplay = (v) => {
-    if (!v) return '';
-    const [y, m, d] = v.split('-');
-    return `${monthNames[parseInt(m) - 1]} ${parseInt(d)}, ${y}`;
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
+
+  const formatDate = (year, month, day) => {
+    const m = String(month + 1).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
+    return `${year}-${m}-${d}`;
   };
 
-  const handleDayClick = (day) => {
-    const formatted = formatDate(viewYear, viewMonth, day);
-    onChange(formatted);
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  };
+
+  const handleDateClick = (day) => {
+    const newDate = formatDate(viewYear, viewMonth, day);
+    setSelectedDate(newDate);
+    onChange({ target: { value: newDate } });
     setIsOpen(false);
   };
 
-  const daysInMonth = getDaysInMonth(viewMonth, viewYear);
-  const firstDay    = getFirstDay(viewMonth, viewYear);
-
-  const triggerRef = useRef(null);
-  const wrapperRef = useRef(null);
-
-  // ✅ Fixed: calculate position from trigger button's bounding rect so calendar is never clipped
-  const handleToggleOpen = () => {
-    if (!isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const calendarWidth = 300;
-      // Flip upward if not enough space below
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const calendarHeight = 320; // approximate
-      const top = spaceBelow >= calendarHeight
-        ? rect.bottom + 6
-        : rect.top - calendarHeight - 6;
-      // Prevent right overflow
-      const left = Math.min(rect.left, window.innerWidth - calendarWidth - 12);
-      setCalendarPos({ top, left, width: calendarWidth });
-    }
-    setIsOpen(o => !o);
+  const previousMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
+    else setViewMonth(viewMonth - 1);
   };
 
-  // Close on outside click
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
+    else setViewMonth(viewMonth + 1);
+  };
+
+  const handleMonthChange = (e) => setViewMonth(parseInt(e.target.value));
+  const handleYearChange = (e) => setViewYear(parseInt(e.target.value));
+
+  const generateCalendar = () => {
+    const daysInMonth = getDaysInMonth(viewMonth, viewYear);
+    const firstDay = getFirstDayOfMonth(viewMonth, viewYear);
+    const days = [];
+
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="bfm-cal-day empty"></div>);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = formatDate(viewYear, viewMonth, day);
+      const isSelected = currentDate &&
+                        currentDate.year === viewYear &&
+                        currentDate.month === viewMonth &&
+                        currentDate.day === day;
+      const isDisabled = maxDate && new Date(dateStr) > new Date(maxDate);
+
+      days.push(
+        <div
+          key={day}
+          className={`bfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+          onClick={() => !isDisabled && handleDateClick(day)}
+        >
+          {day}
+        </div>
+      );
+    }
+
+    return days;
+  };
+
   useEffect(() => {
-    const handler = (e) => {
-      if (
-        wrapperRef.current && !wrapperRef.current.contains(e.target) &&
-        !e.target.closest('.bfm-custom-calendar-portal')
-      ) {
+    const handleClickOutside = (event) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
-    if (isOpen) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Reposition on scroll/resize while open
   useEffect(() => {
-    if (!isOpen) return;
-    const reposition = () => {
-      if (triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        const calendarWidth = 300;
-        const calendarHeight = 320;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const top = spaceBelow >= calendarHeight
-          ? rect.bottom + 6
-          : rect.top - calendarHeight - 6;
-        const left = Math.min(rect.left, window.innerWidth - calendarWidth - 12);
-        setCalendarPos({ top, left, width: calendarWidth });
-      }
-    };
-    window.addEventListener('scroll', reposition, true);
-    window.addEventListener('resize', reposition);
-    return () => {
-      window.removeEventListener('scroll', reposition, true);
-      window.removeEventListener('resize', reposition);
-    };
-  }, [isOpen]);
+    if (value && value !== selectedDate) {
+      setSelectedDate(value);
+      const parsed = parseDate(value);
+      if (parsed) { setViewMonth(parsed.month); setViewYear(parsed.year); }
+    }
+  }, [value]);
 
   return (
-    <div ref={wrapperRef} style={{ position: 'relative' }}>
-      {/* Trigger */}
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={handleToggleOpen}
-        className="bfm-calendar-trigger"
-      >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <CalendarIcon size={16} color="#fc9c1b" />
-          <span className={value ? 'bfm-date-value' : 'bfm-date-placeholder'}>
-            {value ? formatDisplay(value) : placeholder || 'Select date'}
-          </span>
+    <div className="bfm-date-picker-wrapper" ref={calendarRef}>
+      <div className="bfm-calendar-trigger" onClick={() => setIsOpen(!isOpen)}>
+        <span className={selectedDate ? 'bfm-date-value' : 'bfm-date-placeholder'}>
+          {selectedDate ? formatDisplayDate(selectedDate) : (placeholder || 'Select date')}
         </span>
-        <ChevronRight size={14} className="bfm-trigger-icon" style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
-      </button>
+        <CalendarIcon size={16} className="bfm-trigger-icon" />
+      </div>
 
-      {/* ✅ Fixed: Calendar popup uses position:fixed via a portal-like div rendered at document level */}
       {isOpen && (
-        <div
-          className="bfm-custom-calendar bfm-custom-calendar-portal"
-          style={{
-            position: 'fixed',
-            top:  calendarPos.top,
-            left: calendarPos.left,
-            width: calendarPos.width,
-            zIndex: 9999999,
-          }}
-        >
-          {/* Month + Year dropdowns */}
+        <div className="bfm-custom-calendar">
           <div className="bfm-calendar-header">
+            <button type="button" className="bfm-cal-nav-btn" onClick={previousMonth} aria-label="Previous month">
+              <ChevronLeft size={16} />
+            </button>
             <div className="bfm-calendar-selectors">
-              <select
-                className="bfm-month-select"
-                value={viewMonth}
-                onChange={e => setViewMonth(Number(e.target.value))}
-              >
-                {monthNames.map((name, idx) => (
-                  <option key={idx} value={idx}>{name}</option>
+              <select className="bfm-month-select" value={viewMonth} onChange={handleMonthChange}>
+                {monthNames.map((month, idx) => (
+                  <option key={idx} value={idx}>{month}</option>
                 ))}
               </select>
-              <select
-                className="bfm-year-select"
-                value={viewYear}
-                onChange={e => setViewYear(Number(e.target.value))}
-              >
-                {years.map(y => (
-                  <option key={y} value={y}>{y}</option>
+              <select className="bfm-year-select" value={viewYear} onChange={handleYearChange}>
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
                 ))}
               </select>
             </div>
+            <button type="button" className="bfm-cal-nav-btn" onClick={nextMonth} aria-label="Next month">
+              <ChevronRight size={16} />
+            </button>
           </div>
-
-          {/* Weekday headers */}
           <div className="bfm-calendar-weekdays">
-            {weekDays.map(d => (
-              <div key={d} className="bfm-cal-weekday">{d}</div>
-            ))}
+            {weekDays.map(day => <div key={day} className="bfm-cal-weekday">{day}</div>)}
           </div>
-
-          {/* Days grid */}
-          <div className="bfm-calendar-days">
-            {[...Array(firstDay)].map((_, i) => (
-              <div key={`e-${i}`} className="bfm-cal-day empty" />
-            ))}
-            {[...Array(daysInMonth)].map((_, i) => {
-              const day  = i + 1;
-              const dStr = formatDate(viewYear, viewMonth, day);
-              const isSelected = dStr === value;
-              const isDisabled = maxDate && dStr > maxDate;
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => !isDisabled && handleDayClick(day)}
-                  className={`bfm-cal-day${isSelected ? ' selected' : ''}${isDisabled ? ' disabled' : ''}`}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
+          <div className="bfm-calendar-days">{generateCalendar()}</div>
         </div>
       )}
     </div>
   );
 };
 
-// ── Booking Completed Modal ───────────────────────────────────────────────────
+// ✅ BOOKING COMPLETED NOTIFICATION MODAL (NO BUTTONS - AUTO CLOSE)
 const BookingCompletedModal = ({ isOpen, onClose, packageName }) => {
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => onClose(), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '32px', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-        <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#1f2937', marginBottom: '8px' }}>Booking Confirmed!</h3>
-        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '24px' }}>
-          Your booking for <strong>{packageName}</strong> has been submitted successfully.
+    <div className="bfm-overlay" style={{ zIndex: 10001 }}>
+      <div className="bfm-modal-card" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <CheckCircle size={64} color="#22c55e" strokeWidth={2} />
+        </div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+          Booking Completed
+        </h2>
+        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
+          Your booking has been successfully confirmed!
         </p>
-        <button onClick={onClose} style={{ background: '#fc9c1b', color: '#fff', border: 'none', padding: '12px 32px', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer' }}>
-          Close
-        </button>
       </div>
     </div>
   );
 };
 
-// ── Main Component ────────────────────────────────────────────────────────────
 const TourBookingFormModal = ({
-  isOpen, onClose, pkg,
-  currentMonth, selectedDate, getCalculatedDates, monthNames,
-  packageTotal, appliedPromo, discountAmount, finalPackageTotal,
-  selectedFlight, airfareTotal, totalAmount, bookingWithAirfare,
-  isInternationalFlight, requiresID, requiresPassport,
-  passengerStep, totalPassengers, paymentType, setPaymentType,
-  partialAmount, progressPercent, currentPassenger, passengers,
-  handlePassengerChange, handleFileUpload, removeFile,
-  handleNextPassenger, handleBackPassenger, loading,
-  currency = 'PHP', exchangeRate = 58, currencySymbol = '₱',
-  convertPrice,
+  isOpen,
+  onClose,
+  pkg,
+  currentMonth,
+  selectedDate,
+  getCalculatedDates,
+  monthNames,
+  packageTotal,
+  appliedPromo,
+  discountAmount,
+  finalPackageTotal,
+  selectedFlight,
+  airfareTotal,
+  totalAmount,
+  bookingWithAirfare,
+  isInternationalFlight,
+  requiresID,
+  requiresPassport,
+  passengerStep,
+  totalPassengers,
+  progressPercent,
+  currentPassenger,
+  passengers,
+  handlePassengerChange,
+  handleFileUpload,
+  removeFile,
+  handleNextPassenger,
+  handleBackPassenger,
+  // Payment option props
+  paymentType,
+  setPaymentType,
+  partialAmount,
+  loading,
+  // ✅ Currency props
+  currency = 'PHP',
+  exchangeRate = 58,
+  currencySymbol = '₱',
+  // ✅ Additional props
+  selectedRoomType = null,
+  customizationData = null,
 }) => {
   const toast = useToast();
   const [localLoading, setLocalLoading] = useState(false);
+  const overlayRef = useRef(null);
+
+  const handleOverlayWheel = (e) => {
+    if (overlayRef.current) {
+      overlayRef.current.scrollTop += e.deltaY;
+    }
+  };
+
+  // ============================================
+  // CONFIRMATION MODAL STATE
+  // ============================================
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+
+  // ============================================
+  // BOOKING COMPLETED NOTIFICATION MODAL STATE
+  // ============================================
   const [showBookingCompletedModal, setShowBookingCompletedModal] = useState(false);
 
   if (!isOpen) return null;
 
-  const formatCurrency = (amount) => amount.toLocaleString(undefined, {
-    minimumFractionDigits: currency === 'USD' ? 2 : 0,
-    maximumFractionDigits: currency === 'USD' ? 2 : 0
-  });
+  const formatCurrency = (amount) => {
+    return amount.toLocaleString(undefined, {
+      minimumFractionDigits: currency === 'USD' ? 2 : 0,
+      maximumFractionDigits: currency === 'USD' ? 2 : 0,
+    });
+  };
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return '';
     const birthDate = new Date(dateOfBirth);
-    const today     = new Date();
+    const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
@@ -258,163 +272,281 @@ const TourBookingFormModal = ({
 
   const handleDateOfBirthChange = (passengerIndex, dateValue) => {
     handlePassengerChange(passengerIndex, 'dateOfBirth', dateValue);
-    const age = calculateAge(dateValue);
-    if (age !== '') handlePassengerChange(passengerIndex, 'age', age.toString());
+    const calculatedAge = calculateAge(dateValue);
+    if (calculatedAge !== '') {
+      handlePassengerChange(passengerIndex, 'age', calculatedAge.toString());
+    }
   };
 
-  const isLastPassenger    = passengerStep === totalPassengers;
-  const finalAmount        = selectedFlight ? totalAmount : finalPackageTotal;
-  const partialPercentage  = selectedFlight ? 85 : 50;
+  const isLastPassenger = passengerStep === totalPassengers;
+  const finalAmount = selectedFlight ? totalAmount : finalPackageTotal;
+
+  const partialPercentage = selectedFlight ? 85 : 50;
   const partialPercentageText = selectedFlight ? '85%' : '50%';
 
-  const handleFormSubmit = (e) => { e.preventDefault(); handleNextPassenger(e); };
+  // ============================================
+  // HANDLE FORM SUBMISSION WITH CONFIRMATION
+  // ============================================
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    handleNextPassenger(e);
+  };
 
-  // ── Confirm booking → POST to /api/tour-bookings ─────────────────────────
+  // ============================================
+  // CONFIRM TOUR BOOKING ACTION (UPDATED - GAYAHIN SA BOOKINGFORMMODAL)
+  // 1. Create tour booking as PENDING
+  // 2. Create PayMongo checkout session
+  // 3. Fire abandoned booking GHL webhook
+  // 4. Redirect to payment
+  // ============================================
   const handleConfirmBooking = async () => {
-    setShowConfirmModal(false); setPendingSubmit(false); setLocalLoading(true);
+    setShowConfirmModal(false);
+    setPendingSubmit(false);
+    setLocalLoading(true);
+
     try {
+      // ✅ FULL TOUR BOOKING DATA (ginaya ang structure ng BookingFormModal)
       const fullBookingData = {
-        // ✅ Tour-specific identifiers
-        bookingType:  'tour',
-        tourId:       pkg._id || pkg.id,
-        packageId:    pkg._id || pkg.id,     // kept for backend compatibility
-        packageName:  pkg.name || pkg.title,
-        sellerPrice:  pkg.sellerPrice || 0,
-        markup:       pkg.markup || 0,
-        price:        finalPackageTotal,
-        fullName:     (passengers[0]?.firstName || '') + ' ' + (passengers[0]?.lastName || ''),
-        email:        passengers[0]?.email,
-        totalAmount:  finalAmount, finalPackageTotal, packageTotal: finalPackageTotal,
+        packageName: pkg.name || pkg.title || pkg.packageName,
+        tourId: pkg._id || pkg.id,
+        packageId: pkg._id || pkg.id,
+
+        sellerPrice: pkg.sellerPrice || 0,
+        markup: pkg.markup || 0,
+        price: finalPackageTotal,
+
+        fullName: passengers[0]?.firstName + ' ' + (passengers[0]?.lastName || ''),
+        email: passengers[0]?.email,
+
+        totalAmount: finalAmount,
+        finalPackageTotal: finalPackageTotal,
+        packageTotal: finalPackageTotal,
+        packagePrice: finalPackageTotal,
+
         initialPaymentAmount: paymentType === 'full' ? finalAmount : partialAmount,
-        paymentType,
-        startDate: getCalculatedDates().start?.toISOString().split('T')[0],
-        endDate:   getCalculatedDates().end?.toISOString().split('T')[0],
-        duration:  pkg.duration,
+        remainingBalance: paymentType === 'partial' ? finalAmount - partialAmount : 0,
+        paymentType: paymentType,
+
+        startDate: selectedDate,
+        endDate: getCalculatedDates().end.toISOString().split('T')[0],
+        duration: pkg.duration,
+
         pax: { adult: totalPassengers, children: 0, infants: 0 },
+
         passengers: passengers.map((p, i) => ({
           passengerNumber: p.passengerNumber || i + 1,
-          firstName: p.firstName, lastName: p.lastName, email: p.email, phone: p.phone,
-          dateOfBirth: p.dateOfBirth, age: parseInt(p.age) || 0, gender: p.gender || '',
-          address: p.address || '', nationality: p.nationality || 'Filipino',
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          phone: p.phone,
+          dateOfBirth: p.dateOfBirth,
+          age: parseInt(p.age) || 0,
+          gender: p.gender || '',
+          address: p.address || '',
+          nationality: p.nationality || 'Filipino',
         })),
-        selectedFlight:    selectedFlight || null,
-        includesAirfare:   bookingWithAirfare || false,
-        airfareTotal:      airfareTotal || 0,
+
+        // Flight / airfare fields (ginaya ang style ng BookingFormModal)
+        includesAirfare: bookingWithAirfare || false,
+        airfareTotal: airfareTotal || 0,
         flightDetails: selectedFlight ? {
-          airline:       selectedFlight.airline?.name || selectedFlight.airline || '',
-          flightNumber:  selectedFlight.flightNumber || '',
-          route:         `${selectedFlight.departure?.iataCode || ''} → ${selectedFlight.arrival?.iataCode || ''}`,
-          departureTime: selectedFlight.departure?.at || selectedFlight.departureTime || '',
-          arrivalTime:   selectedFlight.arrival?.at || selectedFlight.arrivalTime || '',
+          airline: selectedFlight.airline?.name || selectedFlight.airline || '',
+          flightNumber: selectedFlight.flightNumber || 'N/A',
+          departure: selectedFlight.departure || null,
+          arrival: selectedFlight.arrival || null,
+          duration: selectedFlight.duration || null,
+          stops: selectedFlight.stops || 0,
+          price: airfareTotal || 0,
           isInternational: isInternationalFlight || false,
         } : null,
-        // No hotel fields for tours
-        isCustomized:          false,
-        customizedInclusions:  [],
-        promoCode:     appliedPromo?.code || null,
-        promoId:       appliedPromo?._id || appliedPromo?.id || null,
+
+        // Promo fields
+        promoCode: appliedPromo?.code || null,
+        promoId: appliedPromo?._id || appliedPromo?.id || null,
         discountAmount: discountAmount || 0,
-        currency, timerExpiredAtBooking: false, priceType: 'discounted', appliedMarkup: 0,
+
+        bookingSource: 'online',
+        timerExpiredAtBooking: false,
+        priceType: 'discounted',
+        appliedMarkup: 0,
+        originalPackagePrice: pkg.sellerPrice || finalPackageTotal,
+        isCustomized: false,
+        customizedInclusions: [],
       };
 
+      // ✅ FormData for files + JSON
       const formData = new FormData();
       formData.append('bookingData', JSON.stringify(fullBookingData));
-      passengers.forEach((p, i) => {
-        if (p.idFile instanceof File)       formData.append(`idFile_${i}`, p.idFile);
-        if (p.passportFile instanceof File) formData.append(`passportFile_${i}`, p.passportFile);
+
+      passengers.forEach((passenger, index) => {
+        if (passenger.idFile instanceof File) {
+          formData.append(`idFile_${index}`, passenger.idFile);
+        }
+        if (passenger.passportFile instanceof File) {
+          formData.append(`passportFile_${index}`, passenger.passportFile);
+        }
       });
 
-      const RENDER_BASE = 'https://wanderwaveph.onrender.com';
-      toast.info('Connecting to server, please wait...');
-      try { await axios.get(RENDER_BASE, { timeout: 25000 }); } catch (_) {}
+      const API_BASE = import.meta.env.VITE_API_URL ||
+        (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
+      const baseUrl = API_BASE.replace(/\/+$/, '');
 
-      // ✅ NOW USING TOUR BOOKING ROUTE
-      const postBooking = () => axios.post(`${RENDER_BASE}/api/tour-bookings`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }, timeout: 90000
+      // ✅ Tour-specific endpoints
+      const bookingUrl  = baseUrl.endsWith('/api') ? `${baseUrl}/tour-bookings`           : `${baseUrl}/api/tour-bookings`;
+      const paymentUrl  = baseUrl.endsWith('/api') ? `${baseUrl}/payment/create-intent`    : `${baseUrl}/api/payment/create-intent`;
+      const abandonedUrl = baseUrl.endsWith('/api') ? `${baseUrl}/tour-bookings/abandoned` : `${baseUrl}/api/tour-bookings/abandoned`;
+      const pingUrl     = baseUrl.endsWith('/api') ? baseUrl.replace(/\/api$/, '')         : baseUrl;
+
+      // ✅ STEP 1: Wake up Render server (same as BookingFormModal)
+      console.log('Waking up server...');
+      toast.info('Connecting to server, please wait...');
+      try {
+        await axios.get(pingUrl, { timeout: 25000 });
+      } catch (_) {}
+
+      // ✅ STEP 2: CREATE TOUR BOOKING (PENDING) with retry (same as BookingFormModal)
+      console.log('Creating tour booking as PENDING...');
+
+      const postBooking = () => axios.post(bookingUrl, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 90000,
       });
 
       let bookingRes;
-      try { bookingRes = await postBooking(); }
-      catch (firstErr) {
-        const isRetryable = firstErr.code === 'ECONNABORTED' || firstErr.message?.includes('timeout') || firstErr.message?.includes('Network Error');
-        if (isRetryable) { toast.info('Server is starting up, retrying...'); await new Promise(r => setTimeout(r, 4000)); bookingRes = await postBooking(); }
-        else throw firstErr;
+      try {
+        bookingRes = await postBooking();
+      } catch (firstErr) {
+        const isRetryable =
+          firstErr.code === 'ECONNABORTED' ||
+          firstErr.message?.includes('timeout') ||
+          firstErr.message?.includes('Network Error');
+        if (isRetryable) {
+          console.warn('First attempt failed, retrying once...');
+          toast.info('Server is starting up, retrying...');
+          await new Promise(r => setTimeout(r, 4000));
+          bookingRes = await postBooking();
+        } else {
+          throw firstErr;
+        }
       }
 
-      if (!bookingRes.data?.success) throw new Error(bookingRes.data?.message || 'Failed to create tour booking');
-      const bookingId = bookingRes.data.bookingId || bookingRes.data.data?._id;
-      if (!bookingId) throw new Error('Booking was created but no booking ID was returned. Please contact support.');
+      if (!bookingRes.data?.success) {
+        throw new Error(bookingRes.data?.message || 'Failed to create tour booking');
+      }
 
+      const bookingId = bookingRes.data.bookingId || bookingRes.data.data?._id;
+
+      if (!bookingId) {
+        throw new Error('Tour booking was created but no booking ID was returned. Please contact support.');
+      }
+
+      console.log('✅ Tour booking created (pending) → ID:', bookingId);
+
+      // ✅ STEP 3: CREATE PAYMENT CHECKOUT SESSION
       const amountToPay = paymentType === 'full' ? finalAmount : partialAmount;
-      const paymentRes  = await axios.post(`${RENDER_BASE}/api/payment/create-intent`, {
-        bookingId, paymentType, paymentAmount: amountToPay
+      const paymentRes = await axios.post(paymentUrl, {
+        bookingId: bookingId,
+        bookingType: 'tour',
+        paymentType: paymentType,
+        paymentAmount: amountToPay,
       }, { timeout: 60000 });
 
-      if (paymentRes.data.success && paymentRes.data.checkoutUrl) {
-        // ==================== NEW: GHL ABANDONED WEBHOOK TRIGGER ====================
-        try {
-          await axios.post(`${RENDER_BASE}/api/tour-bookings/abandoned`, {
-            existingBookingId: bookingId,
-            checkoutUrl: paymentRes.data.checkoutUrl,
-            email: fullBookingData.email,
-            fullName: fullBookingData.fullName,
-            packageName: fullBookingData.packageName,
-            totalAmount: finalAmount,
-            startDate: fullBookingData.startDate,
-            endDate: fullBookingData.endDate,
-            pax: fullBookingData.pax.adult || totalPassengers,
-            paymentType: paymentType === 'full' ? 'Full Payment' : 'Partial Payment',
-          });
-          console.log('✅ Tour abandoned webhook triggered successfully');
-        } catch (abErr) {
-          console.warn('⚠️ Failed to trigger abandoned webhook (non-fatal):', abErr.message);
-          // Do NOT block the user flow
-        }
-        // ============================================================================
-
-        toast.success('Redirecting to secure payment page...');
-        if (paymentRes.data.checkoutSessionId) sessionStorage.setItem('pendingCheckoutSessionId', paymentRes.data.checkoutSessionId);
-        onClose();
-        sessionStorage.setItem('lastBookingType', 'tour');
-        window.location.href = paymentRes.data.checkoutUrl;
-      } else {
+      if (!paymentRes.data.success || !paymentRes.data.checkoutUrl) {
         throw new Error('No checkout URL returned');
       }
+
+      const { checkoutUrl, checkoutSessionId } = paymentRes.data;
+
+      // ✅ STEP 4: FIRE ABANDONED BOOKING GHL WEBHOOK (ITO YUNG NAWAWALA KANINA)
+      // Gayahin ang pattern ng BookingFormModal + extra safety
+      try {
+        await axios.post(abandonedUrl, {
+          existingBookingId: bookingId,
+          checkoutUrl: checkoutUrl,
+          email: fullBookingData.email,
+          fullName: fullBookingData.fullName,
+          packageName: fullBookingData.packageName,
+          totalAmount: fullBookingData.totalAmount,
+          startDate: fullBookingData.startDate,
+          endDate: fullBookingData.endDate,
+          pax: fullBookingData.pax?.adult || totalPassengers,
+          paymentType: paymentType === 'full' ? 'Full Payment' : 'Partial Payment',
+        }, { timeout: 10000 });
+        console.log('✅ Abandoned tour booking tracking fired for ID:', bookingId);
+      } catch (abandonedErr) {
+        console.warn('⚠️ Abandoned tour booking tracking failed (non-fatal):', abandonedErr.message);
+      }
+
+      // ✅ STEP 5: REDIRECT TO PAYMENT
+      toast.success('Redirecting to secure payment page...');
+      if (checkoutSessionId) {
+        sessionStorage.setItem('pendingCheckoutSessionId', checkoutSessionId);
+      }
+      onClose();
+      window.location.href = checkoutUrl;
+
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || 'Failed to create booking');
-    } finally { setLocalLoading(false); }
+      console.error('Tour Booking/Payment creation error:', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to create tour booking');
+    } finally {
+      setLocalLoading(false);
+    }
   };
 
-  const handleCancelConfirmation  = () => { setShowConfirmModal(false); setPendingSubmit(false); };
-  const handleCloseBookingCompleted = () => { setShowBookingCompletedModal(false); onClose(); };
+  // ============================================
+  // CANCEL CONFIRMATION
+  // ============================================
+  const handleCancelConfirmation = () => {
+    setShowConfirmModal(false);
+    setPendingSubmit(false);
+  };
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ============================================
+  // CLOSE BOOKING COMPLETED MODAL & REDIRECT
+  // ============================================
+  const handleCloseBookingCompleted = () => {
+    setShowBookingCompletedModal(false);
+    onClose();
+  };
+
   return (
-    <div className="bfm-overlay">
+    <div className="bfm-overlay" ref={overlayRef} onWheel={handleOverlayWheel}>
       <div className="bfm-modal-card">
 
-        <button className="bfm-close-btn" onClick={onClose} aria-label="Close Modal">
+        {/* Close Button */}
+        <button
+          className="bfm-close-btn"
+          onClick={onClose}
+          aria-label="Close Modal"
+        >
           <X size={20} strokeWidth={2.5} />
         </button>
 
-        {/* HEADER */}
+        {/* PREMIUM HEADER SECTION */}
         <div className="bfm-modal-header">
-          <img src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" alt="Wanderwave Logo" className="bfm-modal-logo" />
+          <img
+            src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
+            alt="Wanderwave Logo"
+            className="bfm-modal-logo"
+          />
+
           <h2 className="bfm-modal-title">Your Adventure Awaits!</h2>
           <p className="bfm-modal-subtitle">
-            Please complete your details below. We'll secure your spot for <strong>{pkg.title || pkg.name}</strong> instantly.
+            Please complete your details below. We'll secure your spot for <strong>{pkg.name}</strong> instantly.
           </p>
 
+          {/* TRIP SUMMARY CARDS */}
           <div className="bfm-trip-summary">
             <div className="bfm-summary-item">
               <span className="bfm-summary-label">Travel Dates</span>
               <strong className="bfm-summary-value">
-                {monthNames[currentMonth.getMonth()]} {selectedDate} - {getCalculatedDates().end?.getDate()}, {currentMonth.getFullYear()}
+                {monthNames[currentMonth.getMonth()]} {selectedDate} - {getCalculatedDates().end.getDate()}, {currentMonth.getFullYear()}
               </strong>
               <span className="bfm-summary-subtext">
                 ({parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1)} days trip)
               </span>
             </div>
+
             <div className="bfm-summary-item">
               <span className="bfm-summary-label">Package Price</span>
               <strong className="bfm-summary-value bfm-price">
@@ -425,173 +557,281 @@ const TourBookingFormModal = ({
                     </span>
                     {currencySymbol}{formatCurrency(finalPackageTotal)}
                   </>
-                ) : `${currencySymbol}${formatCurrency(packageTotal)}`}
+                ) : (
+                  `${currencySymbol}${formatCurrency(packageTotal)}`
+                )}
               </strong>
               {appliedPromo && (
                 <span className="bfm-summary-subtext" style={{ color: '#10b981', fontWeight: '600' }}>
-                  Promo applied: -{currencySymbol}{formatCurrency(discountAmount)}
+                  {appliedPromo.code} applied (-{currencySymbol}{formatCurrency(discountAmount)})
                 </span>
               )}
             </div>
+
+            {selectedFlight && (
+              <>
+                <div className="bfm-summary-item">
+                  <span className="bfm-summary-label">
+                    <Plane size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                    Airfare ({selectedFlight.airline.name})
+                  </span>
+                  <strong className="bfm-summary-value bfm-accent-color">
+                    {currencySymbol}{formatCurrency(airfareTotal)}
+                  </strong>
+                  <span className="bfm-summary-subtext">
+                    {selectedFlight.departure?.iataCode} → {selectedFlight.arrival?.iataCode}
+                  </span>
+                </div>
+
+                <div className="bfm-summary-item bfm-grand-total">
+                  <span className="bfm-summary-label">Grand Total</span>
+                  <strong className="bfm-summary-value bfm-grand-total-value">
+                    {currencySymbol}{formatCurrency(totalAmount)}
+                  </strong>
+                </div>
+              </>
+            )}
           </div>
+
+          {/* DOCUMENT REQUIREMENTS */}
+          {bookingWithAirfare && (
+            <div className={`bfm-doc-req-box ${isInternationalFlight ? '' : 'bfm-domestic'}`}>
+              <strong>Required Documents:</strong>
+              {isInternationalFlight ? ' Valid Passport for all passengers' : ' Valid ID for all passengers'}
+            </div>
+          )}
         </div>
 
-        {/* PROGRESS BAR */}
-        {totalPassengers > 1 && (
+        {/* SCROLLABLE FORM CONTENT */}
+        <div className="bfm-form-wrapper">
+
+          {/* PROGRESS SECTION */}
           <div className="bfm-progress-section">
-            <div className="bfm-progress-bar">
-              <div className="bfm-progress-fill" style={{ width: `${progressPercent}%` }} />
+            <div className="bfm-progress-header">
+              <span className="bfm-progress-label">
+                Passenger {passengerStep} of {totalPassengers}
+                {passengerStep === 1 && <span className="bfm-primary-badge">Primary</span>}
+              </span>
+              <span className="bfm-progress-percent">{progressPercent}% Complete</span>
             </div>
-            <p className="bfm-progress-text">Passenger {passengerStep} of {totalPassengers}</p>
+            <div className="bfm-progress-bar-container">
+              <div className="bfm-progress-bar-fill" style={{ width: `${progressPercent}%` }} />
+            </div>
           </div>
-        )}
 
-        {/* FORM — ✅ This is the ONLY scrollable container; scroll works anywhere inside it */}
-        <form id="bfm-passenger-form" onSubmit={handleFormSubmit} className="bfm-form">
-          <div className="bfm-form-body">
-
-            <h3 className="bfm-passenger-title">
-              {totalPassengers > 1 ? `Passenger ${passengerStep} Details` : 'Passenger Details'}
-            </h3>
-
-            {/* Name row */}
-            <div className="bfm-form-row">
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">First Name *</label>
-                <input type="text" className="bfm-form-input" required
-                  placeholder="Juan"
-                  value={currentPassenger?.firstName || ''}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'firstName', e.target.value)} />
-              </div>
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">Last Name *</label>
-                <input type="text" className="bfm-form-input" required
-                  placeholder="dela Cruz"
-                  value={currentPassenger?.lastName || ''}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'lastName', e.target.value)} />
-              </div>
+          <form className="bfm-form" onSubmit={handleFormSubmit}>
+            <div className="bfm-form-section-header">
+              <span className="bfm-passenger-badge">Passenger {passengerStep}</span>
+              {passengerStep === 1 && <span className="bfm-primary-contact-label">Primary Contact</span>}
             </div>
 
-            {/* Email / Phone */}
-            {passengerStep === 1 && (
-              <div className="bfm-form-row">
-                <div className="bfm-form-group">
-                  <label className="bfm-form-label">Email Address *</label>
-                  <input type="email" className="bfm-form-input" required
-                    placeholder="juan@email.com"
-                    value={currentPassenger?.email || ''}
-                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'email', e.target.value)} />
-                </div>
-                <div className="bfm-form-group">
-                  <label className="bfm-form-label">Phone Number *</label>
-                  <input type="tel" className="bfm-form-input" required
-                    placeholder="09XXXXXXXXX"
-                    value={currentPassenger?.phone || ''}
-                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'phone', e.target.value)} />
-                </div>
-              </div>
-            )}
+            {/* FORM GRID */}
+            <div className="bfm-form-grid">
 
-            {/* DOB / Age */}
-            <div className="bfm-form-row">
               <div className="bfm-form-group">
-                <label className="bfm-form-label">Date of Birth *</label>
-                <CustomDatePicker
-                  value={currentPassenger?.dateOfBirth || ''}
-                  onChange={(val) => handleDateOfBirthChange(passengerStep - 1, val)}
-                  maxDate={new Date().toISOString().split('T')[0]}
-                  required placeholder="Select date of birth"
+                <label>First Name <span className="bfm-required">*</span></label>
+                <input
+                  required
+                  type="text"
+                  value={currentPassenger.firstName}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'firstName', e.target.value)}
+                  placeholder="Juan"
                 />
               </div>
+
               <div className="bfm-form-group">
-                <label className="bfm-form-label">Age</label>
-                <input type="number" className="bfm-form-input" min="0" max="120"
+                <label>Last Name <span className="bfm-required">*</span></label>
+                <input
+                  required
+                  type="text"
+                  value={currentPassenger.lastName}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'lastName', e.target.value)}
+                  placeholder="Dela Cruz"
+                />
+              </div>
+
+              <div className="bfm-form-group">
+                <label>Email Address <span className="bfm-required">*</span></label>
+                <input
+                  required
+                  type="email"
+                  value={currentPassenger.email}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'email', e.target.value)}
+                  placeholder="juan@example.com"
+                />
+              </div>
+
+              <div className="bfm-form-group">
+                <label>Phone Number <span className="bfm-required">*</span></label>
+                <input
+                  required
+                  type="tel"
+                  value={currentPassenger.phone}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'phone', e.target.value)}
+                  placeholder="0917 123 4567"
+                />
+              </div>
+
+              {/* CUSTOM DATE PICKER */}
+              <div className="bfm-form-group">
+                <label>Date of Birth <span className="bfm-required">*</span></label>
+                <CustomDatePicker
+                  value={currentPassenger.dateOfBirth}
+                  onChange={(e) => handleDateOfBirthChange(passengerStep - 1, e.target.value)}
+                  maxDate={new Date().toISOString().split('T')[0]}
+                  required
+                  placeholder="Select birth date"
+                />
+              </div>
+
+              <div className="bfm-form-group">
+                <label>Age <span className="bfm-required">*</span></label>
+                <input
+                  required
+                  type="number"
+                  value={currentPassenger.age}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)}
                   placeholder="Auto-calculated"
-                  value={currentPassenger?.age || ''}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)} />
+                  min="0"
+                  max="120"
+                  readOnly
+                  style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                />
               </div>
-            </div>
 
-            {/* Gender */}
-            <div className="bfm-form-group">
-              <label className="bfm-form-label">Gender *</label>
-              <select className="bfm-form-input" required
-                value={currentPassenger?.gender || ''}
-                onChange={(e) => handlePassengerChange(passengerStep - 1, 'gender', e.target.value)}>
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            {/* Nationality */}
-            <div className="bfm-form-group">
-              <label className="bfm-form-label">Nationality *</label>
-              <input type="text" className="bfm-form-input" required
-                placeholder="Filipino"
-                value={currentPassenger?.nationality || 'Filipino'}
-                onChange={(e) => handlePassengerChange(passengerStep - 1, 'nationality', e.target.value)} />
-            </div>
-
-            {/* Address */}
-            <div className="bfm-form-group">
-              <label className="bfm-form-label">Address</label>
-              <input type="text" className="bfm-form-input"
-                placeholder="City, Province"
-                value={currentPassenger?.address || ''}
-                onChange={(e) => handlePassengerChange(passengerStep - 1, 'address', e.target.value)} />
-            </div>
-
-            {/* ID / Passport uploads */}
-            {bookingWithAirfare && requiresID && (
               <div className="bfm-form-group">
-                <label className="bfm-form-label">Valid ID * (required for domestic flight)</label>
-                {!currentPassenger?.idFile ? (
-                  <label className="bfm-upload-label">
-                    <input type="file" accept="image/*,.pdf" style={{ display: 'none' }}
-                      onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)} />
-                    <Upload size={20} /> Upload Valid ID
-                  </label>
-                ) : (
-                  <div className="bfm-uploaded-file">
-                    <CheckCircle size={16} color="#10b981" />
-                    <span>{currentPassenger.idFileName}</span>
-                    <button type="button" onClick={() => removeFile(passengerStep - 1, 'id')} className="bfm-remove-file">×</button>
-                  </div>
-                )}
+                <label>Gender <span className="bfm-required">*</span></label>
+                <select
+                  required
+                  value={currentPassenger.gender}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'gender', e.target.value)}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
-            )}
 
-            {bookingWithAirfare && requiresPassport && (
               <div className="bfm-form-group">
-                <label className="bfm-form-label">Passport * (required for international flight)</label>
-                {!currentPassenger?.passportFile ? (
-                  <label className="bfm-upload-label">
-                    <input type="file" accept="image/*,.pdf" style={{ display: 'none' }}
-                      onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)} />
-                    <Upload size={20} /> Upload Passport
-                  </label>
-                ) : (
-                  <div className="bfm-uploaded-file">
-                    <CheckCircle size={16} color="#10b981" />
-                    <span>{currentPassenger.passportFileName}</span>
-                    <button type="button" onClick={() => removeFile(passengerStep - 1, 'passport')} className="bfm-remove-file">×</button>
-                  </div>
-                )}
+                <label>Nationality <span className="bfm-required">*</span></label>
+                <input
+                  required
+                  type="text"
+                  value={currentPassenger.nationality}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'nationality', e.target.value)}
+                  placeholder="Filipino"
+                />
               </div>
-            )}
 
-            {/* PAYMENT OPTIONS (last passenger only) */}
+              <div className="bfm-form-group bfm-full-width">
+                <label>Complete Address <span className="bfm-required">*</span></label>
+                <input
+                  required
+                  type="text"
+                  value={currentPassenger.address}
+                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'address', e.target.value)}
+                  placeholder="123 Main St, Makati City, Metro Manila"
+                />
+              </div>
+
+              {/* ID UPLOAD */}
+              {bookingWithAirfare && requiresID && (
+                <div className="bfm-form-group bfm-full-width">
+                  <label>
+                    Upload Valid ID <span className="bfm-required">*</span>
+                    <span className="bfm-upload-hint">
+                      (Driver's License, UMID, SSS, Postal ID, etc.)
+                    </span>
+                  </label>
+
+                  {currentPassenger.idFileName ? (
+                    <div className="bfm-file-uploaded">
+                      <div className="bfm-file-info">
+                        <CheckCircle size={18} color="#22c55e" />
+                        <span className="bfm-file-name">{currentPassenger.idFileName}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(passengerStep - 1, 'id')}
+                        className="bfm-remove-file-btn"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bfm-file-upload-box">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)}
+                        id={`id-upload-${passengerStep}`}
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor={`id-upload-${passengerStep}`} className="bfm-file-upload-label">
+                        <Upload size={28} color="#94a3b8" />
+                        <span className="bfm-upload-text">Click to upload ID</span>
+                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* PASSPORT UPLOAD */}
+              {bookingWithAirfare && requiresPassport && (
+                <div className="bfm-form-group bfm-full-width">
+                  <label>
+                    Upload Passport <span className="bfm-required">*</span>
+                    <span className="bfm-upload-hint">
+                      (Bio-data page with photo)
+                    </span>
+                  </label>
+
+                  {currentPassenger.passportFileName ? (
+                    <div className="bfm-file-uploaded">
+                      <div className="bfm-file-info">
+                        <CheckCircle size={18} color="#22c55e" />
+                        <span className="bfm-file-name">{currentPassenger.passportFileName}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(passengerStep - 1, 'passport')}
+                        className="bfm-remove-file-btn"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bfm-file-upload-box">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)}
+                        id={`passport-upload-${passengerStep}`}
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor={`passport-upload-${passengerStep}`} className="bfm-file-upload-label">
+                        <Upload size={28} color="#94a3b8" />
+                        <span className="bfm-upload-text">Click to upload Passport</span>
+                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
+            {/* PAYMENT OPTIONS */}
             {isLastPassenger && (
               <div className="bfm-payment-section">
                 <div className="bfm-payment-header">
-                  <Wallet size={22} />
-                  <h3>Choose Payment Plan</h3>
+                  <Wallet size={18} />
+                  <h3>Select Payment Option</h3>
                 </div>
 
                 <div className="bfm-payment-options">
-                  {/* Full Payment */}
                   <div
                     className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
                     onClick={() => setPaymentType('full')}
@@ -601,26 +841,26 @@ const TourBookingFormModal = ({
                         <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
                       </div>
                       <div className="bfm-payment-card-title">
-                        <CreditCard size={20} />
-                        <span>Full Payment</span>
-                        <span className="bfm-recommended-badge">Recommended</span>
+                        <CreditCard size={16} />
+                        <span>Pay in Full</span>
+                        <span className="bfm-recommended-badge">Most Popular</span>
                       </div>
                     </div>
                     <div className="bfm-payment-card-body">
                       <div className="bfm-payment-amount">
                         {currencySymbol}{formatCurrency(finalAmount)}
-                        <span className="bfm-payment-percentage">100%</span>
                       </div>
-                      <p className="bfm-payment-description">Pay the full amount now and you're all set!</p>
+                      <div className="bfm-payment-description">
+                        Complete payment now and secure your booking
+                      </div>
                       <ul className="bfm-payment-benefits">
-                        <li>✅ Booking confirmed immediately</li>
-                        <li>✅ No remaining balance</li>
-                        <li>✅ Priority slot reservation</li>
+                        <li>Instant confirmation</li>
+                        <li>No further payments needed</li>
+                        <li>Priority processing</li>
                       </ul>
                     </div>
                   </div>
 
-                  {/* Partial Payment */}
                   <div
                     className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
                     onClick={() => setPaymentType('partial')}
@@ -630,7 +870,7 @@ const TourBookingFormModal = ({
                         <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
                       </div>
                       <div className="bfm-payment-card-title">
-                        <Wallet size={20} />
+                        <Wallet size={16} />
                         <span>Partial Payment</span>
                         <span className="bfm-flexible-badge">Flexible</span>
                       </div>
@@ -638,21 +878,18 @@ const TourBookingFormModal = ({
                     <div className="bfm-payment-card-body">
                       <div className="bfm-payment-amount">
                         {currencySymbol}{formatCurrency(partialAmount)}
-                        <span className="bfm-payment-percentage">{partialPercentageText} now</span>
+                        <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
                       </div>
-                      <p className="bfm-payment-description">Pay {partialPercentageText} now, rest before your trip.</p>
-                      <ul className="bfm-payment-benefits">
-                        <li>✅ Lower upfront cost</li>
-                        <li>✅ Slot secured immediately</li>
-                        <li>⚠️ Remaining balance due before trip</li>
-                      </ul>
+                      <div className="bfm-payment-description">
+                        Pay {partialPercentageText} now, remaining balance before departure
+                      </div>
                       <div className="bfm-payment-breakdown">
                         <div className="bfm-breakdown-row">
-                          <span>Pay now ({partialPercentageText})</span>
+                          <span>Now ({partialPercentageText}):</span>
                           <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
                         </div>
                         <div className="bfm-breakdown-row">
-                          <span>Remaining balance</span>
+                          <span>Later ({100 - partialPercentage}%):</span>
                           <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
                         </div>
                       </div>
@@ -677,43 +914,50 @@ const TourBookingFormModal = ({
               </div>
             )}
 
-          </div>
-        </form>
+            {/* ACTION BUTTONS */}
+            <div className="bfm-actions">
+              {passengerStep > 1 && (
+                <button
+                  type="button"
+                  onClick={handleBackPassenger}
+                  className="bfm-back-btn"
+                >
+                  Back
+                </button>
+              )}
 
-        {/* ACTION BUTTONS - Sticky footer outside scroll area */}
-        <div className="bfm-actions">
-          {passengerStep > 1 && (
-            <button type="button" onClick={handleBackPassenger} className="bfm-back-btn">Back</button>
-          )}
-          <button
-            type="submit"
-            form="bfm-passenger-form"
-            disabled={localLoading || loading}
-            className="bfm-submit-btn"
-            style={{ flex: passengerStep === 1 ? '1' : '2' }}
-          >
-            {localLoading || loading
-              ? 'PROCESSING...'
-              : passengerStep === totalPassengers
-                ? 'CONFIRM BOOKING'
-                : `NEXT: PASSENGER ${passengerStep + 1}`}
-          </button>
+              <button
+                type="submit"
+                disabled={localLoading || loading}
+                className="bfm-submit-btn"
+                style={{ flex: passengerStep === 1 ? '1' : '2' }}
+              >
+                {localLoading || loading ? 'PROCESSING...' :
+                  passengerStep === totalPassengers ? 'CONFIRM BOOKING' :
+                  `NEXT: PASSENGER ${passengerStep + 1}`}
+              </button>
+            </div>
+
+          </form>
         </div>
+
       </div>
 
+      {/* CONFIRMATION MODAL */}
       <CustomConfirmModal
         isOpen={showConfirmModal}
-        title="Confirm Your Booking"
-        message={`Are you sure you want to confirm this booking for ${pkg.title || pkg.name}? You will be redirected to the payment page.`}
+        title="Confirm Your Tour Booking"
+        message={`Are you sure you want to confirm this booking for ${pkg.name}? You will be redirected to the payment page.`}
         onConfirm={handleConfirmBooking}
         onCancel={handleCancelConfirmation}
         type="primary"
       />
 
+      {/* BOOKING COMPLETED MODAL */}
       <BookingCompletedModal
         isOpen={showBookingCompletedModal}
         onClose={handleCloseBookingCompleted}
-        packageName={pkg.title || pkg.name}
+        packageName={pkg.name}
       />
     </div>
   );
