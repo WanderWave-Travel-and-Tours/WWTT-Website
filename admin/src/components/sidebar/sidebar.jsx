@@ -40,7 +40,8 @@ import {
   DollarSign,
   UserCog,
   MessageSquare,
-  BarChart2
+  BarChart2,
+  Car
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -58,7 +59,7 @@ const MENU_PATHS = {
         '/view-services', '/services/visa', '/services/psa', '/services/cenomar',
         '/services/passport', '/services/airlinebooking', '/services/hotelbooking',
         '/services/tourarrangements', '/services/ferrybooking', '/services/marriagecert',
-        '/services/travelinsurance', '/services/billspayment'
+        '/services/travelinsurance', '/services/billspayment', '/services/transfers'
     ]
 };
 
@@ -384,6 +385,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Marriage', path: '/services/marriagecert', icon: FileText },
                 { name: 'Insurance', path: '/services/travelinsurance', icon: ShieldCheck },
                 { name: 'Bills', path: '/services/billspayment', icon: DollarSign },
+                { name: 'Transfers', path: '/services/transfers', icon: Car },
               ]}
             />
           </ul>
