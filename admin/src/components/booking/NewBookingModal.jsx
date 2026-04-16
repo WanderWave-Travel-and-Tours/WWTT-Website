@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users } from 'lucide-react';
+import { X, Users, Calendar, MapPin, Bed, CreditCard } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import HotelRoomSelector from './hotelRoomSelector';
 import './newBookingModal.css';
 
@@ -229,11 +228,16 @@ const NewBookingModal = ({ isOpen, onClose }) => {
     return rate * nights * roomsNeeded;
   };
 
-  const computeFinalTotal = () => {
+    const computeFinalTotal = () => {
     const base = calculateBasePackageTotal();
     const hotel = calculateHotelTotal();
     return base + hotel;
   };
+
+  // ── NEW: Amount na talagang babayaran ngayon ──
+  const payableAmount = formData.paymentType === 'partial'
+    ? (formData.initialPaymentAmount || 0)
+    : computeFinalTotal();
 
   const detectPackageType = (pkg) => {
   if (!pkg) return;
@@ -303,7 +307,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
         duration: selectedPackage?.duration,
         price: selectedPackage.price,
         finalPackageTotal: computeFinalTotal(),
-        totalAmount: computeFinalTotal(),
+        totalAmount: payableAmount,
         pax: { adult: paxCount, children: 0, infants: 0 },
         selectedRoomType: selectedRoomType?.type || null,
         hotelName: selectedRoomType?.hotelName || null,
@@ -748,10 +752,29 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                     <span>₱{calculateHotelTotal().toLocaleString()}</span>
                   </div>
                 )}
+
+                {/* Final / Payable amount */}
                 <div className="nbm-total-row nbm-total-final">
-                  <strong>FINAL TOTAL</strong>
-                  <strong>₱{computeFinalTotal().toLocaleString()}</strong>
+                  <strong>
+                    {formData.paymentType === 'partial' 
+                      ? 'INITIAL PAYMENT DUE NOW (50%)' 
+                      : 'FINAL TOTAL'}
+                  </strong>
+                  <strong>₱{payableAmount.toLocaleString()}</strong>
                 </div>
+
+                {/* Extra note kapag partial */}
+                {formData.paymentType === 'partial' && (
+                  <p style={{
+                    textAlign: 'right',
+                    fontSize: '0.85rem',
+                    color: '#64748b',
+                    marginTop: '8px',
+                    fontWeight: 600
+                  }}>
+                    (50% deposit • Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure)
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -787,15 +810,168 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
       </div>
 
-      {/* CONFIRM MODAL */}
-      <CustomConfirmModal
-        isOpen={showConfirm}
-        title="Create New Booking"
-        message="Are you sure you want to create this booking?"
-        onConfirm={handleSubmit}
-        onCancel={() => setShowConfirm(false)}
-        type="primary"
-      />
+      {/* BEAUTIFUL BOOKING PREVIEW MODAL */}
+      {showConfirm && (
+        <div 
+          className="nbm-preview-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowConfirm(false);
+          }}
+        >
+          <div className="nbm-preview-modal" onClick={e => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="nbm-preview-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.25)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📋</div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>Booking Preview</h2>
+                  <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem' }}>Please review before creating</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConfirm(false)}
+                style={{ background: 'none', border: 'none', fontSize: '32px', color: 'white', cursor: 'pointer', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="nbm-preview-body">
+
+              {/* Customer */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <span>👤</span> Customer Information
+                </div>
+                <div className="nbm-preview-row">
+                  <strong>{formData.fullName || '—'}</strong>
+                  <span>{formData.email || '—'}</span>
+                </div>
+              </div>
+
+              {/* Trip Details */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <MapPin size={18} /> Trip Details
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Destination</span>
+                  <strong>{selectedDestination}</strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Package</span>
+                  <strong>{selectedPackage?.title || '—'}</strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span><Calendar size={16} style={{ display: 'inline', marginRight: 4 }} /> Departure</span>
+                  <strong>{departureDate}</strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Return Date</span>
+                  <strong>
+                    {(() => {
+                      const s = new Date(departureDate);
+                      const days = getDurationDays(selectedPackage?.duration || '1D');
+                      s.setDate(s.getDate() + days - 1);
+                      return s.toISOString().split('T')[0];
+                    })()}
+                  </strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Number of Pax</span>
+                  <strong>{paxCount} {isSoloPkg ? '(Solo)' : isMinTwoPkg ? '(Min 2)' : ''}</strong>
+                </div>
+              </div>
+
+              {/* Passengers */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <Users size={18} /> Passengers ({formData.passengers.length})
+                </div>
+                {formData.passengers.map((p, i) => (
+                  <div key={i} className="nbm-preview-passenger">
+                    <strong>Passenger {i + 1}:</strong> {p.firstName} {p.lastName}
+                    {p.phone && <span style={{ marginLeft: 12, color: '#64748b' }}>• {p.phone}</span>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Accommodation */}
+              {selectedRoomType && (
+                <div className="nbm-preview-section">
+                  <div className="nbm-preview-section-title">
+                    <Bed size={18} /> Accommodation
+                  </div>
+                  <div className="nbm-preview-row">
+                    <span>Room Type</span>
+                    <strong>{selectedRoomType.type}</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Summary */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <CreditCard size={18} /> Payment Summary
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Package Total</span>
+                  <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+                </div>
+                {selectedRoomType && (
+                  <div className="nbm-preview-row">
+                    <span>Hotel Accommodation</span>
+                    <span>₱{calculateHotelTotal().toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* BIG TOTAL */}
+                <div className="nbm-preview-total">
+                  <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', marginBottom: 4 }}>
+                    {formData.paymentType === 'partial' ? 'INITIAL PAYMENT DUE NOW' : 'TOTAL AMOUNT'}
+                  </div>
+                  <div className="nbm-due-now">
+                    ₱{payableAmount.toLocaleString()}
+                  </div>
+                  {formData.paymentType === 'partial' && (
+                    <p style={{ marginTop: 8, color: '#166534', fontSize: '0.9rem', fontWeight: 600 }}>
+                      50% deposit • Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure
+                    </p>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{
+              padding: '24px 32px',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              gap: '12px',
+              background: '#fff'
+            }}>
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="nbm-btn nbm-btn-back"
+                style={{ flex: 1 }}
+              >
+                ← Back to Edit
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="nbm-btn nbm-btn-next"
+                style={{ flex: 1 }}
+              >
+                {loading ? 'Creating Booking...' : '✅ Confirm & Create Booking'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

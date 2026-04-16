@@ -395,3 +395,105 @@
   .nbm-header, .nbm-footer, .nbm-progress { padding: 18px 20px; }
   .nbm-card  { padding: 16px; }
 }
+
+/* ── PREVIEW SUMMARY MODAL (premium look) ── */
+.nbm-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.nbm-preview-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.22);
+  width: 100%;
+  max-width: 680px;
+  max-height: 92vh;
+  overflow: hidden;
+  animation: nbmModalPop 0.3s ease;
+}
+
+.nbm-preview-header {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #f59e0b, #fc9c1b);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nbm-preview-body {
+  padding: 28px 32px;
+  max-height: 65vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #f59e0b #f1f5f9;
+}
+
+.nbm-preview-body::-webkit-scrollbar { width: 6px; }
+.nbm-preview-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+.nbm-preview-body::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 10px; }
+
+.nbm-preview-section {
+  margin-bottom: 24px;
+}
+
+.nbm-preview-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nbm-preview-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.nbm-preview-row:last-child {
+  border-bottom: none;
+}
+
+.nbm-preview-total {
+  background: linear-gradient(135deg, #fff7ed, #fefce8);
+  border: 3px solid #f59e0b;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.nbm-preview-passenger {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  border: 1px solid #e2e8f0;
+}
+
+.nbm-due-now {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+@media (max-width: 640px) {
+  .nbm-preview-modal { border-radius: 16px 16px 0 0; max-height: 95vh; }
+  .nbm-preview-header { padding: 18px 20px; }
+  .nbm-preview-body { padding: 20px; }
+}
