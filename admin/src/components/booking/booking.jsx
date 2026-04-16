@@ -12,6 +12,7 @@ import BookingDetailModal from './BookingDetailModal';
 import PaginationControls from './PaginationControls';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
+import NewBookingModal from './NewBookingModal';
 
 const DESTINATION_IMAGES = {
     TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',
@@ -34,6 +35,7 @@ const Booking = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showNewBookingModal, setShowNewBookingModal] = useState(false);
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -223,15 +225,11 @@ const Booking = () => {
       );
       
     } catch (err) {
-      // ===== DEBUG =====
-      console.error('%c❌ [executeConfirm] FAILED:', 'color: red; font-weight: bold;', err.message);
-      console.groupEnd();
-      // =================
-
+      console.error('Confirm error:', err);
       toast.error(
-        err.message || 'Failed to confirm booking. Please try again.',
-        "Confirmation Failed",
-        4000
+        err.message || 'Failed to confirm booking.',
+        "Confirm Failed",
+        5000
       );
     } finally {
       setActionLoading(false);
@@ -248,54 +246,30 @@ const Booking = () => {
   };
 
   const executeCancel = async (booking) => {
-    // ===== DEBUG =====
-    console.group('%c🔍 [executeCancel] DEBUG', 'color: #3b82f6; font-weight: bold;');
-    console.log('Full booking object:', booking);
-    console.log('mongoId value:', booking?.mongoId);
-    const url = `https://wanderwaveph.onrender.com/api/bookings/${booking?.mongoId}/cancel`;
-    console.log('Request URL:', url);
-    console.log('Method: POST');
-    // =================
-
     setActionLoading(true);
     try {
-      const res = await fetch(url, {
-        method: 'POST',
+      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
 
-      // ===== DEBUG =====
-      console.log('Response status:', res.status, res.statusText);
-      // =================
-
-      const responseBody = await res.json().catch(() => ({ _parseError: true }));
-
-      // ===== DEBUG =====
-      console.log('Response body:', responseBody);
-      console.groupEnd();
-      // =================
-
       if (!res.ok) {
-        throw new Error(responseBody?.message || `Server returned ${res.status} - ${res.statusText}`);
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.message || 'Failed to cancel booking');
       }
-      
+
       await fetchBookings();
-      toast.warning(
-        `Booking ${booking.id} has been cancelled`,
+      toast.success(
+        `Booking ${booking.id} for ${booking.customerName} has been cancelled.`,
         "Booking Cancelled",
         4000
       );
-      
     } catch (err) {
-      // ===== DEBUG =====
-      console.error('%c❌ [executeCancel] FAILED:', 'color: red; font-weight: bold;', err.message);
-      console.groupEnd();
-      // =================
-
+      console.error('Cancel error:', err);
       toast.error(
-        err.message || 'Failed to cancel booking. Please try again.',
-        "Cancellation Failed",
-        4000
+        err.message || 'Failed to cancel booking.',
+        "Cancel Failed",
+        5000
       );
     } finally {
       setActionLoading(false);
@@ -305,7 +279,7 @@ const Booking = () => {
   const handleCancel = (booking) => {
     askConfirmation(
       "Cancel Booking",
-      `Are you sure you want to cancel booking ${booking.id}? This cannot be undone.`,
+      `Are you sure you want to cancel booking ${booking.id} for ${booking.customerName}? This action cannot be undone.`,
       () => executeCancel(booking),
       "danger"
     );
@@ -315,27 +289,28 @@ const Booking = () => {
     setActionLoading(true);
     try {
       const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/archive`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
       });
 
-      const result = await res.json();
-
-      if (result.status === 'ok') {
-        await fetchBookings();
-        toast.success(
-          `Booking ${booking.id} ${action}d successfully`,
-          `${action === 'archive' ? 'Archived' : 'Unarchived'}`,
-          3000
-        );
-      } else {
-        throw new Error('Failed to update archive status');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.message || `Failed to ${action} booking`);
       }
-    } catch (err) {
-      toast.error(
-        `Failed to ${action} booking. Please try again.`,
-        "Archive Failed",
+
+      await fetchBookings();
+      toast.success(
+        `Booking ${booking.id} has been ${action}d successfully.`,
+        action === 'archive' ? "Booking Archived" : "Booking Restored",
         4000
+      );
+    } catch (err) {
+      console.error('Archive error:', err);
+      toast.error(
+        err.message || `Failed to ${action} booking.`,
+        `${action.charAt(0).toUpperCase() + action.slice(1)} Failed`,
+        5000
       );
     } finally {
       setActionLoading(false);
@@ -460,6 +435,15 @@ const Booking = () => {
               <h1>Booking Management</h1>
               <p>View and manage all active customer bookings</p>
             </div>
+
+            {/* ← BAGONG BUTTON */}
+            <button 
+              className="bkm-btn-add"
+              onClick={() => setShowNewBookingModal(true)}
+            >
+              <span style={{ fontSize: '18px', marginRight: '6px' }}>+</span>
+              NEW BOOKING
+            </button>
           </div>
 
           <BookingStats stats={stats} />
@@ -561,6 +545,12 @@ const Booking = () => {
         type={confirmConfig.type}
         onConfirm={confirmConfig.onConfirm}
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* NEW BOOKING MODAL */}
+      <NewBookingModal 
+        isOpen={showNewBookingModal} 
+        onClose={() => setShowNewBookingModal(false)} 
       />
     </div>
   );
