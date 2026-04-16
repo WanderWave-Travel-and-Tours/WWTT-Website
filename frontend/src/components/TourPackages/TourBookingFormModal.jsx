@@ -20,9 +20,11 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
   };
 
   const parsed = parseValue(value);
-  const [isOpen, setIsOpen]     = useState(false);
+  const [isOpen, setIsOpen]       = useState(false);
   const [viewMonth, setViewMonth] = useState(parsed?.month ?? today.getMonth());
   const [viewYear, setViewYear]   = useState(parsed?.year ?? maxYear);
+  // ✅ Fixed: track trigger position so calendar renders via fixed positioning (avoids overflow clipping)
+  const [calendarPos, setCalendarPos] = useState({ top: 0, left: 0, width: 0 });
 
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const weekDays   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -49,11 +51,34 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
   const daysInMonth = getDaysInMonth(viewMonth, viewYear);
   const firstDay    = getFirstDay(viewMonth, viewYear);
 
-  // Close on outside click
+  const triggerRef = useRef(null);
   const wrapperRef = useRef(null);
+
+  // ✅ Fixed: calculate position from trigger button's bounding rect so calendar is never clipped
+  const handleToggleOpen = () => {
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const calendarWidth = 300;
+      // Flip upward if not enough space below
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const calendarHeight = 320; // approximate
+      const top = spaceBelow >= calendarHeight
+        ? rect.bottom + 6
+        : rect.top - calendarHeight - 6;
+      // Prevent right overflow
+      const left = Math.min(rect.left, window.innerWidth - calendarWidth - 12);
+      setCalendarPos({ top, left, width: calendarWidth });
+    }
+    setIsOpen(o => !o);
+  };
+
+  // Close on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+      if (
+        wrapperRef.current && !wrapperRef.current.contains(e.target) &&
+        !e.target.closest('.bfm-custom-calendar-portal')
+      ) {
         setIsOpen(false);
       }
     };
@@ -61,12 +86,37 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen]);
 
+  // Reposition on scroll/resize while open
+  useEffect(() => {
+    if (!isOpen) return;
+    const reposition = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        const calendarWidth = 300;
+        const calendarHeight = 320;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const top = spaceBelow >= calendarHeight
+          ? rect.bottom + 6
+          : rect.top - calendarHeight - 6;
+        const left = Math.min(rect.left, window.innerWidth - calendarWidth - 12);
+        setCalendarPos({ top, left, width: calendarWidth });
+      }
+    };
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [isOpen]);
+
   return (
     <div ref={wrapperRef} style={{ position: 'relative' }}>
       {/* Trigger */}
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setIsOpen(o => !o)}
+        onClick={handleToggleOpen}
         className="bfm-calendar-trigger"
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -78,9 +128,18 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
         <ChevronRight size={14} className="bfm-trigger-icon" style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
       </button>
 
-      {/* Calendar popup */}
+      {/* ✅ Fixed: Calendar popup uses position:fixed via a portal-like div rendered at document level */}
       {isOpen && (
-        <div className="bfm-custom-calendar" style={{ minWidth: '300px' }}>
+        <div
+          className="bfm-custom-calendar bfm-custom-calendar-portal"
+          style={{
+            position: 'fixed',
+            top:  calendarPos.top,
+            left: calendarPos.left,
+            width: calendarPos.width,
+            zIndex: 9999999,
+          }}
+        >
           {/* Month + Year dropdowns */}
           <div className="bfm-calendar-header">
             <div className="bfm-calendar-selectors">
@@ -292,9 +351,31 @@ const TourBookingFormModal = ({
       }, { timeout: 60000 });
 
       if (paymentRes.data.success && paymentRes.data.checkoutUrl) {
+        // ==================== NEW: GHL ABANDONED WEBHOOK TRIGGER ====================
+        try {
+          await axios.post(`${RENDER_BASE}/api/tour-bookings/abandoned`, {
+            existingBookingId: bookingId,
+            checkoutUrl: paymentRes.data.checkoutUrl,
+            email: fullBookingData.email,
+            fullName: fullBookingData.fullName,
+            packageName: fullBookingData.packageName,
+            totalAmount: finalAmount,
+            startDate: fullBookingData.startDate,
+            endDate: fullBookingData.endDate,
+            pax: fullBookingData.pax.adult || totalPassengers,
+            paymentType: paymentType === 'full' ? 'Full Payment' : 'Partial Payment',
+          });
+          console.log('✅ Tour abandoned webhook triggered successfully');
+        } catch (abErr) {
+          console.warn('⚠️ Failed to trigger abandoned webhook (non-fatal):', abErr.message);
+          // Do NOT block the user flow
+        }
+        // ============================================================================
+
         toast.success('Redirecting to secure payment page...');
         if (paymentRes.data.checkoutSessionId) sessionStorage.setItem('pendingCheckoutSessionId', paymentRes.data.checkoutSessionId);
         onClose();
+        sessionStorage.setItem('lastBookingType', 'tour');
         window.location.href = paymentRes.data.checkoutUrl;
       } else {
         throw new Error('No checkout URL returned');
@@ -365,7 +446,7 @@ const TourBookingFormModal = ({
           </div>
         )}
 
-        {/* FORM */}
+        {/* FORM — ✅ This is the ONLY scrollable container; scroll works anywhere inside it */}
         <form id="bfm-passenger-form" onSubmit={handleFormSubmit} className="bfm-form">
           <div className="bfm-form-body">
 

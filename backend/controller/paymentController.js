@@ -226,7 +226,10 @@ const createBookingPaymentIntent = async (req, res) => {
               payment_amount: amountToPay,
               payment_type: paymentType || 'full',
               is_initial_payment: isPartial ? true : false,  // ✅ FIXED: was always true, breaks metadata check for full payments
-              includes_airfare: booking.includesAirfare || false
+              includes_airfare: booking.includesAirfare || false,
+              start_date: booking.startDate,
+              end_date: booking.endDate,
+              travel_dates: `${booking.startDate} to ${booking.endDate}`
             }
           }
         }
@@ -360,7 +363,7 @@ const createBalancePaymentLink = async (req, res) => {
         data: {
           attributes: {
             amount: amountInCentavos,
-            description: `${booking.packageName} - Remaining Balance - ${booking.fullName}`,
+            description: `Payment for ${booking.packageName} - ${booking.fullName} (${booking.startDate} - ${booking.endDate})`,
             remarks: `Balance Payment for ${booking.fullName}`,
             metadata: {
               booking_id: bookingId,

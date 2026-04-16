@@ -19,7 +19,9 @@
   /* Top padding clears the fixed site navbar (orange bar ~40px + white nav ~90px = ~130px) */
   padding: 140px 20px 20px 20px;
   animation: bfmFadeIn 0.2s ease-out;
-  overflow-y: auto;
+  /* ✅ Fixed: overflow hidden so the overlay never intercepts mouse-wheel scroll events.
+     The inner .bfm-form is the sole scrollable container — scroll works anywhere in the modal. */
+  overflow: hidden;
 }
 
 @keyframes bfmFadeIn {
@@ -421,16 +423,19 @@
 /* --- Form (the <form> tag itself) --- */
 .bfm-form {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: scroll; /* ✅ 'scroll' keeps scrollbar always visible so scroll activates anywhere in the element */
   overscroll-behavior: contain;
+  /* ✅ Ensures the scroll container captures wheel events even when cursor is over child elements */
+  -webkit-overflow-scrolling: touch;
 }
 
 .bfm-form::-webkit-scrollbar {
-  width: 5px;
+  width: 8px; /* ✅ Wider bar — easier to grab, also wider hit-area */
 }
 
 .bfm-form::-webkit-scrollbar-track {
   background: #f1f5f9;
+  border-radius: 4px;
 }
 
 .bfm-form::-webkit-scrollbar-thumb {
@@ -614,20 +619,17 @@
 }
 
 /* Calendar Popup Container */
+/* ✅ Fixed: position is now set inline as `position:fixed` in the component so the calendar is
+   never clipped by the form's overflow:scroll. Only visual styles remain here. */
 .bfm-custom-calendar {
-  position: absolute;
-  top: 100%;
-  left: 0;
   width: 300px;
-  max-width: 90vw;
+  max-width: 92vw;
   background: white;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-  padding: 12px;
-  z-index: 100;
-  margin-top: 6px;
-  animation: calendarSlideDown 0.2s ease-out;
+  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.2), 0 10px 15px -5px rgba(0, 0, 0, 0.1);
+  padding: 14px;
+  animation: calendarSlideDown 0.18s ease-out;
 }
 
 @keyframes calendarSlideDown {
@@ -1148,7 +1150,7 @@
   .bfm-overlay {
     padding: 0;
     align-items: flex-end;
-    overflow-y: auto;
+    overflow: hidden; /* ✅ Keep hidden on mobile too — inner form scrolls */
   }
 
   .bfm-modal-card {
@@ -1204,12 +1206,10 @@
     padding: 10px 16px;
   }
 
-  /* ✅ Mobile Calendar Adjustments */
+  /* ✅ Mobile Calendar — no transform needed since calendar uses position:fixed */
   .bfm-custom-calendar {
-    width: 280px;
-    max-width: calc(100vw - 32px);
-    left: 50%;
-    transform: translateX(-50%);
+    width: calc(100vw - 24px);
+    max-width: 320px;
   }
 
   .bfm-month-select,

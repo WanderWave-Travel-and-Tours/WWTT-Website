@@ -39,25 +39,19 @@
 /* --- Image Section --- */
 .blc-image-wrapper {
   border-radius: 16px;
-  /* ✅ overflow:visible so absolute-positioned badges (stamp, offer) are never clipped */
-  overflow: visible;
+  overflow: hidden; /* ✅ clip image to rounded corners */
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   margin-bottom: 24px;
   width: 100%;
   position: relative;
   aspect-ratio: 16 / 9;
+  /* ✅ cap height so image doesn't dominate the panel on wide screens */
+  max-height: 280px;
   height: auto;
   background-color: #e2e8f0;
 }
 
-/* ✅ Inner div handles image clipping — keeps border-radius on the photo */
-.blc-image-inner {
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-}
+/* ✅ image clips to border-radius via overflow:hidden on blc-image-wrapper */
 
 .blc-main-image {
   width: 100%;
@@ -515,39 +509,4 @@
     height: 58px;
   }
 }
-/* ================== RUBBER STAMP OVERLAY (no-duration titles) ================== */
-
-.blc-title-stamp-overlay {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 4;
-  pointer-events: none;
-}
-
-.blc-rubber-stamp-svg {
-  display: block;
-  width: 130px;
-  height: 130px;
-  transform: rotate(-15deg);
-  transition: transform 0.3s ease;
-  filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.7));
-}
-
-.blc-image-wrapper:hover .blc-rubber-stamp-svg {
-  transform: rotate(0deg);
-}
-
-@media (max-width: 768px) {
-  .blc-rubber-stamp-svg {
-    width: 90px;
-    height: 90px;
-  }
-}
-
-@media (max-width: 480px) {
-  .blc-rubber-stamp-svg {
-    width: 75px;
-    height: 75px;
-  }
-}
+/* rubber stamp styles removed — stamp overlay no longer used */

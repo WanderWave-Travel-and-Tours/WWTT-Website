@@ -34,10 +34,14 @@ const PaymentSuccess = () => {
       }
     };
 
-    if (bookingId) {
-      // Fire immediately — don't await, let fetchBookingDetails poll for the result
-      confirmBookingByID(bookingId);
-    }
+    // Inside useEffect, after getting bookingId:
+if (bookingId) {
+  setType('booking');
+  fetchBookingDetails(bookingId, paymentType);   // ← now supports tour
+} else if (inquiryId) {
+  setType('inquiry');
+  fetchInquiryDetails(inquiryId);
+}
 
     const storedUser = localStorage.getItem('wanderwave_user');
     if (storedUser) {
@@ -88,65 +92,78 @@ const PaymentSuccess = () => {
     }
   }, [searchParams]);
 
-  const fetchBookingDetails = async (id, paymentType) => {
-    // ✅ FIX: Poll with retries to wait for PayMongo webhook to update booking status.
-    // Without this, the page loads before the webhook fires and shows 'pending'.
-    const MAX_RETRIES = 10;
-    const RETRY_DELAY_MS = 2000; // 2 seconds between retries
+  // === REPLACE your current fetchBookingDetails with this ===
 
-    const tryFetch = async (attempt) => {
-      try {
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${id}`);
-        const data = await response.json();
-        
-        if (data && (data._id || (data.success && data.booking))) {
-          const booking = data.success ? data.booking : data;
-          const isPartialPayment = paymentType === 'partial' || booking.paymentType === 'partial';
-          const paidAmount = isPartialPayment ? booking.initialPaymentAmount : booking.totalAmount;
+const fetchBookingDetails = async (id, paymentType) => {
+  const MAX_RETRIES = 8;
+  const RETRY_DELAY = 1800;
 
-          // ✅ If booking is still pending and we have retries left, keep polling
-          if (booking.status === 'pending' && attempt < MAX_RETRIES) {
-            console.log(`⏳ Booking still pending, retrying... (attempt ${attempt}/${MAX_RETRIES})`);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-            return tryFetch(attempt + 1);
-          }
-          
-          setDetails({
-            id: booking._id,
-            reference: booking.referenceNumber || booking._id.slice(-8).toUpperCase(),
-            title: booking.packageName,
-            subTitle: `${booking.duration} • ${booking.pax?.adult || 1} Pax`,
-            amount: paidAmount,
-            totalAmount: booking.totalAmount,
-            remainingBalance: booking.remainingBalance,
-            email: booking.email,
-            dateLabel: "Travel Dates",
-            dateValue: `${booking.startDate} - ${booking.endDate}`,   // ← pinanatili para sa UI at receipt
-            startDate: booking.startDate,          // ← BAGONG FIELD (para sa webhook)
-            endDate: booking.endDate,              // ← BAGONG FIELD (para sa webhook)
-            status: booking.status,
-            isPartial: isPartialPayment,
-            paymentType: booking.paymentType,
-            fullName: booking.fullName,
-            createdAt: booking.createdAt
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching booking:', error);
-        if (attempt < MAX_RETRIES) {
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-          return tryFetch(attempt + 1);
-        }
-      } finally {
-        if (attempt >= MAX_RETRIES) {
-          setLoading(false);
-        }
+  const tryFetch = async (attempt = 1) => {
+    try {
+      // 1. Try regular Booking first
+      let res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${id}`);
+      let data = await res.json();
+
+      if (res.ok && (data._id || (data.success && data.data))) {
+        const booking = data.success ? data.data : data;
+        return normalizeBooking(booking, paymentType, 'regular');
       }
-    };
 
-    await tryFetch(1);
-    setLoading(false);
+      // 2. If not found → try TourBooking
+      res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${id}`);
+      data = await res.json();
+
+      if (res.ok && (data.success && data.data)) {
+        const tourBooking = data.data;
+        return normalizeBooking(tourBooking, paymentType, 'tour');
+      }
+
+      // Still not found? Retry
+      if (attempt < MAX_RETRIES) {
+        console.log(`⏳ Booking not ready yet (attempt ${attempt}) – retrying...`);
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
+        return tryFetch(attempt + 1);
+      }
+    } catch (e) {
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
+        return tryFetch(attempt + 1);
+      }
+      console.error('All fetch attempts failed');
+    }
+    return null;
   };
+
+  const bookingData = await tryFetch();
+  if (bookingData) setDetails(bookingData);
+  setLoading(false);
+};
+
+// === NEW HELPER: Normalize both models into the same shape ===
+const normalizeBooking = (booking, paymentTypeParam, source) => {
+  const isPartial = paymentTypeParam === 'partial' || booking.paymentType === 'partial';
+
+  return {
+    id: booking._id,
+    reference: booking.referenceNumber || booking._id?.slice(-8)?.toUpperCase() || 'N/A',
+    title: booking.packageName || booking.packageName || 'Tour Package',
+    subTitle: `${booking.duration || ''} • ${booking.pax?.adult || booking.passengers?.length || 1} Pax`,
+    amount: isPartial ? booking.initialPaymentAmount : booking.totalAmount || booking.finalPackageTotal,
+    totalAmount: booking.totalAmount || booking.finalPackageTotal || booking.price,
+    remainingBalance: booking.remainingBalance || 0,
+    email: booking.email,
+    dateLabel: "Travel Dates",
+    dateValue: `${booking.startDate} - ${booking.endDate}`,
+    startDate: booking.startDate,
+    endDate: booking.endDate,
+    status: booking.status,
+    isPartial: isPartial,
+    paymentType: booking.paymentType || paymentTypeParam,
+    fullName: booking.fullName || `${booking.passengers?.[0]?.firstName || ''} ${booking.passengers?.[0]?.lastName || ''}`.trim(),
+    createdAt: booking.createdAt || booking.updatedAt,
+    source // optional flag if you need it later
+  };
+};
 
   const fetchInquiryDetails = async (id) => {
     try {
