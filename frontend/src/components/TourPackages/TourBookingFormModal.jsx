@@ -4,7 +4,7 @@ import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as Calendar
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 // Import the same CSS files as BookingFormModal
-import '../packagedeals/BookingFormModal.css';
+import '../packageDeals/BookingFormModal.css';
 import '../packageDeals/PaymentOption.css';
 
 // ✅ CUSTOM DATE PICKER COMPONENT - WORKS ON ALL PLATFORMS
