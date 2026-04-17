@@ -81,12 +81,15 @@ export const BookingDetailModal = ({
     setShowModal, 
     handleConfirm,
     handleCancel,
+    handleArchive,           // ← idagdag
     actionLoading,
     CheckCircleIcon,
     AlertCircleIcon,
     XCircleIcon,
     CheckIcon,
-    XIcon
+    XIcon,
+    ArchiveIcon,             // ← idagdag
+    RotateCcwIcon
 }) => {
     const [showVoucherPreview, setShowVoucherPreview] = useState(false);
     const [voucherData, setVoucherData] = useState(null);
@@ -787,52 +790,79 @@ const generateVoucherData = async (booking) => {
                     </div>
 
                     {/* FOOTER ACTIONS */}
-                    <div className="modal-footer">
-                        <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
-                        
-                        {/* Show voucher button for confirmed bookings */}
-                        {status === 'CONFIRMED' && (
-                            <button 
-                                className="cnm-btn cnm-btn-primary cnm-btn-left"
-                                onClick={() => generateVoucherData(selectedBooking)}
-                                disabled={isGeneratingVoucher}
-                            >
-                                <FileText size={16} />
-                                {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
-                            </button>
-                        )}
-                        
-                        {/* ✅ Walk-in bookings are auto-confirmed, no confirm button needed */}
-                        {status === 'PENDING' && !isWalkin && (
-                            <>
-                                <div style={{ position: 'relative', display: 'inline-block' }}>
-                                    <button 
-                                        className="cnm-btn cnm-btn-success"
-                                        onClick={() => handleConfirmAndClose(selectedBooking)}
-                                        disabled={actionLoading}
-                                    >
-                                        <CheckIcon size={16} /> Confirm Booking
-                                    </button>
-                                </div>
-                                <button 
-                                    className="cnm-btn cnm-btn-danger cnm-btn-outline"
-                                    onClick={() => handleCancelAndClose(selectedBooking)}
-                                    disabled={actionLoading}
-                                >
-                                    <XIcon size={16} /> Cancel Booking
-                                </button>
-                            </>
-                        )}
-                        {status === 'CONFIRMED' && (
-                            <button 
-                                className="cnm-btn cnm-btn-danger cnm-btn-outline"
-                                onClick={() => handleCancelAndClose(selectedBooking)}
-                                disabled={actionLoading}
-                            >
-                                <XIcon size={16} /> Cancel Booking
-                            </button>
-                        )}
-                    </div>
+                    {/* FOOTER ACTIONS */}
+<div className="modal-footer">
+    <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
+
+    {/* View Voucher (para sa Confirmed) */}
+    {status === 'CONFIRMED' && (
+        <button 
+            className="cnm-btn cnm-btn-primary cnm-btn-left"
+            onClick={() => generateVoucherData(selectedBooking)}
+            disabled={isGeneratingVoucher}
+        >
+            <FileText size={16} />
+            {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
+        </button>
+    )}
+
+    {/* ✅ ARCHIVE / UNARCHIVE BUTTON – gagana na sa CONFIRMED at lahat ng status */}
+    {selectedBooking && (
+        <button
+            className={`cnm-btn ${selectedBooking.isArchive === 'Yes' ? 'cnm-btn-ghost' : 'cnm-btn-outline'}`}
+            onClick={() => {
+                closeModal();                    // optional: isara muna ang modal
+                handleArchive(selectedBooking);  // gamitin ang function mula sa parent
+            }}
+            disabled={actionLoading}
+            style={{ marginLeft: '8px' }}
+        >
+            {selectedBooking.isArchive === 'Yes' ? (
+                <>
+                    <RotateCcwIcon size={16} />
+                    Unarchive
+                </>
+            ) : (
+                <>
+                    <ArchiveIcon size={16} />
+                    Archive
+                </>
+            )}
+        </button>
+    )}
+
+    {/* Confirm / Cancel buttons (existing) */}
+    {status === 'PENDING' && !selectedBooking.isWalkin && (
+        <>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button 
+                    className="cnm-btn cnm-btn-success"
+                    onClick={() => handleConfirmAndClose(selectedBooking)}
+                    disabled={actionLoading}
+                >
+                    <CheckIcon size={16} /> Confirm Booking
+                </button>
+            </div>
+            <button 
+                className="cnm-btn cnm-btn-danger cnm-btn-outline"
+                onClick={() => handleCancelAndClose(selectedBooking)}
+                disabled={actionLoading}
+            >
+                <XIcon size={16} /> Cancel Booking
+            </button>
+        </>
+    )}
+
+    {status === 'CONFIRMED' && (
+        <button 
+            className="cnm-btn cnm-btn-danger cnm-btn-outline"
+            onClick={() => handleCancelAndClose(selectedBooking)}
+            disabled={actionLoading}
+        >
+            <XIcon size={16} /> Cancel Booking
+        </button>
+    )}
+</div>
                 </div>
             </div> 
 

@@ -159,6 +159,14 @@ const [isCheckingPromo, setIsCheckingPromo] = useState(false);
     fetchHotelData();
   }, [selectedDestination, isOpen]);
 
+// ✅ NEW: STRICT 4 PAX REQUIREMENT FOR PROMO
+useEffect(() => {
+  if (appliedPromo && paxCount < 4) {
+    handleRemovePromo();
+    toast.error('Promo removed: This promo code requires a minimum of 4 pax');
+  }
+}, [paxCount, appliedPromo]);
+
   // Update total kapag nagbago ang pax o room o package
   useEffect(() => {
   if (selectedPackage) {
@@ -181,10 +189,30 @@ const [isCheckingPromo, setIsCheckingPromo] = useState(false);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const updatePassenger = (index, field, value) => {
-    const newPassengers = [...formData.passengers];
-    newPassengers[index][field] = value;
-    setFormData(prev => ({ ...prev, passengers: newPassengers }));
+  // ✅ FIXED: Immutable update para siguradong pumapasok ang data
+const updatePassenger = (index, field, value) => {
+  setFormData(prev => ({
+    ...prev,
+    passengers: prev.passengers.map((passenger, i) =>
+      i === index 
+        ? { ...passenger, [field]: value }   // bagong object
+        : passenger
+    )
+  }));
+};
+
+  // Auto calculate age kapag nagbago ang dateOfBirth
+  const handleDateOfBirthChange = (index, dateValue) => {
+    updatePassenger(index, 'dateOfBirth', dateValue);
+
+    if (dateValue) {
+      const birthDate = new Date(dateValue);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+      if (age > 0) updatePassenger(index, 'age', age.toString());
+    }
   };
 
   const getDurationDays = (durationStr) => {
@@ -316,6 +344,12 @@ const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 };
 
 const handleApplyPromo = async () => {
+  // ✅ NEW: STRICT 4 PAX CHECK
+  if (paxCount < 4) {
+    toast.error('This promo code requires a minimum of 4 pax');
+    return;
+  }
+
   if (!promoCode.trim() || !selectedPackage) {
     toast.error('Please select a package first and enter a promo code');
     return;
@@ -326,11 +360,12 @@ const handleApplyPromo = async () => {
 
   try {
     const res = await fetch(
-      `https://wanderwaveph.onrender.com/api/promos/validate?code=${encodeURIComponent(promoCode)}&packageId=${selectedPackage._id}&pax=${paxCount}`
+      `https://wanderwaveph.onrender.com/api/promos/validate/${encodeURIComponent(promoCode)}?packageId=${selectedPackage._id}&pax=${paxCount}`
     );
+
     const data = await res.json();
 
-    if (data.success && data.promo) {
+    if (data.valid && data.promo) {
       setAppliedPromo(data.promo);
       setPromoCode(data.promo.code);
       toast.success('Promo applied successfully!');
@@ -338,8 +373,9 @@ const handleApplyPromo = async () => {
       setPromoError(data.message || 'Invalid or expired promo code');
     }
   } catch (err) {
-    console.error(err);
-    setPromoError('Failed to validate promo. Please try again.');
+    console.error('Promo validation error:', err);
+    setPromoError('Server error validating promo. Please try again.');
+    toast.error('Promo validation failed');
   } finally {
     setIsCheckingPromo(false);
   }
@@ -387,13 +423,22 @@ const handleRemovePromo = () => {
         isWalkin: true,
         status: 'confirmed',
         promoCode: appliedPromo ? appliedPromo.code : null,
-discountAmount: calculateDiscount(),
-appliedPromoId: appliedPromo ? appliedPromo._id : null,
+        discountAmount: calculateDiscount(),
+        appliedPromoId: appliedPromo ? appliedPromo._id : null,
+        // ✅ Normalize passenger emails — set to null if blank so all passengers are saved
+        passengers: formData.passengers.map((p, i) => ({
+          ...p,
+          passengerNumber: i + 1,
+          email: p.email && p.email.trim() !== '' ? p.email.trim() : null,
+        })),
       };
 
       const formPayload = new FormData();
+      console.log('🚀 Passengers being sent to backend:', JSON.stringify(formData.passengers, null, 2));
+console.log('Number of passengers:', formData.passengers.length);
       formPayload.append('bookingData', JSON.stringify(bookingData));
-
+console.log('✅ FINAL PASSENGERS SENT TO BACKEND:', 
+  JSON.stringify(formData.passengers, null, 2));
       const res = await fetch('https://wanderwaveph.onrender.com/api/bookings', {
         method: 'POST',
         body: formPayload,
@@ -696,7 +741,7 @@ appliedPromoId: appliedPromo ? appliedPromo._id : null,
                 </div>
               )}
 
-              {/* PASSENGERS SECTION */}
+              {/* PASSENGERS SECTION - COMPLETE FIELDS (same as BookingFormModal) */}
               <div style={{ marginTop: '24px', borderTop: '2px solid #e2e8f0', paddingTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}>
@@ -710,23 +755,102 @@ appliedPromoId: appliedPromo ? appliedPromo._id : null,
                 </div>
 
                 {formData.passengers.map((p, i) => (
-                  <div key={i} className="nbm-passenger-card">
-                    <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#f59e0b', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <div key={i} className="nbm-passenger-card" style={{ marginBottom: '20px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f59e0b', marginBottom: '12px' }}>
                       Passenger {i + 1}
                     </div>
+
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                      <input placeholder="First Name" value={p.firstName} onChange={e => updatePassenger(i, 'firstName', e.target.value)} />
-                      <input placeholder="Last Name" value={p.lastName} onChange={e => updatePassenger(i, 'lastName', e.target.value)} />
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>First Name *</label>
+                        <input
+                          value={p.firstName}
+                          onChange={e => updatePassenger(i, 'firstName', e.target.value)}
+                          placeholder="Juan"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Last Name *</label>
+                        <input
+                          value={p.lastName}
+                          onChange={e => updatePassenger(i, 'lastName', e.target.value)}
+                          placeholder="Dela Cruz"
+                        />
+                      </div>
                     </div>
+
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                      <input placeholder="Email" value={p.email} onChange={e => updatePassenger(i, 'email', e.target.value)} />
-                      <input placeholder="Phone" value={p.phone} onChange={e => updatePassenger(i, 'phone', e.target.value)} />
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Email (optional)</label>
+                        <input
+                          value={p.email}
+                          onChange={e => updatePassenger(i, 'email', e.target.value)}
+                          placeholder="juan@email.com"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Phone *</label>
+                        <input
+                          value={p.phone}
+                          onChange={e => updatePassenger(i, 'phone', e.target.value)}
+                          placeholder="09171234567"
+                        />
+                      </div>
                     </div>
+
+                    {/* NEW FIELDS - same as BookingFormModal */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Date of Birth *</label>
+                        <input
+                          type="date"
+                          value={p.dateOfBirth}
+                          onChange={e => handleDateOfBirthChange(i, e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Age</label>
+                        <input
+                          type="number"
+                          value={p.age}
+                          onChange={e => updatePassenger(i, 'age', e.target.value)}
+                          readOnly
+                          style={{ backgroundColor: '#f8fafc' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Gender *</label>
+                        <select value={p.gender} onChange={e => updatePassenger(i, 'gender', e.target.value)}>
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Nationality *</label>
+                        <input
+                          value={p.nationality}
+                          onChange={e => updatePassenger(i, 'nationality', e.target.value)}
+                          placeholder="Filipino"
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '12px' }}>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Complete Address *</label>
+                      <input
+                        value={p.address}
+                        onChange={e => updatePassenger(i, 'address', e.target.value)}
+                        placeholder="123 Main St, Angeles City"
+                      />
+                    </div>
+
                     {formData.passengers.length > 1 && (
-                      <button
-                        onClick={() => removePassenger(i)}
-                        style={{ marginTop: '10px', color: '#ef4444', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
-                      >
+                      <button onClick={() => removePassenger(i)} style={{ marginTop: '12px', color: '#ef4444', fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer' }}>
                         ✕ Remove Passenger
                       </button>
                     )}
@@ -769,6 +893,7 @@ appliedPromoId: appliedPromo ? appliedPromo._id : null,
 
                 {/* ── Promo Field ── */}
                 {/* ── Promo Field (fully functional) ── */}
+{/* ── Promo Field (with 4 pax requirement) ── */}
 <div className="nbm-field">
   <label>
     Promo Code{' '}
@@ -786,7 +911,7 @@ appliedPromoId: appliedPromo ? appliedPromo._id : null,
       />
       <button
         onClick={handleApplyPromo}
-        disabled={isCheckingPromo || !selectedPackage}
+        disabled={isCheckingPromo || !selectedPackage || paxCount < 4}
         style={{
           padding: '14px 24px',
           background: 'linear-gradient(135deg, #f59e0b, #fc9c1b)',
@@ -794,9 +919,9 @@ appliedPromoId: appliedPromo ? appliedPromo._id : null,
           border: 'none',
           borderRadius: '10px',
           fontWeight: 700,
-          cursor: isCheckingPromo || !selectedPackage ? 'not-allowed' : 'pointer',
+          cursor: (isCheckingPromo || !selectedPackage || paxCount < 4) ? 'not-allowed' : 'pointer',
           whiteSpace: 'nowrap',
-          opacity: isCheckingPromo || !selectedPackage ? 0.7 : 1
+          opacity: (isCheckingPromo || !selectedPackage || paxCount < 4) ? 0.6 : 1
         }}
       >
         {isCheckingPromo ? 'Checking...' : 'Apply'}
@@ -837,6 +962,21 @@ appliedPromoId: appliedPromo ? appliedPromo._id : null,
       >
         Remove
       </button>
+    </div>
+  )}
+
+  {/* 4 PAX REQUIREMENT WARNING */}
+  {selectedPackage && paxCount < 4 && !appliedPromo && (
+    <div style={{
+      color: '#f59e0b',
+      fontSize: '0.82rem',
+      marginTop: '8px',
+      padding: '8px 12px',
+      background: '#fffbeb',
+      borderRadius: '8px',
+      border: '1px solid #fde047'
+    }}>
+      ⚠️ This promo code requires a minimum of <strong>4 pax</strong>
     </div>
   )}
 
@@ -889,40 +1029,50 @@ appliedPromoId: appliedPromo ? appliedPromo._id : null,
 
               </div>{/* end nbm-card */}
 
-              {/* ── Total Summary ── */}
-              {/* ── Total Summary ── */}
-<div className="nbm-total-box">
-  <div className="nbm-total-row">
-    <span>Package Total</span>
-    <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
-  </div>
+                           {/* ── Total Summary ── */}
+              <div className="nbm-total-box">
+                <div className="nbm-total-row">
+                  <span>Package Total</span>
+                  <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+                </div>
 
-  {/* NEW: Discount row */}
-  {appliedPromo && (
-    <div className="nbm-total-row" style={{ color: '#10b981', fontSize: '0.95rem' }}>
-      <span>- Promo Discount ({appliedPromo.code})</span>
-      <span>-₱{calculateDiscount().toLocaleString()}</span>
-    </div>
-  )}
+                {/* Discount row */}
+                {appliedPromo && (
+                  <div className="nbm-total-row" style={{ color: '#10b981', fontSize: '0.95rem' }}>
+                    <span>- Promo Discount ({appliedPromo.code})</span>
+                    <span>-₱{calculateDiscount().toLocaleString()}</span>
+                  </div>
+                )}
 
-  {selectedRoomType && (
-    <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
-      <span>Hotel Accommodation</span>
-      <span>₱{calculateHotelTotal().toLocaleString()}</span>
-    </div>
-  )}
+                {selectedRoomType && (
+                  <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
+                    <span>Hotel Accommodation</span>
+                    <span>₱{calculateHotelTotal().toLocaleString()}</span>
+                  </div>
+                )}
 
-  {/* Final / Payable amount (now discounted) */}
-  <div className="nbm-total-row nbm-total-final">
-    <strong>
-      {formData.paymentType === 'partial' 
-        ? 'INITIAL PAYMENT DUE NOW (50%)' 
-        : 'FINAL TOTAL'}
-    </strong>
-    <strong>₱{payableAmount.toLocaleString()}</strong>
-  </div>
-  ...
-</div>
+                {/* Final / Payable amount (now discounted) */}
+                <div className="nbm-total-row nbm-total-final">
+                  <strong>
+                    {formData.paymentType === 'partial' 
+                      ? 'INITIAL PAYMENT DUE NOW (50%)' 
+                      : 'FINAL TOTAL'}
+                  </strong>
+                  <strong>₱{payableAmount.toLocaleString()}</strong>
+                </div>
+
+                {formData.paymentType === 'partial' && (
+                  <p style={{
+                    textAlign: 'right',
+                    fontSize: '0.85rem',
+                    color: '#64748b',
+                    marginTop: '8px',
+                    fontWeight: 600
+                  }}>
+                    (50% deposit • Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure)
+                  </p>
+                )}
+              </div>
             </>
           )}
 

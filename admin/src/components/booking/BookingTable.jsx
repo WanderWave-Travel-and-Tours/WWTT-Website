@@ -10,6 +10,9 @@ const BookingTable = ({
     handleCancel,
     handleArchive,
     actionLoading,
+    selectedBookings,
+    onToggleSelect,
+    onSelectAll,
     MailIcon,
     CheckCircleIcon,
     AlertCircleIcon,
@@ -85,7 +88,7 @@ const BookingTable = ({
         return (
             <tbody>
                 <tr>
-                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                         Loading active bookings...
                     </td>
                 </tr>
@@ -97,7 +100,7 @@ const BookingTable = ({
         return (
             <tbody>
                 <tr>
-                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                         No active bookings found
                     </td>
                 </tr>
@@ -110,9 +113,22 @@ const BookingTable = ({
             {currentBookings.map((booking, index) => {
                 const isArchived = booking.isArchive === 'Yes';
                 const paymentStatus = getPaymentStatusBadge(booking);
+                const isSelected = selectedBookings.some(b => b.mongoId === booking.mongoId);
 
                 return (
-                    <tr key={booking.mongoId || booking.id}>
+                    <tr
+                        key={booking.mongoId || booking.id}
+                        className={isSelected ? 'selected-row' : ''}
+                    >
+                        {/* Checkbox */}
+                        <td style={{ textAlign: 'center' }}>
+                            <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => onToggleSelect(booking)}
+                            />
+                        </td>
+
                         {/* Numbering */}
                         <td style={{ fontWeight: "700", color: '#0f172a', textAlign: 'center' }}>
                             {startIndex + index + 1}
@@ -124,7 +140,7 @@ const BookingTable = ({
                             <div className="booking-date-small">
                                 Booked: {booking.bookingDate}
                             </div>
-                        </td> 
+                        </td>
 
                         {/* Customer Details */}
                         <td>
@@ -172,7 +188,7 @@ const BookingTable = ({
                             </div>
                         </td>
 
-                        {/* ✅ NEW: Payment Status */}
+                        {/* Payment Status */}
                         <td>
                             <div className={`payment-status-badge ${paymentStatus.class}`}>
                                 <WalletIcon size={14} />

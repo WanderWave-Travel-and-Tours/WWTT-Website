@@ -526,23 +526,48 @@ if (bookingData.packageId) {
     let passengers = [];
     
     if (bookingData.isWalkin) {
-      console.log('🏢 Processing walk-in booking - skipping passenger validation');
-      
-      // Create a placeholder passenger from primary contact
-      passengers = [{
-        passengerNumber: 1,
-        firstName: bookingData.fullName?.split(' ')[0] || 'Walk-in',
-        lastName: bookingData.fullName?.split(' ').slice(1).join(' ') || 'Customer',
-        email: bookingData.email || 'walkin@placeholder.com',
-        phone: bookingData.primaryContact?.phone || '0000000000',
-        dateOfBirth: '2000-01-01',
-        age: 0,
-        gender: 'Not Specified',
-        address: bookingData.primaryContact?.address || 'Walk-in',
-        nationality: 'Filipino'
-      }];
-      
-      console.log(`✅ Walk-in placeholder passenger created`);
+      console.log('🏢 Processing walk-in booking');
+
+      const rawWalkinPassengers = bookingData.passengers || [];
+console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length);
+      if (rawWalkinPassengers.length > 0) {
+        // ✅ Use actual passengers submitted from the form
+        console.log(`📋 Walk-in: using ${rawWalkinPassengers.length} actual passenger(s) from form`);
+
+        for (let index = 0; index < rawWalkinPassengers.length; index++) {
+          const p = rawWalkinPassengers[index];
+          passengers.push({
+            passengerNumber: p.passengerNumber || index + 1,
+            firstName: p.firstName || 'Walk-in',
+            lastName: p.lastName || 'Customer',
+            email: p.email && p.email.trim() !== '' ? p.email.trim() : null, // ✅ null if empty
+            phone: p.phone || '0000000000',
+            dateOfBirth: p.dateOfBirth || '2000-01-01',
+            age: parseInt(p.age) || 0,
+            gender: p.gender || 'Not Specified',
+            address: p.address || 'Walk-in',
+            nationality: p.nationality || 'Filipino'
+          });
+        }
+
+        console.log(`✅ Walk-in: ${passengers.length} passenger(s) processed from form`);
+      } else {
+        // ✅ Fallback: create a single placeholder from primary contact info
+        passengers = [{
+          passengerNumber: 1,
+          firstName: bookingData.fullName?.split(' ')[0] || 'Walk-in',
+          lastName: bookingData.fullName?.split(' ').slice(1).join(' ') || 'Customer',
+          email: bookingData.email && bookingData.email.trim() !== '' ? bookingData.email.trim() : null,
+          phone: bookingData.primaryContact?.phone || '0000000000',
+          dateOfBirth: '2000-01-01',
+          age: 0,
+          gender: 'Not Specified',
+          address: bookingData.primaryContact?.address || 'Walk-in',
+          nationality: 'Filipino'
+        }];
+
+        console.log(`✅ Walk-in: placeholder passenger created (no form passengers provided)`);
+      }
     } else {
       // ✅ REGULAR BOOKING - COMPLETE PASSENGER PROCESSING LOGIC
       const rawPassengers = bookingData.passengers || []; 
@@ -565,7 +590,7 @@ if (bookingData.packageId) {
         const passengerData = rawPassengers[index];
           // Validate required fields for regular bookings
           if (!passengerData.firstName || !passengerData.lastName || 
-              !passengerData.email || !passengerData.phone || 
+               !passengerData.phone || 
               !passengerData.dateOfBirth) {
               req.files?.forEach(file => { try { fs.unlinkSync(file.path); } catch (e) {} });
               return res.status(400).json({
@@ -579,7 +604,7 @@ if (bookingData.packageId) {
               passengerNumber: passengerData.passengerNumber || index + 1,
               firstName: passengerData.firstName,
               lastName: passengerData.lastName,
-              email: passengerData.email,
+              email: passengerData.email && passengerData.email.trim() !== '' ? passengerData.email.trim() : null, // ✅ null if empty
               phone: passengerData.phone,
               dateOfBirth: passengerData.dateOfBirth,
               age: parseInt(passengerData.age) || 0,
