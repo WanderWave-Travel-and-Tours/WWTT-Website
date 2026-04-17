@@ -14,7 +14,9 @@ const BookingFilters = ({
   typeFilter,
   setTypeFilter,
   typeOptions,
-  getTypeFilterClassName
+  getTypeFilterClassName,
+  createdByFilter, 
+setCreatedByFilter
 }) => {
   return (
     <div className="bkm-filter-card">
@@ -85,6 +87,23 @@ const BookingFilters = ({
                                     {option.label.toUpperCase()}
                                 </option>
                             ))}
+                        </select>
+                        <ChevronDown className="bkm-select-icon" size={14} />
+                    </div>
+                </div>
+
+                {/* Created By Filter */}
+                <div className="bkm-filter-item">
+                    <label>Created By:</label>
+                    <div className="bkm-select-wrapper">
+                        <select 
+                            value={createdByFilter} 
+                            onChange={(e) => setCreatedByFilter(e.target.value)}
+                            className="bkm-select"
+                        >
+                            <option value="ALL">ALL</option>
+                            <option value="sales">Sales</option>
+                            <option value="user">User</option>
                         </select>
                         <ChevronDown className="bkm-select-icon" size={14} />
                     </div>

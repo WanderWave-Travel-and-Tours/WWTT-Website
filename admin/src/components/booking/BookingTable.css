@@ -197,3 +197,12 @@
 .bkm-table tr.selected-row:hover {
     background-color: #e0f2fe !important;
 }
+
+.badge-sales { 
+    background: #10b981; 
+    color: white; 
+}
+.badge-user { 
+    background: #64748b; 
+    color: white; 
+}

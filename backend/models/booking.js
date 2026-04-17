@@ -143,7 +143,17 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'failed', 'cancelled', 'partial_paid', 'fully_paid', 'abandoned'],
     default: 'pending'
   },
+createdByType: { 
+  type: String, 
+  enum: ['user', 'sales'], 
+  default: 'user' 
+},
 
+// ✅ BAGONG FIELD — email ng admin/sales na gumawa ng booking
+createdByEmail: { 
+  type: String, 
+  default: null 
+},
   referenceNumber:  { type: String },
 
   createdAt: { type: Date, default: Date.now },

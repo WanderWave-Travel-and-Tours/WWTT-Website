@@ -101,8 +101,9 @@
 }
 
 /* ── Body — single scrollbar only ── */
+/* ── Body — single scrollbar only ── */
 .nbm-body {
-  padding: 32px;
+  padding: 32px 32px 32px 32px;
   max-height: 65vh;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -285,11 +286,112 @@
 /* ── Passenger card ── */
 .nbm-passenger-card {
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 14px;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: border-color 0.2s;
+}
+.nbm-passenger-card:focus-within {
+  border-color: #f59e0b;
+  box-shadow: 0 2px 12px rgba(245,158,11,0.1);
+}
+
+/* ── Passenger heading ── */
+.nbm-passenger-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.nbm-passenger-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #fc9c1b);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.nbm-passenger-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+/* ── Unified field label inside passenger card ── */
+.nbm-pfield label,
+.nbm-pfield > span.nbm-plabel {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* ── DOB row ── */
+.nbm-dob-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.nbm-dob-select {
+  flex: 1;
+  padding: 11px 10px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  font-size: 0.95rem !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  cursor: pointer;
+  appearance: auto !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  width: auto !important;
+}
+.nbm-dob-select:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18) !important;
+  outline: none !important;
+}
+.nbm-dob-select.dob-day  { flex: 0 0 72px; }
+.nbm-dob-select.dob-year { flex: 0 0 88px; }
+
+/* ── Age badge (auto-computed) ── */
+.nbm-age-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #166534;
+  white-space: nowrap;
+  min-width: 68px;
+  justify-content: center;
+}
+.nbm-age-badge-empty {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* ── Full-width address ── */
+.nbm-passenger-card .nbm-pfield input,
+.nbm-passenger-card .nbm-pfield select {
+  width: 100%;
 }
 
 /* ── Add passenger button ── */
@@ -391,7 +493,7 @@
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .nbm-modal { max-width: 100%; margin: 0; border-radius: 16px 16px 0 0; }
-  .nbm-body  { padding: 24px 20px; max-height: 70vh; }
+  .nbm-body  { padding: 24px 20px 24px 20px; }
   .nbm-header, .nbm-footer, .nbm-progress { padding: 18px 20px; }
   .nbm-card  { padding: 16px; }
 }
@@ -496,4 +598,18 @@
   .nbm-preview-modal { border-radius: 16px 16px 0 0; max-height: 95vh; }
   .nbm-preview-header { padding: 18px 20px; }
   .nbm-preview-body { padding: 20px; }
+}
+
+.nbm-dob-select {
+  padding: 10px 8px !important;
+  font-size: 0.94rem !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  text-align: center;
+}
+
+.nbm-dob-select:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18) !important;
 }

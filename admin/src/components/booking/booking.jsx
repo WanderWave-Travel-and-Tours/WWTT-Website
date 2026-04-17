@@ -37,7 +37,7 @@ const Booking = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState([]);
-
+const [createdByFilter, setCreatedByFilter] = useState('ALL');
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -76,33 +76,37 @@ const Booking = () => {
 const actualStatus = b.status || 'pending';   // ← Tinanggal na ang forced 'confirmed'
           
           return {
-            id: `BK${String(count - index).padStart(4, '0')}`,
-            mongoId: b._id,
-            customerName: b.fullName || 'N/A',
-            email: b.email || 'N/A',
-            packageName: b.packageName || 'Unknown Package',
-            destination: b.destination || b.packageId?.destination || 'N/A',
-            travelDate: b.startDate || 'Not specified',
-            startDate: b.startDate,
-            endDate: b.endDate,
-            duration: b.duration,
-            totalAmount: b.totalAmount || 0,
-            guests: b.pax?.adult || 1,
-            status: actualStatus,
-            bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
-            message: b.message || '',
-            referenceNumber: b.referenceNumber || 'N/A',
-            paymentLinkId: b.paymentLinkId,
-            paymentType: b.paymentType || 'full',
-            initialPaymentAmount: b.initialPaymentAmount || 0,
-            remainingBalance: isWalkin ? 0 : (b.remainingBalance || 0),
-            balancePaidAmount: isWalkin ? b.totalAmount : (b.balancePaidAmount || 0),
-            balancePaidAt: b.balancePaidAt,
-            isWalkin: isWalkin,
-            passengers: b.passengers || [],
-            rawData: b,
-            isArchive: b.isArchive || 'No'
-          };
+  id: `BK${String(count - index).padStart(4, '0')}`,
+  mongoId: b._id,
+  customerName: b.fullName || 'N/A',
+  email: b.email || 'N/A',
+  packageName: b.packageName || 'Unknown Package',
+  destination: b.destination || b.packageId?.destination || 'N/A',
+  travelDate: b.startDate || 'Not specified',
+  startDate: b.startDate,
+  endDate: b.endDate,
+  duration: b.duration,
+  totalAmount: b.totalAmount || 0,
+  guests: b.pax?.adult || 1,
+  status: actualStatus,
+  bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
+  message: b.message || '',
+  referenceNumber: b.referenceNumber || 'N/A',
+  paymentLinkId: b.paymentLinkId,
+  paymentType: b.paymentType || 'full',
+  initialPaymentAmount: b.initialPaymentAmount || 0,
+  remainingBalance: isWalkin ? 0 : (b.remainingBalance || 0),
+  balancePaidAmount: isWalkin ? b.totalAmount : (b.balancePaidAmount || 0),
+  balancePaidAt: b.balancePaidAt,
+  isWalkin: isWalkin,
+  
+  // ✅ FORCE SALES FOR ALL WALK-IN
+  createdByType: isWalkin ? 'sales' : (b.createdByType || 'user'),
+  
+  passengers: b.passengers || [],
+  rawData: b,
+  isArchive: b.isArchive || 'No'
+};
         });
 
       setBookings(formatted);
@@ -154,7 +158,10 @@ const actualStatus = b.status || 'pending';   // ← Tinanggal na ang forced 'co
         filtered = filtered.filter(b => b.isWalkin === true);
       }
     }
-
+// Created By Filter
+if (createdByFilter !== 'ALL') {
+  filtered = filtered.filter(b => b.createdByType === createdByFilter.toLowerCase());
+}
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(b =>
@@ -169,7 +176,7 @@ const actualStatus = b.status || 'pending';   // ← Tinanggal na ang forced 'co
     setFilteredBookings(filtered);
     setCurrentPage(1);
 
-  }, [searchTerm, filterStatus, paymentFilter, typeFilter, bookings]);
+  }, [searchTerm, filterStatus, paymentFilter, typeFilter, createdByFilter, bookings]);
 
   const askConfirmation = (title, message, onConfirm, type = "primary") => {
     setConfirmConfig({
@@ -544,6 +551,8 @@ const actualStatus = b.status || 'pending';   // ← Tinanggal na ang forced 'co
             setTypeFilter={setTypeFilter}
             typeOptions={typeOptions}
             getTypeFilterClassName={getTypeFilterClassName}
+            createdByFilter={createdByFilter}
+            setCreatedByFilter={setCreatedByFilter}
           />
 
           {selectedBookings.length > 0 && (
@@ -590,6 +599,7 @@ const actualStatus = b.status || 'pending';   // ← Tinanggal na ang forced 'co
                   <th>Amount</th>
                   <th>Payment Status</th>
                   <th>Status</th>
+                  <th>Created By</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
