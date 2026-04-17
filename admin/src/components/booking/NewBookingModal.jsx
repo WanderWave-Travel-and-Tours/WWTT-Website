@@ -46,8 +46,6 @@ const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 
   // FORM STATE
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
     packageName: '',
     startDate: '',
     endDate: '',
@@ -133,6 +131,22 @@ const [isCheckingPromo, setIsCheckingPromo] = useState(false);
     return { ...prev, passengers: currentPassengers };
   });
 }, [paxCount]);
+
+// ✅ FIX: Sync startDate + endDate into formData so they are NEVER empty on submit
+useEffect(() => {
+  if (!departureDate || !selectedPackage) return;
+
+  const start = new Date(departureDate);
+  if (isNaN(start.getTime())) return; // safety for invalid date
+
+  const days = getDurationDays(selectedPackage.duration);
+  const end = new Date(start);
+  end.setDate(end.getDate() + days - 1);
+  const computedEndDate = end.toISOString().split('T')[0];
+
+  updateField('startDate', departureDate);
+  updateField('endDate', computedEndDate);
+}, [departureDate, selectedPackage]);
 
   // Fetch Hotel Data when destination + modal is open
   useEffect(() => {
@@ -388,77 +402,115 @@ const handleRemovePromo = () => {
 };
 
   const handleSubmit = async () => {
-    if (!selectedPackage || !departureDate) {
-      toast.error('Please select a package and departure date');
-      return;
+  if (!selectedPackage || !departureDate) {
+    toast.error('Please select a package and departure date');
+    return;
+  }
+
+  if (computeFinalTotal() <= 0) {
+    toast.error('Invalid package price. Please check the selected package.');
+    return;
+  }
+
+  setShowConfirm(false);
+  setLoading(true);
+
+  try {
+    // === 1. CREATE BOOKING AS PENDING (walk-in) ===
+    const start = new Date(departureDate);
+    const days = getDurationDays(selectedPackage.duration);
+    const end = new Date(start);
+    end.setDate(end.getDate() + days - 1);
+    const computedEndDate = end.toISOString().split('T')[0];
+
+    const bookingData = {
+      ...formData,
+      packageId: selectedPackage?._id,
+      price: selectedPackage.price,
+      finalPackageTotal: computeFinalTotal(),
+      totalAmount: payableAmount,
+      pax: { adult: paxCount, children: 0, infants: 0 },
+      selectedRoomType: selectedRoomType?.type || null,
+      hotelName: selectedRoomType?.hotelName || null,
+      numberOfRooms: Math.ceil(paxCount / (selectedRoomType?.capacity || 4)),
+      isWalkin: true,
+      status: 'pending',                    // ← importante ito
+      promoCode: appliedPromo ? appliedPromo.code : null,
+      discountAmount: calculateDiscount(),
+      appliedPromoId: appliedPromo ? appliedPromo._id : null,
+
+      passengers: formData.passengers.map((p, i) => ({
+        passengerNumber: i + 1,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        email: p.email && p.email.trim() !== '' ? p.email.trim() : null,
+        phone: p.phone,
+        dateOfBirth: p.dateOfBirth,
+        age: parseInt(p.age) || 0,
+        gender: p.gender || '',
+        address: p.address || '',
+        nationality: p.nationality || 'Filipino',
+      })),
+    };
+
+    const formPayload = new FormData();
+    formPayload.append('bookingData', JSON.stringify(bookingData));
+
+    const API_BASE = 'https://wanderwaveph.onrender.com';   // ← o 'https://wanderwaveph.onrender.com' kapag live
+
+    const bookingRes = await fetch(`${API_BASE}/api/bookings`, {
+      method: 'POST',
+      body: formPayload,
+    });
+
+    const bookingResult = await bookingRes.json();
+
+    if (!bookingResult.success) {
+      throw new Error(bookingResult.message || 'Failed to create booking');
     }
-    if (paxCount < 1) {
-      toast.error('Pax count cannot be zero');
-      return;
-    }
 
-    setShowConfirm(false);
-    setLoading(true);
+    const bookingId = bookingResult.bookingId || bookingResult.data?._id;
 
-    try {
-      const start = new Date(departureDate);
-      const days = getDurationDays(selectedPackage.duration);
-      const end = new Date(start);
-      end.setDate(end.getDate() + days - 1);
-      const computedEndDate = end.toISOString().split('T')[0];
+    console.log('✅ Walk-in booking created (PENDING) → ID:', bookingId);
 
-      const bookingData = {
-        ...formData,
-        packageId: selectedPackage?._id,
-        startDate: departureDate,
-        endDate: computedEndDate,
-        duration: selectedPackage?.duration,
-        price: selectedPackage.price,
-        finalPackageTotal: computeFinalTotal(),
-        totalAmount: payableAmount,
-        pax: { adult: paxCount, children: 0, infants: 0 },
-        selectedRoomType: selectedRoomType?.type || null,
-        hotelName: selectedRoomType?.hotelName || null,
-        numberOfRooms: Math.ceil(paxCount / (selectedRoomType?.capacity || 4)),
-        isWalkin: true,
-        status: 'confirmed',
-        promoCode: appliedPromo ? appliedPromo.code : null,
-        discountAmount: calculateDiscount(),
-        appliedPromoId: appliedPromo ? appliedPromo._id : null,
-        // ✅ Normalize passenger emails — set to null if blank so all passengers are saved
-        passengers: formData.passengers.map((p, i) => ({
-          ...p,
-          passengerNumber: i + 1,
-          email: p.email && p.email.trim() !== '' ? p.email.trim() : null,
-        })),
-      };
+    // === 2. CREATE PAYMONGO CHECKOUT SESSION (katulad ng BookingFormModal) ===
+    const amountToPay = formData.paymentType === 'full' 
+      ? payableAmount 
+      : formData.initialPaymentAmount;
 
-      const formPayload = new FormData();
-      console.log('🚀 Passengers being sent to backend:', JSON.stringify(formData.passengers, null, 2));
-console.log('Number of passengers:', formData.passengers.length);
-      formPayload.append('bookingData', JSON.stringify(bookingData));
-console.log('✅ FINAL PASSENGERS SENT TO BACKEND:', 
-  JSON.stringify(formData.passengers, null, 2));
-      const res = await fetch('https://wanderwaveph.onrender.com/api/bookings', {
-        method: 'POST',
-        body: formPayload,
-      });
+    const paymentRes = await fetch(`${API_BASE}/api/payment/create-intent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: bookingId,
+        paymentType: formData.paymentType,
+        paymentAmount: amountToPay,
+      }),
+    });
 
-      const result = await res.json();
+    const paymentData = await paymentRes.json();
 
-      if (result.success) {
-        toast.success('New booking created successfully!', 'Success');
-        handleClose();
-        window.location.reload();
-      } else {
-        throw new Error(result.message || 'Failed to create booking');
+    if (paymentData.success && paymentData.checkoutUrl) {
+      toast.success('Redirecting to secure payment page...');
+      
+      // Optional: save session ID para sa future reference
+      if (paymentData.checkoutSessionId) {
+        sessionStorage.setItem('pendingCheckoutSessionId', paymentData.checkoutSessionId);
       }
-    } catch (err) {
-      toast.error(err.message || 'Failed to create booking');
-    } finally {
-      setLoading(false);
+
+      // Redirect to PayMongo
+      window.location.href = paymentData.checkoutUrl;
+    } else {
+      throw new Error(paymentData.message || 'No checkout URL returned');
     }
-  };
+
+  } catch (err) {
+    console.error(err);
+    toast.error(err.message || 'Failed to create booking');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Cleanup kapag isasara ang modal
   const handleClose = () => {
@@ -526,27 +578,6 @@ console.log('✅ FINAL PASSENGERS SENT TO BACKEND:',
 
               {/* CARD WRAPPER — Basic Info + Destination + Package */}
               <div className="nbm-card">
-
-                {/* BASIC INFO */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="nbm-field">
-                    <label>Customer Full Name <span style={{ color: 'red' }}>*</span></label>
-                    <input
-                      value={formData.fullName}
-                      onChange={e => updateField('fullName', e.target.value)}
-                      placeholder="Juan Dela Cruz"
-                    />
-                  </div>
-                  <div className="nbm-field">
-                    <label>Email <span style={{ color: 'red' }}>*</span></label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={e => updateField('email', e.target.value)}
-                      placeholder="customer@email.com"
-                    />
-                  </div>
-                </div>
 
                 {/* ── DESTINATION — Searchable ── */}
                 <div className="nbm-field" style={{ marginTop: '16px' }} ref={destRef}>
@@ -1138,15 +1169,10 @@ console.log('✅ FINAL PASSENGERS SENT TO BACKEND:',
             <div className="nbm-preview-body">
 
               {/* Customer */}
-              <div className="nbm-preview-section">
-                <div className="nbm-preview-section-title">
-                  <span>👤</span> Customer Information
-                </div>
-                <div className="nbm-preview-row">
-                  <strong>{formData.fullName || '—'}</strong>
-                  <span>{formData.email || '—'}</span>
-                </div>
-              </div>
+<div className="nbm-preview-section">
+  <div className="nbm-preview-section-title">👤 Customer Information</div>
+  ...
+</div>
 
               {/* Trip Details */}
               <div className="nbm-preview-section">
