@@ -38,9 +38,11 @@ const NewBookingModal = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
 
   // Promo & Total computation states
-  const [promoCode, setPromoCode] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState(null);
-  const [finalPackageTotal, setFinalPackageTotal] = useState(0);
+const [promoCode, setPromoCode] = useState('');
+const [appliedPromo, setAppliedPromo] = useState(null);
+const [finalPackageTotal, setFinalPackageTotal] = useState(0);
+const [promoError, setPromoError] = useState('');
+const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 
   // FORM STATE
   const [formData, setFormData] = useState({
@@ -159,22 +161,21 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
   // Update total kapag nagbago ang pax o room o package
   useEffect(() => {
-    if (selectedPackage) {
-      setFinalPackageTotal(computeFinalTotal());
-    }
-  }, [selectedPackage, paxCount, selectedRoomType]);
+  if (selectedPackage) {
+    setFinalPackageTotal(computeFinalTotal());
+  }
+}, [selectedPackage, paxCount, selectedRoomType, appliedPromo]);   // ← added appliedPromo
 
   // AUTO HALF PAYMENT LOGIC — kapag partial payment
   useEffect(() => {
-    if (formData.paymentType === 'partial') {
-      const total = computeFinalTotal();
-      const halfAmount = Math.round(total / 2);   // exact half, rounded to nearest peso
-      updateField('initialPaymentAmount', halfAmount);
-    } else {
-      // Kapag full payment, i-clear ang initial amount
-      updateField('initialPaymentAmount', 0);
-    }
-  }, [formData.paymentType, selectedPackage, paxCount, selectedRoomType]);
+  if (formData.paymentType === 'partial') {
+    const total = computeFinalTotal();   // now includes discount
+    const halfAmount = Math.round(total / 2);
+    updateField('initialPaymentAmount', halfAmount);
+  } else {
+    updateField('initialPaymentAmount', 0);
+  }
+}, [formData.paymentType, selectedPackage, paxCount, selectedRoomType, appliedPromo]); // ← added
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -229,10 +230,45 @@ const NewBookingModal = ({ isOpen, onClose }) => {
   };
 
     const computeFinalTotal = () => {
-    const base = calculateBasePackageTotal();
-    const hotel = calculateHotelTotal();
-    return base + hotel;
-  };
+  const base = calculateBasePackageTotal();
+  const hotel = calculateHotelTotal();
+  const discount = calculateDiscount();
+  return Math.max(0, base + hotel - discount);
+};
+
+  const calculateDiscount = () => {
+  if (!appliedPromo || !selectedPackage) return 0;
+
+  let maxPaxCovered = paxCount;
+
+  // Respect usage limits (exactly like bookingRightForm)
+  if (appliedPromo.remainingUses != null && appliedPromo.remainingUses !== undefined) {
+    maxPaxCovered = Math.min(maxPaxCovered, appliedPromo.remainingUses);
+  }
+  if (appliedPromo.maxUsesPerBooking) {
+    maxPaxCovered = Math.min(maxPaxCovered, appliedPromo.maxUsesPerBooking);
+  }
+
+  // Resolve promo value - always use .local for PHP walk-in (backend already filters by package type)
+  const promoValue = (() => {
+    const p = appliedPromo.pricing;
+    if (p) {
+      return p.local > 0 ? p.local : (p.international ?? 0);
+    }
+    return appliedPromo.discountValue ?? 0;
+  })();
+
+  // Effective per-pax price (matches min-2 / solo logic in your modal)
+  const effectivePerPaxPrice = isMinTwoPkg 
+    ? (selectedPackage.price || 0) / 2 
+    : (selectedPackage.price || 0);
+
+  if (appliedPromo.discountType === 'Percentage') {
+    return (effectivePerPaxPrice * (promoValue / 100)) * maxPaxCovered;
+  } else {
+    return promoValue * maxPaxCovered;
+  }
+};
 
   // ── NEW: Amount na talagang babayaran ngayon ──
   const payableAmount = formData.paymentType === 'partial'
@@ -279,6 +315,42 @@ const NewBookingModal = ({ isOpen, onClose }) => {
   setPaxCount(prev => prev - 1);
 };
 
+const handleApplyPromo = async () => {
+  if (!promoCode.trim() || !selectedPackage) {
+    toast.error('Please select a package first and enter a promo code');
+    return;
+  }
+
+  setIsCheckingPromo(true);
+  setPromoError('');
+
+  try {
+    const res = await fetch(
+      `https://wanderwaveph.onrender.com/api/promos/validate?code=${encodeURIComponent(promoCode)}&packageId=${selectedPackage._id}&pax=${paxCount}`
+    );
+    const data = await res.json();
+
+    if (data.success && data.promo) {
+      setAppliedPromo(data.promo);
+      setPromoCode(data.promo.code);
+      toast.success('Promo applied successfully!');
+    } else {
+      setPromoError(data.message || 'Invalid or expired promo code');
+    }
+  } catch (err) {
+    console.error(err);
+    setPromoError('Failed to validate promo. Please try again.');
+  } finally {
+    setIsCheckingPromo(false);
+  }
+};
+
+const handleRemovePromo = () => {
+  setAppliedPromo(null);
+  setPromoCode('');
+  setPromoError('');
+};
+
   const handleSubmit = async () => {
     if (!selectedPackage || !departureDate) {
       toast.error('Please select a package and departure date');
@@ -314,6 +386,9 @@ const NewBookingModal = ({ isOpen, onClose }) => {
         numberOfRooms: Math.ceil(paxCount / (selectedRoomType?.capacity || 4)),
         isWalkin: true,
         status: 'confirmed',
+        promoCode: appliedPromo ? appliedPromo.code : null,
+discountAmount: calculateDiscount(),
+appliedPromoId: appliedPromo ? appliedPromo._id : null,
       };
 
       const formPayload = new FormData();
@@ -693,17 +768,91 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* ── Promo Field ── */}
-                <div className="nbm-field">
-                  <label>
-                    Promo Code{' '}
-                    <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: '0.85rem' }}>(optional)</span>
-                  </label>
-                  <input
-                    value={promoCode}
-                    onChange={e => setPromoCode(e.target.value.toUpperCase())}
-                    placeholder="Enter promo code"
-                  />
-                </div>
+                {/* ── Promo Field (fully functional) ── */}
+<div className="nbm-field">
+  <label>
+    Promo Code{' '}
+    <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: '0.85rem' }}>(optional)</span>
+  </label>
+
+  {!appliedPromo ? (
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <input
+        style={{ flex: 1 }}
+        value={promoCode}
+        onChange={e => setPromoCode(e.target.value.toUpperCase())}
+        placeholder="Enter promo code"
+        onKeyPress={e => { if (e.key === 'Enter') handleApplyPromo(); }}
+      />
+      <button
+        onClick={handleApplyPromo}
+        disabled={isCheckingPromo || !selectedPackage}
+        style={{
+          padding: '14px 24px',
+          background: 'linear-gradient(135deg, #f59e0b, #fc9c1b)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '10px',
+          fontWeight: 700,
+          cursor: isCheckingPromo || !selectedPackage ? 'not-allowed' : 'pointer',
+          whiteSpace: 'nowrap',
+          opacity: isCheckingPromo || !selectedPackage ? 0.7 : 1
+        }}
+      >
+        {isCheckingPromo ? 'Checking...' : 'Apply'}
+      </button>
+    </div>
+  ) : (
+    <div style={{
+      background: '#f0fdf4',
+      border: '2px solid #10b981',
+      borderRadius: '12px',
+      padding: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, color: '#166534', fontSize: '1.1rem' }}>
+          {appliedPromo.code}
+        </div>
+        <div style={{ fontSize: '0.85rem', color: '#166534' }}>
+          {appliedPromo.discountType === 'Percentage' 
+            ? `${appliedPromo.pricing?.local || appliedPromo.discountValue}% off per pax` 
+            : `₱${(appliedPromo.pricing?.local || appliedPromo.discountValue).toLocaleString()} off per pax`}
+        </div>
+      </div>
+      <button
+        onClick={handleRemovePromo}
+        style={{
+          background: '#ef4444',
+          color: 'white',
+          border: 'none',
+          padding: '8px 20px',
+          borderRadius: '8px',
+          fontSize: '0.9rem',
+          cursor: 'pointer',
+          fontWeight: 600
+        }}
+      >
+        Remove
+      </button>
+    </div>
+  )}
+
+  {promoError && (
+    <div style={{
+      color: '#ef4444',
+      fontSize: '0.85rem',
+      marginTop: '8px',
+      padding: '10px',
+      background: '#fee2e2',
+      borderRadius: '8px'
+    }}>
+      ❌ {promoError}
+    </div>
+  )}
+</div>
 
                 {/* ── Payment Type ── */}
                 <div className="nbm-field" style={{ marginTop: '20px' }}>
@@ -741,41 +890,39 @@ const NewBookingModal = ({ isOpen, onClose }) => {
               </div>{/* end nbm-card */}
 
               {/* ── Total Summary ── */}
-              <div className="nbm-total-box">
-                <div className="nbm-total-row">
-                  <span>Package Total</span>
-                  <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
-                </div>
-                {selectedRoomType && (
-                  <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
-                    <span>Hotel Accommodation</span>
-                    <span>₱{calculateHotelTotal().toLocaleString()}</span>
-                  </div>
-                )}
+              {/* ── Total Summary ── */}
+<div className="nbm-total-box">
+  <div className="nbm-total-row">
+    <span>Package Total</span>
+    <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+  </div>
 
-                {/* Final / Payable amount */}
-                <div className="nbm-total-row nbm-total-final">
-                  <strong>
-                    {formData.paymentType === 'partial' 
-                      ? 'INITIAL PAYMENT DUE NOW (50%)' 
-                      : 'FINAL TOTAL'}
-                  </strong>
-                  <strong>₱{payableAmount.toLocaleString()}</strong>
-                </div>
+  {/* NEW: Discount row */}
+  {appliedPromo && (
+    <div className="nbm-total-row" style={{ color: '#10b981', fontSize: '0.95rem' }}>
+      <span>- Promo Discount ({appliedPromo.code})</span>
+      <span>-₱{calculateDiscount().toLocaleString()}</span>
+    </div>
+  )}
 
-                {/* Extra note kapag partial */}
-                {formData.paymentType === 'partial' && (
-                  <p style={{
-                    textAlign: 'right',
-                    fontSize: '0.85rem',
-                    color: '#64748b',
-                    marginTop: '8px',
-                    fontWeight: 600
-                  }}>
-                    (50% deposit • Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure)
-                  </p>
-                )}
-              </div>
+  {selectedRoomType && (
+    <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
+      <span>Hotel Accommodation</span>
+      <span>₱{calculateHotelTotal().toLocaleString()}</span>
+    </div>
+  )}
+
+  {/* Final / Payable amount (now discounted) */}
+  <div className="nbm-total-row nbm-total-final">
+    <strong>
+      {formData.paymentType === 'partial' 
+        ? 'INITIAL PAYMENT DUE NOW (50%)' 
+        : 'FINAL TOTAL'}
+    </strong>
+    <strong>₱{payableAmount.toLocaleString()}</strong>
+  </div>
+  ...
+</div>
             </>
           )}
 
@@ -917,9 +1064,16 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                   <CreditCard size={18} /> Payment Summary
                 </div>
                 <div className="nbm-preview-row">
-                  <span>Package Total</span>
-                  <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
-                </div>
+  <span>Package Total</span>
+  <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+</div>
+
+{appliedPromo && (
+  <div className="nbm-preview-row" style={{ color: '#10b981' }}>
+    <span>- Promo ({appliedPromo.code})</span>
+    <span>-₱{calculateDiscount().toLocaleString()}</span>
+  </div>
+)}
                 {selectedRoomType && (
                   <div className="nbm-preview-row">
                     <span>Hotel Accommodation</span>
