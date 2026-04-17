@@ -1,15 +1,21 @@
 const express = require('express');
-const router  = express.Router();
+const router = express.Router();
 const SiteVisit = require('../models/siteVisit');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/log-visit
-// Called by your landing page script when a visitor arrives via a social link.
-// Body: { platform: 'facebook' | 'instagram' | 'tiktok' | 'direct' | 'other' }
+// Body: { 
+//   platform: 'facebook' | 'instagram' | 'tiktok' | 'direct' | 'other',
+//   campaignType?: 'organic' | 'ads'     ← new optional field
+// }
+// Example:
+//   { "platform": "facebook", "campaignType": "organic" }
+//   { "platform": "tiktok", "campaignType": "ads" }
+//   { "platform": "direct" }   ← walang campaignType
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/log-visit', async (req, res) => {
   try {
-    const { platform } = req.body;
+    const { platform, campaignType } = req.body;
 
     if (!platform) {
       return res.status(400).json({ status: 'error', message: 'platform is required' });
@@ -25,10 +31,28 @@ router.post('/log-visit', async (req, res) => {
       });
     }
 
-    const visit = new SiteVisit({ platform: normalized });
+    // Handle campaignType (organic / ads)
+    let normalizedCampaignType = null;
+    if (campaignType !== undefined && campaignType !== null) {
+      normalizedCampaignType = String(campaignType).toLowerCase().trim();
+      const VALID_TYPES = ['organic', 'ads'];
+      if (!VALID_TYPES.includes(normalizedCampaignType)) {
+        return res.status(400).json({
+          status: 'error',
+          message: `Invalid campaignType. Must be one of: ${VALID_TYPES.join(', ')}`,
+        });
+      }
+    }
+
+    const visitData = { platform: normalized };
+    if (normalizedCampaignType) {
+      visitData.campaignType = normalizedCampaignType;
+    }
+
+    const visit = new SiteVisit(visitData);
     await visit.save();
 
-    console.log(`✅ Visit logged — platform: ${normalized}`);
+    console.log(`✅ Visit logged — platform: ${normalized}, campaignType: ${normalizedCampaignType || 'none'}`);
     res.status(201).json({ status: 'ok', message: 'Visit logged', data: visit });
   } catch (error) {
     console.error('❌ Error logging visit:', error);
@@ -38,10 +62,9 @@ router.post('/log-visit', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/site-visits/stats
-// Returns per-platform click counts + recent visits for the Reporting dashboard.
-// Optional query params:
-//   ?start=2025-01-01   — ISO date string (inclusive)
-//   ?end=2025-12-31     — ISO date string (inclusive)
+// Returns per-platform click counts + recent visits
+// Ngayon mas detailed na ang platformRows (may organic at ads breakdown)
+// byPlatform ay total pa rin per platform (backward compatible)
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/stats', async (req, res) => {
   try {
@@ -57,29 +80,34 @@ router.get('/stats', async (req, res) => {
       }
     }
 
-    // Aggregate click counts per platform
+    // Aggregate with campaignType (new)
     const platformCounts = await SiteVisit.aggregate([
       { $match: filter },
       {
         $group: {
-          _id:   '$platform',
+          _id: {
+            platform: '$platform',
+            campaignType: { $ifNull: ['$campaignType', null] }, // null = legacy data
+          },
           count: { $sum: 1 },
-          // Keep the most recent visit timestamp per platform
           lastVisit: { $max: '$createdAt' },
         },
       },
       { $sort: { count: -1 } },
     ]);
 
-    // Build a flat map for easy frontend consumption
+    // Total per platform (backward compatible)
     const countMap = { facebook: 0, instagram: 0, tiktok: 0, direct: 0, other: 0 };
     platformCounts.forEach(({ _id, count }) => {
-      if (_id in countMap) countMap[_id] = count;
+      const plat = _id.platform;
+      if (plat in countMap) {
+        countMap[plat] += count;
+      }
     });
 
     const totalVisits = Object.values(countMap).reduce((a, b) => a + b, 0);
 
-    // Last 500 raw visits (for date-range filtering in the frontend)
+    // Last 500 raw visits (may campaignType na)
     const recentVisits = await SiteVisit.find(filter)
       .sort({ createdAt: -1 })
       .limit(500)
@@ -89,9 +117,9 @@ router.get('/stats', async (req, res) => {
       status: 'ok',
       data: {
         totalVisits,
-        byPlatform:   countMap,
-        platformRows: platformCounts, // [{_id, count, lastVisit}, …]
-        recentVisits,                 // raw rows for client-side date slicing
+        byPlatform: countMap,
+        platformRows: platformCounts,   // ← mas detailed na (platform + campaignType)
+        recentVisits,
       },
     });
   } catch (error) {
