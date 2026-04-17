@@ -73,7 +73,7 @@ const Booking = () => {
         .filter(b => (b.isArchive || 'No') === 'No')
         .map((b, index) => {
           const isWalkin = b.isWalkin || false;
-          const actualStatus = isWalkin ? 'confirmed' : (b.status || 'pending');
+const actualStatus = b.status || 'pending';   // ← Tinanggal na ang forced 'confirmed'
           
           return {
             id: `BK${String(count - index).padStart(4, '0')}`,
