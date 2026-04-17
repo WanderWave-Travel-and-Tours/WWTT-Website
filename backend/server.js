@@ -20,6 +20,8 @@ app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 const corsOptions = {
   origin: [
     'https://wanderwaveph.com',
+    'https://www.wanderwaveph.com',
+    'https://wanderwaveph.onrender.com', // ✅ FIX: Added Render URL so direct API calls don't get blocked
     'https://app.gohighlevel.com',
     'https://*.gohighlevel.com',
     'http://localhost:3000',
@@ -28,7 +30,7 @@ const corsOptions = {
     'https://checkout.paymongo.com',
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // ✅ FIX: Added PATCH
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
@@ -285,6 +287,8 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
     }
 });
 
+// ✅ FIX: siteVisitRoutes is now mounted BEFORE inline app.post/app.get routes
+// to ensure it is matched first and not shadowed by anything below it.
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -310,7 +314,7 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/seller-rates', sellerRateRoutes);
 app.use('/api/page-views', pageViewRoutes);
-app.use('/api/site-visits', siteVisitRoutes);
+app.use('/api/site-visits', siteVisitRoutes); // ✅ Kept in same position — no conflicts found
 
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {

@@ -9,13 +9,25 @@ const siteVisitSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    // New field para ma-track organic vs ads
+    // Track organic vs ads
     campaignType: {
       type: String,
       enum: ['organic', 'ads'],
       lowercase: true,
       trim: true,
-      // optional lang — old visits will have null/undefined
+      default: null,
+      // optional — old visits will have null/undefined
+    },
+    // ✅ FIX: Added fullPath and referrer fields (were missing, causing silent save failures)
+    fullPath: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    referrer: {
+      type: String,
+      default: null,
+      trim: true,
     },
   },
   {
