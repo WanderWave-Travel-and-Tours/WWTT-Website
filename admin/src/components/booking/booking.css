@@ -146,3 +146,67 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     .bkm-overlay { padding: 0; align-items: flex-end; }
     .bkm-modal { border-radius: 14px 14px 0 0; max-width: 100%; margin: 0; }
 }
+
+/* ====================== BULK ACTION BAR ====================== */
+.bulk-action-bar {
+    background: #0f172a;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    flex-wrap: wrap;
+}
+
+.bulk-action-bar span {
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1;
+    min-width: 140px;
+}
+
+.bulk-action-bar button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.bulk-action-bar button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Primary Action - Archive */
+.bulk-action-bar button:first-of-type {
+    background: #ef4444;        /* Red - dangerous action */
+    color: white;
+}
+
+.bulk-action-bar button:first-of-type:hover:not(:disabled) {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+/* Secondary Action - Clear */
+.bulk-action-bar button:last-of-type {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.bulk-action-bar button:last-of-type:hover:not(:disabled) {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.5);
+}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, Users, Search, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
-  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw, Wallet
+  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw, Wallet, 
 } from 'lucide-react';
 import './booking.css';
 import Sidebar from '../sidebar/sidebar';
@@ -36,6 +36,7 @@ const Booking = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+  const [selectedBookings, setSelectedBookings] = useState([]);
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -288,32 +289,32 @@ const Booking = () => {
   const executeArchive = async (booking, action) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/archive`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action })
-      });
+        const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/archive`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.message || `Failed to ${action} booking`);
-      }
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData?.message || `Failed to ${action} booking`);
+        }
 
-      await fetchBookings();
-      toast.success(
-        `Booking ${booking.id} has been ${action}d successfully.`,
-        action === 'archive' ? "Booking Archived" : "Booking Restored",
-        4000
-      );
+        await fetchBookings();
+        toast.success(
+            `Booking ${booking.id} has been ${action}d successfully.`,
+            action === 'archive' ? "Booking Archived" : "Booking Restored",
+            4000
+        );
     } catch (err) {
-      console.error('Archive error:', err);
-      toast.error(
-        err.message || `Failed to ${action} booking.`,
-        `${action.charAt(0).toUpperCase() + action.slice(1)} Failed`,
-        5000
-      );
+        console.error('Archive error:', err);
+        toast.error(
+            err.message || `Failed to ${action} booking.`,
+            `${action.charAt(0).toUpperCase() + action.slice(1)} Failed`,
+            5000
+        );
     } finally {
-      setActionLoading(false);
+        setActionLoading(false);
     }
   };
 
@@ -337,6 +338,87 @@ const Booking = () => {
     setSelectedBooking(booking);
     setShowModal(true);
   };
+
+  // ==================== MULTI-SELECT FUNCTIONS ====================
+
+  const toggleSelect = (booking) => {
+    setSelectedBookings(prev =>
+      prev.some(b => b.mongoId === booking.mongoId)
+        ? prev.filter(b => b.mongoId !== booking.mongoId)
+        : [...prev, booking]
+    );
+  };
+
+  const selectAll = () => {
+    if (selectedBookings.length === currentBookings.length) {
+      setSelectedBookings([]);                     // deselect all
+    } else {
+      setSelectedBookings([...currentBookings]);   // select all visible
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedBookings([]);
+  };
+
+    const handleBulkArchiveClick = () => {
+    if (selectedBookings.length === 0) return;
+
+    const count = selectedBookings.length;
+    const title = "Archive Selected Bookings";
+    const message = `Are you sure you want to archive ${count} booking${count > 1 ? 's' : ''}? This action cannot be undone.`;
+
+    askConfirmation(
+      title,
+      message,
+      async () => {
+        setActionLoading(true);
+
+        try {
+          // Process all archives in parallel (mas mabilis)
+          await Promise.all(
+            selectedBookings.map(async (booking) => {
+              const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/archive`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'archive' })
+              });
+
+              if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || `Failed to archive booking ${booking.id}`);
+              }
+            })
+          );
+
+          // Refresh once lang pagkatapos ng lahat
+          await fetchBookings();
+          
+          clearSelection();
+
+          toast.success(
+            `${count} booking${count > 1 ? 's' : ''} archived successfully.`,
+            "Bulk Archive Completed",
+            4000
+          );
+
+        } catch (err) {
+          console.error('Bulk archive error:', err);
+          toast.error(
+            err.message || 'Failed to archive some bookings.',
+            "Bulk Archive Failed",
+            5000
+          );
+          // Still refresh para makita ang successful ones
+          await fetchBookings();
+        } finally {
+          setActionLoading(false);
+        }
+      },
+      "danger"
+    );
+  };
+  // ================================================================
 
   const stats = useMemo(() => {
     const confirmedRevenue = bookings
@@ -436,7 +518,6 @@ const Booking = () => {
               <p>View and manage all active customer bookings</p>
             </div>
 
-            {/* ← BAGONG BUTTON */}
             <button 
               className="bkm-btn-add"
               onClick={() => setShowNewBookingModal(true)}
@@ -464,11 +545,42 @@ const Booking = () => {
             typeOptions={typeOptions}
             getTypeFilterClassName={getTypeFilterClassName}
           />
-          
+
+          {selectedBookings.length > 0 && (
+  <div className="bulk-action-bar">
+    <span>
+      {selectedBookings.length} booking{selectedBookings.length > 1 ? 's' : ''} selected
+    </span>
+    
+    <button 
+      onClick={handleBulkArchiveClick}
+      disabled={actionLoading}
+    >
+      <Archive size={16} />
+      Archive Selected
+    </button>
+    
+    <button 
+      onClick={clearSelection}
+      disabled={actionLoading}
+    >
+      Clear Selection
+    </button>
+  </div>
+)}
+
           <div className="bkm-table-container">
             <table className="bkm-table">
               <thead>
                 <tr>
+                  {/* Select All Checkbox */}
+                  <th style={{ width: '50px', textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={currentBookings.length > 0 && selectedBookings.length === currentBookings.length}
+                      onChange={selectAll}
+                    />
+                  </th>
                   <th style={{ width: '50px' }}>No.</th>
                   <th>Booking ID</th>
                   <th>Customer Details</th>
@@ -491,6 +603,9 @@ const Booking = () => {
                 handleCancel={handleCancel}
                 handleArchive={handleArchive}
                 actionLoading={actionLoading}
+                selectedBookings={selectedBookings}
+                onToggleSelect={toggleSelect}
+                onSelectAll={selectAll}
                 MailIcon={Mail}
                 CheckCircleIcon={CheckCircle}
                 AlertCircleIcon={AlertCircle}

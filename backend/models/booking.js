@@ -4,7 +4,7 @@ const passengerSchema = new mongoose.Schema({
   passengerNumber: { type: Number, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  email: { type: String, required: true },
+  email: { type: String, required: false, default: null },   // optional, null if not provided
   phone: { type: String, required: true },
   dateOfBirth: { type: String, required: true },
   age: { type: Number, required: true },
