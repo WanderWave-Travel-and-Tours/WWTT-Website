@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users } from 'lucide-react';
+import { X, Users, Calendar, MapPin, Bed, CreditCard } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import HotelRoomSelector from './hotelRoomSelector';
 import './newBookingModal.css';
 
@@ -39,9 +38,11 @@ const NewBookingModal = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
 
   // Promo & Total computation states
-  const [promoCode, setPromoCode] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState(null);
-  const [finalPackageTotal, setFinalPackageTotal] = useState(0);
+const [promoCode, setPromoCode] = useState('');
+const [appliedPromo, setAppliedPromo] = useState(null);
+const [finalPackageTotal, setFinalPackageTotal] = useState(0);
+const [promoError, setPromoError] = useState('');
+const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 
   // FORM STATE
   const [formData, setFormData] = useState({
@@ -160,22 +161,21 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
   // Update total kapag nagbago ang pax o room o package
   useEffect(() => {
-    if (selectedPackage) {
-      setFinalPackageTotal(computeFinalTotal());
-    }
-  }, [selectedPackage, paxCount, selectedRoomType]);
+  if (selectedPackage) {
+    setFinalPackageTotal(computeFinalTotal());
+  }
+}, [selectedPackage, paxCount, selectedRoomType, appliedPromo]);   // ← added appliedPromo
 
   // AUTO HALF PAYMENT LOGIC — kapag partial payment
   useEffect(() => {
-    if (formData.paymentType === 'partial') {
-      const total = computeFinalTotal();
-      const halfAmount = Math.round(total / 2);   // exact half, rounded to nearest peso
-      updateField('initialPaymentAmount', halfAmount);
-    } else {
-      // Kapag full payment, i-clear ang initial amount
-      updateField('initialPaymentAmount', 0);
-    }
-  }, [formData.paymentType, selectedPackage, paxCount, selectedRoomType]);
+  if (formData.paymentType === 'partial') {
+    const total = computeFinalTotal();   // now includes discount
+    const halfAmount = Math.round(total / 2);
+    updateField('initialPaymentAmount', halfAmount);
+  } else {
+    updateField('initialPaymentAmount', 0);
+  }
+}, [formData.paymentType, selectedPackage, paxCount, selectedRoomType, appliedPromo]); // ← added
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -229,11 +229,51 @@ const NewBookingModal = ({ isOpen, onClose }) => {
     return rate * nights * roomsNeeded;
   };
 
-  const computeFinalTotal = () => {
-    const base = calculateBasePackageTotal();
-    const hotel = calculateHotelTotal();
-    return base + hotel;
-  };
+    const computeFinalTotal = () => {
+  const base = calculateBasePackageTotal();
+  const hotel = calculateHotelTotal();
+  const discount = calculateDiscount();
+  return Math.max(0, base + hotel - discount);
+};
+
+  const calculateDiscount = () => {
+  if (!appliedPromo || !selectedPackage) return 0;
+
+  let maxPaxCovered = paxCount;
+
+  // Respect usage limits (exactly like bookingRightForm)
+  if (appliedPromo.remainingUses != null && appliedPromo.remainingUses !== undefined) {
+    maxPaxCovered = Math.min(maxPaxCovered, appliedPromo.remainingUses);
+  }
+  if (appliedPromo.maxUsesPerBooking) {
+    maxPaxCovered = Math.min(maxPaxCovered, appliedPromo.maxUsesPerBooking);
+  }
+
+  // Resolve promo value - always use .local for PHP walk-in (backend already filters by package type)
+  const promoValue = (() => {
+    const p = appliedPromo.pricing;
+    if (p) {
+      return p.local > 0 ? p.local : (p.international ?? 0);
+    }
+    return appliedPromo.discountValue ?? 0;
+  })();
+
+  // Effective per-pax price (matches min-2 / solo logic in your modal)
+  const effectivePerPaxPrice = isMinTwoPkg 
+    ? (selectedPackage.price || 0) / 2 
+    : (selectedPackage.price || 0);
+
+  if (appliedPromo.discountType === 'Percentage') {
+    return (effectivePerPaxPrice * (promoValue / 100)) * maxPaxCovered;
+  } else {
+    return promoValue * maxPaxCovered;
+  }
+};
+
+  // ── NEW: Amount na talagang babayaran ngayon ──
+  const payableAmount = formData.paymentType === 'partial'
+    ? (formData.initialPaymentAmount || 0)
+    : computeFinalTotal();
 
   const detectPackageType = (pkg) => {
   if (!pkg) return;
@@ -275,6 +315,42 @@ const NewBookingModal = ({ isOpen, onClose }) => {
   setPaxCount(prev => prev - 1);
 };
 
+const handleApplyPromo = async () => {
+  if (!promoCode.trim() || !selectedPackage) {
+    toast.error('Please select a package first and enter a promo code');
+    return;
+  }
+
+  setIsCheckingPromo(true);
+  setPromoError('');
+
+  try {
+    const res = await fetch(
+      `https://wanderwaveph.onrender.com/api/promos/validate?code=${encodeURIComponent(promoCode)}&packageId=${selectedPackage._id}&pax=${paxCount}`
+    );
+    const data = await res.json();
+
+    if (data.success && data.promo) {
+      setAppliedPromo(data.promo);
+      setPromoCode(data.promo.code);
+      toast.success('Promo applied successfully!');
+    } else {
+      setPromoError(data.message || 'Invalid or expired promo code');
+    }
+  } catch (err) {
+    console.error(err);
+    setPromoError('Failed to validate promo. Please try again.');
+  } finally {
+    setIsCheckingPromo(false);
+  }
+};
+
+const handleRemovePromo = () => {
+  setAppliedPromo(null);
+  setPromoCode('');
+  setPromoError('');
+};
+
   const handleSubmit = async () => {
     if (!selectedPackage || !departureDate) {
       toast.error('Please select a package and departure date');
@@ -303,13 +379,16 @@ const NewBookingModal = ({ isOpen, onClose }) => {
         duration: selectedPackage?.duration,
         price: selectedPackage.price,
         finalPackageTotal: computeFinalTotal(),
-        totalAmount: computeFinalTotal(),
+        totalAmount: payableAmount,
         pax: { adult: paxCount, children: 0, infants: 0 },
         selectedRoomType: selectedRoomType?.type || null,
         hotelName: selectedRoomType?.hotelName || null,
         numberOfRooms: Math.ceil(paxCount / (selectedRoomType?.capacity || 4)),
         isWalkin: true,
         status: 'confirmed',
+        promoCode: appliedPromo ? appliedPromo.code : null,
+discountAmount: calculateDiscount(),
+appliedPromoId: appliedPromo ? appliedPromo._id : null,
       };
 
       const formPayload = new FormData();
@@ -689,17 +768,91 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* ── Promo Field ── */}
-                <div className="nbm-field">
-                  <label>
-                    Promo Code{' '}
-                    <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: '0.85rem' }}>(optional)</span>
-                  </label>
-                  <input
-                    value={promoCode}
-                    onChange={e => setPromoCode(e.target.value.toUpperCase())}
-                    placeholder="Enter promo code"
-                  />
-                </div>
+                {/* ── Promo Field (fully functional) ── */}
+<div className="nbm-field">
+  <label>
+    Promo Code{' '}
+    <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: '0.85rem' }}>(optional)</span>
+  </label>
+
+  {!appliedPromo ? (
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <input
+        style={{ flex: 1 }}
+        value={promoCode}
+        onChange={e => setPromoCode(e.target.value.toUpperCase())}
+        placeholder="Enter promo code"
+        onKeyPress={e => { if (e.key === 'Enter') handleApplyPromo(); }}
+      />
+      <button
+        onClick={handleApplyPromo}
+        disabled={isCheckingPromo || !selectedPackage}
+        style={{
+          padding: '14px 24px',
+          background: 'linear-gradient(135deg, #f59e0b, #fc9c1b)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '10px',
+          fontWeight: 700,
+          cursor: isCheckingPromo || !selectedPackage ? 'not-allowed' : 'pointer',
+          whiteSpace: 'nowrap',
+          opacity: isCheckingPromo || !selectedPackage ? 0.7 : 1
+        }}
+      >
+        {isCheckingPromo ? 'Checking...' : 'Apply'}
+      </button>
+    </div>
+  ) : (
+    <div style={{
+      background: '#f0fdf4',
+      border: '2px solid #10b981',
+      borderRadius: '12px',
+      padding: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, color: '#166534', fontSize: '1.1rem' }}>
+          {appliedPromo.code}
+        </div>
+        <div style={{ fontSize: '0.85rem', color: '#166534' }}>
+          {appliedPromo.discountType === 'Percentage' 
+            ? `${appliedPromo.pricing?.local || appliedPromo.discountValue}% off per pax` 
+            : `₱${(appliedPromo.pricing?.local || appliedPromo.discountValue).toLocaleString()} off per pax`}
+        </div>
+      </div>
+      <button
+        onClick={handleRemovePromo}
+        style={{
+          background: '#ef4444',
+          color: 'white',
+          border: 'none',
+          padding: '8px 20px',
+          borderRadius: '8px',
+          fontSize: '0.9rem',
+          cursor: 'pointer',
+          fontWeight: 600
+        }}
+      >
+        Remove
+      </button>
+    </div>
+  )}
+
+  {promoError && (
+    <div style={{
+      color: '#ef4444',
+      fontSize: '0.85rem',
+      marginTop: '8px',
+      padding: '10px',
+      background: '#fee2e2',
+      borderRadius: '8px'
+    }}>
+      ❌ {promoError}
+    </div>
+  )}
+</div>
 
                 {/* ── Payment Type ── */}
                 <div className="nbm-field" style={{ marginTop: '20px' }}>
@@ -737,22 +890,39 @@ const NewBookingModal = ({ isOpen, onClose }) => {
               </div>{/* end nbm-card */}
 
               {/* ── Total Summary ── */}
-              <div className="nbm-total-box">
-                <div className="nbm-total-row">
-                  <span>Package Total</span>
-                  <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
-                </div>
-                {selectedRoomType && (
-                  <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
-                    <span>Hotel Accommodation</span>
-                    <span>₱{calculateHotelTotal().toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="nbm-total-row nbm-total-final">
-                  <strong>FINAL TOTAL</strong>
-                  <strong>₱{computeFinalTotal().toLocaleString()}</strong>
-                </div>
-              </div>
+              {/* ── Total Summary ── */}
+<div className="nbm-total-box">
+  <div className="nbm-total-row">
+    <span>Package Total</span>
+    <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+  </div>
+
+  {/* NEW: Discount row */}
+  {appliedPromo && (
+    <div className="nbm-total-row" style={{ color: '#10b981', fontSize: '0.95rem' }}>
+      <span>- Promo Discount ({appliedPromo.code})</span>
+      <span>-₱{calculateDiscount().toLocaleString()}</span>
+    </div>
+  )}
+
+  {selectedRoomType && (
+    <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
+      <span>Hotel Accommodation</span>
+      <span>₱{calculateHotelTotal().toLocaleString()}</span>
+    </div>
+  )}
+
+  {/* Final / Payable amount (now discounted) */}
+  <div className="nbm-total-row nbm-total-final">
+    <strong>
+      {formData.paymentType === 'partial' 
+        ? 'INITIAL PAYMENT DUE NOW (50%)' 
+        : 'FINAL TOTAL'}
+    </strong>
+    <strong>₱{payableAmount.toLocaleString()}</strong>
+  </div>
+  ...
+</div>
             </>
           )}
 
@@ -787,15 +957,175 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
       </div>
 
-      {/* CONFIRM MODAL */}
-      <CustomConfirmModal
-        isOpen={showConfirm}
-        title="Create New Booking"
-        message="Are you sure you want to create this booking?"
-        onConfirm={handleSubmit}
-        onCancel={() => setShowConfirm(false)}
-        type="primary"
-      />
+      {/* BEAUTIFUL BOOKING PREVIEW MODAL */}
+      {showConfirm && (
+        <div 
+          className="nbm-preview-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowConfirm(false);
+          }}
+        >
+          <div className="nbm-preview-modal" onClick={e => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="nbm-preview-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.25)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📋</div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>Booking Preview</h2>
+                  <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem' }}>Please review before creating</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConfirm(false)}
+                style={{ background: 'none', border: 'none', fontSize: '32px', color: 'white', cursor: 'pointer', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="nbm-preview-body">
+
+              {/* Customer */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <span>👤</span> Customer Information
+                </div>
+                <div className="nbm-preview-row">
+                  <strong>{formData.fullName || '—'}</strong>
+                  <span>{formData.email || '—'}</span>
+                </div>
+              </div>
+
+              {/* Trip Details */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <MapPin size={18} /> Trip Details
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Destination</span>
+                  <strong>{selectedDestination}</strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Package</span>
+                  <strong>{selectedPackage?.title || '—'}</strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span><Calendar size={16} style={{ display: 'inline', marginRight: 4 }} /> Departure</span>
+                  <strong>{departureDate}</strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Return Date</span>
+                  <strong>
+                    {(() => {
+                      const s = new Date(departureDate);
+                      const days = getDurationDays(selectedPackage?.duration || '1D');
+                      s.setDate(s.getDate() + days - 1);
+                      return s.toISOString().split('T')[0];
+                    })()}
+                  </strong>
+                </div>
+                <div className="nbm-preview-row">
+                  <span>Number of Pax</span>
+                  <strong>{paxCount} {isSoloPkg ? '(Solo)' : isMinTwoPkg ? '(Min 2)' : ''}</strong>
+                </div>
+              </div>
+
+              {/* Passengers */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <Users size={18} /> Passengers ({formData.passengers.length})
+                </div>
+                {formData.passengers.map((p, i) => (
+                  <div key={i} className="nbm-preview-passenger">
+                    <strong>Passenger {i + 1}:</strong> {p.firstName} {p.lastName}
+                    {p.phone && <span style={{ marginLeft: 12, color: '#64748b' }}>• {p.phone}</span>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Accommodation */}
+              {selectedRoomType && (
+                <div className="nbm-preview-section">
+                  <div className="nbm-preview-section-title">
+                    <Bed size={18} /> Accommodation
+                  </div>
+                  <div className="nbm-preview-row">
+                    <span>Room Type</span>
+                    <strong>{selectedRoomType.type}</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Summary */}
+              <div className="nbm-preview-section">
+                <div className="nbm-preview-section-title">
+                  <CreditCard size={18} /> Payment Summary
+                </div>
+                <div className="nbm-preview-row">
+  <span>Package Total</span>
+  <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+</div>
+
+{appliedPromo && (
+  <div className="nbm-preview-row" style={{ color: '#10b981' }}>
+    <span>- Promo ({appliedPromo.code})</span>
+    <span>-₱{calculateDiscount().toLocaleString()}</span>
+  </div>
+)}
+                {selectedRoomType && (
+                  <div className="nbm-preview-row">
+                    <span>Hotel Accommodation</span>
+                    <span>₱{calculateHotelTotal().toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* BIG TOTAL */}
+                <div className="nbm-preview-total">
+                  <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', marginBottom: 4 }}>
+                    {formData.paymentType === 'partial' ? 'INITIAL PAYMENT DUE NOW' : 'TOTAL AMOUNT'}
+                  </div>
+                  <div className="nbm-due-now">
+                    ₱{payableAmount.toLocaleString()}
+                  </div>
+                  {formData.paymentType === 'partial' && (
+                    <p style={{ marginTop: 8, color: '#166534', fontSize: '0.9rem', fontWeight: 600 }}>
+                      50% deposit • Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure
+                    </p>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{
+              padding: '24px 32px',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              gap: '12px',
+              background: '#fff'
+            }}>
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="nbm-btn nbm-btn-back"
+                style={{ flex: 1 }}
+              >
+                ← Back to Edit
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="nbm-btn nbm-btn-next"
+                style={{ flex: 1 }}
+              >
+                {loading ? 'Creating Booking...' : '✅ Confirm & Create Booking'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
