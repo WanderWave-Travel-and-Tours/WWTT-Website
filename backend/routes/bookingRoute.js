@@ -417,6 +417,14 @@ router.post('/', upload.any(), async (req, res) => {
         });
     }
 
+ // ===== DETERMINE CREATOR =====
+const bookingToSave = {
+  ...bookingData,
+  createdByType: bookingData.createdByType || (bookingData.isWalkin ? 'sales' : 'user'),
+  createdByEmail: bookingData.createdByEmail || (bookingData.isWalkin ? 'houston@wanderwaveph.com' : bookingData.email),
+};
+
+
 // ✅ PRICE VALIDATION - Verify submitted price matches expected price
 if (bookingData.packageId) {
   try {
@@ -808,7 +816,13 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       // Walk-in fields
       isWalkin: bookingData.isWalkin || false,
       appointmentDate: bookingData.appointmentDate || null,
-      appointmentTime: bookingData.appointmentTime || null
+      appointmentTime: bookingData.appointmentTime || null,
+
+      // Creator type + email
+      createdByType: bookingData.createdByType || (bookingData.isWalkin === true ? 'sales' : 'user'),
+      createdByEmail: bookingData.createdByEmail || (bookingData.isWalkin === true
+        ? 'houston@wanderwaveph.com'
+        : bookingData.email)
     });
 
     console.log('💾 Saving booking to database...');

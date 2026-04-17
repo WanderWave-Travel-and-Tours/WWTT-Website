@@ -58,7 +58,8 @@ const [isCheckingPromo, setIsCheckingPromo] = useState(false);
     message: '',
     passengers: [{
       firstName: '', lastName: '', email: '', phone: '',
-      dateOfBirth: '', age: '', gender: '', address: '', nationality: 'Filipino'
+      dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
+      age: '', gender: '', address: '', nationality: 'Filipino'
     }]
   });
 
@@ -121,7 +122,8 @@ const [isCheckingPromo, setIsCheckingPromo] = useState(false);
       while (currentPassengers.length < paxCount) {
         currentPassengers.push({
           firstName: '', lastName: '', email: '', phone: '',
-          dateOfBirth: '', age: '', gender: '', address: '', nationality: 'Filipino'
+          dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
+          age: '', gender: '', address: '', nationality: 'Filipino'
         });
       }
     } else if (currentPassengers.length > paxCount) {
@@ -227,6 +229,36 @@ const updatePassenger = (index, field, value) => {
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
       if (age > 0) updatePassenger(index, 'age', age.toString());
     }
+  };
+
+  // DD / MM / YY dropdown handler — composes full ISO date when all parts are set
+  const handleDobPartChange = (index, part, value) => {
+    // Update the individual part first
+    setFormData(prev => {
+      const updatedPassengers = prev.passengers.map((p, i) => {
+        if (i !== index) return p;
+        const updated = { ...p, [part]: value };
+
+        // Compose full date if all three parts are filled
+        const day   = part === 'dobDay'   ? value : updated.dobDay;
+        const month = part === 'dobMonth' ? value : updated.dobMonth;
+        const year  = part === 'dobYear'  ? value : updated.dobYear;
+
+        if (day && month && year) {
+          const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const birthDate = new Date(iso);
+          if (!isNaN(birthDate.getTime())) {
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const md = today.getMonth() - birthDate.getMonth();
+            if (md < 0 || (md === 0 && today.getDate() < birthDate.getDate())) age--;
+            return { ...updated, dateOfBirth: iso, age: age > 0 ? age.toString() : '' };
+          }
+        }
+        return { ...updated, dateOfBirth: '' };
+      });
+      return { ...prev, passengers: updatedPassengers };
+    });
   };
 
   const getDurationDays = (durationStr) => {
@@ -434,6 +466,8 @@ const handleRemovePromo = () => {
       hotelName: selectedRoomType?.hotelName || null,
       numberOfRooms: Math.ceil(paxCount / (selectedRoomType?.capacity || 4)),
       isWalkin: true,
+      createdByType: 'sales',                    // Force Sales
+      createdByEmail: 'houston@wanderwaveph.com', // Change this to your actual admin email if you have auth
       status: 'pending',                    // ← importante ito
       promoCode: appliedPromo ? appliedPromo.code : null,
       discountAmount: calculateDiscount(),
@@ -676,99 +710,158 @@ const handleRemovePromo = () => {
 
               </div>{/* end nbm-card */}
 
-              {/* PAX SELECTOR — with clear Number of Pax label */}
-{selectedPackage && (
-  <div className="nbm-card" style={{ marginTop: '20px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-      <label style={{ fontWeight: 700, fontSize: '1.1rem', margin: 0 }}>
-        Number of Pax
-      </label>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {isSoloPkg && <span className="nbm-badge nbm-badge-green">Solo Package - Fixed 1 Pax</span>}
-        {isMinTwoPkg && <span className="nbm-badge nbm-badge-blue">Min. 2 Pax</span>}
-        {isSoloJoinersPkg && <span className="nbm-badge nbm-badge-green">Solo / Joiners</span>}
-      </div>
-    </div>
-
-    {isSoloPkg ? (
-      <div className="nbm-pax-solo">
-        <span>1 Pax (Solo - Fixed)</span>
-      </div>
-    ) : (
-      <div className="nbm-pax-counter">
-        <button
-          className="nbm-pax-btn"
-          onClick={() => {
-            const min = isMinTwoPkg ? 2 : 1;
-            if (paxCount > min) setPaxCount(paxCount - 1);
-          }}
-          disabled={paxCount <= (isMinTwoPkg ? 2 : 1)}
-        >
-          −
-        </button>
-        <span className="nbm-pax-count">{paxCount}</span>
-        <button
-          className="nbm-pax-btn"
-          onClick={() => setPaxCount(paxCount + 1)}
-        >
-          +
-        </button>
-      </div>
-    )}
-  </div>
-)}
-
-              {/* DEPARTURE DATE */}
+              {/* ── PAX + DEPARTURE DATE — Combined Card ── */}
               {selectedPackage && (
                 <div className="nbm-card" style={{ marginTop: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-                    Departure Date <span style={{ color: 'red' }}>*</span>
-                  </label>
 
-                  <input
-                    type="date"
-                    value={departureDate}
-                    onChange={e => {
-                      const date = new Date(e.target.value);
-                      const day = date.getDay();
+                  {/* Divider label */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginBottom: '20px'
+                  }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #f59e0b, #fc9c1b)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '16px', flexShrink: 0
+                    }}>🗓️</div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>Trip Configuration</div>
+                      <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>Set number of travellers and preferred departure</div>
+                    </div>
+                  </div>
 
-                      if (isSoloJoinersPkg && ![5, 6, 0].includes(day)) {
-                        toast.error('Solo/Joiners packages can only depart on Friday, Saturday, or Sunday.');
-                        return;
-                      }
+                  {/* Two columns: Pax | Date */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
 
-                      setDepartureDate(e.target.value);
-                    }}
-                    min={new Date().toISOString().split('T')[0]}
-                    style={{ width: '100%' }}
-                  />
+                    {/* LEFT — Number of Pax */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                          Number of Pax
+                        </label>
+                        {isSoloPkg && <span className="nbm-badge nbm-badge-green">Solo</span>}
+                        {isMinTwoPkg && <span className="nbm-badge nbm-badge-blue">Min. 2</span>}
+                        {isSoloJoinersPkg && <span className="nbm-badge nbm-badge-green">Joiners</span>}
+                      </div>
 
-                  {isSoloJoinersPkg && (
-                    <p style={{ fontSize: '0.85rem', color: '#166534', margin: '6px 0 0' }}>
-                      📅 Only Friday, Saturday, or Sunday departures allowed for Solo/Joiners packages.
-                    </p>
-                  )}
+                      {isSoloPkg ? (
+                        <div className="nbm-pax-solo">1 Pax (Solo - Fixed)</div>
+                      ) : (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0',
+                          background: '#f8fafc',
+                          border: '1.5px solid #e2e8f0',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          width: 'fit-content'
+                        }}>
+                          <button
+                            className="nbm-pax-btn"
+                            onClick={() => {
+                              const min = isMinTwoPkg ? 2 : 1;
+                              if (paxCount > min) setPaxCount(paxCount - 1);
+                            }}
+                            disabled={paxCount <= (isMinTwoPkg ? 2 : 1)}
+                            style={{ borderRadius: 0, border: 'none', borderRight: '1.5px solid #e2e8f0', background: '#fff' }}
+                          >−</button>
+                          <span className="nbm-pax-count" style={{ padding: '0 20px', fontSize: '1.4rem' }}>{paxCount}</span>
+                          <button
+                            className="nbm-pax-btn"
+                            onClick={() => setPaxCount(paxCount + 1)}
+                            style={{ borderRadius: 0, border: 'none', borderLeft: '1.5px solid #e2e8f0', background: '#fff' }}
+                          >+</button>
+                        </div>
+                      )}
 
+                      <div style={{ marginTop: '10px', fontSize: '0.82rem', color: '#94a3b8' }}>
+                        {isSoloPkg ? 'Fixed at 1 traveller' : isMinTwoPkg ? 'Minimum 2 travellers' : 'Add or remove travellers'}
+                      </div>
+                    </div>
+
+                    {/* RIGHT — Departure Date */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
+                        Departure Date <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+
+                      <input
+                        type="date"
+                        value={departureDate}
+                        onChange={e => {
+                          const date = new Date(e.target.value);
+                          const day = date.getDay();
+                          if (isSoloJoinersPkg && ![5, 6, 0].includes(day)) {
+                            toast.error('Solo/Joiners packages can only depart on Friday, Saturday, or Sunday.');
+                            return;
+                          }
+                          setDepartureDate(e.target.value);
+                        }}
+                        min={new Date().toISOString().split('T')[0]}
+                        style={{ width: '100%' }}
+                      />
+
+                      {isSoloJoinersPkg && (
+                        <p style={{ fontSize: '0.8rem', color: '#166534', margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          📅 Fri, Sat, or Sun only
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Date preview strip — shown only when date is picked */}
                   {departureDate && (
-                    <div className="nbm-date-preview">
-                      <div className="nbm-date-preview-row">
-                        <div><strong>Departure:</strong> {departureDate}</div>
-                        <div style={{ fontSize: '1.1rem', color: '#f59e0b' }}>→</div>
+                    <div style={{
+                      marginTop: '20px',
+                      padding: '14px 18px',
+                      background: 'linear-gradient(135deg, #fff7ed, #fefce8)',
+                      border: '1.5px solid #fcd34d',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '18px' }}>✈️</span>
                         <div>
-                          <strong>Return:</strong>{' '}
-                          {(() => {
-                            const s = new Date(departureDate);
-                            const days = getDurationDays(selectedPackage.duration);
-                            s.setDate(s.getDate() + days - 1);
-                            return s.toISOString().split('T')[0];
-                          })()}
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Departure</div>
+                          <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>{departureDate}</div>
                         </div>
                       </div>
-                      <div style={{ marginTop: '8px', fontSize: '0.92rem', color: '#166534', fontWeight: 600 }}>
-                        📅 {selectedPackage.duration} Trip • {getDurationDays(selectedPackage.duration)} days
+                      <div style={{ color: '#f59e0b', fontSize: '1.4rem', fontWeight: 300 }}>→</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '18px' }}>🏠</span>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Return</div>
+                          <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
+                            {(() => {
+                              const s = new Date(departureDate);
+                              const days = getDurationDays(selectedPackage.duration);
+                              s.setDate(s.getDate() + days - 1);
+                              return s.toISOString().split('T')[0];
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        background: '#f59e0b',
+                        color: '#fff',
+                        padding: '6px 14px',
+                        borderRadius: '999px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700
+                      }}>
+                        {selectedPackage.duration} • {getDurationDays(selectedPackage.duration)} days
                       </div>
                     </div>
                   )}
+
                 </div>
               )}
 
@@ -786,22 +879,26 @@ const handleRemovePromo = () => {
                 </div>
 
                 {formData.passengers.map((p, i) => (
-                  <div key={i} className="nbm-passenger-card" style={{ marginBottom: '20px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f59e0b', marginBottom: '12px' }}>
-                      Passenger {i + 1}
+                  <div key={i} className="nbm-passenger-card">
+
+                    {/* Heading */}
+                    <div className="nbm-passenger-heading">
+                      <div className="nbm-passenger-num">{i + 1}</div>
+                      <span className="nbm-passenger-label">Passenger {i + 1}</span>
                     </div>
 
+                    {/* Row 1: First Name + Last Name */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>First Name *</label>
+                      <div className="nbm-pfield">
+                        <label>First Name <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                           value={p.firstName}
                           onChange={e => updatePassenger(i, 'firstName', e.target.value)}
                           placeholder="Juan"
                         />
                       </div>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Last Name *</label>
+                      <div className="nbm-pfield">
+                        <label>Last Name <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                           value={p.lastName}
                           onChange={e => updatePassenger(i, 'lastName', e.target.value)}
@@ -810,17 +907,18 @@ const handleRemovePromo = () => {
                       </div>
                     </div>
 
+                    {/* Row 2: Email + Phone */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Email (optional)</label>
+                      <div className="nbm-pfield">
+                        <label>Email <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem' }}>(optional)</span></label>
                         <input
                           value={p.email}
                           onChange={e => updatePassenger(i, 'email', e.target.value)}
                           placeholder="juan@email.com"
                         />
                       </div>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Phone *</label>
+                      <div className="nbm-pfield">
+                        <label>Phone <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                           value={p.phone}
                           onChange={e => updatePassenger(i, 'phone', e.target.value)}
@@ -829,31 +927,93 @@ const handleRemovePromo = () => {
                       </div>
                     </div>
 
-                    {/* NEW FIELDS - same as BookingFormModal */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Date of Birth *</label>
-                        <input
-                          type="date"
-                          value={p.dateOfBirth}
-                          onChange={e => handleDateOfBirthChange(i, e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Age</label>
-                        <input
-                          type="number"
-                          value={p.age}
-                          onChange={e => updatePassenger(i, 'age', e.target.value)}
-                          readOnly
-                          style={{ backgroundColor: '#f8fafc' }}
-                        />
-                      </div>
-                    </div>
+                    {/* === COMPACT & LEFT-ALIGNED DATE OF BIRTH === */}
+<div style={{ marginTop: '12px' }}>
+  <label style={{ 
+    display: 'block', 
+    fontSize: '0.82rem', 
+    fontWeight: 600, 
+    color: '#64748b', 
+    marginBottom: '6px', 
+    letterSpacing: '0.02em', 
+    textTransform: 'uppercase' 
+  }}>
+    Date of Birth <span style={{ color: '#ef4444' }}>*</span>
+  </label>
+  
+  <div style={{ 
+    display: 'flex', 
+    gap: '8px', 
+    alignItems: 'center' 
+  }}>
+    
+    {/* Day */}
+    <select
+      className="nbm-dob-select"
+      value={p.dobDay}
+      onChange={e => handleDobPartChange(i, 'dobDay', e.target.value)}
+      style={{ width: '72px', textAlign: 'left' }}
+    >
+      <option value="">DD</option>
+      {Array.from({ length: 31 }, (_, n) => n + 1).map(d => (
+        <option key={d} value={d}>{String(d).padStart(2, '0')}</option>
+      ))}
+    </select>
 
+    {/* Month - Short & Left Aligned */}
+    <select
+      className="nbm-dob-select"
+      value={p.dobMonth}
+      onChange={e => handleDobPartChange(i, 'dobMonth', e.target.value)}
+      style={{ width: '92px', textAlign: 'left' }}
+    >
+      <option value="">Month</option>
+      <option value="1">January</option>
+      <option value="2">February</option>
+      <option value="3">March</option>
+      <option value="4">April</option>
+      <option value="5">May</option>
+      <option value="6">June</option>
+      <option value="7">July</option>
+      <option value="8">August</option>
+      <option value="9">September</option>
+      <option value="10">October</option>
+      <option value="11">November</option>
+      <option value="12">December</option>
+    </select>
+
+    {/* Year */}
+    <select
+      className="nbm-dob-select"
+      value={p.dobYear}
+      onChange={e => handleDobPartChange(i, 'dobYear', e.target.value)}
+      style={{ width: '82px', textAlign: 'left' }}
+    >
+      <option value="">Year</option>
+      {Array.from(
+        { length: new Date().getFullYear() - 1939 },
+        (_, n) => new Date().getFullYear() - n
+      ).map(y => (
+        <option key={y} value={y}>{y}</option>
+      ))}
+    </select>
+
+    {/* Age Badge */}
+    <div className={`nbm-age-badge${p.age ? '' : ' nbm-age-badge-empty'}`} 
+         style={{ minWidth: '68px', textAlign: 'center' }}>
+      {p.age ? (
+        <>{p.age} <span style={{ fontSize: '0.73rem', opacity: 0.85 }}>yrs</span></>
+      ) : (
+        '—'
+      )}
+    </div>
+  </div>
+</div>
+
+                    {/* Row 4: Gender + Nationality */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Gender *</label>
+                      <div className="nbm-pfield">
+                        <label>Gender <span style={{ color: '#ef4444' }}>*</span></label>
                         <select value={p.gender} onChange={e => updatePassenger(i, 'gender', e.target.value)}>
                           <option value="">Select Gender</option>
                           <option value="Male">Male</option>
@@ -861,8 +1021,8 @@ const handleRemovePromo = () => {
                           <option value="Other">Other</option>
                         </select>
                       </div>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Nationality *</label>
+                      <div className="nbm-pfield">
+                        <label>Nationality <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                           value={p.nationality}
                           onChange={e => updatePassenger(i, 'nationality', e.target.value)}
@@ -871,8 +1031,9 @@ const handleRemovePromo = () => {
                       </div>
                     </div>
 
-                    <div style={{ marginTop: '12px' }}>
-                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Complete Address *</label>
+                    {/* Row 5: Complete Address */}
+                    <div className="nbm-pfield" style={{ marginTop: '12px' }}>
+                      <label>Complete Address <span style={{ color: '#ef4444' }}>*</span></label>
                       <input
                         value={p.address}
                         onChange={e => updatePassenger(i, 'address', e.target.value)}
@@ -881,8 +1042,22 @@ const handleRemovePromo = () => {
                     </div>
 
                     {formData.passengers.length > 1 && (
-                      <button onClick={() => removePassenger(i)} style={{ marginTop: '12px', color: '#ef4444', fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        ✕ Remove Passenger
+                      <button
+                        onClick={() => removePassenger(i)}
+                        style={{
+                          marginTop: '14px',
+                          color: '#ef4444',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: '8px',
+                          padding: '6px 14px',
+                          cursor: 'pointer',
+                          fontFamily: 'Plus Jakarta Sans, sans-serif'
+                        }}
+                      >
+                        ✕ Remove Passenger {i + 1}
                       </button>
                     )}
                   </div>
