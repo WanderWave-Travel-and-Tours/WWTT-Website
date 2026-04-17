@@ -3,57 +3,57 @@ const router = express.Router();
 const SiteVisit = require('../models/siteVisit');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/log-visit
-// Body: { 
+// POST /api/site-visits/log-visit
+// Body: {
 //   platform: 'facebook' | 'instagram' | 'tiktok' | 'direct' | 'other',
-//   campaignType?: 'organic' | 'ads'     ← new optional field
+//   campaignType?: 'organic' | 'ads',   ← optional
+//   fullPath?: string,                  ← optional (e.g. '/facebook-organic')
+//   referrer?: string,                  ← optional (document.referrer)
 // }
-// Example:
-//   { "platform": "facebook", "campaignType": "organic" }
-//   { "platform": "tiktok", "campaignType": "ads" }
-//   { "platform": "direct" }   ← walang campaignType
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/log-visit', async (req, res) => {
   try {
-    const { platform, campaignType } = req.body;
+    // ✅ FIX: Always log incoming payload for easy Render Logs debugging
+    console.log('📥 Site Visit Payload Received:', req.body);
+
+    const { platform, campaignType, fullPath, referrer } = req.body || {};
 
     if (!platform) {
       return res.status(400).json({ status: 'error', message: 'platform is required' });
     }
 
-    const VALID = ['facebook', 'instagram', 'tiktok', 'direct', 'other'];
-    const normalized = String(platform).toLowerCase().trim();
+    const VALID_PLATFORMS = ['facebook', 'instagram', 'tiktok', 'direct', 'other'];
+    const normalizedPlatform = String(platform).toLowerCase().trim();
 
-    if (!VALID.includes(normalized)) {
+    if (!VALID_PLATFORMS.includes(normalizedPlatform)) {
       return res.status(400).json({
         status: 'error',
-        message: `Invalid platform. Must be one of: ${VALID.join(', ')}`,
+        message: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(', ')}`,
       });
     }
 
-    // Handle campaignType (organic / ads)
+    // Normalize campaignType — silently ignore invalid values instead of rejecting
     let normalizedCampaignType = null;
-    if (campaignType !== undefined && campaignType !== null) {
-      normalizedCampaignType = String(campaignType).toLowerCase().trim();
-      const VALID_TYPES = ['organic', 'ads'];
-      if (!VALID_TYPES.includes(normalizedCampaignType)) {
-        return res.status(400).json({
-          status: 'error',
-          message: `Invalid campaignType. Must be one of: ${VALID_TYPES.join(', ')}`,
-        });
+    if (campaignType) {
+      const ct = String(campaignType).toLowerCase().trim();
+      if (['organic', 'ads'].includes(ct)) {
+        normalizedCampaignType = ct;
       }
     }
 
-    const visitData = { platform: normalized };
-    if (normalizedCampaignType) {
-      visitData.campaignType = normalizedCampaignType;
-    }
+    const visit = new SiteVisit({
+      platform: normalizedPlatform,
+      campaignType: normalizedCampaignType,
+      fullPath: fullPath || null,
+      referrer: referrer || null,
+    });
 
-    const visit = new SiteVisit(visitData);
     await visit.save();
 
-    console.log(`✅ Visit logged — platform: ${normalized}, campaignType: ${normalizedCampaignType || 'none'}`);
-    res.status(201).json({ status: 'ok', message: 'Visit logged', data: visit });
+    console.log(`✅ Visit logged → platform: ${normalizedPlatform} | campaignType: ${normalizedCampaignType || 'none'} | path: ${fullPath || 'N/A'}`);
+
+    // ✅ Fast response — important for keepalive + quick redirects
+    res.status(201).json({ status: 'ok', message: 'Visit logged' });
   } catch (error) {
     console.error('❌ Error logging visit:', error);
     res.status(500).json({ status: 'error', message: error.message });
@@ -62,9 +62,8 @@ router.post('/log-visit', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/site-visits/stats
-// Returns per-platform click counts + recent visits
-// Ngayon mas detailed na ang platformRows (may organic at ads breakdown)
-// byPlatform ay total pa rin per platform (backward compatible)
+// Query params: ?start=YYYY-MM-DD&end=YYYY-MM-DD (optional date filter)
+// Returns per-platform totals + organic/ads breakdown + recent visits
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/stats', async (req, res) => {
   try {
@@ -80,14 +79,14 @@ router.get('/stats', async (req, res) => {
       }
     }
 
-    // Aggregate with campaignType (new)
+    // Aggregate with platform + campaignType breakdown
     const platformCounts = await SiteVisit.aggregate([
       { $match: filter },
       {
         $group: {
           _id: {
             platform: '$platform',
-            campaignType: { $ifNull: ['$campaignType', null] }, // null = legacy data
+            campaignType: { $ifNull: ['$campaignType', null] },
           },
           count: { $sum: 1 },
           lastVisit: { $max: '$createdAt' },
@@ -107,7 +106,7 @@ router.get('/stats', async (req, res) => {
 
     const totalVisits = Object.values(countMap).reduce((a, b) => a + b, 0);
 
-    // Last 500 raw visits (may campaignType na)
+    // Last 500 raw visits
     const recentVisits = await SiteVisit.find(filter)
       .sort({ createdAt: -1 })
       .limit(500)
@@ -118,7 +117,7 @@ router.get('/stats', async (req, res) => {
       data: {
         totalVisits,
         byPlatform: countMap,
-        platformRows: platformCounts,   // ← mas detailed na (platform + campaignType)
+        platformRows: platformCounts, // detailed: platform + campaignType breakdown
         recentVisits,
       },
     });
