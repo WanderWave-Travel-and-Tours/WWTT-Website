@@ -825,12 +825,15 @@ if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html')))
 
   app.use(express.static(distPath));
 
-  // ←←← ITO ANG BAGONG CATCH-ALL
-  app.use((req, res, next) => {
-    // Huwag i-block ang /admin paths
+  // ←←← UPDATED CATCH-ALL: app.get('*') — mas reliable para sa React + basename="/admin"
+  app.get('/{*path}', (req, res) => {
+    // Huwag i-serve ang index.html sa API, uploads, at social redirects
     if (req.path.startsWith('/api/') || 
-        req.path.startsWith('/uploads')) {
-      return next();
+        req.path.startsWith('/uploads') ||
+        req.path.startsWith('/fb') ||      // social redirects
+        req.path.startsWith('/ig') ||
+        req.path.startsWith('/tiktok')) {
+      return res.status(404).json({ error: 'Not found' });
     }
 
     console.log(`✅ Serving index.html for: ${req.path}`);
