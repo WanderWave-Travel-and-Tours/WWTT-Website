@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store, Image, File } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store, Image, File, ReceiptText } from 'lucide-react';
 import './BookingDetailModal.css'; 
 import VoucherPreviewModal from './VoucherPreviewModal';
+import OrderSlipModal from './OrderSlipModal';
 
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -96,6 +97,7 @@ export const BookingDetailModal = ({
     const [submittedDocs, setSubmittedDocs] = useState([]);
     const [isLoadingDocs, setIsLoadingDocs] = useState(false);
     const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
+    const [showOrderSlip, setShowOrderSlip] = useState(false);
 
     // Fetch submitted documents whenever the modal opens for a booking
     useEffect(() => {
@@ -794,6 +796,21 @@ const generateVoucherData = async (booking) => {
 <div className="modal-footer">
     <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
 
+    {/* ✅ ORDER SLIP BUTTON — available for all bookings */}
+    <button
+        className="cnm-btn cnm-btn-left"
+        style={{
+            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+            color: 'white',
+            boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
+            marginRight: 'auto',
+        }}
+        onClick={() => setShowOrderSlip(true)}
+    >
+        <ReceiptText size={16} />
+        Order Slip
+    </button>
+
     {/* View Voucher (para sa Confirmed) */}
     {status === 'CONFIRMED' && (
         <button 
@@ -872,6 +889,14 @@ const generateVoucherData = async (booking) => {
                     voucherData={voucherData}
                     onClose={() => setShowVoucherPreview(false)}
                     onEdit={(updatedData) => setVoucherData(updatedData)}
+                />
+            )}
+
+            {/* ✅ ORDER SLIP MODAL */}
+            {showOrderSlip && (
+                <OrderSlipModal
+                    booking={selectedBooking}
+                    onClose={() => setShowOrderSlip(false)}
                 />
             )}
         </>
