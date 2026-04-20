@@ -836,15 +836,6 @@ const Reporting = () => {
               <p className="rp-page-subtitle">Facebook · Instagram · TikTok performance overview</p>
             </div>
             <div className="rp-page-header-right">
-              {/* ALL PLATFORMS button */}
-              <button 
-                className="rp-btn"
-                style={{ backgroundColor: '#001f3f', color: '#ffffff', borderColor: '#001f3f' }}
-              >
-                <BarChart2 size={16} />
-                All Platforms
-                <ChevronDown size={15} />
-              </button>
               {/* Download button */}
               <button
                 className="rp-btn-icon"
@@ -1061,49 +1052,52 @@ const Reporting = () => {
 
             {/* LINE GRAPH — all platforms traffic trend */}
             <div className="rp-chart-card rp-sv-line-card">
-              {/* Header: single row — title | platform pills | campaign filter */}
+              {/* Header: two rows on small screens */}
               <div className="rp-line-header">
                 {/* Title badge */}
                 <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6', flexShrink: 0 }}>
                   <TrendingUp size={16} color="#001f3f" />
                   <span style={{ color: '#001f3f' }}>Traffic Trend</span>
                 </div>
-                {/* Platform pills — centre */}
-                <div className="rp-sv-platform-tabs" style={{ flex: 1, justifyContent: 'center' }}>
-                  {[
-                    { key: 'facebook',  label: 'Facebook',  color: '#1877F2', Icon: Facebook },
-                    { key: 'instagram', label: 'Instagram', color: '#E1306C', Icon: Instagram },
-                    { key: 'tiktok',    label: 'TikTok',    color: '#010101', Icon: null },
-                  ].map(pt => (
-                    <span
-                      key={pt.key}
-                      className="rp-sv-platform-tab rp-header-btn active"
-                      style={{ background: pt.color, borderColor: pt.color, color: '#fff', cursor: 'default' }}
-                    >
-                      {pt.key === 'tiktok'
-                        ? <TikTokIcon size={13} color="#fff" />
-                        : <pt.Icon size={13} color="#fff" />}
-                      {pt.label}
-                    </span>
-                  ))}
-                </div>
-                {/* Campaign filter — right */}
-                <div className="rp-sv-campaign-tabs" style={{ flexShrink: 0 }}>
-                  {[
-                    { key: 'total',   label: 'Total',   Icon: Layers },
-                    { key: 'organic', label: 'Organic', Icon: Sprout },
-                    { key: 'ads',     label: 'Ads',     Icon: Megaphone },
-                  ].map(ct => (
-                    <button
-                      key={ct.key}
-                      className={`rp-sv-campaign-tab rp-header-btn ${svLineCampaignFilter === ct.key ? 'active' : ''}`}
-                      onClick={() => setSvLineCampaignFilter(ct.key)}
-                      style={svLineCampaignFilter === ct.key ? { background: '#001f3f', borderColor: '#001f3f', color: '#fff' } : {}}
-                    >
-                      <ct.Icon size={12} color={svLineCampaignFilter === ct.key ? '#fff' : '#64748b'} />
-                      {ct.label}
-                    </button>
-                  ))}
+                {/* Platform pills + campaign filter — wrap together on zoom */}
+                <div className="rp-line-header-filters">
+                  {/* Platform pills */}
+                  <div className="rp-sv-platform-tabs">
+                    {[
+                      { key: 'facebook',  label: 'Facebook',  color: '#1877F2', Icon: Facebook },
+                      { key: 'instagram', label: 'Instagram', color: '#E1306C', Icon: Instagram },
+                      { key: 'tiktok',    label: 'TikTok',    color: '#010101', Icon: null },
+                    ].map(pt => (
+                      <span
+                        key={pt.key}
+                        className="rp-sv-platform-tab rp-header-btn active"
+                        style={{ background: pt.color, borderColor: pt.color, color: '#fff', cursor: 'default' }}
+                      >
+                        {pt.key === 'tiktok'
+                          ? <TikTokIcon size={13} color="#fff" />
+                          : <pt.Icon size={13} color="#fff" />}
+                        {pt.label}
+                      </span>
+                    ))}
+                  </div>
+                  {/* Campaign filter */}
+                  <div className="rp-sv-campaign-tabs" style={{ flexShrink: 0 }}>
+                    {[
+                      { key: 'total',   label: 'Total',   Icon: Layers },
+                      { key: 'organic', label: 'Organic', Icon: Sprout },
+                      { key: 'ads',     label: 'Ads',     Icon: Megaphone },
+                    ].map(ct => (
+                      <button
+                        key={ct.key}
+                        className={`rp-sv-campaign-tab rp-header-btn ${svLineCampaignFilter === ct.key ? 'active' : ''}`}
+                        onClick={() => setSvLineCampaignFilter(ct.key)}
+                        style={svLineCampaignFilter === ct.key ? { background: '#001f3f', borderColor: '#001f3f', color: '#fff' } : {}}
+                      >
+                        <ct.Icon size={12} color={svLineCampaignFilter === ct.key ? '#fff' : '#64748b'} />
+                        {ct.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               {svLoading ? (
@@ -1170,7 +1164,15 @@ const Reporting = () => {
 
           {/* ── CAMPAIGN TYPE BREAKDOWN (Organic vs Ads) ── */}
           <div className="rp-breakdown-section">
-            <h3 className="rp-breakdown-title">Organic vs Paid Ads Breakdown</h3>
+            <div className="rp-breakdown-section-header">
+              <div className="rp-breakdown-title-wrap">
+                <div className="rp-breakdown-title-icon">
+                  <Layers size={16} color="#001f3f" />
+                </div>
+                <h3 className="rp-breakdown-title">Organic vs Paid Ads Breakdown</h3>
+              </div>
+              <span className="rp-breakdown-period-badge">{periodLabel}</span>
+            </div>
 
             <div className="rp-breakdown-grid">
               {[
@@ -1179,33 +1181,68 @@ const Reporting = () => {
                 { key: 'tiktok',    label: 'TikTok',    color: '#010101', Icon: null },
               ].map(({ key, label, color, Icon }) => {
                 const b = platformBreakdown[key];
+                const maxVal = Math.max(b.organic, b.ads, 1);
+                const organicPct = Math.round((b.organic / maxVal) * 100);
+                const adsPct = Math.round((b.ads / maxVal) * 100);
+                const totalPct = b.total > 0
+                  ? Math.round((b.total / Math.max(siteVisitStats.totalVisits, 1)) * 100)
+                  : 0;
                 return (
                   <div key={key} className="rp-breakdown-card">
+                    {/* Colored top accent */}
+                    <div className="rp-breakdown-accent" style={{ background: color }} />
                     <div className="rp-breakdown-header" style={{ borderLeftColor: color }}>
                       <div className="rp-breakdown-header-icon" style={{ background: color + '18' }}>
                         {Icon ? <Icon size={18} color={color} /> : <TikTokIcon size={18} color={color} />}
                       </div>
-                      <span className="rp-breakdown-platform-name" style={{ color }}>{label}</span>
+                      <div style={{ flex: 1 }}>
+                        <span className="rp-breakdown-platform-name" style={{ color }}>{label}</span>
+                        <div className="rp-breakdown-share-bar-wrap">
+                          <div className="rp-breakdown-share-bar" style={{ width: `${totalPct}%`, background: color }} />
+                        </div>
+                      </div>
+                      <span className="rp-breakdown-total-badge" style={{ background: color + '15', color }}>
+                        {formatCount(b.total)} total
+                      </span>
                     </div>
                     <div className="rp-breakdown-body">
+                      {/* Organic row */}
                       <div className="rp-breakdown-row">
                         <div className="rp-breakdown-type-wrap">
-                          <Sprout size={14} color="#16a34a" />
+                          <div className="rp-breakdown-type-icon" style={{ background: '#f0fdf4' }}>
+                            <Sprout size={13} color="#16a34a" />
+                          </div>
                           <span className="rp-breakdown-type">Organic</span>
                         </div>
-                        <span className="rp-breakdown-value">{formatCount(b.organic)}</span>
+                        <div className="rp-breakdown-right">
+                          <div className="rp-breakdown-mini-bar-wrap">
+                            <div className="rp-breakdown-mini-bar" style={{ width: `${organicPct}%`, background: '#16a34a' }} />
+                          </div>
+                          <span className="rp-breakdown-value" style={{ color: '#16a34a' }}>{formatCount(b.organic)}</span>
+                        </div>
                       </div>
+                      {/* Paid Ads row */}
                       <div className="rp-breakdown-row">
                         <div className="rp-breakdown-type-wrap">
-                          <Megaphone size={14} color="#f59e0b" />
+                          <div className="rp-breakdown-type-icon" style={{ background: '#fffbeb' }}>
+                            <Megaphone size={13} color="#f59e0b" />
+                          </div>
                           <span className="rp-breakdown-type">Paid Ads</span>
                         </div>
-                        <span className="rp-breakdown-value">{formatCount(b.ads)}</span>
+                        <div className="rp-breakdown-right">
+                          <div className="rp-breakdown-mini-bar-wrap">
+                            <div className="rp-breakdown-mini-bar" style={{ width: `${adsPct}%`, background: '#f59e0b' }} />
+                          </div>
+                          <span className="rp-breakdown-value" style={{ color: '#d97706' }}>{formatCount(b.ads)}</span>
+                        </div>
                       </div>
+                      {/* Total row */}
                       <div className="rp-breakdown-total">
                         <div className="rp-breakdown-type-wrap">
-                          <Layers size={14} color="#64748b" />
-                          <span className="rp-breakdown-type">Total</span>
+                          <div className="rp-breakdown-type-icon" style={{ background: color + '12' }}>
+                            <Layers size={13} color={color} />
+                          </div>
+                          <span className="rp-breakdown-type" style={{ fontWeight: 700 }}>Total Visits</span>
                         </div>
                         <span className="rp-breakdown-value total" style={{ color }}>{formatCount(b.total)}</span>
                       </div>
@@ -1215,33 +1252,42 @@ const Reporting = () => {
               })}
             </div>
 
-            {/* Overall Totals */}
+            {/* Overall Totals — enhanced */}
             <div className="rp-overall-breakdown">
               <div className="rp-overall-item">
-                <div className="rp-overall-icon-wrap" style={{ background: '#f0fdf4' }}>
-                  <Sprout size={20} color="#16a34a" />
+                <div className="rp-overall-icon-wrap" style={{ background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)' }}>
+                  <Sprout size={22} color="#16a34a" />
                 </div>
                 <span className="rp-overall-label">Total Organic</span>
-                <span className="rp-overall-value">{formatCount(overallBreakdown.organic)}</span>
-                <span className="rp-overall-sub">all platforms</span>
+                <span className="rp-overall-value" style={{ color: '#16a34a' }}>{formatCount(overallBreakdown.organic)}</span>
+                <span className="rp-overall-sub">across all platforms</span>
+                <div className="rp-overall-pill" style={{ background: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0' }}>
+                  <Sprout size={11} /> Organic Traffic
+                </div>
               </div>
               <div className="rp-overall-divider" />
               <div className="rp-overall-item">
-                <div className="rp-overall-icon-wrap" style={{ background: '#fffbeb' }}>
-                  <Megaphone size={20} color="#f59e0b" />
+                <div className="rp-overall-icon-wrap" style={{ background: 'linear-gradient(135deg, #fef9c3, #fde68a)' }}>
+                  <Megaphone size={22} color="#d97706" />
                 </div>
                 <span className="rp-overall-label">Total Paid Ads</span>
-                <span className="rp-overall-value">{formatCount(overallBreakdown.ads)}</span>
-                <span className="rp-overall-sub">all platforms</span>
+                <span className="rp-overall-value" style={{ color: '#d97706' }}>{formatCount(overallBreakdown.ads)}</span>
+                <span className="rp-overall-sub">across all platforms</span>
+                <div className="rp-overall-pill" style={{ background: '#fffbeb', color: '#d97706', borderColor: '#fde68a' }}>
+                  <Megaphone size={11} /> Paid Traffic
+                </div>
               </div>
               <div className="rp-overall-divider" />
               <div className="rp-overall-item rp-overall-item--grand">
-                <div className="rp-overall-icon-wrap" style={{ background: '#f0f4ff' }}>
-                  <Layers size={20} color="#001f3f" />
+                <div className="rp-overall-icon-wrap" style={{ background: 'linear-gradient(135deg, #dbeafe, #93c5fd)' }}>
+                  <Layers size={22} color="#001f3f" />
                 </div>
                 <span className="rp-overall-label">Grand Total</span>
                 <span className="rp-overall-value grand">{formatCount(overallBreakdown.total)}</span>
-                <span className="rp-overall-sub">all platforms</span>
+                <span className="rp-overall-sub">across all platforms</span>
+                <div className="rp-overall-pill" style={{ background: '#eff6ff', color: '#001f3f', borderColor: '#93c5fd' }}>
+                  <Layers size={11} /> All Traffic
+                </div>
               </div>
             </div>
           </div>
