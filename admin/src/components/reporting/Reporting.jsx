@@ -23,6 +23,9 @@ import {
   Package,
   Map,
   Activity,
+  Sprout,
+  Megaphone,
+  Layers,
 } from 'lucide-react';
 import {
   BarChart,
@@ -242,6 +245,8 @@ const Reporting = () => {
   // ── Site Visit Section — own period/platform state ────────────────────────
   const [svActivePeriod, setSvActivePeriod] = useState('weekly');
   const [svActivePlatform, setSvActivePlatform] = useState('facebook');
+  const [svPieCampaignFilter,  setSvPieCampaignFilter]  = useState('total');  // 'total' | 'organic' | 'ads'
+  const [svLineCampaignFilter, setSvLineCampaignFilter] = useState('total');  // 'total' | 'organic' | 'ads'
   const [svIsDailyOpen,   setSvIsDailyOpen]   = useState(false);
   const [svIsMonthlyOpen, setSvIsMonthlyOpen] = useState(false);
   const [svIsCustomOpen,  setSvIsCustomOpen]  = useState(false);
@@ -302,51 +307,10 @@ const Reporting = () => {
   const [siteVisitStats, setSiteVisitStats] = useState({
     recentVisits: [],
     byPlatform: { facebook: 0, instagram: 0, tiktok: 0 },
+    platformRows: [],     // ← NEW
+    totalVisits:  0,      // ← NEW
   });
   const [svLoading, setSvLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [pvRes, bookRes, svRes] = await Promise.all([
-          fetch('/api/page-views/stats'),
-          fetch('/api/bookings/active'),
-          fetch('/api/site-visits/stats'),
-        ]);
-        const [pvJson, bookJson, svJson] = await Promise.all([pvRes.json(), bookRes.json(), svRes.json()]);
-
-        if (pvJson.status === 'ok') {
-          const d = pvJson.data;
-          setPageViewStats({
-            recentViews:       d.recentViews      || [],
-            totalViews:        d.totalViews        || 0,
-            packagesPageViews: d.packagesPageViews || 0,
-            bookingPageViews:  d.bookingPageViews  || 0,
-            flightsPageViews:  d.flightsPageViews  || 0,
-            servicesPageViews: d.servicesPageViews || 0,
-            topViewedPackages: d.topViewedPackages || [],
-          });
-        }
-
-        if (bookJson.success) {
-          setRecentActiveBookings(bookJson.bookings || []);
-        }
-
-        if (svJson.status === 'ok') {
-          setSiteVisitStats({
-            recentVisits: svJson.data.recentVisits || [],
-            byPlatform:   svJson.data.byPlatform   || { facebook: 0, instagram: 0, tiktok: 0 },
-          });
-        }
-      } catch (err) {
-        console.error('Failed to fetch reporting stats:', err);
-      } finally {
-        setPvLoading(false);
-        setSvLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
 
   // ── Date window — mirrors RevenueAnalytics logic exactly ─────────────────
   const analyticsDateWindow = useMemo(() => {
@@ -412,6 +376,72 @@ const Reporting = () => {
     return { start: new Date(0), end: new Date() };
   }, [svActivePeriod, svSelectedDailyDate, svSelectedMonth, svCustomDates]);
 
+  // ── Fetch stats — placed after svDateWindow so the dep array is valid ─────
+  useEffect(() => {
+    const fetchStats = async () => {
+      setPvLoading(true);
+      setSvLoading(true);
+      try {
+        // Build query params for site-visits only (date-aware)
+        const svParams = new URLSearchParams();
+        const { start, end } = svDateWindow;
+        if (start) svParams.append('start', start.toISOString().split('T')[0]);
+        if (end)   svParams.append('end',   end.toISOString().split('T')[0]);
+
+        const svUrl = svParams.toString()
+          ? `/api/site-visits/stats?${svParams.toString()}`
+          : '/api/site-visits/stats';
+
+        const [pvRes, bookRes, svRes] = await Promise.all([
+          fetch('/api/page-views/stats'),
+          fetch('/api/bookings/active'),
+          fetch(svUrl),
+        ]);
+
+        const [pvJson, bookJson, svJson] = await Promise.all([
+          pvRes.json(),
+          bookRes.json(),
+          svRes.json(),
+        ]);
+
+        if (pvJson.status === 'ok') {
+          const d = pvJson.data;
+          setPageViewStats({
+            recentViews:       d.recentViews      || [],
+            totalViews:        d.totalViews        || 0,
+            packagesPageViews: d.packagesPageViews || 0,
+            bookingPageViews:  d.bookingPageViews  || 0,
+            flightsPageViews:  d.flightsPageViews  || 0,
+            servicesPageViews: d.servicesPageViews || 0,
+            topViewedPackages: d.topViewedPackages || [],
+          });
+        }
+
+        if (bookJson.success) {
+          setRecentActiveBookings(bookJson.bookings || []);
+        }
+
+        // ── SITE VISIT STATS (now date-aware + detailed breakdown) ──
+        if (svJson.status === 'ok') {
+          const data = svJson.data;
+          setSiteVisitStats({
+            recentVisits: data.recentVisits || [],
+            byPlatform:   data.byPlatform   || { facebook: 0, instagram: 0, tiktok: 0 },
+            platformRows: data.platformRows || [],
+            totalVisits:  data.totalVisits  || 0,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch reporting stats:', err);
+      } finally {
+        setPvLoading(false);
+        setSvLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [svDateWindow]);   // ← important: refetches when period changes
+
   // ── Filtered page view stats — driven by the shared sv date toggle ────────
   const filteredPageViewStats = useMemo(() => {
     const allViews = pageViewStats.recentViews || [];
@@ -469,92 +499,203 @@ const Reporting = () => {
     return { totalConfirmedBookings: filtered.length };
   }, [recentActiveBookings, svDateWindow]);
 
-  // ── Filtered social (site-visit) counts — date-range aware ───────────────
-  const filteredSocialVisits = useMemo(() => {
-    const { start, end } = svDateWindow;
-    const all = siteVisitStats.recentVisits;
+  // ── Platform + Campaign Type Breakdown (Organic vs Ads) ─────────────────────
+  const platformBreakdown = useMemo(() => {
+    const breakdown = {
+      facebook:  { organic: 0, ads: 0, total: 0 },
+      instagram: { organic: 0, ads: 0, total: 0 },
+      tiktok:    { organic: 0, ads: 0, total: 0 },
+    };
 
-    const inRange = all.filter(v => {
-      const d = new Date(v.createdAt);
-      return d >= start && d <= end;
+    siteVisitStats.platformRows.forEach((row) => {
+      const plat = row._id.platform;
+      const camp = row._id.campaignType; // 'organic', 'ads', or null
+      const count = row.count || 0;
+
+      if (plat in breakdown) {
+        breakdown[plat].total += count;
+
+        if (camp === 'organic') {
+          breakdown[plat].organic += count;
+        } else if (camp === 'ads') {
+          breakdown[plat].ads += count;
+        }
+        // null campaignType → only counted in total, not organic or ads
+      }
+    });
+
+    return breakdown;
+  }, [siteVisitStats.platformRows]);
+
+  // ── Overall totals ────────────────────────────────────────────────────────
+  const overallBreakdown = useMemo(() => {
+    let organic = 0;
+    let ads = 0;
+
+    Object.values(platformBreakdown).forEach((p) => {
+      organic += p.organic;
+      ads += p.ads;
     });
 
     return {
-      facebook:  inRange.filter(v => v.platform === 'facebook').length,
-      instagram: inRange.filter(v => v.platform === 'instagram').length,
-      tiktok:    inRange.filter(v => v.platform === 'tiktok').length,
+      organic,
+      ads,
+      total: organic + ads,
     };
-  }, [siteVisitStats.recentVisits, svDateWindow]);
+  }, [platformBreakdown]);
 
-  // ── Pie chart data — filtered by sv period ───────────────────────────────
+  // ── Filtered social (site-visit) counts — date-range aware ───────────────
+  const filteredSocialVisits = useMemo(() => ({
+    facebook:  platformBreakdown.facebook.total,
+    instagram: platformBreakdown.instagram.total,
+    tiktok:    platformBreakdown.tiktok.total,
+  }), [platformBreakdown]);
+
+  // ── Pie chart data — filtered by sv period + campaign filter ───────────────
   const svPieData = useMemo(() => {
-    const { start, end } = svDateWindow;
-    const all = siteVisitStats.recentVisits;
-    const inRange = all.filter(v => {
-      const d = new Date(v.createdAt);
-      return d >= start && d <= end;
-    });
-    const fb = inRange.filter(v => v.platform === 'facebook').length;
-    const ig = inRange.filter(v => v.platform === 'instagram').length;
-    const tt = inRange.filter(v => v.platform === 'tiktok').length;
+    const key = svPieCampaignFilter; // 'total' | 'organic' | 'ads'
     return [
-      { name: 'Facebook',  value: fb, color: '#1877F2' },
-      { name: 'Instagram', value: ig, color: '#E1306C' },
-      { name: 'TikTok',    value: tt, color: '#010101' },
+      { name: 'Facebook',  value: platformBreakdown.facebook[key],  color: '#1877F2' },
+      { name: 'Instagram', value: platformBreakdown.instagram[key], color: '#E1306C' },
+      { name: 'TikTok',    value: platformBreakdown.tiktok[key],    color: '#010101' },
     ];
-  }, [siteVisitStats.recentVisits, svDateWindow]);
+  }, [platformBreakdown, svPieCampaignFilter]);
 
-  // ── Line graph data — per-platform over time ──────────────────────────────
+  // ── Line graph date window — excludes daily (line graph ignores daily toggle) ─
+  const svLineWindow = useMemo(() => {
+    const now = new Date();
+    if (svActivePeriod === 'weekly') {
+      const start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0);
+      const end   = new Date(now); end.setHours(23, 59, 59, 999);
+      return { start, end, mode: 'weekly' };
+    }
+    if (svActivePeriod === 'monthly') {
+      const [year, month] = svSelectedMonth.split('-');
+      const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+      const end   = new Date(year, month, 0, 23, 59, 59, 999);
+      return { start, end, mode: 'monthly' };
+    }
+    if (svActivePeriod === '6months') {
+      const start = new Date(now.getFullYear(), now.getMonth() - 5, 1, 0, 0, 0, 0);
+      const end   = new Date(now); end.setHours(23, 59, 59, 999);
+      return { start, end, mode: '6months' };
+    }
+    if (svActivePeriod === 'custom' && svCustomDates.start && svCustomDates.end) {
+      const start = new Date(svCustomDates.start); start.setHours(0, 0, 0, 0);
+      const end   = new Date(svCustomDates.end);   end.setHours(23, 59, 59, 999);
+      const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      const mode = diffDays > 60 ? '6months' : diffDays > 14 ? 'monthly' : 'weekly';
+      return { start, end, mode };
+    }
+    // daily or fallback → use last 7 days but don't react to daily date picker
+    const start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0);
+    const end   = new Date(now); end.setHours(23, 59, 59, 999);
+    return { start, end, mode: 'weekly' };
+  }, [svActivePeriod, svSelectedMonth, svCustomDates]);  // NOTE: svSelectedDailyDate intentionally excluded
+
+  // ── Line graph data — ALL 3 platforms simultaneously ─────────────────────
   const svLineData = useMemo(() => {
-    const { start, end } = svDateWindow;
+    const { start, end, mode } = svLineWindow;
     const all = siteVisitStats.recentVisits;
-    const inRange = all.filter(v => {
+
+    // Filter by date window
+    let inRange = all.filter(v => {
       const d = new Date(v.createdAt);
       return d >= start && d <= end;
-    }).filter(v => v.platform === svActivePlatform);
-
-    if (inRange.length === 0) return [];
-
-    // bucket by day
-    const buckets = {};
-    inRange.forEach(v => {
-      const day = new Date(v.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      buckets[day] = (buckets[day] || 0) + 1;
     });
 
-    // build sorted array from start to end, filling 0 for missing days
+    // Apply campaign type filter — per platform (each platform only counts its own campaignType)
+    const matchesCampaign = (v) => {
+      if (svLineCampaignFilter === 'total') return true;
+      return v.campaignType === svLineCampaignFilter;
+    };
+
+    // ── MONTHLY mode: bucket per calendar week within the month ──────────────
+    if (mode === 'monthly') {
+      // Build week boundaries: Mon–Sun within the month
+      const weeks = [];
+      const cur = new Date(start);
+      while (cur <= end) {
+        const weekStart = new Date(cur);
+        const weekEnd = new Date(cur);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        if (weekEnd > end) weekEnd.setTime(end.getTime());
+        weeks.push({
+          label: `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+          from: new Date(weekStart),
+          to: new Date(weekEnd),
+        });
+        cur.setDate(cur.getDate() + 7);
+      }
+
+      return weeks.map(({ label, from, to }) => {
+        const slice = inRange.filter(v => {
+          const d = new Date(v.createdAt);
+          return d >= from && d <= to;
+        });
+        return {
+          date: label,
+          facebook:  slice.filter(v => v.platform === 'facebook'  && matchesCampaign(v)).length,
+          instagram: slice.filter(v => v.platform === 'instagram' && matchesCampaign(v)).length,
+          tiktok:    slice.filter(v => v.platform === 'tiktok'    && matchesCampaign(v)).length,
+        };
+      });
+    }
+
+    // ── 6MONTHS mode: bucket per calendar month ───────────────────────────────
+    if (mode === '6months') {
+      const months = [];
+      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+      while (cur <= end) {
+        const mStart = new Date(cur.getFullYear(), cur.getMonth(), 1, 0, 0, 0, 0);
+        const mEnd   = new Date(cur.getFullYear(), cur.getMonth() + 1, 0, 23, 59, 59, 999);
+        months.push({
+          label: cur.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          sortKey: cur.getFullYear() * 100 + cur.getMonth(),
+          from: mStart,
+          to: mEnd,
+        });
+        cur.setMonth(cur.getMonth() + 1);
+      }
+
+      return months
+        .sort((a, b) => a.sortKey - b.sortKey)
+        .map(({ label, from, to }) => {
+          const slice = inRange.filter(v => {
+            const d = new Date(v.createdAt);
+            return d >= from && d <= to;
+          });
+          return {
+            date: label,
+            facebook:  slice.filter(v => v.platform === 'facebook'  && matchesCampaign(v)).length,
+            instagram: slice.filter(v => v.platform === 'instagram' && matchesCampaign(v)).length,
+            tiktok:    slice.filter(v => v.platform === 'tiktok'    && matchesCampaign(v)).length,
+          };
+        });
+    }
+
+    // ── WEEKLY (default): bucket per day ─────────────────────────────────────
     const days = [];
     const cur = new Date(start);
     while (cur <= end) {
       const label = cur.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      days.push({ date: label, visits: buckets[label] || 0 });
+      const dayStart = new Date(cur); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd   = new Date(cur); dayEnd.setHours(23, 59, 59, 999);
+      const slice = inRange.filter(v => {
+        const d = new Date(v.createdAt);
+        return d >= dayStart && d <= dayEnd;
+      });
+      days.push({
+        date: label,
+        facebook:  slice.filter(v => v.platform === 'facebook'  && matchesCampaign(v)).length,
+        instagram: slice.filter(v => v.platform === 'instagram' && matchesCampaign(v)).length,
+        tiktok:    slice.filter(v => v.platform === 'tiktok'    && matchesCampaign(v)).length,
+      });
       cur.setDate(cur.getDate() + 1);
     }
-
-    // For 6months / custom long ranges, bucket by week or month to keep readable
-    if (days.length > 60) {
-      // monthly buckets
-      const monthly = {};
-      inRange.forEach(v => {
-        const key = new Date(v.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        monthly[key] = (monthly[key] || 0) + 1;
-      });
-      return Object.entries(monthly).map(([date, visits]) => ({ date, visits }));
-    }
-    if (days.length > 14) {
-      // weekly buckets
-      const weekly = {};
-      inRange.forEach(v => {
-        const d = new Date(v.createdAt);
-        const weekStart = new Date(d); weekStart.setDate(d.getDate() - d.getDay());
-        const key = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        weekly[key] = (weekly[key] || 0) + 1;
-      });
-      return Object.entries(weekly).map(([date, visits]) => ({ date, visits }));
-    }
-
     return days;
-  }, [siteVisitStats.recentVisits, svDateWindow, svActivePlatform]);
+  }, [siteVisitStats.recentVisits, svLineWindow, svLineCampaignFilter]);
+
   const viewToBookRate = useMemo(() => {
     const { bookingPageViews } = filteredPageViewStats;
     const { totalConfirmedBookings } = filteredBookingCounts;
@@ -673,6 +814,7 @@ const Reporting = () => {
       activePeriod,
       periodLabel,
       svPieData,
+      platformBreakdown,
     });
   };
 
@@ -757,100 +899,87 @@ const Reporting = () => {
         <section className="rp-section">
           <h2 className="rp-section-title">Site Visit Analytics <span className="rp-section-subtitle-inline">— Social Referral Traffic</span></h2>
 
-          {/* Controls: period toggles */}
-          <div className="rp-chart-controls">
-            <span className="rp-sv-controls-label">Period</span>
-            <div className="rp-period-bar">
-              {/* DAILY */}
-              <div className="rp-period-dropdown" ref={svDailyRef}>
-                <button
-                  className={`rp-period-btn ${svActivePeriod === 'daily' ? 'active' : ''}`}
-                  style={svActivePeriod === 'daily' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                  onClick={() => { setSvIsDailyOpen(o => !o); setSvIsMonthlyOpen(false); setSvIsCustomOpen(false); }}
-                >
-                  <Clock size={14} /> Daily <ChevronDown size={13} className={svIsDailyOpen ? 'rp-chevron-open' : ''} />
-                </button>
-                {svIsDailyOpen && (
-                  <div className="rp-period-menu">
-                    <p className="rp-period-menu-title">Select Day</p>
-                    <input type="date" className="rp-period-date-input" value={svSelectedDailyDate}
-                      max={new Date().toISOString().split('T')[0]}
-                      onChange={e => { setSvSelectedDailyDate(e.target.value); setSvActivePeriod('daily'); setSvIsDailyOpen(false); }} />
-                  </div>
-                )}
+          {/* Controls: period toggles — new clean pill navigator */}
+          <div className="rp-pt-wrap">
+            {/* ── Pill row ── */}
+            <div className="rp-pt-bar">
+              <span className="rp-pt-label"><Clock size={13} /> Period</span>
+              <div className="rp-pt-pills">
+                {[
+                  { key: 'weekly',  icon: <Calendar size={13} />,          label: 'Weekly'   },
+                  { key: 'monthly', icon: <CalendarDays size={13} />,      label: 'Monthly'  },
+                  { key: '6months', icon: <TrendingUp size={13} />,        label: '6 Months' },
+                  { key: 'custom',  icon: <SlidersHorizontal size={13} />, label: 'Custom'   },
+                ].map(p => (
+                  <button
+                    key={p.key}
+                    className={`rp-pt-pill ${svActivePeriod === p.key ? 'rp-pt-pill--active' : ''}`}
+                    onClick={() => setSvActivePeriod(p.key)}
+                  >
+                    {p.icon}{p.label}
+                  </button>
+                ))}
               </div>
 
-              {/* WEEKLY */}
-              <button
-                className={`rp-period-btn ${svActivePeriod === 'weekly' ? 'active' : ''}`}
-                style={svActivePeriod === 'weekly' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                onClick={() => setSvActivePeriod('weekly')}
-              >
-                <Calendar size={14} /> Weekly
-              </button>
-
-              {/* MONTHLY */}
-              <div className="rp-period-dropdown" ref={svMonthlyRef}>
-                <button
-                  className={`rp-period-btn ${svActivePeriod === 'monthly' ? 'active' : ''}`}
-                  style={svActivePeriod === 'monthly' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                  onClick={() => { setSvIsMonthlyOpen(o => !o); setSvIsDailyOpen(false); setSvIsCustomOpen(false); }}
-                >
-                  <CalendarDays size={14} /> Monthly <ChevronDown size={13} className={svIsMonthlyOpen ? 'rp-chevron-open' : ''} />
-                </button>
-                {svIsMonthlyOpen && (
-                  <div className="rp-period-menu">
-                    <p className="rp-period-menu-title">Select Month</p>
-                    <input type="month" className="rp-period-date-input" value={svSelectedMonth}
-                      max={new Date().toISOString().slice(0, 7)}
-                      onChange={e => { setSvSelectedMonth(e.target.value); setSvActivePeriod('monthly'); setSvIsMonthlyOpen(false); }} />
+              {/* Monthly inline navigator */}
+              {svActivePeriod === 'monthly' && (() => {
+                const [y, m] = svSelectedMonth.split('-').map(Number);
+                const today = new Date();
+                const isMax = y === today.getFullYear() && m === today.getMonth() + 1;
+                const isMin = y === 2020 && m === 1;
+                const goPrev = () => {
+                  const d = new Date(y, m - 2, 1);
+                  setSvSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                };
+                const goNext = () => {
+                  const d = new Date(y, m, 1);
+                  setSvSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                };
+                const monthLabel = new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                return (
+                  <div className="rp-pt-month-nav">
+                    <button className="rp-pt-nav-arrow" onClick={goPrev} disabled={isMin}>&#8249;</button>
+                    <span className="rp-pt-month-label">{monthLabel}</span>
+                    <button className="rp-pt-nav-arrow" onClick={goNext} disabled={isMax}>&#8250;</button>
                   </div>
-                )}
-              </div>
-
-              {/* 6 MONTHS */}
-              <button
-                className={`rp-period-btn ${svActivePeriod === '6months' ? 'active' : ''}`}
-                style={svActivePeriod === '6months' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                onClick={() => setSvActivePeriod('6months')}
-              >
-                <TrendingUp size={14} /> 6 Months
-              </button>
-
-              {/* CUSTOM RANGE */}
-              <div className="rp-period-dropdown" ref={svCustomRef}>
-                <button
-                  className={`rp-period-btn ${svActivePeriod === 'custom' ? 'active' : ''}`}
-                  style={svActivePeriod === 'custom' ? { backgroundColor: '#001f3f', color: '#fff' } : {}}
-                  onClick={() => { setSvIsCustomOpen(o => !o); setSvIsDailyOpen(false); setSvIsMonthlyOpen(false); }}
-                >
-                  <SlidersHorizontal size={14} /> Custom Range <ChevronDown size={13} className={svIsCustomOpen ? 'rp-chevron-open' : ''} />
-                </button>
-                {svIsCustomOpen && (
-                  <div className="rp-period-menu rp-period-menu--wide">
-                    <p className="rp-period-menu-title">Custom Range</p>
-                    <div className="rp-period-range-row">
-                      <div className="rp-period-range-field">
-                        <label>Start</label>
-                        <input type="date" className="rp-period-date-input" value={svCustomDates.start}
-                          max={svCustomDates.end || new Date().toISOString().split('T')[0]}
-                          onChange={e => setSvCustomDates(d => ({ ...d, start: e.target.value }))} />
-                      </div>
-                      <div className="rp-period-range-field">
-                        <label>End</label>
-                        <input type="date" className="rp-period-date-input" value={svCustomDates.end}
-                          min={svCustomDates.start} max={new Date().toISOString().split('T')[0]}
-                          onChange={e => setSvCustomDates(d => ({ ...d, end: e.target.value }))} />
-                      </div>
-                      <button className="rp-period-apply"
-                        onClick={() => { setSvActivePeriod('custom'); setSvIsCustomOpen(false); }}>
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
+
+            {/* Custom range row */}
+            {svActivePeriod === 'custom' && (
+              <div className="rp-pt-custom-row">
+                <div className="rp-pt-custom-field">
+                  <label className="rp-pt-custom-label">From</label>
+                  <input
+                    type="date"
+                    className="rp-pt-date-input"
+                    value={svCustomDates.start}
+                    max={svCustomDates.end || new Date().toISOString().split('T')[0]}
+                    onChange={e => setSvCustomDates(d => ({ ...d, start: e.target.value }))}
+                  />
+                </div>
+                <span className="rp-pt-custom-sep">→</span>
+                <div className="rp-pt-custom-field">
+                  <label className="rp-pt-custom-label">To</label>
+                  <input
+                    type="date"
+                    className="rp-pt-date-input"
+                    value={svCustomDates.end}
+                    min={svCustomDates.start}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={e => setSvCustomDates(d => ({ ...d, end: e.target.value }))}
+                  />
+                </div>
+                {svCustomDates.start && svCustomDates.end && (
+                  <span className="rp-pt-custom-confirm">
+                    ✓ {new Date(svCustomDates.start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {' – '}
+                    {new Date(svCustomDates.end + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Charts row: Pie + Line side by side */}
@@ -858,12 +987,29 @@ const Reporting = () => {
 
             {/* PIE CHART — platform share comparison */}
             <div className="rp-chart-card rp-sv-pie-card">
-              <div className="rp-chart-card-header">
-                <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6' }}>
+              <div className="rp-line-header">
+                <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6', flexShrink: 0 }}>
                   <BarChart2 size={16} color="#001f3f" />
                   <span style={{ color: '#001f3f' }}>Platform Share</span>
                 </div>
-                <p className="rp-chart-card-subtitle">Which platform drives the most visits</p>
+                {/* Campaign Type Toggle */}
+                <div className="rp-sv-campaign-tabs" style={{ flexShrink: 0 }}>
+                  {[
+                    { key: 'total',   label: 'Total',   Icon: Layers },
+                    { key: 'organic', label: 'Organic', Icon: Sprout },
+                    { key: 'ads',     label: 'Ads',     Icon: Megaphone },
+                  ].map(ct => (
+                    <button
+                      key={ct.key}
+                      className={`rp-sv-campaign-tab rp-header-btn ${svPieCampaignFilter === ct.key ? 'active' : ''}`}
+                      onClick={() => setSvPieCampaignFilter(ct.key)}
+                      style={svPieCampaignFilter === ct.key ? { background: '#001f3f', borderColor: '#001f3f', color: '#fff' } : {}}
+                    >
+                      <ct.Icon size={12} color={svPieCampaignFilter === ct.key ? '#fff' : '#64748b'} />
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               {svLoading ? (
                 <div className="rp-loading"><div className="rp-spinner" /><p className="rp-loading-text">Loading…</p></div>
@@ -913,76 +1059,193 @@ const Reporting = () => {
               )}
             </div>
 
-            {/* LINE GRAPH — per-platform traffic trend */}
+            {/* LINE GRAPH — all platforms traffic trend */}
             <div className="rp-chart-card rp-sv-line-card">
-              <div className="rp-chart-card-header">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6', alignSelf: 'flex-start' }}>
-                    <TrendingUp size={16} color="#001f3f" />
-                    <span style={{ color: '#001f3f' }}>Traffic Trend</span>
-                  </div>
-                  {/* Platform toggle buttons */}
-                  <div className="rp-sv-platform-tabs">
-                    {[
-                      { key: 'facebook',  label: 'Facebook',  color: '#1877F2', bg: '#e7f0fd', Icon: Facebook },
-                      { key: 'instagram', label: 'Instagram', color: '#E1306C', bg: '#fde8ef', Icon: Instagram },
-                      { key: 'tiktok',    label: 'TikTok',    color: '#010101', bg: '#f0f0f0', Icon: null },
-                    ].map(pt => (
-                      <button
-                        key={pt.key}
-                        className={`rp-sv-platform-tab ${svActivePlatform === pt.key ? 'active' : ''}`}
-                        onClick={() => setSvActivePlatform(pt.key)}
-                        style={svActivePlatform === pt.key ? { background: pt.color, borderColor: pt.color, color: '#fff' } : {}}
-                      >
-                        {pt.key === 'tiktok'
-                          ? <TikTokIcon size={13} color={svActivePlatform === pt.key ? '#fff' : '#64748b'} />
-                          : <pt.Icon size={13} color={svActivePlatform === pt.key ? '#fff' : '#64748b'} />}
-                        {pt.label}
-                      </button>
-                    ))}
-                  </div>
+              {/* Header: single row — title | platform pills | campaign filter */}
+              <div className="rp-line-header">
+                {/* Title badge */}
+                <div className="rp-chart-platform-badge" style={{ background: '#f3f4f6', flexShrink: 0 }}>
+                  <TrendingUp size={16} color="#001f3f" />
+                  <span style={{ color: '#001f3f' }}>Traffic Trend</span>
                 </div>
-                <p className="rp-chart-card-subtitle">Site visits over time</p>
+                {/* Platform pills — centre */}
+                <div className="rp-sv-platform-tabs" style={{ flex: 1, justifyContent: 'center' }}>
+                  {[
+                    { key: 'facebook',  label: 'Facebook',  color: '#1877F2', Icon: Facebook },
+                    { key: 'instagram', label: 'Instagram', color: '#E1306C', Icon: Instagram },
+                    { key: 'tiktok',    label: 'TikTok',    color: '#010101', Icon: null },
+                  ].map(pt => (
+                    <span
+                      key={pt.key}
+                      className="rp-sv-platform-tab rp-header-btn active"
+                      style={{ background: pt.color, borderColor: pt.color, color: '#fff', cursor: 'default' }}
+                    >
+                      {pt.key === 'tiktok'
+                        ? <TikTokIcon size={13} color="#fff" />
+                        : <pt.Icon size={13} color="#fff" />}
+                      {pt.label}
+                    </span>
+                  ))}
+                </div>
+                {/* Campaign filter — right */}
+                <div className="rp-sv-campaign-tabs" style={{ flexShrink: 0 }}>
+                  {[
+                    { key: 'total',   label: 'Total',   Icon: Layers },
+                    { key: 'organic', label: 'Organic', Icon: Sprout },
+                    { key: 'ads',     label: 'Ads',     Icon: Megaphone },
+                  ].map(ct => (
+                    <button
+                      key={ct.key}
+                      className={`rp-sv-campaign-tab rp-header-btn ${svLineCampaignFilter === ct.key ? 'active' : ''}`}
+                      onClick={() => setSvLineCampaignFilter(ct.key)}
+                      style={svLineCampaignFilter === ct.key ? { background: '#001f3f', borderColor: '#001f3f', color: '#fff' } : {}}
+                    >
+                      <ct.Icon size={12} color={svLineCampaignFilter === ct.key ? '#fff' : '#64748b'} />
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               {svLoading ? (
                 <div className="rp-loading"><div className="rp-spinner" /><p className="rp-loading-text">Loading…</p></div>
               ) : svLineData.length === 0 ? (
                 <div className="rp-empty"><p>No data for selected platform and period.</p></div>
               ) : (
-                <ResponsiveContainer width="100%" height={240}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={svLineData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b', fontFamily: 'Plus Jakarta Sans, sans-serif' }} />
-                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} width={32} />
                     <Tooltip
                       content={({ active, payload, label }) => {
                         if (!active || !payload?.length) return null;
                         const platformColors = { facebook: '#1877F2', instagram: '#E1306C', tiktok: '#010101' };
+                        const platformLabels = { facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok' };
                         return (
                           <div className="rp-tooltip">
                             <p className="rp-tooltip-label">{label}</p>
-                            <p className="rp-tooltip-item">
-                              <span className="rp-tooltip-dot" style={{ background: platformColors[svActivePlatform] }} />
-                              {svActivePlatform.charAt(0).toUpperCase() + svActivePlatform.slice(1)}: <strong>{payload[0].value}</strong>
-                            </p>
+                            {payload.map(entry => (
+                              <p key={entry.dataKey} className="rp-tooltip-item">
+                                <span className="rp-tooltip-dot" style={{ background: platformColors[entry.dataKey] }} />
+                                {platformLabels[entry.dataKey]}
+                                {svLineCampaignFilter !== 'total' ? ` (${svLineCampaignFilter})` : ''}: <strong>{entry.value}</strong>
+                              </p>
+                            ))}
                           </div>
                         );
                       }}
                     />
                     <Line
                       type="monotone"
-                      dataKey="visits"
-                      stroke={svActivePlatform === 'facebook' ? '#1877F2' : svActivePlatform === 'instagram' ? '#E1306C' : '#010101'}
+                      dataKey="facebook"
+                      stroke="#1877F2"
                       strokeWidth={2.5}
-                      dot={{ r: 4, fill: svActivePlatform === 'facebook' ? '#1877F2' : svActivePlatform === 'instagram' ? '#E1306C' : '#010101' }}
+                      dot={{ r: 4, fill: '#1877F2' }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="instagram"
+                      stroke="#E1306C"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: '#E1306C' }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="tiktok"
+                      stroke="#010101"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: '#010101' }}
                       activeDot={{ r: 6 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
+                </div>
               )}
             </div>
 
           </div>
+
+          {/* ── CAMPAIGN TYPE BREAKDOWN (Organic vs Ads) ── */}
+          <div className="rp-breakdown-section">
+            <h3 className="rp-breakdown-title">Organic vs Paid Ads Breakdown</h3>
+
+            <div className="rp-breakdown-grid">
+              {[
+                { key: 'facebook',  label: 'Facebook',  color: '#1877F2', Icon: Facebook },
+                { key: 'instagram', label: 'Instagram', color: '#E1306C', Icon: Instagram },
+                { key: 'tiktok',    label: 'TikTok',    color: '#010101', Icon: null },
+              ].map(({ key, label, color, Icon }) => {
+                const b = platformBreakdown[key];
+                return (
+                  <div key={key} className="rp-breakdown-card">
+                    <div className="rp-breakdown-header" style={{ borderLeftColor: color }}>
+                      <div className="rp-breakdown-header-icon" style={{ background: color + '18' }}>
+                        {Icon ? <Icon size={18} color={color} /> : <TikTokIcon size={18} color={color} />}
+                      </div>
+                      <span className="rp-breakdown-platform-name" style={{ color }}>{label}</span>
+                    </div>
+                    <div className="rp-breakdown-body">
+                      <div className="rp-breakdown-row">
+                        <div className="rp-breakdown-type-wrap">
+                          <Sprout size={14} color="#16a34a" />
+                          <span className="rp-breakdown-type">Organic</span>
+                        </div>
+                        <span className="rp-breakdown-value">{formatCount(b.organic)}</span>
+                      </div>
+                      <div className="rp-breakdown-row">
+                        <div className="rp-breakdown-type-wrap">
+                          <Megaphone size={14} color="#f59e0b" />
+                          <span className="rp-breakdown-type">Paid Ads</span>
+                        </div>
+                        <span className="rp-breakdown-value">{formatCount(b.ads)}</span>
+                      </div>
+                      <div className="rp-breakdown-total">
+                        <div className="rp-breakdown-type-wrap">
+                          <Layers size={14} color="#64748b" />
+                          <span className="rp-breakdown-type">Total</span>
+                        </div>
+                        <span className="rp-breakdown-value total" style={{ color }}>{formatCount(b.total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Overall Totals */}
+            <div className="rp-overall-breakdown">
+              <div className="rp-overall-item">
+                <div className="rp-overall-icon-wrap" style={{ background: '#f0fdf4' }}>
+                  <Sprout size={20} color="#16a34a" />
+                </div>
+                <span className="rp-overall-label">Total Organic</span>
+                <span className="rp-overall-value">{formatCount(overallBreakdown.organic)}</span>
+                <span className="rp-overall-sub">all platforms</span>
+              </div>
+              <div className="rp-overall-divider" />
+              <div className="rp-overall-item">
+                <div className="rp-overall-icon-wrap" style={{ background: '#fffbeb' }}>
+                  <Megaphone size={20} color="#f59e0b" />
+                </div>
+                <span className="rp-overall-label">Total Paid Ads</span>
+                <span className="rp-overall-value">{formatCount(overallBreakdown.ads)}</span>
+                <span className="rp-overall-sub">all platforms</span>
+              </div>
+              <div className="rp-overall-divider" />
+              <div className="rp-overall-item rp-overall-item--grand">
+                <div className="rp-overall-icon-wrap" style={{ background: '#f0f4ff' }}>
+                  <Layers size={20} color="#001f3f" />
+                </div>
+                <span className="rp-overall-label">Grand Total</span>
+                <span className="rp-overall-value grand">{formatCount(overallBreakdown.total)}</span>
+                <span className="rp-overall-sub">all platforms</span>
+              </div>
+            </div>
+          </div>
+
         </section>
 
 

@@ -42,6 +42,7 @@ export const exportReportingToPDF = ({
     activePeriod          = 'weekly',
     periodLabel           = 'All Time',
     svPieData             = [],
+    platformBreakdown     = {},
 }) => {
     try {
         const doc       = new jsPDF();
@@ -264,10 +265,95 @@ export const exportReportingToPDF = ({
 
         yPos = doc.lastAutoTable.finalY + 15;
 
-
-
         // ══════════════════════════════════════════════════════════════════
-        // FOOTER (last page)
+        // 3. ORGANIC vs PAID ADS BREAKDOWN — Per Platform
+        // ══════════════════════════════════════════════════════════════════
+        checkPageBreak(80);
+        drawSectionHeader(3, 'ORGANIC vs PAID ADS BREAKDOWN — Per Platform', yPos);
+        yPos += 12;
+
+        const PLATFORM_PDF_COLORS = {
+            facebook:  [24,  119, 242],
+            instagram: [225, 48,  108],
+            tiktok:    [1,   1,   1  ],
+        };
+
+        const platforms = [
+            { key: 'facebook',  label: 'Facebook'  },
+            { key: 'instagram', label: 'Instagram' },
+            { key: 'tiktok',    label: 'TikTok'    },
+        ];
+
+        // Build rows
+        const adsBody = [];
+        let grandOrganic = 0;
+        let grandAds     = 0;
+        let grandTotal   = 0;
+
+        platforms.forEach(({ key, label }) => {
+            const b       = platformBreakdown[key] || { organic: 0, ads: 0, total: 0 };
+            const total   = b.total   || 0;
+            const organic = b.organic || 0;
+            const ads     = b.ads     || 0;
+            grandOrganic += organic;
+            grandAds     += ads;
+            grandTotal   += total;
+            adsBody.push([label, String(organic), String(ads), String(total)]);
+        });
+
+        adsBody.push(['TOTAL ALL PLATFORMS', String(grandOrganic), String(grandAds), String(grandTotal)]);
+
+        autoTable(doc, {
+            startY: yPos,
+            head:   [['Platform', 'Organic Visits', 'Paid Ads Visits', 'Total Visits']],
+            body:   adsBody,
+            theme:  'plain',
+            margin: { left: 14, right: 14 },
+            headStyles: {
+                fillColor: [0, 31, 63],
+                textColor: [255, 255, 255],
+                fontSize:  10,
+                fontStyle: 'bold',
+            },
+            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            columnStyles: {
+                0: { cellWidth: 'auto', fontStyle: 'bold' },
+                1: { halign: 'center', cellWidth: 38, textColor: [22, 163, 74]  },   // green for organic
+                2: { halign: 'center', cellWidth: 38, textColor: [245, 158, 11] },   // amber for ads
+                3: { halign: 'center', cellWidth: 32, fontStyle: 'bold' },
+            },
+            didParseCell: (data) => {
+                if (data.section !== 'body') return;
+                // Color platform name by brand color
+                if (data.column.index === 0) {
+                    const platKey = platforms[data.row.index]?.key;
+                    const col = platKey ? PLATFORM_PDF_COLORS[platKey] : null;
+                    if (col) data.cell.styles.textColor = col;
+                }
+                // TOTAL row styling
+                if (data.row.index === platforms.length) {
+                    data.cell.styles.fillColor = [245, 247, 250];
+                    data.cell.styles.fontStyle = 'bold';
+                    if (data.column.index === 0) data.cell.styles.textColor = [0, 31, 63];
+                    if (data.column.index === 1) data.cell.styles.textColor = [22, 163, 74];
+                    if (data.column.index === 2) data.cell.styles.textColor = [245, 158, 11];
+                    if (data.column.index === 3) data.cell.styles.textColor = [0, 31, 63];
+                }
+            },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+
+        // Per-platform organic/ads share note
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(
+            'Organic = direct/social referrals without paid campaigns. Paid Ads = tracked ad campaign visits.',
+            14, yPos,
+        );
+        yPos += 14;
         // ══════════════════════════════════════════════════════════════════
         const fy = pageHeight - 15;
         doc.setFontSize(8);
