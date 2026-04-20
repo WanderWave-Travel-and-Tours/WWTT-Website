@@ -812,17 +812,17 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
   });
 });
 
+// ====================== SERVE REACT FRONTEND (PRODUCTION) ======================
 if (process.env.NODE_ENV === 'production') {
-  // 1. Serve ang built React files
-  app.use(express.static(path.join(__dirname, 'build')));   // <-- adjust path kung iba ang folder name mo
+  // Serve ang built React app
+  app.use(express.static(path.join(__dirname, 'build')));
 
-  // 2. Catch-all route para sa lahat ng /admin/* at iba pang client routes
-  //    IMPORTANT: Dapat ito ay AFTER lahat ng API routes mo
-  app.get('*', (req, res) => {
+  // FIXED: Catch-all route (gamit ang app.use para maiwasan ang PathError)
+  app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
   });
 }
-
+// ===============================================================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
