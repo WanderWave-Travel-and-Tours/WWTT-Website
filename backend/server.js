@@ -21,7 +21,7 @@ const corsOptions = {
   origin: [
     'https://wanderwaveph.com',
     'https://www.wanderwaveph.com',
-    'https://wanderwaveph.onrender.com', // ✅ FIX: Added Render URL so direct API calls don't get blocked
+    'https://wanderwaveph.onrender.com',
     'https://app.gohighlevel.com',
     'https://*.gohighlevel.com',
     'http://localhost:3000',
@@ -47,23 +47,19 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ====================== 🔍 GLOBAL REQUEST LOGGER ======================
-// Logs every incoming request so we can identify exactly what's hitting the server
 app.use((req, res, next) => {
   const start = Date.now();
 
-  // Skip logging for static file requests to keep logs clean
   if (req.path.startsWith('/uploads')) return next();
 
   console.log(`\n📥 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   console.log(`   Origin: ${req.headers.origin || 'N/A'}`);
   console.log(`   Content-Type: ${req.headers['content-type'] || 'N/A'}`);
 
-  // Log request body for POST/PUT/PATCH (but skip file uploads)
   if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.headers['content-type']?.includes('application/json')) {
     console.log(`   Body: ${JSON.stringify(req.body)}`);
   }
 
-  // Log response when it finishes
   res.on('finish', () => {
     const duration = Date.now() - start;
     const statusIcon = res.statusCode >= 400 ? '❌' : '✅';
@@ -151,6 +147,8 @@ const imagesRoutes = require('./routes/imagesRoute');
 const sellerRateRoutes = require('./routes/sellerRoute');
 const pageViewRoutes = require('./routes/pageViewRoute');
 const siteVisitRoutes = require('./routes/siteVisitRoute');
+// ✅ FIX: Import the missing activityLog route
+const activityLogRoutes = require('./routes/activityLogRoute');
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -288,7 +286,6 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
 });
 
 // ✅ FIX: siteVisitRoutes is now mounted BEFORE inline app.post/app.get routes
-// to ensure it is matched first and not shadowed by anything below it.
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -314,7 +311,9 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/seller-rates', sellerRateRoutes);
 app.use('/api/page-views', pageViewRoutes);
-app.use('/api/site-visits', siteVisitRoutes); // ✅ Kept in same position — no conflicts found
+app.use('/api/site-visits', siteVisitRoutes);
+// ✅ FIX: Register the activity-logs route so it is reachable
+app.use('/api/activity-logs', activityLogRoutes);
 
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
@@ -370,9 +369,9 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
 app.post('/api/bookings', async (req, res) => {
   try {
     const bookingData = req.body;
-    const package = await PackageModel.findOne({ title: bookingData.packageName });
+    const pkg = await PackageModel.findOne({ title: bookingData.packageName });
     
-    if (!package) {
+    if (!pkg) {
       return res.status(404).json({ 
         success: false,
         message: 'Package not found' 
@@ -384,255 +383,49 @@ app.post('/api/bookings', async (req, res) => {
       (bookingData.pax?.children || 0) + 
       (bookingData.pax?.infants || 0);
     
-    const totalAmount = package.price * totalPax;
+    const totalAmount = pkg.price * totalPax;
     
     console.log('📦 Creating booking with pricing:', {
-      packageName: package.title,
-      sellerPrice: package.sellerPrice,
-      markup: package.markup,
-      price: package.price,
+      packageName: pkg.title,
+      sellerPrice: pkg.sellerPrice,
+      markup: pkg.markup,
+      price: pkg.price,
       totalPax,
       totalAmount
     });
     
     const newBooking = new Booking({
       ...bookingData,
-      packageId: package._id,
-      sellerPrice: package.sellerPrice,
-      markup: package.markup,
-      price: package.price,
-      totalAmount: totalAmount
+      packageId: pkg._id,
+      totalAmount: totalAmount,
+      status: 'pending'
     });
     
     await newBooking.save();
     
-    console.log('✅ Booking created successfully with ID:', newBooking._id);
-    
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
-      message: 'Booking created successfully', 
-      booking: newBooking 
+      message: 'Booking created successfully',
+      data: newBooking
     });
     
   } catch (error) {
-    console.error('❌ Error creating booking:', error);
+    console.error('❌ Create booking error:', error);
     res.status(500).json({ 
       success: false,
-      message: 'Error creating booking', 
+      message: 'Server error', 
       error: error.message 
     });
-  }
-});
-
-app.get('/api/admin/bookings', async (req, res) => {
-  try {
-    const bookings = await Booking.find()
-      .sort({ createdAt: -1 }) 
-      .select('-__v'); 
-
-    res.status(200).json(bookings);
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-    res.status(500).json({ message: 'Failed to fetch bookings', error: error.message });
-  }
-});
-
-app.put('/api/admin/bookings/:id/confirm', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const booking = await Booking.findById(id);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    if (booking.status === 'confirmed') {
-      return res.status(400).json({
-        success: false,
-        message: 'Booking is already confirmed'
-      });
-    }
-
-    if (booking.status === 'cancelled') {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot confirm a cancelled booking'
-      });
-    }
-
-    booking.status = 'confirmed';
-    booking.updatedAt = new Date();
-    
-    if (!booking.paidAt) {
-      booking.paidAt = new Date();
-    }
-
-    await booking.save();
-
-    console.log('✅ Booking confirmed:', id);
-
-    res.json({
-      success: true,
-      message: 'Booking confirmed successfully',
-      booking: booking
-    });
-
-  } catch (error) {
-    console.error('❌ Confirm booking error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to confirm booking',
-      error: error.message
-    });
-  }
-});
-
-app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const booking = await Booking.findById(id);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    if (booking.status === 'cancelled') {
-      return res.status(400).json({
-        success: false,
-        message: 'Booking is already cancelled'
-      });
-    }
-
-    booking.status = 'cancelled';
-    booking.updatedAt = new Date();
-    booking.cancelledAt = new Date();
-
-    await booking.save();
-
-    console.log('❌ Booking cancelled:', id);
-
-    res.json({
-      success: true,
-      message: 'Booking cancelled successfully',
-      booking: booking
-    });
-
-  } catch (error) {
-    console.error('❌ Cancel booking error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to cancel booking',
-      error: error.message
-    });
-  }
-});
-
-app.get('/api/blogs', async (req, res) => {
-  const blogs = await Blog.find();
-  res.json(blogs);
-});
-
-app.get('/api/admin/statistics', async (req, res) => {
-  try {
-    const confirmedBookings = await Booking.find({ status: 'confirmed' });
-    const statistics = confirmedBookings.reduce((acc, booking) => {
-      const pax = 
-        (booking.pax?.adult || 1) + 
-        (booking.pax?.children || 0) + 
-        (booking.pax?.infants || 0);
-      if (booking.sellerPrice && booking.markup) {
-        acc.totalSellerCost += booking.sellerPrice * pax;
-        acc.totalMarkup += booking.markup * pax;
-        acc.totalSales += booking.totalAmount;
-      }
-      
-      acc.totalBookings += 1;
-      
-      return acc;
-    }, {
-      totalSellerCost: 0,
-      totalMarkup: 0,
-      totalSales: 0,
-      totalBookings: 0
-    });
-    
-    statistics.profitMargin = statistics.totalSales > 0 
-      ? ((statistics.totalMarkup / statistics.totalSales) * 100).toFixed(1)
-      : 0;
-    
-    console.log('📊 Statistics calculated:', statistics);
-    
-    res.json({
-      success: true,
-      data: statistics
-    });
-    
-  } catch (error) {
-    console.error('❌ Error fetching statistics:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Error fetching statistics', 
-      error: error.message 
-    });
-  }
-});
-
-// ============================================================
-// ⭐ FAVORITES / WISHLIST ROUTES
-// ============================================================
-
-// GET USER WISHLIST - FIXED (returns full package data)
-app.get('/api/favorites/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const user = await User.findById(userId)
-      .populate({
-        path: 'favorites',
-        model: 'packages',
-        select: '_id title name destination location price image duration soloPaxPrice multiplePaxPrice inclusions rating reviews package_code'
-      });
-
-    if (!user) {
-      return res.status(404).json({ status: 'error', message: 'User not found' });
-    }
-
-    const wishlistItems = user.favorites.map(pkg => ({
-      promo_id: pkg._id.toString(),
-      package_title: pkg.title || pkg.name || 'Untitled Package',
-      package_location: pkg.destination || pkg.location || 'Unknown',
-      packageDetails: pkg.toObject()
-    }));
-
-    console.log(`✅ Wishlist fetched → ${wishlistItems.length} items for user ${userId}`);
-
-    res.status(200).json({ 
-      status: 'ok', 
-      data: wishlistItems 
-    });
-
-  } catch (error) {
-    console.error('❌ Error fetching wishlist:', error);
-    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
 // ==============================================
-// FAVORITES / WISHLIST - FIXED (matches current frontend)
+// FAVORITES / WISHLIST
 // ==============================================
 app.post('/api/favorites', async (req, res) => {
   try {
     const { promo_id, user_id, package_title, package_location } = req.body;
 
-    // Accept either "promo_id" or "packageId"
     const packageId = promo_id || req.body.packageId;
     const userId    = user_id    || req.body.userId;
 
@@ -661,7 +454,6 @@ app.post('/api/favorites', async (req, res) => {
 
     console.log(`✅ Wishlist toggle success → ${isFavorited ? 'REMOVED' : 'ADDED'} ${packageId} for user ${userId}`);
 
-    // Optional: return extra info for WishlistDropdown
     res.status(200).json({
       status: 'ok',
       isFavorited: !isFavorited,
@@ -775,46 +567,41 @@ Object.entries(SOCIAL_REDIRECTS).forEach(([slug, { platform, url }]) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NEW: WanderWave Custom Ad & Organic Redirect Routes (6 URLs)
-// Logs directly to SiteVisit with fullPath + campaignType
-// Added without deleting any existing code
+// WanderWave Custom Ad & Organic Redirect Routes
 // ─────────────────────────────────────────────────────────────────────────────
 const CUSTOM_URLS = {
-  // Paid Ads
   'fb-ads':     { platform: 'facebook', campaignType: 'ads' },
   'ig-ads':     { platform: 'instagram', campaignType: 'ads' },
   'tiktok-ads': { platform: 'tiktok', campaignType: 'ads' },
-  // Organic
   'fb-org':     { platform: 'facebook', campaignType: 'organic' },
   'ig-org':     { platform: 'instagram', campaignType: 'organic' },
   'tiktok-org': { platform: 'tiktok', campaignType: 'organic' },
 };
 
-Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
-  app.get(`/${path}`, async (req, res) => {
+Object.entries(CUSTOM_URLS).forEach(([urlPath, { platform, campaignType }]) => {
+  app.get(`/${urlPath}`, async (req, res) => {
     try {
       const SiteVisit = require('./models/siteVisit');
       const visit = new SiteVisit({
         platform,
         campaignType,
-        fullPath: `/${path}`,           // exact clean URL path
+        fullPath: `/${urlPath}`,
         referrer: req.headers.referer || req.headers.referrer || null,
       });
       await visit.save();
 
-      console.log(`✅ Custom URL visit logged → ${path} | ${platform} | ${campaignType}`);
+      console.log(`✅ Custom URL visit logged → ${urlPath} | ${platform} | ${campaignType}`);
     } catch (err) {
-      console.error(`❌ Failed to log custom URL ${path}:`, err.message);
+      console.error(`❌ Failed to log custom URL ${urlPath}:`, err.message);
     }
 
-    // Redirect to homepage (clean, no UTM needed anymore)
     res.redirect(302, 'https://wanderwaveph.com/');
   });
 });
 
 // ====================== SERVE REACT FRONTEND (PRODUCTION) ======================
 if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, 'dist');   // ← Binago natin dito
+  const distPath = path.join(__dirname, 'dist');
 
   console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
   console.log('📁 Current directory:', __dirname);
@@ -827,7 +614,7 @@ if (process.env.NODE_ENV === 'production') {
 
     app.use(express.static(distPath));
 
-    // Catch-all route para sa admin pages (SPA routing)
+    // Catch-all route for admin SPA pages — API routes are excluded
     app.use((req, res, next) => {
       if (req.path.startsWith('/api/') || 
           req.path.startsWith('/uploads') || 
@@ -840,10 +627,16 @@ if (process.env.NODE_ENV === 'production') {
     });
 
   } else {
+    // ✅ FIX: The 503 catch-all only applies to non-API routes now.
+    // API routes registered above will still work even if dist is missing.
     console.error('❌ DIST FOLDER NOT FOUND!');
     console.error('   Expected path:', distPath);
     
-    app.use((req, res) => {
+    app.use((req, res, next) => {
+      // Don't block API routes even if dist is missing
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
       res.status(503).send('Admin dashboard build is missing. Please check Render build settings.');
     });
   }
