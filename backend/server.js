@@ -827,7 +827,6 @@ if (process.env.NODE_ENV === 'production') {
 
     app.use(express.static(buildPath));
 
-    // Safe catch-all route
     app.use((req, res, next) => {
       if (req.path.startsWith('/api/') || 
           req.path.startsWith('/uploads') || 
@@ -840,9 +839,11 @@ if (process.env.NODE_ENV === 'production') {
     });
 
   } else {
-    console.error('❌ BUILD FOLDER NOT FOUND! Check Render Build Command and Root Directory.');
+    console.error('❌ BUILD FOLDER NOT FOUND!');
+    console.error('   Make sure Root Directory is "frontend" and Build Command is correct.');
+    
     app.use((req, res) => {
-      res.status(503).send('Admin dashboard is still building. Please wait a moment and refresh.');
+      res.status(503).send('Admin dashboard build is missing. Please check Render settings.');
     });
   }
 }
