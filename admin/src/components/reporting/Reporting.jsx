@@ -50,6 +50,9 @@ import './Reporting.css';
 
 
 
+// ─── API BASE URL ─────────────────────────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 // ─── CHART DATA (social media — replace with real API when ready) ──────────────
 
 // All 12 months of data — getChartData() will slice up to current month
@@ -389,12 +392,12 @@ const Reporting = () => {
         if (end)   svParams.append('end',   end.toISOString().split('T')[0]);
 
         const svUrl = svParams.toString()
-          ? `/api/site-visits/stats?${svParams.toString()}`
-          : '/api/site-visits/stats';
+          ? `${API_BASE}/api/site-visits/stats?${svParams.toString()}`
+          : `${API_BASE}/api/site-visits/stats`;
 
         const [pvRes, bookRes, svRes] = await Promise.all([
-          fetch('/api/page-views/stats'),
-          fetch('/api/bookings/active'),
+          fetch(`${API_BASE}/api/page-views/stats`),
+          fetch(`${API_BASE}/api/bookings/active`),
           fetch(svUrl),
         ]);
 
