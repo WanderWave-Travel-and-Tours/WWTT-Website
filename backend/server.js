@@ -812,24 +812,21 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
   });
 });
 
-// ====================== TEMP DIAGNOSIS (Alisin pag naayos na) ======================
-console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
-console.log('📁 Current directory:', __dirname);
-console.log('📁 Build folder path:', path.join(__dirname, 'build'));
-console.log('📁 Build folder exists?', fs.existsSync(path.join(__dirname, 'build')));
-console.log('📁 index.html exists?', fs.existsSync(path.join(__dirname, 'build', 'index.html')));
-// ===============================================================================
-
 // ====================== SERVE REACT FRONTEND (PRODUCTION) ======================
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, 'build');
+
+  console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
+  console.log('📁 Current directory:', __dirname);
+  console.log('📁 Build path:', buildPath);
+  console.log('📁 Build folder exists?', fs.existsSync(buildPath));
+  console.log('📁 index.html exists?', fs.existsSync(path.join(buildPath, 'index.html')));
 
   if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
     console.log('✅ SUCCESS: Build folder found → Serving React Admin Dashboard');
 
     app.use(express.static(buildPath));
 
-    // Catch-all route - SKIP API at uploads
     app.use((req, res, next) => {
       if (req.path.startsWith('/api/') || 
           req.path.startsWith('/uploads') || 
@@ -843,12 +840,10 @@ if (process.env.NODE_ENV === 'production') {
 
   } else {
     console.error('❌ BUILD FOLDER NOT FOUND!');
-    console.error('   Expected path:', buildPath);
-    app.get('*', (req, res) => {
-      res.status(503).send(`
-        <h1>Admin Dashboard is not ready yet</h1>
-        <p>Build folder is missing. Please check Render build logs.</p>
-      `);
+    console.error('   Make sure Root Directory is "frontend" and Build Command is correct.');
+    
+    app.use((req, res) => {
+      res.status(503).send('Admin dashboard build is missing. Please check Render settings.');
     });
   }
 }
