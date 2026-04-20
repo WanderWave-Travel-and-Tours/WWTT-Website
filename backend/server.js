@@ -814,19 +814,20 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
 
 // ====================== SERVE REACT FRONTEND (PRODUCTION) ======================
 if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.join(__dirname, 'build');
+  const distPath = path.join(__dirname, 'dist');   // ← Binago natin dito
 
   console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
   console.log('📁 Current directory:', __dirname);
-  console.log('📁 Build path:', buildPath);
-  console.log('📁 Build folder exists?', fs.existsSync(buildPath));
-  console.log('📁 index.html exists?', fs.existsSync(path.join(buildPath, 'index.html')));
+  console.log('📁 Dist path:', distPath);
+  console.log('📁 Dist folder exists?', fs.existsSync(distPath));
+  console.log('📁 index.html exists?', fs.existsSync(path.join(distPath, 'index.html')));
 
-  if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
-    console.log('✅ SUCCESS: Build folder found → Serving React Admin Dashboard');
+  if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'))) {
+    console.log('✅ SUCCESS: Dist folder found → Serving React Admin Dashboard');
 
-    app.use(express.static(buildPath));
+    app.use(express.static(distPath));
 
+    // Catch-all route para sa admin pages (SPA routing)
     app.use((req, res, next) => {
       if (req.path.startsWith('/api/') || 
           req.path.startsWith('/uploads') || 
@@ -835,15 +836,15 @@ if (process.env.NODE_ENV === 'production') {
           req.path.startsWith('/tiktok')) {
         return next();
       }
-      res.sendFile(path.join(buildPath, 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
 
   } else {
-    console.error('❌ BUILD FOLDER NOT FOUND!');
-    console.error('   Make sure Root Directory is "frontend" and Build Command is correct.');
+    console.error('❌ DIST FOLDER NOT FOUND!');
+    console.error('   Expected path:', distPath);
     
     app.use((req, res) => {
-      res.status(503).send('Admin dashboard build is missing. Please check Render settings.');
+      res.status(503).send('Admin dashboard build is missing. Please check Render build settings.');
     });
   }
 }
