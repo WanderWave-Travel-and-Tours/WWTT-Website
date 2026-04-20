@@ -223,6 +223,14 @@ const EngagementRing = ({ rate, color }) => {
   );
 };
 
+// ─── API BASE URL ─────────────────────────────────────────────────────────────
+// In production the admin frontend is a separate origin from the Express backend.
+// Relative paths (/api/...) work on localhost via the Vite dev proxy but fail
+// on Render/Vercel/etc. where there is no proxy.  We resolve the backend URL
+// from the Vite env variable VITE_API_BASE_URL if it is set; otherwise we fall
+// back to the Render backend URL so the deployed build always hits the right server.
+const API_BASE = (import.meta.env?.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com').replace(/\/$/, '');
+
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 const Reporting = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -393,9 +401,9 @@ const Reporting = () => {
           : '/api/site-visits/stats';
 
         const [pvRes, bookRes, svRes] = await Promise.all([
-          fetch('/api/page-views/stats'),
-          fetch('/api/bookings/active'),
-          fetch(svUrl),
+          fetch(`${API_BASE}/api/page-views/stats`),
+          fetch(`${API_BASE}/api/bookings/active`),
+          fetch(`${API_BASE}${svUrl}`),
         ]);
 
         const [pvJson, bookJson, svJson] = await Promise.all([
