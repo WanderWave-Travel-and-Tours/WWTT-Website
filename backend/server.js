@@ -811,7 +811,11 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
     res.redirect(302, 'https://wanderwaveph.com/');
   });
 });
-
+// TEMP DIAGNOSIS - alisin mo ulit pag naayos na
+console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
+console.log('📁 Build folder path:', path.join(__dirname, 'build'));
+console.log('📁 Build folder exists?', fs.existsSync(path.join(__dirname, 'build')));
+console.log('📁 index.html exists?', fs.existsSync(path.join(__dirname, 'build', 'index.html')));
 // ====================== SERVE REACT FRONTEND (PRODUCTION) ======================
 if (process.env.NODE_ENV === 'production') {
   // Serve ang built React app
