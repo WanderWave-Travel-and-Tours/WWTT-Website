@@ -813,19 +813,22 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
 });
 
 // ====================== SERVE REACT ADMIN DASHBOARD (PRODUCTION) ======================
-const adminDistPath = path.join(__dirname, 'admin', 'dist');
+const distPath = path.join(__dirname, 'dist');   // ← Root dist folder (katabi ng server.js)
 
 console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
-console.log('📁 Trying to serve admin from:', adminDistPath);
-console.log('📁 Admin dist exists?', fs.existsSync(adminDistPath));
+console.log('📁 Current directory:', __dirname);
+console.log('📁 Dist path:', distPath);
+console.log('📁 Dist folder exists?', fs.existsSync(distPath));
+console.log('📁 index.html exists?', fs.existsSync(path.join(distPath, 'index.html')));
 
-if (fs.existsSync(adminDistPath)) {
-  console.log('✅ Admin dist folder FOUND → Serving React Admin');
+if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'))) {
+  
+  console.log('✅ SUCCESS: Dist folder found in ROOT → Serving React Admin Dashboard');
 
-  // Serve static files (CSS, JS, images, etc.)
-  app.use(express.static(adminDistPath));
+  // Serve all static files (JS, CSS, images, etc.)
+  app.use(express.static(distPath));
 
-  // Catch-all route para sa lahat ng SPA routes (dashboard, users, etc.)
+  // Catch-all route para sa SPA (para gumana ang refresh sa /dashboard, /users, etc.)
   app.use((req, res, next) => {
     if (req.path.startsWith('/api/') || 
         req.path.startsWith('/uploads') || 
@@ -835,18 +838,19 @@ if (fs.existsSync(adminDistPath)) {
       return next();
     }
 
-    console.log(`✅ SPA Catch-all triggered for: ${req.path}`);
-    res.sendFile(path.join(adminDistPath, 'index.html'));
+    console.log(`✅ Catch-all triggered → serving index.html for path: ${req.path}`);
+    res.sendFile(path.join(distPath, 'index.html'));
   });
 
 } else {
-  console.error('❌ Admin dist folder NOT FOUND at:', adminDistPath);
-  console.error('   Make sure you built your admin app and placed "dist" inside "admin" folder.');
-  
-  // Temporary fallback - para hindi mag-503 ang API
+  console.error('❌ DIST FOLDER NOT FOUND in ROOT!');
+  console.error('   Expected path:', distPath);
+  console.error('   Solution: Build your admin app and put the "dist" folder directly inside backend/');
+
+  // Temporary message para hindi mag-error ang API
   app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) return next();
-    res.status(503).send('Admin dashboard is not built yet. Please build the admin folder.');
+    res.status(503).send('Admin dashboard build is missing. Please build and place dist folder in backend root.');
   });
 }
 // ===============================================================================
