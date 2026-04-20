@@ -811,22 +811,49 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
     res.redirect(302, 'https://wanderwaveph.com/');
   });
 });
-// TEMP DIAGNOSIS - alisin mo ulit pag naayos na
+
+// ====================== TEMP DIAGNOSIS (Alisin pag naayos na) ======================
 console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
+console.log('📁 Current directory:', __dirname);
 console.log('📁 Build folder path:', path.join(__dirname, 'build'));
 console.log('📁 Build folder exists?', fs.existsSync(path.join(__dirname, 'build')));
 console.log('📁 index.html exists?', fs.existsSync(path.join(__dirname, 'build', 'index.html')));
+// ===============================================================================
+
 // ====================== SERVE REACT FRONTEND (PRODUCTION) ======================
 if (process.env.NODE_ENV === 'production') {
-  // Serve ang built React app
-  app.use(express.static(path.join(__dirname, 'build')));
+  const buildPath = path.join(__dirname, 'build');
 
-  // FIXED: Catch-all route (gamit ang app.use para maiwasan ang PathError)
-  app.use((req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-  });
+  if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
+    console.log('✅ SUCCESS: Build folder found → Serving React Admin Dashboard');
+
+    app.use(express.static(buildPath));
+
+    // Catch-all route - SKIP API at uploads
+    app.use((req, res, next) => {
+      if (req.path.startsWith('/api/') || 
+          req.path.startsWith('/uploads') || 
+          req.path.startsWith('/fb') || 
+          req.path.startsWith('/ig') || 
+          req.path.startsWith('/tiktok')) {
+        return next();
+      }
+      res.sendFile(path.join(buildPath, 'index.html'));
+    });
+
+  } else {
+    console.error('❌ BUILD FOLDER NOT FOUND!');
+    console.error('   Expected path:', buildPath);
+    app.get('*', (req, res) => {
+      res.status(503).send(`
+        <h1>Admin Dashboard is not ready yet</h1>
+        <p>Build folder is missing. Please check Render build logs.</p>
+      `);
+    });
+  }
 }
 // ===============================================================================
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
