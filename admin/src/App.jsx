@@ -134,12 +134,29 @@ const VALID_PROTECTED_ROUTES = [
 
 // ============================================================
 // AXIOS INTERCEPTOR - AUTO LOGOUT ON 401
+// ✅ FIX: Skip /verify endpoint so ProtectedRoute handles it.
+//         If we intercept /verify here, we double-trigger:
+//         both the interceptor (window.location.href) AND the
+//         ProtectedRoute catch block run simultaneously, causing
+//         a race condition that nukes valid tokens on network errors.
+//         Also reset isRedirecting on page load so it never
+//         permanently blocks future sessions.
 // ============================================================
 let isRedirecting = false;
+
+// Reset the flag on every fresh page load
+window.addEventListener('pageshow', () => { isRedirecting = false; });
 
 axios.interceptors.response.use(
   response => response,
   error => {
+    const requestUrl = error.config?.url || '';
+
+    // ✅ FIX: Let ProtectedRoute handle /verify errors exclusively.
+    if (requestUrl.includes('/api/admin/verify')) {
+      return Promise.reject(error);
+    }
+
     if ((error.response?.status === 401 || error.response?.data?.requiresAuth) && !isRedirecting) {
       isRedirecting = true;
       localStorage.removeItem('adminToken');
@@ -408,6 +425,11 @@ const UnauthorizedAccess = () => {
 
 // ============================================================
 // PROTECTED ROUTE WITH TOKEN VERIFICATION
+// ✅ FIX: Only clear token on definitive auth errors (401/403).
+//         Network errors / timeouts / 5xx (e.g. Render cold start)
+//         should NOT wipe a valid token. The user will see the
+//         unauthorized screen temporarily, but their token is
+//         preserved so the next visit works once the server wakes up.
 // ============================================================
 const ProtectedRoute = ({ children }) => {
   const [authState, setAuthState] = useState('loading');
@@ -427,22 +449,37 @@ const ProtectedRoute = ({ children }) => {
 
       try {
         const response = await axios.get('https://wanderwaveph.onrender.com/api/admin/verify', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          // ✅ FIX: Give Render's cold-start server 15s to wake up before timing out.
+          timeout: 15000,
         });
 
         if (response.data.status === 'ok') {
           console.log('✅ Token verified - User authenticated');
           if (isMounted) setAuthState('authenticated');
         } else {
-          console.log('❌ Invalid token');
+          // Server responded but returned a non-ok body (shouldn't normally happen)
+          console.log('❌ Verify returned non-ok status body');
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
         }
       } catch (error) {
-        console.error('❌ Token verification failed:', error.message);
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminData');
+        const status = error.response?.status;
+
+        // ✅ FIX: Only remove the token on definitive auth rejections.
+        // 401 = token invalid or expired       → clear token, block access.
+        // 403 = account inactive               → clear token, block access.
+        // Network error / timeout / 500 / etc  → server issue, NOT auth failure.
+        //   Keep the token so the next refresh works once Render wakes up.
+        if (status === 401 || status === 403) {
+          console.error(`❌ Auth rejected (HTTP ${status}) - clearing token`);
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminData');
+        } else {
+          console.warn(`⚠️ Verify failed (${error.message}) - token preserved (server may be waking up)`);
+        }
+
         if (isMounted) setAuthState('unauthenticated');
       }
     };
