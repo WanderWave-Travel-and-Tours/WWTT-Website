@@ -812,6 +812,35 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
   });
 });
 
+// ====================== SERVE REACT ADMIN DASHBOARD ======================
+const distPath = path.join(__dirname, 'dist');
+
+console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
+console.log('📁 Dist path:', distPath);
+console.log('📁 Dist exists?', fs.existsSync(distPath));
+console.log('📁 index.html exists?', fs.existsSync(path.join(distPath, 'index.html')));
+
+if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'))) {
+  console.log('✅ Dist folder OK → Serving Admin SPA');
+
+  app.use(express.static(distPath));
+
+  // ←←← ITO ANG BAGONG CATCH-ALL
+  app.use((req, res, next) => {
+    // Huwag i-block ang /admin paths
+    if (req.path.startsWith('/api/') || 
+        req.path.startsWith('/uploads')) {
+      return next();
+    }
+
+    console.log(`✅ Serving index.html for: ${req.path}`);
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+
+} else {
+  console.error('❌ DIST FOLDER NOT FOUND!');
+}
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
