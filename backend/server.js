@@ -774,6 +774,44 @@ Object.entries(SOCIAL_REDIRECTS).forEach(([slug, { platform, url }]) => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: WanderWave Custom Ad & Organic Redirect Routes (6 URLs)
+// Logs directly to SiteVisit with fullPath + campaignType
+// Added without deleting any existing code
+// ─────────────────────────────────────────────────────────────────────────────
+const CUSTOM_URLS = {
+  // Paid Ads
+  'fb-ads':     { platform: 'facebook', campaignType: 'ads' },
+  'ig-ads':     { platform: 'instagram', campaignType: 'ads' },
+  'tiktok-ads': { platform: 'tiktok', campaignType: 'ads' },
+  // Organic
+  'fb-org':     { platform: 'facebook', campaignType: 'organic' },
+  'ig-org':     { platform: 'instagram', campaignType: 'organic' },
+  'tiktok-org': { platform: 'tiktok', campaignType: 'organic' },
+};
+
+Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
+  app.get(`/${path}`, async (req, res) => {
+    try {
+      const SiteVisit = require('./models/siteVisit');
+      const visit = new SiteVisit({
+        platform,
+        campaignType,
+        fullPath: `/${path}`,           // exact clean URL path
+        referrer: req.headers.referer || req.headers.referrer || null,
+      });
+      await visit.save();
+
+      console.log(`✅ Custom URL visit logged → ${path} | ${platform} | ${campaignType}`);
+    } catch (err) {
+      console.error(`❌ Failed to log custom URL ${path}:`, err.message);
+    }
+
+    // Redirect to homepage (clean, no UTM needed anymore)
+    res.redirect(302, 'https://wanderwaveph.com/');
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
