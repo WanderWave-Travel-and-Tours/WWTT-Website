@@ -601,7 +601,7 @@ Object.entries(CUSTOM_URLS).forEach(([urlPath, { platform, campaignType }]) => {
 
 // ====================== SERVE REACT FRONTEND (PRODUCTION) ======================
 if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, 'dist');
+  const distPath = path.join(__dirname, 'admin', 'dist');
 
   console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
   console.log('📁 Current directory:', __dirname);
