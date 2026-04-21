@@ -4,6 +4,7 @@ const Payment = require('../models/payment');
 const Booking = require('../models/booking');
 const TourBooking = require('../models/tourBooking'); // ✅ FIX: needed for tour payment lookup
 const TransferBooking = require('../models/transferBooking'); // ✅ needed for transfer payment lookup
+const { createGHLInvoice } = require('../utils/ghlApiService'); // ✅ Import for GHL Invoice
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
@@ -90,6 +91,17 @@ const createInquiryCheckoutSession = async (req, res) => {
     });
     
     console.log('Payment record created in database');
+
+    // 🔥 GHL INVOICE TRIGGER: Fire-and-forget after PayMongo session is created
+    if (inquiry.ghlContactId) {
+      createGHLInvoice(inquiry.ghlContactId, {
+        serviceName: inquiry.serviceName,
+        paxCount: inquiry.paxCount,
+        totalAmount: inquiry.estimatedPrice,
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days from now
+      }).catch(err => console.log('GHL Invoice background error skipped:', err.message));
+    }
+
     console.log('=== INQUIRY PAYMENT SUCCESS ===');
 
     res.json({
