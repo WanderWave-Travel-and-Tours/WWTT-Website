@@ -99,14 +99,14 @@ const BookingRightForm = ({
   const basePax = totalPassengers; // ✅ Component-level pax count for promo calculations
 
   // ✅ Component-level effective per-pax price (mirrors calculateBasePackageTotal logic)
-  // For min-2 packages, effective per-pax rate = base price / 2 (base covers 2 pax)
+  // pkg.price is always per pax — for min-2 packages, min enforced by selector, not price formula
   const effectivePerPaxPrice = (() => {
     const bp = pkg.price || 0;
     const timerPrice = timerExpired ? Math.round(bp * 1.10) : bp;
     if (customizationData && customizationData.totalPrice !== undefined) {
-      return isMinTwoPkg ? customizationData.totalPrice / 2 : customizationData.totalPrice;
+      return customizationData.totalPrice;
     }
-    return isMinTwoPkg ? timerPrice / 2 : timerPrice;
+    return timerPrice;
   })();
 
   const isInternationalFlight = selectedFlight && 
@@ -492,13 +492,9 @@ if (savedState.formData.appliedPromo) {
   }
   
   // ✅ Straight per-pax multiplication: 1 pax = price, 2 pax = price×2, etc.
-  // ✅ For min-2 packages: base price covers 2 pax; each extra pax = price/2
+  // ✅ For min-2 packages: pkg.price is per pax — multiply normally (min 2 pax enforced by selector)
   let basePackagePrice;
-  if (isMinTwoPkg) {
-    basePackagePrice = effectivePrice + Math.max(0, basePax - 2) * (effectivePrice / 2);
-  } else {
-    basePackagePrice = effectivePrice * basePax;
-  }
+  basePackagePrice = effectivePrice * basePax;
   
   // ✅ FIX: If package price is 0 or negative (all priced inclusions removed), return 0
   if (basePackagePrice <= 0) {
@@ -1477,6 +1473,31 @@ const handleNextPassenger = async (e) => {
               </div>
               <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
 
+              {/* ✅ MIN-2 PKG: Show automatic price for current pax selection */}
+              {isMinTwoPkg && (
+                <div style={{
+                  marginTop: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  flexWrap: 'wrap'
+                }}>
+                  <span style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#1d4ed8',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    borderRadius: '8px',
+                    padding: '3px 10px'
+                  }}>
+                    {currencySymbol}{convertPrice(effectivePerPaxPrice * quantities.adult).toLocaleString(undefined, {
+                      minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                      maximumFractionDigits: currency === 'USD' ? 2 : 0
+                    })} for {quantities.adult} pax
+                  </span>
+                </div>
+              )}
 
             </div>
             <div className="brf-quantity-controls">
@@ -1785,37 +1806,20 @@ const handleNextPassenger = async (e) => {
             padding: '10px 14px', marginTop: '4px', marginBottom: '8px',
             fontSize: '0.82rem', color: '#1e40af', lineHeight: '1.6'
           }}>
-            {(() => {
-              // effectivePerPaxPrice = basePrice / 2 for min-2 packages
-              // so baseRate = effectivePerPaxPrice * 2 = basePrice (the original price covering 2 pax)
-              const baseRate = effectivePerPaxPrice * 2;
-              const extraPax = Math.max(0, totalPassengers - 2);
-              const extraCost = extraPax * effectivePerPaxPrice;
-              return (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Original price (covers 2 pax)</span>
-                    <span style={{ fontWeight: '700' }}>
-                      {currencySymbol}{convertPrice(baseRate).toLocaleString(undefined, {
-                        minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                        maximumFractionDigits: currency === 'USD' ? 2 : 0
-                      })}
-                    </span>
-                  </div>
-                  {extraPax > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>+{extraPax} extra pax × ½ rate</span>
-                      <span style={{ fontWeight: '700' }}>
-                        +{currencySymbol}{convertPrice(extraCost).toLocaleString(undefined, {
-                          minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                          maximumFractionDigits: currency === 'USD' ? 2 : 0
-                        })}
-                      </span>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>
+                {currencySymbol}{convertPrice(effectivePerPaxPrice).toLocaleString(undefined, {
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0
+                })} per pax × {totalPassengers} pax
+              </span>
+              <span style={{ fontWeight: '700' }}>
+                {currencySymbol}{convertPrice(effectivePerPaxPrice * totalPassengers).toLocaleString(undefined, {
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0
+                })}
+              </span>
+            </div>
           </div>
         )}
 
