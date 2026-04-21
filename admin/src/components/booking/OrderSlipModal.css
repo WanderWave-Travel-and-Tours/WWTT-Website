@@ -919,4 +919,79 @@
   /* ⑬ Watermark: print-visible */
   .os-watermark          { font-size: 60px !important; opacity: 0.05 !important; }
   .os-watermark-cancelled { opacity: 0.07 !important; }
+}/* =====================================================
+   ORDER SLIP — OrderSlipModal.css
+   Only contains overrides that are specific to the
+   Order Slip. All base styling (modal, pages, tables,
+   footer, action bar, buttons) comes from
+   VoucherPreviewModal.css which is imported first.
+   ===================================================== */
+
+/* ── COVER IMAGE FIX ─────────────────────────────── */
+.voucher-header-compact {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.voucher-header-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.voucher-header-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.25));
+  pointer-events: none;
+}
+
+/* ── WATERMARK (pending / cancelled overlay) ─────── */
+.os-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 90px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 10px;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.045;
+  white-space: nowrap;
+  color: #0f172a;
+  z-index: 10;
+}
+
+.os-watermark-cancelled {
+  color: #dc2626;
+  opacity: 0.06;
+}
+
+/* ── Print: ensure @page removes browser chrome ──── */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .os-watermark {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    opacity: 0.05 !important;
+  }
+  .os-watermark-cancelled { opacity: 0.07 !important; }
 }
