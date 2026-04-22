@@ -107,15 +107,19 @@ router.post('/webhook', async (req, res) => {
       let booking = null;
 
       // ✅ FIX: Helper to search Booking, TourBooking, and TransferBooking collections
+      // Chains .populate('packageId') at the query level for reliable population
       const findBooking = async (findFn) => {
-        let result = await findFn(Booking);
-        if (!result) result = await findFn(TourBooking);
-        if (!result) result = await findFn(TransferBooking);
-
-        // ✅ NEW: Populate packageId so we get the Cloudinary image URL and package details
-        if (result && result.packageId) {
-          await result.populate('packageId');
-        }
+        const populatingFindFn = (Model) => {
+          const query = findFn(Model);
+          // Chain .populate() before awaiting so Mongoose resolves it in one round-trip
+          if (query && typeof query.populate === 'function') {
+            return query.populate('packageId');
+          }
+          return query;
+        };
+        let result = await populatingFindFn(Booking);
+        if (!result) result = await populatingFindFn(TourBooking);
+        if (!result) result = await populatingFindFn(TransferBooking);
         return result;
       };
 
@@ -149,12 +153,14 @@ router.post('/webhook', async (req, res) => {
       if (booking) {
         console.log('Booking found for checkout session');
 
-        // ✅ NEW: Capture populated packageData BEFORE booking.save() —
-        // calling .save() reverts populated refs back to ObjectId, losing the package details
-        const packageData = booking.packageId && typeof booking.packageId === 'object'
+        // ✅ Capture populated packageData BEFORE booking.save() —
+        // .save() reverts populated refs back to raw ObjectId.
+        // Check for .title (a real Package field) to confirm it's truly populated and not just an ObjectId.
+        const packageData = (booking.packageId && booking.packageId.title)
           ? booking.packageId
           : null;
-        console.log('📦 Package data captured:', packageData?._id, '| image:', packageData?.image);
+        console.log('📦 packageId raw:', booking.packageId);
+        console.log('📦 packageData resolved:', packageData ? `id=${packageData._id} title=${packageData.title} image=${packageData.image}` : 'NULL — packageId missing or not populated');
 
         const metadata = session.attributes.payments?.[0]?.attributes?.metadata
                       || session.attributes.metadata
@@ -254,15 +260,16 @@ router.post('/webhook', async (req, res) => {
         return res.status(404).json({ received: true, error: 'Booking not found' });
       }
 
-      // ✅ NEW: Populate packageId and capture BEFORE booking.save() —
+      // ✅ Populate packageId and capture BEFORE booking.save() —
       // calling .save() reverts populated refs back to ObjectId, losing the package details
       if (booking.packageId) {
         await booking.populate('packageId');
       }
-      const packageData = booking.packageId && typeof booking.packageId === 'object'
+      const packageData = (booking.packageId && booking.packageId.title)
         ? booking.packageId
         : null;
-      console.log('📦 Package data captured:', packageData?._id, '| image:', packageData?.image);
+      console.log('📦 packageId raw:', booking.packageId);
+      console.log('📦 packageData resolved:', packageData ? `id=${packageData._id} title=${packageData.title} image=${packageData.image}` : 'NULL — packageId missing or not populated');
 
       if (metadata.is_balance_payment === true || metadata.is_balance_payment === 'true') {
         // This is a balance payment
