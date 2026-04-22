@@ -150,7 +150,7 @@ const createBookingPaymentIntent = async (req, res) => {
 
     console.log('Searching for booking in database...');
     // ✅ FIX: Check Booking (packages), TourBooking, and TransferBooking collections
-    // ✅ Always populate packageId so we can access inclusions, destination, image, etc.
+    // ✅ populate('packageId') para makuha ang inclusions, destination, image, etc.
     let booking = await Booking.findById(bookingId).populate('packageId');
     if (!booking) {
       console.log('Not found in Booking collection, trying TourBooking...');
@@ -231,28 +231,28 @@ const createBookingPaymentIntent = async (req, res) => {
             success_url: `${FRONTEND_URL}/payment-success?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
             cancel_url: `${FRONTEND_URL}/packages`,
             metadata: {
-              // ─── Booking Identity ─────────────────────────────────────────
+              // ─── Booking Identity ─────────────────────────────────────
               booking_id:     bookingId,
               booking_status: booking.status || 'pending',
 
-              // ─── Customer Info ────────────────────────────────────────────
+              // ─── Customer Info ────────────────────────────────────────
               customer_name:  booking.fullName,
               customer_email: booking.email,
               customer_phone: booking.phone || booking.contactNumber || '',
 
-              // ─── Package Info ─────────────────────────────────────────────
+              // ─── Package Info ─────────────────────────────────────────
               package:       booking.packageName,
               destination:   booking.packageId?.destination || '',
               duration:      booking.packageId?.duration    || booking.duration || '',
               tour_type:     booking.packageId?.tourType    || '',
               package_image: booking.packageId?.image       || '',
 
-              // ─── Travel Dates ─────────────────────────────────────────────
+              // ─── Travel Dates ─────────────────────────────────────────
               start_date:   booking.startDate,
               end_date:     booking.endDate,
               travel_dates: `${booking.startDate} to ${booking.endDate}`,
 
-              // ─── Pax Breakdown ────────────────────────────────────────────
+              // ─── Pax Breakdown ────────────────────────────────────────
               pax_adult:   String(booking.pax?.adult    || 1),
               pax_child:   String(booking.pax?.children || 0),
               pax_infant:  String(booking.pax?.infants  || 0),
@@ -264,7 +264,7 @@ const createBookingPaymentIntent = async (req, res) => {
                              (booking.pax?.senior   || 0)
                            ),
 
-              // ─── Payment Info ─────────────────────────────────────────────
+              // ─── Payment Info ─────────────────────────────────────────
               total_amount:       String(booking.totalAmount),
               payment_amount:     String(amountToPay),
               payment_type:       paymentType || 'full',
@@ -272,45 +272,49 @@ const createBookingPaymentIntent = async (req, res) => {
               includes_airfare:   String(booking.includesAirfare || false),
               remaining_balance:  String(booking.remainingBalance || 0),
 
-              // ─── Add-ons / Room ───────────────────────────────────────────
+              // ─── Add-ons / Room ───────────────────────────────────────
               selected_room_type: booking.selectedRoomType  || '',
               hotel_name:         booking.hotelName         || '',
               number_of_rooms:    String(booking.numberOfRooms || ''),
 
-              // ─── Promo ────────────────────────────────────────────────────
-              promo_code:     booking.promoCode          || '',
+              // ─── Promo ────────────────────────────────────────────────
+              promo_code:     booking.promoCode         || '',
               promo_discount: String(booking.discountAmount || 0),
 
-              // ─── Inclusions ───────────────────────────────────────────────
-              // booking schema has no inclusions field — always from packageId
-              // packageId is now populated above so this will have data
-              // Package inclusions schema: inclusions: [{ type: String }]
-              inclusions: (() => {
+              // ─── Notes ────────────────────────────────────────────────
+              booking_notes: booking.message || '',
+
+              // ─── Inclusions — one field per item (inclusion_1, inclusion_2, ...) ─
+              // Source: packageId.inclusions (populated), schema: [String]
+              ...(() => {
                 const raw = booking.packageId?.inclusions || [];
-                if (!Array.isArray(raw) || raw.length === 0) return '';
-                const str = raw.filter(i => typeof i === 'string' && i.trim()).join(', ');
-                return str.length > 500 ? str.substring(0, 497) + '...' : str;
+                const result = {};
+                raw.forEach((item, i) => {
+                  if (typeof item === 'string' && item.trim()) {
+                    result[`inclusion_${i + 1}`] = item.trim();
+                  }
+                });
+                result['inclusions_count'] = String(raw.filter(i => typeof i === 'string' && i.trim()).length);
+                return result;
               })(),
 
-              // ─── Itinerary ────────────────────────────────────────────────
-              // booking.itinerary IS snapshotted at booking time
-              // Schema: [{ day: Number, title: String, activities: [String] }]
-              itinerary: (() => {
+              // ─── Itinerary — one field per day (itinerary_1, itinerary_2, ...) ─
+              // Source: booking.itinerary (snapshotted), schema: [{ day, title, activities: [String] }]
+              ...(() => {
                 const raw = booking.itinerary || [];
-                if (!Array.isArray(raw) || raw.length === 0) return '';
-                const str = raw.map(day => {
-                  const label = day.day   ? `Day ${day.day}` : '';
+                const result = {};
+                raw.forEach((day, i) => {
+                  const label = day.day   ? `Day ${day.day}` : `Day ${i + 1}`;
                   const title = day.title || '';
                   const acts  = Array.isArray(day.activities) && day.activities.length > 0
                     ? day.activities.join(' | ')
                     : '';
-                  return [label, title, acts].filter(Boolean).join(': ');
-                }).join(' // ');
-                return str.length > 500 ? str.substring(0, 497) + '...' : str;
+                  const full = [label + (title ? ': ' + title : ''), acts].filter(Boolean).join(' — ');
+                  result[`itinerary_${i + 1}`] = full.length > 500 ? full.substring(0, 497) + '...' : full;
+                });
+                result['itinerary_count'] = String(raw.length);
+                return result;
               })(),
-
-              // ─── Notes ────────────────────────────────────────────────────
-              booking_notes: booking.message || '',
             }
           }
         }
