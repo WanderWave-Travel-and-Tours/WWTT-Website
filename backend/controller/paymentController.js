@@ -230,18 +230,84 @@ const createBookingPaymentIntent = async (req, res) => {
             success_url: `${FRONTEND_URL}/payment-success?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
             cancel_url: `${FRONTEND_URL}/packages`,
             metadata: {
-              booking_id: bookingId,
-              customer_name: booking.fullName,
+              // ─── Booking Identity ─────────────────────────────────────────
+              booking_id:     bookingId,
+              booking_status: booking.status || 'pending',
+
+              // ─── Customer Info ────────────────────────────────────────────
+              customer_name:  booking.fullName,
               customer_email: booking.email,
-              package: booking.packageName,
-              total_amount: booking.totalAmount,
-              payment_amount: amountToPay,
-              payment_type: paymentType || 'full',
-              is_initial_payment: isPartial ? true : false,  // ✅ FIXED: was always true, breaks metadata check for full payments
-              includes_airfare: booking.includesAirfare || false,
-              start_date: booking.startDate,
-              end_date: booking.endDate,
-              travel_dates: `${booking.startDate} to ${booking.endDate}`
+              customer_phone: booking.phone || booking.contactNumber || '',
+
+              // ─── Package Info ─────────────────────────────────────────────
+              package:       booking.packageName,
+              destination:   booking.packageId?.destination || booking.destination || '',
+              duration:      booking.packageId?.duration    || booking.duration    || '',
+              tour_type:     booking.packageId?.tourType    || booking.tourType    || '',
+              package_image: booking.packageId?.image       || '',
+
+              // ─── Travel Dates ─────────────────────────────────────────────
+              start_date:   booking.startDate,
+              end_date:     booking.endDate,
+              travel_dates: `${booking.startDate} to ${booking.endDate}`,
+
+              // ─── Pax Breakdown ────────────────────────────────────────────
+              pax_adult:  String(booking.pax?.adult  || 1),
+              pax_child:  String(booking.pax?.child  || 0),
+              pax_infant: String(booking.pax?.infant || 0),
+              pax_senior: String(booking.pax?.senior || 0),
+              pax_total:  String(
+                            (booking.pax?.adult  || 1) +
+                            (booking.pax?.child  || 0) +
+                            (booking.pax?.infant || 0) +
+                            (booking.pax?.senior || 0)
+                          ),
+
+              // ─── Payment Info ─────────────────────────────────────────────
+              total_amount:       String(booking.totalAmount),
+              payment_amount:     String(amountToPay),
+              payment_type:       paymentType || 'full',
+              is_initial_payment: String(isPartial ? true : false),
+              includes_airfare:   String(booking.includesAirfare || false),
+              remaining_balance:  String(booking.remainingBalance || 0),
+
+              // ─── Add-ons / Room ───────────────────────────────────────────
+              selected_room_type: booking.selectedRoomType || '',
+              hotel_name:         booking.hotelName        || '',
+              number_of_rooms:    String(booking.numberOfRooms || ''),
+
+              // ─── Promo ────────────────────────────────────────────────────
+              promo_code:     booking.promoCode          || '',
+              promo_discount: String(booking.promoDiscount || 0),
+
+              // ─── Inclusions (comma-separated, max 500 chars) ──────────────
+              inclusions: (() => {
+                const raw = booking.packageId?.inclusions || booking.inclusions || [];
+                if (!Array.isArray(raw) || raw.length === 0) return '';
+                const str = raw
+                  .map(i => typeof i === 'string' ? i : i.name || i.text || '')
+                  .filter(Boolean)
+                  .join(', ');
+                return str.length > 500 ? str.substring(0, 497) + '...' : str;
+              })(),
+
+              // ─── Itinerary (day-by-day, max 500 chars) ────────────────────
+              itinerary: (() => {
+                const raw = booking.packageId?.itinerary || booking.itinerary || [];
+                if (!Array.isArray(raw) || raw.length === 0) return '';
+                const str = raw.map(day => {
+                  const label = day.day   ? `Day ${day.day}` : '';
+                  const title = day.title || day.name || '';
+                  const acts  = Array.isArray(day.activities)
+                    ? day.activities.map(a => typeof a === 'string' ? a : a.description || a.name || '').join(' | ')
+                    : day.description || '';
+                  return [label, title, acts].filter(Boolean).join(': ');
+                }).join(' // ');
+                return str.length > 500 ? str.substring(0, 497) + '...' : str;
+              })(),
+
+              // ─── Notes ────────────────────────────────────────────────────
+              booking_notes: booking.notes || booking.specialRequests || '',
             }
           }
         }
