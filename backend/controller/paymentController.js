@@ -150,14 +150,15 @@ const createBookingPaymentIntent = async (req, res) => {
 
     console.log('Searching for booking in database...');
     // ✅ FIX: Check Booking (packages), TourBooking, and TransferBooking collections
-    let booking = await Booking.findById(bookingId);
+    // ✅ Always populate packageId so we can access inclusions, destination, image, etc.
+    let booking = await Booking.findById(bookingId).populate('packageId');
     if (!booking) {
       console.log('Not found in Booking collection, trying TourBooking...');
-      booking = await TourBooking.findById(bookingId);
+      booking = await TourBooking.findById(bookingId).populate('packageId');
     }
     if (!booking) {
       console.log('Not found in TourBooking collection, trying TransferBooking...');
-      booking = await TransferBooking.findById(bookingId);
+      booking = await TransferBooking.findById(bookingId).populate('packageId');
     }
     if (!booking) {
       console.error('Booking not found in database (checked both Booking and TourBooking)');
@@ -241,9 +242,9 @@ const createBookingPaymentIntent = async (req, res) => {
 
               // ─── Package Info ─────────────────────────────────────────────
               package:       booking.packageName,
-              destination:   booking.packageId?.destination || booking.destination || '',
-              duration:      booking.packageId?.duration    || booking.duration    || '',
-              tour_type:     booking.packageId?.tourType    || booking.tourType    || '',
+              destination:   booking.packageId?.destination || '',
+              duration:      booking.packageId?.duration    || booking.duration || '',
+              tour_type:     booking.packageId?.tourType    || '',
               package_image: booking.packageId?.image       || '',
 
               // ─── Travel Dates ─────────────────────────────────────────────
@@ -252,62 +253,64 @@ const createBookingPaymentIntent = async (req, res) => {
               travel_dates: `${booking.startDate} to ${booking.endDate}`,
 
               // ─── Pax Breakdown ────────────────────────────────────────────
-              pax_adult:  String(booking.pax?.adult  || 1),
-              pax_child:  String(booking.pax?.child  || 0),
-              pax_infant: String(booking.pax?.infant || 0),
-              pax_senior: String(booking.pax?.senior || 0),
-              pax_total:  String(
-                            (booking.pax?.adult  || 1) +
-                            (booking.pax?.child  || 0) +
-                            (booking.pax?.infant || 0) +
-                            (booking.pax?.senior || 0)
-                          ),
+              pax_adult:   String(booking.pax?.adult    || 1),
+              pax_child:   String(booking.pax?.children || 0),
+              pax_infant:  String(booking.pax?.infants  || 0),
+              pax_senior:  String(booking.pax?.senior   || 0),
+              pax_total:   String(
+                             (booking.pax?.adult    || 1) +
+                             (booking.pax?.children || 0) +
+                             (booking.pax?.infants  || 0) +
+                             (booking.pax?.senior   || 0)
+                           ),
 
               // ─── Payment Info ─────────────────────────────────────────────
               total_amount:       String(booking.totalAmount),
               payment_amount:     String(amountToPay),
               payment_type:       paymentType || 'full',
-              is_initial_payment: String(isPartial ? true : false),
+              is_initial_payment: String(isPartial),
               includes_airfare:   String(booking.includesAirfare || false),
               remaining_balance:  String(booking.remainingBalance || 0),
 
               // ─── Add-ons / Room ───────────────────────────────────────────
-              selected_room_type: booking.selectedRoomType || '',
-              hotel_name:         booking.hotelName        || '',
+              selected_room_type: booking.selectedRoomType  || '',
+              hotel_name:         booking.hotelName         || '',
               number_of_rooms:    String(booking.numberOfRooms || ''),
 
               // ─── Promo ────────────────────────────────────────────────────
               promo_code:     booking.promoCode          || '',
-              promo_discount: String(booking.promoDiscount || 0),
+              promo_discount: String(booking.discountAmount || 0),
 
-              // ─── Inclusions (comma-separated, max 500 chars) ──────────────
+              // ─── Inclusions ───────────────────────────────────────────────
+              // booking schema has no inclusions field — always from packageId
+              // packageId is now populated above so this will have data
+              // Package inclusions schema: inclusions: [{ type: String }]
               inclusions: (() => {
-                const raw = booking.packageId?.inclusions || booking.inclusions || [];
+                const raw = booking.packageId?.inclusions || [];
                 if (!Array.isArray(raw) || raw.length === 0) return '';
-                const str = raw
-                  .map(i => typeof i === 'string' ? i : i.name || i.text || '')
-                  .filter(Boolean)
-                  .join(', ');
+                const str = raw.filter(i => typeof i === 'string' && i.trim()).join(', ');
                 return str.length > 500 ? str.substring(0, 497) + '...' : str;
               })(),
 
-              // ─── Itinerary (day-by-day, max 500 chars) ────────────────────
+              // ─── Itinerary ────────────────────────────────────────────────
+              // booking.itinerary IS snapshotted at booking time
+              // Schema: [{ day: Number, title: String, activities: [String] }]
               itinerary: (() => {
-                const raw = booking.packageId?.itinerary || booking.itinerary || [];
+                const raw = booking.itinerary || [];
                 if (!Array.isArray(raw) || raw.length === 0) return '';
                 const str = raw.map(day => {
                   const label = day.day   ? `Day ${day.day}` : '';
-                  const title = day.title || day.name || '';
-                  const acts  = Array.isArray(day.activities)
-                    ? day.activities.map(a => typeof a === 'string' ? a : a.description || a.name || '').join(' | ')
-                    : day.description || '';
+                  const title = day.title || '';
+                  const acts  = Array.isArray(day.activities) && day.activities.length > 0
+                    ? day.activities.join(' | ')
+                    : '';
                   return [label, title, acts].filter(Boolean).join(': ');
                 }).join(' // ');
                 return str.length > 500 ? str.substring(0, 497) + '...' : str;
               })(),
 
               // ─── Notes ────────────────────────────────────────────────────
-              booking_notes: booking.notes || booking.specialRequests || '',
+              booking_notes: booking.message || '',
             }
           }
         }
