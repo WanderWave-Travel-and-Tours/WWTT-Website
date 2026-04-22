@@ -113,7 +113,8 @@ const sendBookingConfirmationToGHL = async (
   totalAmount,
   startDate,
   endDate,
-  passengerCount
+  passengerCount,
+  packageData // ✅ NEW: Accept the package data parameter
 ) => {
   const firstName = fullName.split(' ')[0] || '';
   const lastName = fullName.split(' ').slice(1).join(' ') || '';
@@ -142,6 +143,20 @@ const sendBookingConfirmationToGHL = async (
     passenger_count: passengerCount,
     passengers: passengerCount,
     pax: passengerCount,
+
+    // ✅ NEW: Cloudinary Image URL mapping
+    package_image_url: packageData?.image || '',
+
+    // ✅ NEW: Additional Package Data
+    package_destination: packageData?.destination || '',
+    package_duration: packageData?.duration || '',
+    package_category: packageData?.category || '',
+    package_tour_type: packageData?.tourType || '',
+
+    // Convert arrays/objects to strings for GHL custom fields
+    package_inclusions: packageData?.inclusions ? packageData.inclusions.join(', ') : '',
+    package_itinerary: packageData?.itinerary ? JSON.stringify(packageData.itinerary) : '',
+
     bookingDate: new Date().toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'long', 

@@ -111,6 +111,11 @@ router.post('/webhook', async (req, res) => {
         let result = await findFn(Booking);
         if (!result) result = await findFn(TourBooking);
         if (!result) result = await findFn(TransferBooking);
+
+        // ✅ NEW: Populate packageId so we get the Cloudinary image URL and package details
+        if (result && result.packageId) {
+          await result.populate('packageId');
+        }
         return result;
       };
 
@@ -195,7 +200,8 @@ router.post('/webhook', async (req, res) => {
             booking.totalAmount,
             booking.startDate,
             booking.endDate,
-            booking.passengers?.length || booking.pax?.adult || 1
+            booking.passengers?.length || booking.pax?.adult || 1,
+            booking.packageId // ✅ NEW: Pass the full populated package object to GHL service
           );
         } catch (ghlError) {
           console.error('⚠️ GHL Onboarding Kit failed (checkout session):', ghlError.message);
@@ -275,7 +281,8 @@ router.post('/webhook', async (req, res) => {
           booking.totalAmount,
           booking.startDate,
           booking.endDate,
-          booking.passengers?.length || booking.pax?.adult || 1
+          booking.passengers?.length || booking.pax?.adult || 1,
+          booking.packageId // ✅ NEW: Pass the full populated package object to GHL service
         );
       } catch (ghlError) {
         console.error('⚠️ GHL Onboarding Kit failed (balance payment):', ghlError.message);
