@@ -697,6 +697,16 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         }
       } else {
         try {
+          // ✅ Fetch the full Package document to get Cloudinary image + details for GHL
+          let packageData = null;
+          if (bookingData.packageId) {
+            try {
+              packageData = await Package.findById(bookingData.packageId).lean();
+              console.log('📦 packageData for GHL:', packageData ? `id=${packageData._id} title=${packageData.title} image=${packageData.image}` : 'NULL — not found');
+            } catch (pkgErr) {
+              console.warn('⚠️ Package lookup for GHL failed (non-fatal):', pkgErr.message);
+            }
+          }
           await sendBookingConfirmationToGHL(
             primaryEmail,
             primaryName,
@@ -704,7 +714,8 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
             bookingData.totalAmount,
             bookingData.startDate,
             bookingData.endDate,
-            passengers.length
+            passengers.length,
+            packageData // ✅ Pass full package object so GHL gets image, destination, inclusions, etc.
           );
           console.log('✅ Booking confirmation email sent');
         } catch (e) {
