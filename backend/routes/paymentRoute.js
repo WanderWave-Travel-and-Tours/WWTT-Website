@@ -149,6 +149,13 @@ router.post('/webhook', async (req, res) => {
       if (booking) {
         console.log('Booking found for checkout session');
 
+        // ✅ NEW: Capture populated packageData BEFORE booking.save() —
+        // calling .save() reverts populated refs back to ObjectId, losing the package details
+        const packageData = booking.packageId && typeof booking.packageId === 'object'
+          ? booking.packageId
+          : null;
+        console.log('📦 Package data captured:', packageData?._id, '| image:', packageData?.image);
+
         const metadata = session.attributes.payments?.[0]?.attributes?.metadata
                       || session.attributes.metadata
                       || {};
@@ -201,7 +208,7 @@ router.post('/webhook', async (req, res) => {
             booking.startDate,
             booking.endDate,
             booking.passengers?.length || booking.pax?.adult || 1,
-            booking.packageId // ✅ NEW: Pass the full populated package object to GHL service
+            packageData // ✅ Use the pre-saved captured package object (not booking.packageId which reverts after .save())
           );
         } catch (ghlError) {
           console.error('⚠️ GHL Onboarding Kit failed (checkout session):', ghlError.message);
@@ -247,6 +254,16 @@ router.post('/webhook', async (req, res) => {
         return res.status(404).json({ received: true, error: 'Booking not found' });
       }
 
+      // ✅ NEW: Populate packageId and capture BEFORE booking.save() —
+      // calling .save() reverts populated refs back to ObjectId, losing the package details
+      if (booking.packageId) {
+        await booking.populate('packageId');
+      }
+      const packageData = booking.packageId && typeof booking.packageId === 'object'
+        ? booking.packageId
+        : null;
+      console.log('📦 Package data captured:', packageData?._id, '| image:', packageData?.image);
+
       if (metadata.is_balance_payment === true || metadata.is_balance_payment === 'true') {
         // This is a balance payment
         booking.status = 'confirmed';
@@ -282,7 +299,7 @@ router.post('/webhook', async (req, res) => {
           booking.startDate,
           booking.endDate,
           booking.passengers?.length || booking.pax?.adult || 1,
-          booking.packageId // ✅ NEW: Pass the full populated package object to GHL service
+          packageData // ✅ Use the pre-saved captured package object (not booking.packageId which reverts after .save())
         );
       } catch (ghlError) {
         console.error('⚠️ GHL Onboarding Kit failed (balance payment):', ghlError.message);
