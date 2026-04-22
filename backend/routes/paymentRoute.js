@@ -214,7 +214,8 @@ router.post('/webhook', async (req, res) => {
             booking.startDate,
             booking.endDate,
             booking.passengers?.length || booking.pax?.adult || 1,
-            packageData // ✅ Use the pre-saved captured package object (not booking.packageId which reverts after .save())
+            packageData,  // ✅ Pre-saved populated package object
+            booking       // ✅ Full booking document for complete details
           );
         } catch (ghlError) {
           console.error('⚠️ GHL Onboarding Kit failed (checkout session):', ghlError.message);
@@ -306,7 +307,8 @@ router.post('/webhook', async (req, res) => {
           booking.startDate,
           booking.endDate,
           booking.passengers?.length || booking.pax?.adult || 1,
-          packageData // ✅ Use the pre-saved captured package object (not booking.packageId which reverts after .save())
+          packageData,  // ✅ Pre-saved populated package object
+          booking       // ✅ Full booking document for complete details
         );
       } catch (ghlError) {
         console.error('⚠️ GHL Onboarding Kit failed (balance payment):', ghlError.message);

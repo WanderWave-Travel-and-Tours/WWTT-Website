@@ -10,17 +10,14 @@ const PaymentSuccess = () => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState(null);
-  const [user, setUser] = useState(null); // ✅ NEW
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // ✅ SAFETY NET: Confirm booking immediately on page load using booking_id.
-    // This is the PRIMARY fallback when the PayMongo webhook doesn't fire.
-    // We call confirm-by-booking FIRST (non-blocking), then fetch booking details.
     const bookingId = searchParams.get('booking_id') || searchParams.get('bookingId');
     const inquiryId = searchParams.get('inquiryId');
     const paymentType = searchParams.get('paymentType');
 
-    // ✅ Must declare BEFORE calling — const is not hoisted
+    // ✅ Safety-net: confirm booking on page load (fallback when webhook doesn't fire)
     const confirmBookingByID = async (id) => {
       try {
         const res = await fetch(`https://wanderwaveph.onrender.com/api/payment/confirm-by-booking/${id}`, {
@@ -34,15 +31,16 @@ const PaymentSuccess = () => {
       }
     };
 
-    // Inside useEffect, after getting bookingId:
-if (bookingId) {
-  setType('booking');
-  fetchBookingDetails(bookingId, paymentType);   // ← now supports tour
-} else if (inquiryId) {
-  setType('inquiry');
-  fetchInquiryDetails(inquiryId);
-}
+    if (bookingId) {
+      confirmBookingByID(bookingId);
+      setType('booking');
+      fetchBookingDetails(bookingId, paymentType);
+    } else if (inquiryId) {
+      setType('inquiry');
+      fetchInquiryDetails(inquiryId);
+    }
 
+    // Restore user session
     const storedUser = localStorage.getItem('wanderwave_user');
     if (storedUser) {
       try {
@@ -57,146 +55,176 @@ if (bookingId) {
     // Confetti Effect
     const duration = 3 * 1000;
     const end = Date.now() + duration;
-
     const frame = () => {
-      confetti({
-        particleCount: 2,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#fc9c1b', '#f97316', '#22c55e']
-      });
-      confetti({
-        particleCount: 2,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#fc9c1b', '#f97316', '#22c55e']
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+      confetti({ particleCount: 2, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fc9c1b', '#f97316', '#22c55e'] });
+      confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#fc9c1b', '#f97316', '#22c55e'] });
+      if (Date.now() < end) requestAnimationFrame(frame);
     };
     frame();
 
-    // Identify Transaction Type and fetch details
-    if (bookingId) {
-      setType('booking');
-      fetchBookingDetails(bookingId, paymentType);
-    } else if (inquiryId) {
-      setType('inquiry');
-      fetchInquiryDetails(inquiryId);
-    } else {
-      setLoading(false); 
-    }
+    if (!bookingId && !inquiryId) setLoading(false);
   }, [searchParams]);
 
-  // === REPLACE your current fetchBookingDetails with this ===
+  // ============================================
+  // FETCH BOOKING WITH RETRY
+  // ============================================
+  const fetchBookingDetails = async (id, paymentType) => {
+    const MAX_RETRIES = 8;
+    const RETRY_DELAY = 1800;
 
-const fetchBookingDetails = async (id, paymentType) => {
-  const MAX_RETRIES = 8;
-  const RETRY_DELAY = 1800;
+    const tryFetch = async (attempt = 1) => {
+      try {
+        // 1. Try regular Booking first
+        let res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${id}`);
+        let data = await res.json();
 
-  const tryFetch = async (attempt = 1) => {
-    try {
-      // 1. Try regular Booking first
-      let res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${id}`);
-      let data = await res.json();
+        if (res.ok && (data._id || (data.success && data.data))) {
+          const booking = data.success ? data.data : data;
+          return normalizeBooking(booking, paymentType, 'regular');
+        }
 
-      if (res.ok && (data._id || (data.success && data.data))) {
-        const booking = data.success ? data.data : data;
-        return normalizeBooking(booking, paymentType, 'regular');
+        // 2. Try TourBooking
+        res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${id}`);
+        data = await res.json();
+
+        if (res.ok && data.success && data.data) {
+          return normalizeBooking(data.data, paymentType, 'tour');
+        }
+
+        if (attempt < MAX_RETRIES) {
+          console.log(`⏳ Booking not ready yet (attempt ${attempt}) – retrying...`);
+          await new Promise(r => setTimeout(r, RETRY_DELAY));
+          return tryFetch(attempt + 1);
+        }
+      } catch (e) {
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, RETRY_DELAY));
+          return tryFetch(attempt + 1);
+        }
+        console.error('All fetch attempts failed');
       }
+      return null;
+    };
 
-      // 2. If not found → try TourBooking
-      res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${id}`);
-      data = await res.json();
-
-      if (res.ok && (data.success && data.data)) {
-        const tourBooking = data.data;
-        return normalizeBooking(tourBooking, paymentType, 'tour');
-      }
-
-      // Still not found? Retry
-      if (attempt < MAX_RETRIES) {
-        console.log(`⏳ Booking not ready yet (attempt ${attempt}) – retrying...`);
-        await new Promise(r => setTimeout(r, RETRY_DELAY));
-        return tryFetch(attempt + 1);
-      }
-    } catch (e) {
-      if (attempt < MAX_RETRIES) {
-        await new Promise(r => setTimeout(r, RETRY_DELAY));
-        return tryFetch(attempt + 1);
-      }
-      console.error('All fetch attempts failed');
-    }
-    return null;
+    const bookingData = await tryFetch();
+    if (bookingData) setDetails(bookingData);
+    setLoading(false);
   };
 
-  const bookingData = await tryFetch();
-  if (bookingData) setDetails(bookingData);
-  setLoading(false);
-};
+  // ============================================
+  // ✅ UPDATED: normalizeBooking — ALL fields included
+  // ============================================
+  const normalizeBooking = (booking, paymentTypeParam, source) => {
+    const isPartial = paymentTypeParam === 'partial' || booking.paymentType === 'partial';
 
-// === NEW HELPER: Normalize both models into the same shape ===
-const normalizeBooking = (booking, paymentTypeParam, source) => {
-  const isPartial = paymentTypeParam === 'partial' || booking.paymentType === 'partial';
+    return {
+      // — Core identifiers —
+      id: booking._id,
+      reference: booking.referenceNumber || booking._id?.slice(-8)?.toUpperCase() || 'N/A',
+      source,
 
-  return {
-    id: booking._id,
-    reference: booking.referenceNumber || booking._id?.slice(-8)?.toUpperCase() || 'N/A',
-    title: booking.packageName || booking.packageName || 'Tour Package',
-    subTitle: `${booking.duration || ''} • ${booking.pax?.adult || booking.passengers?.length || 1} Pax`,
-    amount: isPartial ? booking.initialPaymentAmount : booking.totalAmount || booking.finalPackageTotal,
-    totalAmount: booking.totalAmount || booking.finalPackageTotal || booking.price,
-    remainingBalance: booking.remainingBalance || 0,
-    email: booking.email,
-    dateLabel: "Travel Dates",
-    dateValue: `${booking.startDate} - ${booking.endDate}`,
-    startDate: booking.startDate,
-    endDate: booking.endDate,
-    status: booking.status,
-    isPartial: isPartial,
-    paymentType: booking.paymentType || paymentTypeParam,
-    fullName: booking.fullName || `${booking.passengers?.[0]?.firstName || ''} ${booking.passengers?.[0]?.lastName || ''}`.trim(),
-    createdAt: booking.createdAt || booking.updatedAt,
-    source // optional flag if you need it later
+      // — Display fields —
+      title: booking.packageName || 'Tour Package',
+      subTitle: `${booking.duration || ''} • ${booking.pax?.adult || booking.passengers?.length || 1} Pax`,
+      dateLabel: 'Travel Dates',
+      dateValue: `${booking.startDate} - ${booking.endDate}`,
+
+      // — Customer info —
+      fullName: booking.fullName || `${booking.passengers?.[0]?.firstName || ''} ${booking.passengers?.[0]?.lastName || ''}`.trim(),
+      email: booking.email,
+      phone: booking.phone || booking.contactNumber || '',
+      nationality: booking.nationality || '',
+
+      // — Travel details —
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      duration: booking.duration || '',
+      destination: booking.destination || booking.packageId?.destination || '',
+      category: booking.category || booking.packageId?.category || '',
+      tourType: booking.tourType || booking.packageId?.tourType || '',
+
+      // — Pax / passengers —
+      pax: booking.pax || null,
+      passengerCount: booking.pax?.adult || booking.passengers?.length || 1,
+      passengers: booking.passengers || [],
+
+      // — Payment info —
+      isPartial: isPartial,
+      paymentType: booking.paymentType || paymentTypeParam,
+      amount: isPartial ? booking.initialPaymentAmount : (booking.totalAmount || booking.finalPackageTotal),
+      totalAmount: booking.totalAmount || booking.finalPackageTotal || booking.price,
+      remainingBalance: booking.remainingBalance || 0,
+      initialPaymentAmount: booking.initialPaymentAmount || null,
+      includesAirfare: booking.includesAirfare || false,
+
+      // — Booking status —
+      status: booking.status,
+      checkoutSessionId: booking.checkoutSessionId || null,
+
+      // — Package extras —
+      packageImage: booking.image || booking.packageImage || booking.packageId?.image || '',
+      inclusions: booking.inclusions || booking.packageId?.inclusions || [],
+      itinerary: booking.itinerary || booking.packageId?.itinerary || [],
+
+      // — Optional extras —
+      specialRequests: booking.specialRequests || '',
+      selectedRoomType: booking.selectedRoomType || '',
+      hotelName: booking.hotelName || '',
+      promoCode: booking.promoCode || '',
+      discountAmount: booking.discountAmount || 0,
+
+      // — Timestamps —
+      createdAt: booking.createdAt || booking.updatedAt,
+      paidAt: booking.paidAt || null,
+    };
   };
-};
 
+  // ============================================
+  // FETCH INQUIRY
+  // ============================================
   const fetchInquiryDetails = async (id) => {
     try {
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/inquiries/${id}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            const inquiry = data.data;
-            setDetails({
-                id: inquiry._id,
-                reference: inquiry._id.slice(-8).toUpperCase(),
-                title: inquiry.serviceName,
-                subTitle: inquiry.visaCountry ? `Visa Assistance for ${inquiry.visaCountry}` : 'Custom Service',
-                amount: inquiry.estimatedPrice,
-                email: inquiry.email,
-                dateLabel: "Date Submitted",
-                dateValue: new Date(inquiry.createdAt).toLocaleDateString(),
-                startDate: null,      // inquiry walang travel date
-                endDate: null,
-                status: inquiry.status,
-                isPartial: false,
-                fullName: inquiry.fullName,
-                createdAt: inquiry.createdAt
-            });
-        }
+      const response = await fetch(`https://wanderwaveph.onrender.com/api/inquiries/${id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        const inquiry = data.data;
+        setDetails({
+          id: inquiry._id,
+          reference: inquiry._id.slice(-8).toUpperCase(),
+          title: inquiry.serviceName,
+          subTitle: inquiry.visaCountry ? `Visa Assistance for ${inquiry.visaCountry}` : 'Custom Service',
+          amount: inquiry.estimatedPrice,
+          totalAmount: inquiry.estimatedPrice,
+          email: inquiry.email,
+          fullName: inquiry.fullName,
+          phone: inquiry.phone || '',
+          dateLabel: 'Date Submitted',
+          dateValue: new Date(inquiry.createdAt).toLocaleDateString(),
+          startDate: null,
+          endDate: null,
+          status: inquiry.status,
+          isPartial: false,
+          paymentType: 'full',
+          remainingBalance: 0,
+          createdAt: inquiry.createdAt,
+          serviceName: inquiry.serviceName,
+          visaCountry: inquiry.visaCountry || '',
+          paxCount: inquiry.paxCount || 1,
+          message: inquiry.message || '',
+          source: 'inquiry',
+        });
+      }
     } catch (error) {
-        console.error('Error fetching inquiry:', error);
+      console.error('Error fetching inquiry:', error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
-  // ✅ REUSABLE WEBHOOK TRIGGER (gamitin sa lahat ng buttons)
+  // ============================================
+  // ✅ UPDATED: triggerWebhook — COMPLETE flattened payload
+  // ============================================
   const triggerWebhook = async (eventName) => {
     if (!details) return;
 
@@ -205,29 +233,108 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          event: eventName,                    // ← magkakaiba na ang event name
+          // ── Meta ──────────────────────────────────────────────
+          event: eventName,
           timestamp: new Date().toISOString(),
-          user: user || null,
-          details: details,                    // ← may startDate at endDate na
-          type: type || null
+          type: type || null,
+
+          // ── User session ──────────────────────────────────────
+          user_email: user?.email || null,
+          user_name: user?.name || null,
+          user_id: user?._id || user?.id || null,
+
+          // ── Booking identifiers ───────────────────────────────
+          booking_id: details.id,
+          reference_number: details.reference,
+          checkout_session_id: details.checkoutSessionId || null,
+          booking_source: details.source || null,
+
+          // ── Customer info ─────────────────────────────────────
+          full_name: details.fullName,
+          first_name: details.fullName?.split(' ')[0] || '',
+          last_name: details.fullName?.split(' ').slice(1).join(' ') || '',
+          email: details.email,
+          phone: details.phone || '',
+          nationality: details.nationality || '',
+
+          // ── Package / service info ────────────────────────────
+          package_name: details.title,
+          destination: details.destination || '',
+          duration: details.duration || '',
+          category: details.category || '',
+          tour_type: details.tourType || '',
+          package_image: details.packageImage || '',
+          inclusions: Array.isArray(details.inclusions) ? details.inclusions.join(', ') : '',
+          itinerary: Array.isArray(details.itinerary) ? JSON.stringify(details.itinerary) : '',
+
+          // ── Travel dates ──────────────────────────────────────
+          start_date: details.startDate || '',
+          end_date: details.endDate || '',
+          travel_dates: details.dateValue || '',
+
+          // ── Pax info ──────────────────────────────────────────
+          passenger_count: details.passengerCount || 1,
+          pax_adult: details.pax?.adult || details.passengerCount || 1,
+          pax_child: details.pax?.child || 0,
+          pax_infant: details.pax?.infant || 0,
+
+          // ── Payment info ──────────────────────────────────────
+          payment_type: details.paymentType || 'full',
+          is_partial: details.isPartial || false,
+          includes_airfare: details.includesAirfare || false,
+          amount_paid: details.amount || 0,
+          total_amount: details.totalAmount || 0,
+          remaining_balance: details.remainingBalance || 0,
+          initial_payment_amount: details.initialPaymentAmount || null,
+          discount_amount: details.discountAmount || 0,
+          promo_code: details.promoCode || '',
+
+          // ── Hotel / room ──────────────────────────────────────
+          selected_room_type: details.selectedRoomType || '',
+          hotel_name: details.hotelName || '',
+
+          // ── Special requests ──────────────────────────────────
+          special_requests: details.specialRequests || '',
+
+          // ── Booking status ────────────────────────────────────
+          booking_status: details.status || '',
+          paid_at: details.paidAt || null,
+          booking_created_at: details.createdAt || null,
+
+          // ── Inquiry-specific (if applicable) ──────────────────
+          service_name: details.serviceName || details.title || '',
+          visa_country: details.visaCountry || '',
+          inquiry_message: details.message || '',
+
+          // ── Formatted amount string (for email templates) ─────
+          amount_paid_formatted: `₱${(details.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+          total_amount_formatted: `₱${(details.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+          remaining_balance_formatted: details.remainingBalance > 0
+            ? `₱${details.remainingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+            : '₱0.00',
+
+          // ── Raw details object (backup for GHL custom fields) ──
+          details: details,
         })
       });
+
       console.log(`✅ Webhook triggered: ${eventName}`);
     } catch (err) {
       console.error('Webhook error:', err);
     }
   };
 
-  // ✅ DOWNLOAD RECEIPT FUNCTION
+  // ============================================
+  // DOWNLOAD RECEIPT
+  // ============================================
   const handleDownloadReceipt = async () => {
     if (!details) {
       alert('No transaction details available');
       return;
     }
 
-    await triggerWebhook('download_receipt_clicked');   // ← bagong event
+    await triggerWebhook('download_receipt_clicked');
 
-    // Generate HTML receipt
     const receiptHTML = `
 <!DOCTYPE html>
 <html>
@@ -261,11 +368,7 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
             color: #667eea;
             margin-bottom: 8px;
         }
-        .receipt-title {
-            font-size: 20px;
-            color: #2d3748;
-            font-weight: 600;
-        }
+        .receipt-title { font-size: 20px; color: #2d3748; font-weight: 600; }
         .status-badge {
             display: inline-block;
             background: #d4edda;
@@ -275,29 +378,16 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
             font-weight: 600;
             margin: 20px 0;
         }
-        .info-section {
-            margin: 25px 0;
-        }
+        .info-section { margin: 25px 0; }
         .info-row {
             display: flex;
             justify-content: space-between;
             padding: 12px 0;
             border-bottom: 1px solid #e2e8f0;
         }
-        .info-label {
-            color: #718096;
-            font-weight: 500;
-        }
-        .info-value {
-            color: #2d3748;
-            font-weight: 600;
-            text-align: right;
-        }
-        .amount-highlight {
-            font-size: 24px;
-            color: #22c55e;
-            font-weight: bold;
-        }
+        .info-label { color: #718096; font-weight: 500; }
+        .info-value { color: #2d3748; font-weight: 600; text-align: right; }
+        .amount-highlight { font-size: 24px; color: #22c55e; font-weight: bold; }
         .footer {
             margin-top: 40px;
             padding-top: 20px;
@@ -376,16 +466,12 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
     </div>
 
     <script>
-        // Auto print on load
-        window.onload = function() {
-            window.print();
-        }
+        window.onload = function() { window.print(); }
     </script>
 </body>
 </html>
     `;
 
-    // Create blob and download
     const blob = new Blob([receiptHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -396,16 +482,16 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    // Also open in new window for printing
     const printWindow = window.open('', '_blank');
     printWindow.document.write(receiptHTML);
     printWindow.document.close();
   };
 
-  // ✅ HANDLE DASHBOARD NAVIGATION - Auto login if user exists
+  // ============================================
+  // NAVIGATION HANDLERS
+  // ============================================
   const handleGoToDashboard = async () => {
-    await triggerWebhook('go_to_dashboard_clicked');   // ← bagong event
-
+    await triggerWebhook('go_to_dashboard_clicked');
     if (user) {
       navigate('/dashboard');
     } else {
@@ -413,14 +499,15 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
       navigate('/login');
     }
   };
- 
-  // ✅ BACK TO HOME WITH WEBHOOK TRIGGER
-  const handleBackToHome = async () => {
-    await triggerWebhook('back_to_home_clicked');      // ← pinanatili ang event name
 
+  const handleBackToHome = async () => {
+    await triggerWebhook('back_to_home_clicked');
     navigate('/');
   };
 
+  // ============================================
+  // LOADING STATE
+  // ============================================
   if (loading) {
     return (
       <div className="loading-container">
@@ -430,6 +517,9 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
     );
   }
 
+  // ============================================
+  // RENDER
+  // ============================================
   return (
     <div className="success-page">
       <div className="success-container">
@@ -516,13 +606,11 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
           </div>
 
           <div className="action-buttons">
-            {/* ✅ UPDATED: Use handleGoToDashboard instead of direct navigate */}
             <button className="btn-primary" onClick={handleGoToDashboard}>
               <LayoutDashboard size={20} />
               Go to Dashboard
             </button>
             
-            {/* ✅ UPDATED: Now actually downloads receipt */}
             <button className="btn-secondary" onClick={handleDownloadReceipt}>
               <Download size={20} />
               Download Receipt
@@ -531,7 +619,6 @@ const normalizeBooking = (booking, paymentTypeParam, source) => {
 
           <div className="success-footer">
             <p>Need help? Contact us at <a href="mailto:support@wanderwave.com">support@wanderwave.com</a></p>
-            {/* ✅ UPDATED: Back to Home now triggers webhook before navigating */}
             <button className="btn-link" onClick={handleBackToHome}>
               <Home size={16} style={{marginRight: '4px', display:'inline-block', verticalAlign:'text-bottom'}}/>
               Back to Home
