@@ -330,8 +330,10 @@ function PackageCard({
   const originalPrice  = applyConversion(regularPrice); // shown as strikethrough when NOT expired
 
   // ✅ Solo & Multiple Pax prices — also timer-aware
-  const hasSoloPaxPrice     = pkg.soloPaxPrice != null;
-  const hasMultiplePaxPrice = pkg.multiplePaxPrice != null;
+  // ✅ FIX: Must be > 0, not just != null. A value of 0 means "not set" and should fall
+  // through to the base price fallback block, otherwise the card renders 0.
+  const hasSoloPaxPrice     = pkg.soloPaxPrice != null && pkg.soloPaxPrice > 0;
+  const hasMultiplePaxPrice = pkg.multiplePaxPrice != null && pkg.multiplePaxPrice > 0;
 
   const soloBase     = pkg.soloPaxPrice || 0;
   const multiBase    = pkg.multiplePaxPrice || 0;

@@ -364,11 +364,15 @@ function PackageDealsContent() {
             const calculatedRating = (seededRandom(seed) * 0.9 + 4.0).toFixed(1);
             const randomReviews = Math.floor(seededRandom(seed + 2) * 460) + 40;
             const shapedPkg = {
+              // ✅ Keep both _id and id so BookingFormModal can always resolve packageId
+              _id: pkg._id,
               id: pkg._id,
               name: pkg.title,
+              title: pkg.title,
               category: pkg.category?.toLowerCase() || 'local',
               scope: pkg.category?.toLowerCase() === 'local' ? 'local' : 'international',
               location: pkg.destination,
+              destination: pkg.destination,
               duration: pkg.duration,
               nights: pkg.duration?.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights',
               price: pkg.price,
@@ -377,10 +381,17 @@ function PackageDealsContent() {
               hasRealDiscount: false,
               isDiscountExpired: false,
               discountEndDate: null,
+              // ✅ Raw pricing fields needed by BookingFormModal
+              sellerPrice: pkg.sellerPrice || 0,
+              markup: pkg.markup || 0,
+              markupType: pkg.markupType || 'fixed',
+              soloPaxPrice: pkg.soloPaxPrice ?? null,
+              multiplePaxPrice: pkg.multiplePaxPrice ?? null,
               rating: calculatedRating,
               reviews: randomReviews,
               image: pkg.image,
               inclusions: pkg.inclusions || [],
+              includes: pkg.inclusions || [],
               itinerary: pkg.itinerary || [],
               excludes: [],
               maxGuests: pkg.pax || pkg.minPax || 4,
@@ -389,7 +400,6 @@ function PackageDealsContent() {
               tourType: pkg.tourType || 'private',
               featured: false,
               description: pkg.title,
-              includes: pkg.inclusions || [],
               hasTours: false,
               tourCount: 0,
               matchedTours: [],
@@ -626,14 +636,18 @@ function PackageDealsContent() {
             }
 
             return {
+              // ✅ Keep both _id and id so BookingFormModal can always resolve packageId
+              _id: pkg._id,
               id: pkg._id,
               name: pkg.title,
+              title: pkg.title,
               category: pkg.category.toLowerCase(),
               scope: pkg.category.toLowerCase() === 'local' ? 'local' : 'international',
               location: pkg.destination,
+              destination: pkg.destination,
               duration: pkg.duration,
-              nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights', 
-              
+              nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights',
+
               // ✅ UPDATED PRICE LOGIC
               price: displayPrice,
               originalPrice: originalPrice,
@@ -641,20 +655,28 @@ function PackageDealsContent() {
               hasRealDiscount: hasDiscount,
               isDiscountExpired: isDiscountExpired,
               discountEndDate: pkg.discountEndDate,
-              
+
+              // ✅ Raw pricing fields needed by BookingFormModal for booking snapshot
+              sellerPrice: pkg.sellerPrice || 0,
+              markup: pkg.markup || 0,
+              markupType: pkg.markupType || 'fixed',
+              soloPaxPrice: pkg.soloPaxPrice ?? null,
+              multiplePaxPrice: pkg.multiplePaxPrice ?? null,
+
               rating: calculatedRating,
               reviews: randomReviews,
-              image: pkg.image, 
-              inclusions: pkg.inclusions || [], 
-              itinerary: pkg.itinerary || [], 
-              excludes: [], 
+              image: pkg.image,
+              // ✅ inclusions and itinerary — snapshotted into booking at submission time
+              inclusions: pkg.inclusions || [],
+              includes: pkg.inclusions || [],
+              itinerary: pkg.itinerary || [],
+              excludes: [],
               maxGuests: pkg.pax || pkg.minPax || 4,
               pax: pkg.pax,
               minPax: pkg.minPax,
               tourType: pkg.tourType || 'private',
-              featured: index === 0, 
+              featured: index === 0,
               description: pkg.title,
-              includes: pkg.inclusions || [],
               // ✅ Tour availability — populated by /with-tours endpoint
               hasTours: pkg.hasTours || false,
               tourCount: pkg.tourCount || 0,

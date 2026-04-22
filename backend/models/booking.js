@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
- 
+
+// ✅ Itinerary schema — mirrors package.js ItineraryItemSchema
+const itineraryItemSchema = new mongoose.Schema({
+  day: { type: Number, required: true },
+  title: { type: String, required: true },
+  activities: [{ type: String }]
+}, { _id: false });
+
 const passengerSchema = new mongoose.Schema({
   passengerNumber: { type: Number, required: true },
   firstName: { type: String, required: true },
@@ -88,6 +95,9 @@ const bookingSchema = new mongoose.Schema({
   customizedInclusions: [customInclusionSchema],
   customizationAdditionalPrice: { type: Number, default: 0 },
   originalInclusions: [String],
+
+  // ✅ Itinerary — snapshotted from package at time of booking (day-by-day breakdown)
+  itinerary: { type: [itineraryItemSchema], default: [] },
 
   includesAirfare: { type: Boolean, default: false },
   flightDetails: {

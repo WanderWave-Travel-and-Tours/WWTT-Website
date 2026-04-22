@@ -401,9 +401,15 @@ const BookingFormModal = ({
 
     try {
       // ✅ FULL BOOKING DATA WITH ALL REQUIRED FIELDS
+      // ✅ FIX: Mongoose ObjectId may be an object — always convert to string
+      const resolvedPackageId =
+        (pkg._id ? pkg._id.toString() : null) ||
+        (pkg.id  ? pkg.id.toString()  : null) ||
+        null;
+
       const fullBookingData = {
         packageName: pkg.name || pkg.title || pkg.packageName,
-        packageId: pkg._id || pkg.id,
+        packageId: resolvedPackageId,
 
         // ✅ REQUIRED MONGOOSE FIELDS (were missing → caused 500)
         sellerPrice: pkg.sellerPrice || 0,
@@ -478,12 +484,26 @@ const BookingFormModal = ({
             }))
           : [],
         customizationAdditionalPrice: customizationData?.additionalPrice || customizationData?.customizationAdditionalPrice || 0,
-        originalInclusions: customizationData ? (pkg.inclusions || []) : [],
 
         // ✅ Promo fields — extracted from appliedPromo object
         promoCode: appliedPromo?.code || null,
         promoId: appliedPromo?._id || appliedPromo?.id || null,
         discountAmount: discountAmount || 0,
+
+        // ✅ Inclusions snapshot — carried from the package into the booking record
+        // This ensures inclusions are always saved even if packageId is null
+        originalInclusions: (pkg.inclusions && Array.isArray(pkg.inclusions))
+          ? pkg.inclusions
+          : [],
+
+        // ✅ Itinerary snapshot — carried from the package into the booking record
+        itinerary: (pkg.itinerary && Array.isArray(pkg.itinerary))
+          ? pkg.itinerary.map(item => ({
+              day: item.day,
+              title: item.title,
+              activities: item.activities || [],
+            }))
+          : [],
 
         currency: currency,
         timerExpiredAtBooking: false,
