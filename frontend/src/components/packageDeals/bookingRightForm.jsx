@@ -1130,9 +1130,17 @@ const handleNextPassenger = async (e) => {
     console.log('Final Package Total:', finalPackageTotal);
     console.log('========================');
 
+    // ✅ FIX: Always use pkg._id || pkg.id so packageId is never null
+    const resolvedPackageId = pkg._id || pkg.id || null;
+
+    // ✅ FIX: Always use the clean base title (pkg.title or pkg.name) — never a pax-suffixed label.
+    // The "(Solo)", "(Group)", etc. suffix is a display-only label added by the UI.
+    // Saving it as packageName breaks the backend's itinerary/inclusion lookup.
+    const resolvedPackageName = pkg.title || pkg.name || '';
+
     const baseBookingData = {
-      packageId: pkg._id,
-      packageName: pkg.title || pkg.name,
+      packageId: resolvedPackageId,
+      packageName: resolvedPackageName,
       packagePrice: correctPrice, // ✅ FIXED - Uses timer-aware price
       startDate: startDateFormatted,
       endDate: endDateFormatted,
@@ -1210,7 +1218,14 @@ const handleNextPassenger = async (e) => {
       customizationAdditionalPrice: customizationData ? customizationData.additionalPrice : 0,
       customizationDeductions: customizationData ? customizationData.deductions : 0,
       customizationAdditions: customizationData ? customizationData.additions : 0,
-      originalInclusions: customizationData ? (pkg.inclusions || []) : [],
+      // ✅ FIX: Always send originalInclusions regardless of customization.
+      // Previously this was [] for non-customized bookings, causing the backend fallback to save empty inclusions.
+      originalInclusions: pkg.inclusions || [],
+
+      // ✅ FIX: Send pkg.itinerary as a client-side fallback — stripped of _id so Mongoose accepts it.
+      // The backend ALWAYS fetches itinerary from the DB using packageId first (source of truth).
+      // This array is only used as a last resort if no DB match is found.
+      itinerary: (pkg.itinerary || []).map(({ day, title, activities }) => ({ day, title, activities })),
       
       passengers: passengers.map(p => ({
         passengerNumber: p.passengerNumber || 1,

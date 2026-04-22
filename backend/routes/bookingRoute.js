@@ -168,6 +168,100 @@ router.get('/init-archive', async (req, res) => {
     }
 });
 
+// ============================================
+// GET /backfill-itinerary
+// ✅ One-time admin utility: fills in missing itinerary (and inclusions) for
+// existing bookings by matching each booking's packageId or packageName
+// against the Package collection. Safe to run multiple times — skips any
+// booking that already has itinerary data.
+// ============================================
+router.get('/backfill-itinerary', async (req, res) => {
+  try {
+    // Only target bookings with empty itinerary
+    const bookings = await Booking.find({ itinerary: { $size: 0 } }).lean();
+    console.log(`🔧 Backfill: found ${bookings.length} booking(s) with empty itinerary`);
+
+    let updated = 0;
+    let skipped = 0;
+
+    for (const booking of bookings) {
+      let pkgSnapshot = null;
+
+      // 1. By packageId
+      if (booking.packageId) {
+        pkgSnapshot = await Package.findById(booking.packageId)
+          .select('itinerary inclusions title')
+          .lean();
+      }
+
+      // 2. Exact title
+      if (!pkgSnapshot && booking.packageName) {
+        pkgSnapshot = await Package.findOne({ title: booking.packageName })
+          .select('itinerary inclusions title')
+          .lean();
+      }
+
+      // 3. Case-insensitive exact
+      if (!pkgSnapshot && booking.packageName) {
+        pkgSnapshot = await Package.findOne({
+          title: { $regex: new RegExp(`^${booking.packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+        }).select('itinerary inclusions title').lean();
+      }
+
+      // 4. Strip pax suffixes and retry
+      if (!pkgSnapshot && booking.packageName) {
+        const coreTitle = booking.packageName
+          .replace(/\s*\(solo\)\s*/gi, '')
+          .replace(/\s*\(group\)\s*/gi, '')
+          .replace(/\s*\(pax.*?\)\s*/gi, '')
+          .replace(/\s*\(joiner.*?\)\s*/gi, '')
+          .replace(/\s*\(private.*?\)\s*/gi, '')
+          .trim();
+        if (coreTitle && coreTitle !== booking.packageName) {
+          pkgSnapshot = await Package.findOne({
+            title: { $regex: new RegExp(coreTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
+          }).select('itinerary inclusions title').lean();
+        }
+      }
+
+      // 5. First segment before parenthesis
+      if (!pkgSnapshot && booking.packageName) {
+        const firstSegment = booking.packageName.split('(')[0].trim();
+        if (firstSegment && firstSegment.length >= 4) {
+          pkgSnapshot = await Package.findOne({
+            title: { $regex: new RegExp(firstSegment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
+          }).select('itinerary inclusions title').lean();
+        }
+      }
+
+      if (!pkgSnapshot || !pkgSnapshot.itinerary || pkgSnapshot.itinerary.length === 0) {
+        skipped++;
+        continue;
+      }
+
+      // Update booking with snapshotted itinerary (and inclusions if also missing)
+      const updateFields = { itinerary: pkgSnapshot.itinerary };
+      if ((!booking.originalInclusions || booking.originalInclusions.length === 0) && pkgSnapshot.inclusions?.length > 0) {
+        updateFields.originalInclusions = pkgSnapshot.inclusions;
+      }
+
+      await Booking.findByIdAndUpdate(booking._id, { $set: updateFields }, { runValidators: false });
+      console.log(`  ✅ Backfilled "${booking.packageName}" (${booking._id}) from "${pkgSnapshot.title}" — ${pkgSnapshot.itinerary.length} day(s)`);
+      updated++;
+    }
+
+    res.status(200).json({
+      status: 'ok',
+      message: `Backfill complete. Updated: ${updated}, Skipped (no match or already has data): ${skipped}.`,
+      updated,
+      skipped,
+    });
+  } catch (error) {
+    console.error('❌ Backfill itinerary error:', error);
+    res.status(500).json({ status: 'error', error: error.message });
+  }
+});
+
 
 
 router.get('/active', async (req, res) => {
@@ -778,6 +872,110 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       console.log(`✅ Sanitized ${sanitizedCustomizedInclusions.length} customized inclusions`);
     }
 
+    // ✅ ITINERARY + INCLUSIONS SNAPSHOT — always fetch from DB (source of truth)
+    // DB lookup runs unconditionally so empty arrays from frontend never block the fetch.
+    let bookingItinerary = [];
+    let bookingInclusions = [];
+
+    try {
+      let pkgSnapshot = null;
+
+      // 1. Try by packageId (most reliable)
+      if (bookingData.packageId) {
+        pkgSnapshot = await Package.findById(bookingData.packageId)
+          .select('itinerary inclusions title')
+          .lean();
+        console.log(`🔍 Package lookup by ID (${bookingData.packageId}): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
+      }
+
+      // 2. Fallback: exact title match
+      if (!pkgSnapshot && bookingData.packageName) {
+        pkgSnapshot = await Package.findOne({ title: bookingData.packageName })
+          .select('itinerary inclusions title')
+          .lean();
+        console.log(`🔍 Package lookup by exact title ("${bookingData.packageName}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
+      }
+
+      // 3. Fallback: case-insensitive exact title match
+      if (!pkgSnapshot && bookingData.packageName) {
+        pkgSnapshot = await Package.findOne({
+          title: { $regex: new RegExp(`^${bookingData.packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+        })
+          .select('itinerary inclusions title')
+          .lean();
+        console.log(`🔍 Package lookup by case-insensitive title ("${bookingData.packageName}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
+      }
+
+      // 4. Fallback: partial/fuzzy title match — strips pax suffixes like "(solo)", "(Solo)", etc.
+      // This handles cases where packageName was appended with extra labels at booking time
+      if (!pkgSnapshot && bookingData.packageName) {
+        // Extract the core title by stripping common suffixes: (solo), (Solo), (group), (pax), etc.
+        const coreTitle = bookingData.packageName
+          .replace(/\s*\(solo\)\s*/gi, '')
+          .replace(/\s*\(group\)\s*/gi, '')
+          .replace(/\s*\(pax.*?\)\s*/gi, '')
+          .replace(/\s*\(joiner.*?\)\s*/gi, '')
+          .replace(/\s*\(private.*?\)\s*/gi, '')
+          .trim();
+
+        if (coreTitle && coreTitle !== bookingData.packageName) {
+          pkgSnapshot = await Package.findOne({
+            title: { $regex: new RegExp(coreTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
+          })
+            .select('itinerary inclusions title')
+            .lean();
+          console.log(`🔍 Package lookup by stripped title ("${coreTitle}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
+        }
+      }
+
+      // 5. Last resort: partial match using the first meaningful segment of packageName
+      if (!pkgSnapshot && bookingData.packageName) {
+        // Use the first 20 chars or up to the first parenthesis as search term
+        const firstSegment = bookingData.packageName.split('(')[0].trim();
+        if (firstSegment && firstSegment.length >= 4) {
+          pkgSnapshot = await Package.findOne({
+            title: { $regex: new RegExp(firstSegment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
+          })
+            .select('itinerary inclusions title')
+            .lean();
+          console.log(`🔍 Package lookup by first segment ("${firstSegment}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
+        }
+      }
+
+      if (pkgSnapshot) {
+        // ✅ FIX: Strip _id from each itinerary item — package.js ItineraryItemSchema has _id enabled,
+        // but booking.js itineraryItemSchema has { _id: false }. Copying raw items with _id causes
+        // Mongoose to either reject or silently drop the array on save.
+        const rawItinerary = pkgSnapshot.itinerary && pkgSnapshot.itinerary.length > 0
+          ? pkgSnapshot.itinerary
+          : (bookingData.itinerary || []);
+        bookingItinerary = rawItinerary.map(({ day, title, activities }) => ({ day, title, activities }));
+
+        bookingInclusions = pkgSnapshot.inclusions && pkgSnapshot.inclusions.length > 0
+          ? pkgSnapshot.inclusions
+          : (bookingData.originalInclusions || bookingData.inclusions || []);
+        console.log(`✅ Snapshot from "${pkgSnapshot.title}" — itinerary: ${bookingItinerary.length} day(s), inclusions: ${bookingInclusions.length} item(s)`);
+      } else {
+        // Last resort: use whatever the frontend sent (may be empty)
+        // ✅ FIX: Strip _id just in case the frontend sent raw package itinerary items
+        bookingItinerary = (bookingData.itinerary || []).map(item => ({
+          day: item.day,
+          title: item.title,
+          activities: item.activities || []
+        }));
+        bookingInclusions = bookingData.originalInclusions || bookingData.inclusions || [];
+        console.warn(`⚠️ No matching package found in DB for "${bookingData.packageName}" — itinerary: ${bookingItinerary.length}, inclusions: ${bookingInclusions.length}`);
+      }
+    } catch (snapshotErr) {
+      console.warn('⚠️ Package snapshot fetch failed (non-fatal):', snapshotErr.message);
+      bookingItinerary = (bookingData.itinerary || []).map(item => ({
+        day: item.day,
+        title: item.title,
+        activities: item.activities || []
+      }));
+      bookingInclusions = bookingData.originalInclusions || bookingData.inclusions || [];
+    }
+
     // ✅ Create booking with all fields
     const newBooking = new Booking({
       packageName: bookingData.packageName,
@@ -801,7 +999,10 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       isCustomized: bookingData.isCustomized || false,
       customizedInclusions: sanitizedCustomizedInclusions, // ✅ FIXED: Use sanitized inclusions
       customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
-      originalInclusions: bookingData.originalInclusions || [],
+      originalInclusions: bookingInclusions,
+
+      // ✅ Itinerary — snapshot from package at time of booking
+      itinerary: bookingItinerary,
       
       includesAirfare: bookingData.includesAirfare || false,
       flightDetails: flightDetailsObject, 
