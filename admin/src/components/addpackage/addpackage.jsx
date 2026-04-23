@@ -30,7 +30,6 @@ const AddPackage = () => {
     const toast = useToast();
 
     // --- STATE ---
-    const [title, setTitle] = useState("");
     const [destination, setDestination] = useState("");
     const [supplierRate, setSupplierRate] = useState("");
     const [markupValue, setMarkupValue] = useState("");
@@ -39,19 +38,31 @@ const AddPackage = () => {
     const [duration, setDuration] = useState("");
     const [category, setCategory] = useState("Local Tour");
     
-    // ✅ Tour Type State
-    const [tourType, setTourType] = useState("private"); // "private" or "joiners"
-    const [pax, setPax] = useState(""); // Only for private
-    const [minPax, setMinPax] = useState(""); // Only for joiners
+    // ✅ Tour Type State — now uses tag-based string (e.g. "Solo", "Min of 2 pax", etc.)
+    const [tourType, setTourType] = useState("Solo");
+    const [pax, setPax] = useState(""); // Kept for backward compatibility
+    const [minPax, setMinPax] = useState(""); // Kept for backward compatibility
 
     // ✅ Pax Mode — for PricingCalculator pricing mode toggle
     const [paxMode, setPaxMode] = useState("multiple"); // "solo" or "multiple"
 
     // ✅ Solo and Multiple Pax Price fields
-    // soloPaxPrice     — admin-set selling price for a 1-person booking (saved to DB as Number | null)
-    // multiplePaxPrice — admin-set selling price for a group/multiple-person booking (saved to DB as Number | null)
+    // soloPaxPrice     — computed selling price for a 1-person booking (saved to DB as Number | null)
+    // multiplePaxPrice — computed selling price for a group/multiple-person booking (saved to DB as Number | null)
     const [soloPaxPrice, setSoloPaxPrice] = useState("");
     const [multiplePaxPrice, setMultiplePaxPrice] = useState("");
+
+    // ✅ Solo Pax Pricing Breakdown — supplier rate + markup per pax type
+    // These drive the computed soloPaxPrice value (same pattern as main pricing)
+    const [soloSupplierRate, setSoloSupplierRate] = useState("");
+    const [soloMarkupValue, setSoloMarkupValue] = useState("");
+    const [soloMarkupType, setSoloMarkupType] = useState("peso");
+
+    // ✅ Multiple Pax Pricing Breakdown — supplier rate + markup per pax type
+    // These drive the computed multiplePaxPrice value
+    const [multipleSupplierRate, setMultipleSupplierRate] = useState("");
+    const [multipleMarkupValue, setMultipleMarkupValue] = useState("");
+    const [multipleMarkupType, setMultipleMarkupType] = useState("peso");
     
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -111,7 +122,6 @@ const AddPackage = () => {
     useEffect(() => {
         const updateDraft = async () => {
             const isFormEmpty = 
-                !title && 
                 !destination && 
                 !supplierRate && 
                 !markupValue && 
@@ -142,7 +152,6 @@ const AddPackage = () => {
             }
 
             setDraftPayload({
-                title,
                 destination,
                 supplierRate,
                 markupValue,
@@ -154,8 +163,15 @@ const AddPackage = () => {
                 pax,
                 minPax,
                 paxMode,
-                soloPaxPrice,       // ✅ included in draft
-                multiplePaxPrice,   // ✅ included in draft
+                soloPaxPrice,           // ✅ included in draft
+                multiplePaxPrice,       // ✅ included in draft
+                // ✅ Pax pricing breakdown — included in draft
+                soloSupplierRate,
+                soloMarkupValue,
+                soloMarkupType,
+                multipleSupplierRate,
+                multipleMarkupValue,
+                multipleMarkupType,
                 inclusions,
                 itinerary,
                 image: imageBase64,
@@ -169,16 +185,18 @@ const AddPackage = () => {
 
         return () => clearTimeout(timeoutId);
     }, [
-        title, destination, supplierRate, markupValue, markupType,
+        destination, supplierRate, markupValue, markupType,
         price, duration, category, tourType, pax, minPax,
         paxMode, soloPaxPrice, multiplePaxPrice, // ✅
+        // ✅ Pax pricing breakdown deps
+        soloSupplierRate, soloMarkupValue, soloMarkupType,
+        multipleSupplierRate, multipleMarkupValue, multipleMarkupType,
         inclusions, itinerary, file
     ]);
 
     const restoreDraftData = async (data) => {
         if (!data) return;
 
-        setTitle(data.title || "");
         setDestination(data.destination || "");
         setSupplierRate(data.supplierRate || "");
         setMarkupValue(data.markupValue || "");
@@ -186,12 +204,19 @@ const AddPackage = () => {
         setPrice(data.price || "");
         setDuration(data.duration || "");
         setCategory(data.category || "Local Tour");
-        setTourType(data.tourType || "private");
+        setTourType(data.tourType || "Solo");
         setPax(data.pax || "");
         setMinPax(data.minPax || "");
         setPaxMode(data.paxMode || "multiple");
         setSoloPaxPrice(data.soloPaxPrice || "");         // ✅ restored from draft
         setMultiplePaxPrice(data.multiplePaxPrice || ""); // ✅ restored from draft
+        // ✅ Restore pax pricing breakdown from draft
+        setSoloSupplierRate(data.soloSupplierRate || "");
+        setSoloMarkupValue(data.soloMarkupValue || "");
+        setSoloMarkupType(data.soloMarkupType || "peso");
+        setMultipleSupplierRate(data.multipleSupplierRate || "");
+        setMultipleMarkupValue(data.multipleMarkupValue || "");
+        setMultipleMarkupType(data.multipleMarkupType || "peso");
         setInclusions(data.inclusions || [""]);
         setItinerary(data.itinerary || [{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
 
@@ -320,20 +345,58 @@ const AddPackage = () => {
         setPrice(total.toString());
     };
 
-    // ✅ Solo Pax Price handler — accepts numbers only, updates soloPaxPrice state
-    const handleSoloPaxPriceChange = (e) => {
+    // ✅ Solo Pax Pricing — supplier rate + markup handlers
+    // Mirrors the main pricing pattern: each field change recomputes soloPaxPrice
+    const handleSoloSupplierRateChange = (e) => {
         const value = e.target.value;
         if (value === "" || !isNaN(value)) {
-            setSoloPaxPrice(value);
+            setSoloSupplierRate(value);
+            const computed = computePrice(value, soloMarkupValue, soloMarkupType);
+            setSoloPaxPrice(computed > 0 ? computed.toString() : "");
         }
     };
 
-    // ✅ Multiple Pax Price handler — accepts numbers only, updates multiplePaxPrice state
-    const handleMultiplePaxPriceChange = (e) => {
+    const handleSoloMarkupChange = (e) => {
         const value = e.target.value;
         if (value === "" || !isNaN(value)) {
-            setMultiplePaxPrice(value);
+            setSoloMarkupValue(value);
+            const computed = computePrice(soloSupplierRate, value, soloMarkupType);
+            setSoloPaxPrice(computed > 0 ? computed.toString() : "");
         }
+    };
+
+    const toggleSoloMarkupType = () => {
+        const newType = soloMarkupType === "peso" ? "percentage" : "peso";
+        setSoloMarkupType(newType);
+        const computed = computePrice(soloSupplierRate, soloMarkupValue, newType);
+        setSoloPaxPrice(computed > 0 ? computed.toString() : "");
+    };
+
+    // ✅ Multiple Pax Pricing — supplier rate + markup handlers
+    // Mirrors the main pricing pattern: each field change recomputes multiplePaxPrice
+    const handleMultipleSupplierRateChange = (e) => {
+        const value = e.target.value;
+        if (value === "" || !isNaN(value)) {
+            setMultipleSupplierRate(value);
+            const computed = computePrice(value, multipleMarkupValue, multipleMarkupType);
+            setMultiplePaxPrice(computed > 0 ? computed.toString() : "");
+        }
+    };
+
+    const handleMultipleMarkupChange = (e) => {
+        const value = e.target.value;
+        if (value === "" || !isNaN(value)) {
+            setMultipleMarkupValue(value);
+            const computed = computePrice(multipleSupplierRate, value, multipleMarkupType);
+            setMultiplePaxPrice(computed > 0 ? computed.toString() : "");
+        }
+    };
+
+    const toggleMultipleMarkupType = () => {
+        const newType = multipleMarkupType === "peso" ? "percentage" : "peso";
+        setMultipleMarkupType(newType);
+        const computed = computePrice(multipleSupplierRate, multipleMarkupValue, newType);
+        setMultiplePaxPrice(computed > 0 ? computed.toString() : "");
     };
 
     // --- INCLUSIONS ---
@@ -452,13 +515,19 @@ const AddPackage = () => {
             return;
         }
 
-        if (!title.trim() || !destination.trim() || !supplierRate || !duration || !category) {
+        if (!destination.trim() || !supplierRate || !duration || !category) {
             toast.warning("Please fill in all required fields.", "Missing Fields");
             setSubmitting(false);
             return;
         }
 
-        // ✅ Validate pax and minPax based on tourType
+        if (!tourType || !tourType.trim()) {
+            toast.warning("Please select a tour type.", "Missing Tour Type");
+            setSubmitting(false);
+            return;
+        }
+
+        // ✅ Validate pax and minPax based on tourType (backward compat — only fires for legacy 'private'/'joiners' values)
         if (tourType === "private" && (!pax || parseInt(pax) < 1)) {
             toast.warning("Please enter the number of pax for private tour.", "Missing Pax");
             setSubmitting(false);
@@ -497,14 +566,12 @@ const AddPackage = () => {
             : markupValueNum;
         markupInPeso = Math.round(markupInPeso * 100) / 100;
 
-        // ✅ Build the full formatted title to send to DB: "{duration} {title} (Solo)" or "{duration} {title} (min of 2 pax)"
-        const paxSuffix = paxMode === 'solo' ? ' (Solo)' : ' (min of 2 pax)';
-        const baseTitle = duration && title
-            ? `${duration} ${title}`
-            : duration && !title
-            ? `${duration} Package Name`
-            : title || 'Package Name';
-        const formattedTitle = `${baseTitle}${paxSuffix}`;
+        // ✅ Build the full formatted title: "{duration} {destination} {tourType}"
+        // e.g. "3D2N BOHOL Solo" | "4D3N TOKYO, JAPAN Min of 2 pax (Exclusive Tour)"
+        const formattedTitle = [duration, destination, tourType]
+            .filter(Boolean)
+            .join(' ')
+            .trim() || 'Package';
 
         const formData = new FormData();
         formData.append("title", formattedTitle);
@@ -516,7 +583,7 @@ const AddPackage = () => {
         formData.append("tourType", tourType);
         formData.append("markupType", markupType === "percentage" ? "percentage" : "fixed");
         
-        // ✅ Append pax or minPax based on tourType
+        // ✅ Append pax or minPax based on tourType (backward compat)
         if (tourType === "private") {
             formData.append("pax", parseInt(pax));
         } else if (tourType === "joiners") {
@@ -536,7 +603,7 @@ const AddPackage = () => {
         const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
         const activeId = adminData.id || adminData._id || "";
 
-        formData.append("userEmail", activeUser);
+        formData.append("userEmail", activeUser); 
         formData.append("adminId", activeId); 
 
         try {
@@ -554,26 +621,32 @@ const AddPackage = () => {
             
             if (response.ok) {
                 toast.success(
-                    `"${title}" has been published successfully!`,
+                    `"${formattedTitle}" has been published successfully!`,
                     "Package Published",
                     4000
                 );
                 
                 await clearDraft();
                 
-                setTitle("");
                 setDestination("");
                 setSupplierRate("");
                 setMarkupValue("");
                 setPrice("");
                 setDuration("");
                 setCategory("Local Tour");
-                setTourType("private");
+                setTourType("Solo");
                 setPax("");
                 setMinPax("");
                 setPaxMode("multiple");
                 setSoloPaxPrice("");            // ✅ reset on success
                 setMultiplePaxPrice("");        // ✅ reset on success
+                // ✅ Reset pax pricing breakdown on success
+                setSoloSupplierRate("");
+                setSoloMarkupValue("");
+                setSoloMarkupType("peso");
+                setMultipleSupplierRate("");
+                setMultipleMarkupValue("");
+                setMultipleMarkupType("peso");
                 setFile(null);
                 setPreviewUrl(null);
                 setInclusions([""]);
@@ -651,7 +724,6 @@ const AddPackage = () => {
                                     pasteAreaRef={pasteAreaRef}
                                 />
                                 <BasicInfo
-                                    title={title} setTitle={setTitle}
                                     destination={destination} setDestination={setDestination}
                                     duration={duration} setDuration={setDuration}
                                     category={category} setCategory={setCategory}
@@ -672,11 +744,22 @@ const AddPackage = () => {
                                     tourType={tourType}
                                     pax={pax}
                                     minPax={minPax}
-                                    // ✅ Solo and multiple pax price props
+                                    // ✅ Solo pax pricing breakdown props
                                     soloPaxPrice={soloPaxPrice}
-                                    handleSoloPaxPriceChange={handleSoloPaxPriceChange}
+                                    soloSupplierRate={soloSupplierRate}
+                                    handleSoloSupplierRateChange={handleSoloSupplierRateChange}
+                                    soloMarkupValue={soloMarkupValue}
+                                    handleSoloMarkupChange={handleSoloMarkupChange}
+                                    soloMarkupType={soloMarkupType}
+                                    toggleSoloMarkupType={toggleSoloMarkupType}
+                                    // ✅ Multiple pax pricing breakdown props
                                     multiplePaxPrice={multiplePaxPrice}
-                                    handleMultiplePaxPriceChange={handleMultiplePaxPriceChange}
+                                    multipleSupplierRate={multipleSupplierRate}
+                                    handleMultipleSupplierRateChange={handleMultipleSupplierRateChange}
+                                    multipleMarkupValue={multipleMarkupValue}
+                                    handleMultipleMarkupChange={handleMultipleMarkupChange}
+                                    multipleMarkupType={multipleMarkupType}
+                                    toggleMultipleMarkupType={toggleMultipleMarkupType}
                                 />
                                 <InclusionsList
                                     inclusions={inclusions}
@@ -699,7 +782,7 @@ const AddPackage = () => {
                             <aside className="apkg-right">
                                 <PackagePreview
                                     previewUrl={previewUrl} category={category}
-                                    title={title} destination={destination}
+                                    title={null} destination={destination}
                                     price={price} duration={duration}
                                     inclusions={inclusions} itinerary={itinerary}
                                     tourType={tourType}

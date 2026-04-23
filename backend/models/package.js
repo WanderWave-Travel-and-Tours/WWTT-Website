@@ -23,11 +23,13 @@ const PackageSchema = new mongoose.Schema({
     duration: { type: String, required: true },
     category: { type: String, enum: ['Local', 'International', 'Internation Tour'], default: 'Local' },
     
-    // ✅ Tour Type Fields
+    // ✅ Tour Type — flexible string to support tag-based values:
+    // e.g. "Solo", "Min of 2 pax", "Solo/Joiners", "With Free City Tour",
+    //      "With City Tour", "Min of 2 pax (Exclusive Tour)", or any custom value.
+    // Legacy values "private" and "joiners" are still accepted for backward compatibility.
     tourType: { 
         type: String, 
-        enum: ['private', 'joiners'], 
-        default: 'private' 
+        default: 'Solo'
     },
     pax: { 
         type: Number, 
@@ -94,12 +96,12 @@ PackageSchema.pre('save', function(next) {
         this.price = this.sellerPrice + this.markup;
     }
     
-    // ✅ Clear pax if tour type is joiners
+    // ✅ Clear pax if tour type is joiners (legacy compat)
     if (this.tourType === 'joiners') {
         this.pax = null;
     }
     
-    // ✅ Clear minPax if tour type is private
+    // ✅ Clear minPax if tour type is private (legacy compat)
     if (this.tourType === 'private') {
         this.minPax = null;
     }

@@ -14,7 +14,7 @@ const PackagePreview = ({
     // ✅ Pax pricing props
     soloPaxPrice,
     multiplePaxPrice,
-    // ✅ Pricing mode — needed to build the preview title suffix
+    // ✅ Pricing mode — kept for backward compatibility
     paxMode,
 }) => {
     
@@ -30,21 +30,11 @@ const PackagePreview = ({
 
     const hasPaxPricing = soloPaxPrice || multiplePaxPrice;
 
-    // ✅ Build the pax suffix for the preview title
-    // Solo mode   → "(Solo)"
-    // Multiple    → always "(min of 2 pax)" hardcoded
-    const paxSuffix = paxMode === 'solo'
-        ? ' (Solo)'
-        : ' (min of 2 pax)';
-
-    // ✅ Full preview title: "{duration} {title} {paxSuffix}"
-    const baseTitle = duration && title
-        ? `${duration} ${title}`
-        : duration && !title
-        ? `${duration} Package Name`
-        : title || 'Package Name';
-
-    const previewTitle = `${baseTitle}${paxSuffix}`;
+    // ✅ Preview title format: "{duration} {destination} {tourType}"
+    // e.g. "3D2N BOHOL Solo" | "4D3N TOKYO, JAPAN Min of 2 pax"
+    const previewTitle = [duration, destination, tourType]
+        .filter(Boolean)
+        .join(' ') || 'Package Preview';
 
     return (
         <div className="apkg-preview">
@@ -58,15 +48,15 @@ const PackagePreview = ({
                     )}
                 </div>
                 <div className="apkg-card-body">
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
                         <span className="apkg-card-badge">{category}</span>
-                        {/* ✅ Tour Type Badge */}
+                        {/* ✅ Tour Type Tag Badge */}
                         {tourType && (
                             <span className="apkg-card-badge" style={{ 
-                                backgroundColor: tourType === 'joiners' ? '#10b981' : '#3b82f6',
+                                backgroundColor: '#3b82f6',
                                 fontSize: '11px'
                             }}>
-                                {tourType === 'joiners' ? `👥 Joiners` : `👤 Private`}
+                                {tourType}
                             </span>
                         )}
                     </div>
@@ -78,7 +68,7 @@ const PackagePreview = ({
                         {destination || "Destination"}
                     </p>
                     
-                    {/* ✅ Show Pax for Private Tours */}
+                    {/* ✅ Show Pax for Private Tours (backward compat) */}
                     {tourType === 'private' && pax && (
                         <p style={{ 
                             fontSize: '12px', 
@@ -90,7 +80,7 @@ const PackagePreview = ({
                         </p>
                     )}
                     
-                    {/* ✅ Show Min Pax for Joiners */}
+                    {/* ✅ Show Min Pax for Joiners (backward compat) */}
                     {tourType === 'joiners' && minPax && (
                         <p style={{ 
                             fontSize: '12px', 

@@ -1,8 +1,74 @@
 import React from 'react';
 import './BasicInfo.css';
 
+const PREDEFINED_TOUR_TYPES = [
+  'Solo',
+  'Min of 2 pax',
+  'Solo/Joiners',
+  'With Free City Tour',
+  'With City Tour',
+  'Min of 2 pax (Exclusive Tour)',
+];
+
+const LOCAL_DESTINATIONS = [
+  { value: 'BAGUIO', label: 'Baguio' },
+  { value: 'BATANES', label: 'Batanes' },
+  { value: 'BOHOL', label: 'Bohol' },
+  { value: 'BOLINAO', label: 'Bolinao' },
+  { value: 'BORACAY', label: 'Boracay' },
+  { value: 'CEBU', label: 'Cebu' },
+  { value: 'CORON', label: 'Coron' },
+  { value: 'DAVAO', label: 'Davao' },
+  { value: 'EL NIDO', label: 'El Nido' },
+  { value: 'LA UNION', label: 'La Union' },
+  { value: 'PUERTO PRINCESA', label: 'Puerto Princesa' },
+  { value: 'SAGADA', label: 'Sagada' },
+  { value: 'SIARGAO', label: 'Siargao' },
+  { value: 'SIQUIJOR', label: 'Siquijor' },
+];
+
+const INTERNATIONAL_DESTINATIONS = [
+  // East Asia
+  { value: 'TOKYO, JAPAN', label: 'Tokyo, Japan' },
+  { value: 'OSAKA, JAPAN', label: 'Osaka, Japan' },
+  { value: 'KYOTO, JAPAN', label: 'Kyoto, Japan' },
+  { value: 'SEOUL, SOUTH KOREA', label: 'Seoul, South Korea' },
+  { value: 'BUSAN, SOUTH KOREA', label: 'Busan, South Korea' },
+  { value: 'TAIPEI, TAIWAN', label: 'Taipei, Taiwan' },
+  { value: 'HONG KONG', label: 'Hong Kong' },
+  { value: 'BEIJING, CHINA', label: 'Beijing, China' },
+  { value: 'SHANGHAI, CHINA', label: 'Shanghai, China' },
+  // Southeast Asia
+  { value: 'BANGKOK, THAILAND', label: 'Bangkok, Thailand' },
+  { value: 'PHUKET, THAILAND', label: 'Phuket, Thailand' },
+  { value: 'CHIANG MAI, THAILAND', label: 'Chiang Mai, Thailand' },
+  { value: 'HANOI, VIETNAM', label: 'Hanoi, Vietnam' },
+  { value: 'HO CHI MINH CITY, VIETNAM', label: 'Ho Chi Minh City, Vietnam' },
+  { value: 'DA NANG, VIETNAM', label: 'Da Nang, Vietnam' },
+  { value: 'SINGAPORE', label: 'Singapore' },
+  { value: 'KUALA LUMPUR, MALAYSIA', label: 'Kuala Lumpur, Malaysia' },
+  { value: 'LANGKAWI, MALAYSIA', label: 'Langkawi, Malaysia' },
+  { value: 'KOTA KINABALU, MALAYSIA', label: 'Kota Kinabalu, Malaysia' },
+  { value: 'BALI, INDONESIA', label: 'Bali, Indonesia' },
+  { value: 'JAKARTA, INDONESIA', label: 'Jakarta, Indonesia' },
+  { value: 'SIEM REAP, CAMBODIA', label: 'Siem Reap, Cambodia' },
+  { value: 'PHNOM PENH, CAMBODIA', label: 'Phnom Penh, Cambodia' },
+  // Middle East
+  { value: 'DUBAI, UAE', label: 'Dubai, UAE' },
+  { value: 'ABU DHABI, UAE', label: 'Abu Dhabi, UAE' },
+  // Europe
+  { value: 'PARIS, FRANCE', label: 'Paris, France' },
+  { value: 'LONDON, UK', label: 'London, UK' },
+  { value: 'ROME, ITALY', label: 'Rome, Italy' },
+  { value: 'BARCELONA, SPAIN', label: 'Barcelona, Spain' },
+  { value: 'AMSTERDAM, NETHERLANDS', label: 'Amsterdam, Netherlands' },
+  // Americas
+  { value: 'NEW YORK, USA', label: 'New York, USA' },
+  { value: 'LOS ANGELES, USA', label: 'Los Angeles, USA' },
+  { value: 'LAS VEGAS, USA', label: 'Las Vegas, USA' },
+];
+
 const BasicInfo = ({ 
-  title, setTitle, 
   destination, setDestination, 
   duration, setDuration, 
   category, setCategory,
@@ -11,7 +77,12 @@ const BasicInfo = ({
   minPax, setMinPax
 }) => {
   const [isOtherDestination, setIsOtherDestination] = React.useState(false);
-  
+  const [isOtherTourType, setIsOtherTourType] = React.useState(false);
+  const [otherTourTypeValue, setOtherTourTypeValue] = React.useState('');
+
+  const isInternational = category === 'International Tour';
+  const destinationList = isInternational ? INTERNATIONAL_DESTINATIONS : LOCAL_DESTINATIONS;
+
   const handleDestinationChange = (e) => {
     const value = e.target.value;
     if (value === 'OTHER') {
@@ -23,21 +94,36 @@ const BasicInfo = ({
     }
   };
 
+  // ✅ When category changes, reset destination to avoid mismatch
+  const handleCategoryChange = (e) => {
+    setCategory(e.target.value);
+    setDestination('');
+    setIsOtherDestination(false);
+  };
+
+  const handleTourTypeTag = (tag) => {
+    setIsOtherTourType(false);
+    setOtherTourTypeValue('');
+    setTourType(tag);
+  };
+
+  const handleOtherTourTypeClick = () => {
+    setIsOtherTourType(true);
+    setTourType('');
+  };
+
+  const handleOtherTourTypeInput = (e) => {
+    const value = e.target.value;
+    setOtherTourTypeValue(value);
+    setTourType(value);
+  };
+
   return (
     <section className="apkg-section">
       <h2 className="apkg-section-title">BASIC INFORMATION</h2>
       <div className="apkg-fields">
-        <div className="apkg-field apkg-field--full">
-          <label>Package Name</label>
-          <input
-            type="text"
-            placeholder="Enter package name"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </div>
-        
+
+        {/* ✅ DESTINATION */}
         <div className="apkg-field apkg-field--full">
           <label>Destination</label>
           <select
@@ -46,27 +132,16 @@ const BasicInfo = ({
             required
           >
             <option value="">Select Destination</option>
-            <option value="BAGUIO">Baguio</option>
-            <option value="BATANES">Batanes</option>
-            <option value="BOHOL">Bohol</option>
-            <option value="BOLINAO">Bolinao</option>
-            <option value="BORACAY">Boracay</option>
-            <option value="CEBU">Cebu</option>
-            <option value="CORON">Coron</option>
-            <option value="DAVAO">Davao</option>
-            <option value="EL NIDO">El Nido</option>
-            <option value="LA UNION">La Union</option>
-            <option value="PUERTO PRINCESA">Puerto Princesa</option>
-            <option value="SAGADA">Sagada</option>
-            <option value="SIARGAO">Siargao</option>
-            <option value="SIQUIJOR">Siquijor</option>
+            {destinationList.map((d) => (
+              <option key={d.value} value={d.value}>{d.label}</option>
+            ))}
             <option value="OTHER">Other</option>
           </select>
-          
+
           {isOtherDestination && (
             <input
               type="text"
-              placeholder="Enter destination (e.g. Tokyo, Japan)"
+              placeholder={isInternational ? 'Enter destination (e.g. Zurich, Switzerland)' : 'Enter destination (e.g. Zambales)'}
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               required
@@ -75,6 +150,7 @@ const BasicInfo = ({
           )}
         </div>
 
+        {/* ✅ DURATION */}
         <div className="apkg-field">
           <label className="apkg-label">Duration *</label>
           <select
@@ -91,79 +167,62 @@ const BasicInfo = ({
           </select>
         </div>
 
+        {/* ✅ TOUR CATEGORY */}
         <div className="apkg-field">
           <label>Tour Category</label>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={handleCategoryChange}
           >
             <option value="Local Tour">Local Tour</option>
             <option value="International Tour">International Tour</option>
           </select>
         </div>
 
-        {/* ✅ TOUR TYPE TOGGLE */}
+        {/* ✅ TOUR TYPE TAGS */}
         <div className="apkg-field apkg-field--full">
           <label>Tour Type *</label>
-          <div className="apkg-tour-type-toggle">
+          <div className="apkg-tour-type-tags">
+            {PREDEFINED_TOUR_TYPES.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={`apkg-type-tag ${!isOtherTourType && tourType === tag ? 'active' : ''}`}
+                onClick={() => handleTourTypeTag(tag)}
+              >
+                {tag}
+              </button>
+            ))}
+            {/* ✅ OTHER — custom tour type input */}
             <button
               type="button"
-              className={`apkg-toggle-btn ${tourType === 'private' ? 'active' : ''}`}
-              onClick={() => setTourType('private')}
+              className={`apkg-type-tag apkg-type-tag--other ${isOtherTourType ? 'active' : ''}`}
+              onClick={handleOtherTourTypeClick}
             >
-              <span className="toggle-icon">👤</span>
-              Private Tour
-            </button>
-            <button
-              type="button"
-              className={`apkg-toggle-btn ${tourType === 'joiners' ? 'active' : ''}`}
-              onClick={() => setTourType('joiners')}
-            >
-              <span className="toggle-icon">👥</span>
-              Joiners
+              + Other
             </button>
           </div>
+
+          {/* ✅ Custom tour type text input (shown when Other is selected) */}
+          {isOtherTourType && (
+            <input
+              type="text"
+              placeholder="Enter custom tour type (e.g. With Island Hopping)"
+              value={otherTourTypeValue}
+              onChange={handleOtherTourTypeInput}
+              required
+              style={{ marginTop: '10px' }}
+              className="apkg-input"
+            />
+          )}
+
+          {tourType && (
+            <span className="apkg-field-hint">
+              Selected: <strong>{tourType}</strong>
+            </span>
+          )}
         </div>
 
-        {/* ✅ PAX FOR PRIVATE TOURS */}
-        {tourType === 'private' && (
-          <div className="apkg-field apkg-field--full">
-            <label>Number of Pax *</label>
-            <input
-              type="number"
-              placeholder="Enter number of pax (e.g. 2)"
-              value={pax}
-              onChange={(e) => setPax(e.target.value)}
-              onWheel={(e) => e.target.blur()}
-              required
-              min="1"
-              max="50"
-            />
-            <span className="apkg-field-hint">
-              This package is for {pax || '___'} person(s)
-            </span>
-          </div>
-        )}
-
-        {/* ✅ MIN PAX FOR JOINERS */}
-        {tourType === 'joiners' && (
-          <div className="apkg-field apkg-field--full">
-            <label>Minimum Pax Required *</label>
-            <input
-              type="number"
-              placeholder="Enter minimum number of joiners (e.g. 4)"
-              value={minPax}
-              onChange={(e) => setMinPax(e.target.value)}
-              onWheel={(e) => e.target.blur()}
-              required
-              min="1"
-              max="50"
-            />
-            <span className="apkg-field-hint">
-              This package requires at least {minPax || '___'} joiners to proceed
-            </span>
-          </div>
-        )}
       </div>
     </section>
   );
