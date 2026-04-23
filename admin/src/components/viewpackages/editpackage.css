@@ -708,3 +708,69 @@
         font-size: 10px;
     }
 }
+/* ================================================= */
+/* TOUR TYPE TAG PILLS (ported from BasicInfo.css)   */
+/* ================================================= */
+
+.epa-tour-type-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.epa-type-tag {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  line-height: 1.3;
+  font-family: inherit;
+}
+
+.epa-type-tag:hover {
+  border-color: #001F3F;
+  color: #001F3F;
+  background: #f0f4ff;
+}
+
+.epa-type-tag.active {
+  background: #001F3F;
+  border-color: #001F3F;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 31, 63, 0.25);
+}
+
+.epa-type-tag--other {
+  border-style: dashed;
+  color: #64748b;
+}
+
+.epa-type-tag--other:hover,
+.epa-type-tag--other.active {
+  border-style: solid;
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #ffffff;
+}
+
+/* ================================================= */
+/* REMOVE NUMBER INPUT SPINNERS                      */
+/* ================================================= */
+
+.epa-main input[type="number"]::-webkit-inner-spin-button,
+.epa-main input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.epa-main input[type="number"] {
+  -moz-appearance: textfield;
+}

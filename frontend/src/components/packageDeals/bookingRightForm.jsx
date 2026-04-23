@@ -42,18 +42,53 @@ const BookingRightForm = ({
     setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
   // ✅ PAX RULES — checks BOTH DB fields AND package title (pkg.title is the DB field; pkg.name is the alias used in some places)
   // Title-based detection handles packages where DB pax fields are missing/incomplete
-    // ✅ PAX RULES — checks BOTH DB fields AND package title
-    // ✅ PAX RULES
   const pkgNameLower = (pkg.title || pkg.name || '').toLowerCase();
-  const titleIsSoloJoiners = /solo\s*\/\s*joiners/i.test(pkgNameLower) || /\bsolo\s+joiners\b/i.test(pkgNameLower);
+
+  // ✅ EXPANDED: catches ALL solo/joiner title variations:
+  // "Solo/Joiners", "Solo Joiners", "Solo/Joiner", "Solo Joiner",
+  // "Joiners", "Joiner", "Solo/Joiners", "solo joiner", etc.
+  const titleIsSoloJoiners = 
+    /solo\s*\/\s*joiners?\b/i.test(pkgNameLower) ||   // Solo/Joiners, Solo/Joiner
+    /\bsolo\s+joiners?\b/i.test(pkgNameLower) ||       // Solo Joiners, Solo Joiner
+    /\bjoiners?\b/i.test(pkgNameLower);                // Joiners, Joiner (standalone)
+
   const titleIsSolo       = !titleIsSoloJoiners && /\bsolo\b/i.test(pkgNameLower);
   const titleIsMinTwo     = pkgNameLower.includes('min of 2') || pkgNameLower.includes('min. of 2') || 
                             pkgNameLower.includes('minimum 2') || pkgNameLower.includes('min 2 pax') || 
                             pkgNameLower.includes('min.of 2');
 
   const isSoloPkg     = !titleIsSoloJoiners && ((pkg.pax === 1) || titleIsSolo);
-  const isSoloJoiners = (!isSoloPkg && pkg.tourType === 'joiners') || titleIsSoloJoiners;
+
+  // ✅ isSoloJoiners: title-based detection is primary, DB tourType is fallback.
+  // Guards against "Min of 2" packages being misclassified.
+  const isSoloJoiners = titleIsSoloJoiners || (
+    !isSoloPkg &&
+    !titleIsMinTwo &&
+    (pkg.tourType === 'joiners' || pkg.tourType === 'Solo/Joiners')
+  );
+
   const isMinTwoPkg   = (!isSoloPkg && (pkg.tourType === 'private' && pkg.pax === 2)) || titleIsMinTwo;
+
+  // ✅ RESTRICTED BOOKING DAYS — ONLY Solo/Joiners packages at these specific destinations
+  // 3D2N → Fridays only | 2D1N → Saturdays only
+  // ✅ Non-Solo/Joiners packages (Solo, Min of 2, Private, etc.) at these destinations
+  //    are NOT affected — the restriction is exclusive to true Solo/Joiners packages.
+  const RESTRICTED_DESTINATIONS = ['sagada', 'baguio', 'la union', 'launion', 'bolinao', 'ilocos'];
+  const pkgDestinationLower = (pkg.destination || pkg.location || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const isRestrictedDestination = isSoloJoiners && RESTRICTED_DESTINATIONS.some(dest => pkgDestinationLower.includes(dest));
+
+  // Returns true if a given Date object is an allowed booking start day
+  const isAllowedBookingDay = (date) => {
+    if (!isRestrictedDestination) return true; // No restriction for other packages
+    const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+    if (durationDays === 3 && durationNights === 2) {
+      return dayOfWeek === 5; // Friday only for 3D2N
+    }
+    if (durationDays === 2 && durationNights === 1) {
+      return dayOfWeek === 6; // Saturday only for 2D1N
+    }
+    return true; // Other durations: no restriction
+  };
 
   const defaultPax = isSoloPkg ? 1 : isMinTwoPkg ? 2 : isSoloJoiners ? 1 : 2;
 
@@ -1391,6 +1426,33 @@ const handleNextPassenger = async (e) => {
             </button>
           </div>
 
+          {/* ✅ RESTRICTED BOOKING DAY NOTICE: Shown only for Solo/Joiners packages to restricted destinations */}
+          {isRestrictedDestination && (
+            <div style={{
+              background: '#fff7ed',
+              border: '1px solid #fed7aa',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.82rem',
+              color: '#92400e',
+              lineHeight: '1.4'
+            }}>
+              <span style={{fontSize: '1rem'}}>📅</span>
+              <span>
+                <strong>Available start days:</strong>{' '}
+                {durationDays === 3 && durationNights === 2
+                  ? 'Fridays only (3D2N)'
+                  : durationDays === 2 && durationNights === 1
+                  ? 'Saturdays only (2D1N)'
+                  : 'Check available dates below'}
+              </span>
+            </div>
+          )}
+
           {selectedDate && (
             <div className="brf-selected-date-display">
               <div className="brf-date-icon">📅</div>
@@ -1419,18 +1481,24 @@ const handleNextPassenger = async (e) => {
               today.setHours(0, 0, 0, 0);
               const isPastDate = dateToCheck < today;
 
+              // ✅ RESTRICTED BOOKING DAYS: Solo/Joiners packages to Sagada, Baguio, La Union, Bolinao, Ilocos
+              // 3D2N → Fridays only | 2D1N → Saturdays only
+              const isNotAllowedDay = !isAllowedBookingDay(dateToCheck);
+              const isDisabled = isPastDate || isNotAllowedDay;
+
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
               
               return (
                 <button
                   key={day}
-                  disabled={isPastDate} 
-                  onClick={() => !isPastDate && setSelectedDate(day)}
+                  disabled={isDisabled} 
+                  onClick={() => !isDisabled && setSelectedDate(day)}
                   className={`brf-calendar-day 
                     ${isStartDate ? 'brf-selected' : ''} 
                     ${isInRange && !isStartDate ? 'brf-in-range' : ''} 
                     ${isPastDate ? 'brf-disabled-date' : ''} 
+                    ${isNotAllowedDay && !isPastDate ? 'brf-not-allowed-day' : ''} 
                   `}
                 >
                   {day}
