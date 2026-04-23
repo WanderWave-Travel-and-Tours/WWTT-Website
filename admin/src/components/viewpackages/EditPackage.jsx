@@ -25,6 +25,76 @@ const getAdminData = () => {
     }
 };
 
+// ✅ Predefined tour type tags (mirrors AddPackage / BasicInfo)
+const PREDEFINED_TOUR_TYPES = [
+  'Solo',
+  'Min of 2 pax',
+  'Solo/Joiners',
+  'With Free City Tour',
+  'With City Tour',
+  'Min of 2 pax (Exclusive Tour)',
+];
+
+// ✅ Local destination list
+const LOCAL_DESTINATIONS = [
+  { value: 'BAGUIO', label: 'Baguio' },
+  { value: 'BATANES', label: 'Batanes' },
+  { value: 'BOHOL', label: 'Bohol' },
+  { value: 'BOLINAO', label: 'Bolinao' },
+  { value: 'BORACAY', label: 'Boracay' },
+  { value: 'CEBU', label: 'Cebu' },
+  { value: 'CORON', label: 'Coron' },
+  { value: 'DAVAO', label: 'Davao' },
+  { value: 'EL NIDO', label: 'El Nido' },
+  { value: 'LA UNION', label: 'La Union' },
+  { value: 'PUERTO PRINCESA', label: 'Puerto Princesa' },
+  { value: 'SAGADA', label: 'Sagada' },
+  { value: 'SIARGAO', label: 'Siargao' },
+  { value: 'SIQUIJOR', label: 'Siquijor' },
+];
+
+// ✅ International destination list
+const INTERNATIONAL_DESTINATIONS = [
+  // East Asia
+  { value: 'TOKYO, JAPAN', label: 'Tokyo, Japan' },
+  { value: 'OSAKA, JAPAN', label: 'Osaka, Japan' },
+  { value: 'KYOTO, JAPAN', label: 'Kyoto, Japan' },
+  { value: 'SEOUL, SOUTH KOREA', label: 'Seoul, South Korea' },
+  { value: 'BUSAN, SOUTH KOREA', label: 'Busan, South Korea' },
+  { value: 'TAIPEI, TAIWAN', label: 'Taipei, Taiwan' },
+  { value: 'HONG KONG', label: 'Hong Kong' },
+  { value: 'BEIJING, CHINA', label: 'Beijing, China' },
+  { value: 'SHANGHAI, CHINA', label: 'Shanghai, China' },
+  // Southeast Asia
+  { value: 'BANGKOK, THAILAND', label: 'Bangkok, Thailand' },
+  { value: 'PHUKET, THAILAND', label: 'Phuket, Thailand' },
+  { value: 'CHIANG MAI, THAILAND', label: 'Chiang Mai, Thailand' },
+  { value: 'HANOI, VIETNAM', label: 'Hanoi, Vietnam' },
+  { value: 'HO CHI MINH CITY, VIETNAM', label: 'Ho Chi Minh City, Vietnam' },
+  { value: 'DA NANG, VIETNAM', label: 'Da Nang, Vietnam' },
+  { value: 'SINGAPORE', label: 'Singapore' },
+  { value: 'KUALA LUMPUR, MALAYSIA', label: 'Kuala Lumpur, Malaysia' },
+  { value: 'LANGKAWI, MALAYSIA', label: 'Langkawi, Malaysia' },
+  { value: 'KOTA KINABALU, MALAYSIA', label: 'Kota Kinabalu, Malaysia' },
+  { value: 'BALI, INDONESIA', label: 'Bali, Indonesia' },
+  { value: 'JAKARTA, INDONESIA', label: 'Jakarta, Indonesia' },
+  { value: 'SIEM REAP, CAMBODIA', label: 'Siem Reap, Cambodia' },
+  { value: 'PHNOM PENH, CAMBODIA', label: 'Phnom Penh, Cambodia' },
+  // Middle East
+  { value: 'DUBAI, UAE', label: 'Dubai, UAE' },
+  { value: 'ABU DHABI, UAE', label: 'Abu Dhabi, UAE' },
+  // Europe
+  { value: 'PARIS, FRANCE', label: 'Paris, France' },
+  { value: 'LONDON, UK', label: 'London, UK' },
+  { value: 'ROME, ITALY', label: 'Rome, Italy' },
+  { value: 'BARCELONA, SPAIN', label: 'Barcelona, Spain' },
+  { value: 'AMSTERDAM, NETHERLANDS', label: 'Amsterdam, Netherlands' },
+  // Americas
+  { value: 'NEW YORK, USA', label: 'New York, USA' },
+  { value: 'LOS ANGELES, USA', label: 'Los Angeles, USA' },
+  { value: 'LAS VEGAS, USA', label: 'Las Vegas, USA' },
+];
+
 const EditPackage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -40,7 +110,7 @@ const EditPackage = () => {
   const [formData, setFormData] = useState({
     title: "",
     destination: "",
-    tourType: "private",
+    tourType: "Solo",
     pax: "",
     minPax: "",
     sellerPrice: "",
@@ -64,9 +134,20 @@ const EditPackage = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
+  // ✅ Destination dropdown state
+  const [isOtherDestination, setIsOtherDestination] = useState(false);
+
+  // ✅ Tour type tag state
+  const [isOtherTourType, setIsOtherTourType] = useState(false);
+  const [otherTourTypeValue, setOtherTourTypeValue] = useState('');
+
   const API_BASE_URL = "https://wanderwaveph.onrender.com/api/packages";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
+  // ✅ Derived destination list based on category
+  const isInternational = formData.category === 'International' || formData.category === 'International Tour';
+  const destinationList = isInternational ? INTERNATIONAL_DESTINATIONS : LOCAL_DESTINATIONS;
 
   // =========================================================
   // AUTO-DRAFT LOGIC START
@@ -131,7 +212,10 @@ const EditPackage = () => {
         imageMeta: imageMeta,
         originalId: packageId,
         soloPaxPrice: formData.soloPaxPrice,
-        multiplePaxPrice: formData.multiplePaxPrice
+        multiplePaxPrice: formData.multiplePaxPrice,
+        isOtherDestination,
+        isOtherTourType,
+        otherTourTypeValue,
       });
     };
 
@@ -140,7 +224,7 @@ const EditPackage = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [formData, inclusions, itinerary, imageFile, loading, packageId]);
+  }, [formData, inclusions, itinerary, imageFile, loading, packageId, isOtherDestination, isOtherTourType, otherTourTypeValue]);
 
   const restoreDraftData = async (data) => {
     if (!data) return;
@@ -153,7 +237,7 @@ const EditPackage = () => {
     setFormData({
       title: data.title || "",
       destination: data.destination || "",
-      tourType: data.tourType || "private",
+      tourType: data.tourType || "Solo",
       pax: data.pax || "",
       minPax: data.minPax || "",
       sellerPrice: data.sellerPrice || "",
@@ -169,6 +253,11 @@ const EditPackage = () => {
 
     if (data.inclusions) setInclusions(data.inclusions);
     if (data.itinerary) setItinerary(data.itinerary);
+
+    // ✅ Restore destination/tourType UI state
+    if (data.isOtherDestination !== undefined) setIsOtherDestination(data.isOtherDestination);
+    if (data.isOtherTourType !== undefined) setIsOtherTourType(data.isOtherTourType);
+    if (data.otherTourTypeValue !== undefined) setOtherTourTypeValue(data.otherTourTypeValue);
 
     if (data.image && data.imageMeta) {
       try {
@@ -246,17 +335,34 @@ const EditPackage = () => {
           const currentInclusions = pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [""];
           const currentItinerary = pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", activities: [""] }];
 
+          // ✅ Detect if the loaded destination is in the predefined list
+          const loadedDestination = pkg.destination || "";
+          const loadedCategory = pkg.category || "Local";
+          const destList = (loadedCategory === 'International' || loadedCategory === 'International Tour')
+            ? INTERNATIONAL_DESTINATIONS
+            : LOCAL_DESTINATIONS;
+          const isKnownDest = destList.some(d => d.value === loadedDestination);
+          setIsOtherDestination(!!loadedDestination && !isKnownDest);
+
+          // ✅ Detect if the loaded tourType is in the predefined tag list
+          const loadedTourType = pkg.tourType || "Solo";
+          const isKnownTourType = PREDEFINED_TOUR_TYPES.includes(loadedTourType);
+          if (!isKnownTourType && loadedTourType) {
+            setIsOtherTourType(true);
+            setOtherTourTypeValue(loadedTourType);
+          }
+
           setOriginalData({
             title: pkg.title || "",
-            destination: pkg.destination || "",
-            tourType: pkg.tourType || "private",
+            destination: loadedDestination,
+            tourType: loadedTourType,
             pax: pkg.pax || "",
             minPax: pkg.minPax || "",
             sellerPrice: sellerPriceValue,
             markup: markupValue,
             markupType: pkg.markupType || "flat",
             duration: pkg.duration || "",
-            category: pkg.category || "Local",
+            category: loadedCategory,
             inclusions: currentInclusions,
             itinerary: currentItinerary,
             soloPaxPrice: pkg.soloPaxPrice ?? "",
@@ -265,15 +371,15 @@ const EditPackage = () => {
 
           setFormData({
             title: pkg.title || "",
-            destination: pkg.destination || "",
-            tourType: pkg.tourType || "private",
+            destination: loadedDestination,
+            tourType: loadedTourType,
             pax: pkg.pax || "",
             minPax: pkg.minPax || "",
             sellerPrice: sellerPriceValue,
             markup: markupValue,
             markupType: pkg.markupType || "flat",
             duration: pkg.duration || "",
-            category: pkg.category || "Local",
+            category: loadedCategory,
             existingImage: pkg.image || "",
             existingImagePublicId: pkg.imagePublicId || "",
             soloPaxPrice: pkg.soloPaxPrice ?? "",
@@ -338,6 +444,42 @@ const EditPackage = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // ✅ Destination handlers
+  const handleDestinationChange = (e) => {
+    const value = e.target.value;
+    if (value === 'OTHER') {
+      setIsOtherDestination(true);
+      setFormData(prev => ({ ...prev, destination: '' }));
+    } else {
+      setIsOtherDestination(false);
+      setFormData(prev => ({ ...prev, destination: value }));
+    }
+  };
+
+  const handleCategoryChange = (e) => {
+    // Reset destination when category changes to avoid list mismatch
+    setFormData(prev => ({ ...prev, category: e.target.value, destination: '' }));
+    setIsOtherDestination(false);
+  };
+
+  // ✅ Tour type tag handlers
+  const handleTourTypeTag = (tag) => {
+    setIsOtherTourType(false);
+    setOtherTourTypeValue('');
+    setFormData(prev => ({ ...prev, tourType: tag }));
+  };
+
+  const handleOtherTourTypeClick = () => {
+    setIsOtherTourType(true);
+    setFormData(prev => ({ ...prev, tourType: '' }));
+  };
+
+  const handleOtherTourTypeInput = (e) => {
+    const value = e.target.value;
+    setOtherTourTypeValue(value);
+    setFormData(prev => ({ ...prev, tourType: value }));
   };
 
   const handleInclusionChange = (index, value) => {
@@ -458,6 +600,12 @@ const EditPackage = () => {
       return;
     }
 
+    if (!formData.tourType || !formData.tourType.trim()) {
+      toast.warning("Please select a tour type.", "Missing Tour Type");
+      return;
+    }
+
+    // ✅ Legacy pax validations (only fire for backward-compat values)
     if (formData.tourType === 'private' && (!formData.pax || parseInt(formData.pax) < 1)) {
       toast.warning("Pax is required for private tours and must be at least 1.", "Invalid Pax");
       return;
@@ -673,6 +821,7 @@ const EditPackage = () => {
             <div className="epa-section">
               <h2 className="epa-section-title">Basic Information</h2>
               <div className="epa-form-grid">
+
                 <div className="epa-form-group">
                   <label className="epa-label">Package Title *</label>
                   <input
@@ -686,97 +835,136 @@ const EditPackage = () => {
                   />
                 </div>
 
-                <div className="epa-form-group">
-                  <label className="epa-label">Destination *</label>
-                  <input
-                    type="text"
-                    name="destination"
-                    value={formData.destination}
-                    onChange={handleInputChange}
-                    className="epa-input"
-                    placeholder="Enter destination"
-                    required
-                  />
-                </div>
-
-                {/* Tour Type Selection */}
-                <div className="epa-form-group">
-                  <label className="epa-label">Tour Type *</label>
-                  <select
-                    name="tourType"
-                    value={formData.tourType}
-                    onChange={handleInputChange}
-                    className="epa-input"
-                    required
-                  >
-                    <option value="private">Private</option>
-                    <option value="joiners">Joiners</option>
-                  </select>
-                </div>
-
-                {/* Show pax field only for private tours */}
-                {formData.tourType === 'private' && (
-                  <div className="epa-form-group">
-                    <label className="epa-label">Pax *</label>
-                    <input
-                      type="number"
-                      name="pax"
-                      value={formData.pax}
-                      onChange={handleInputChange}
-                      className="epa-input"
-                      placeholder="e.g., 2"
-                      min="1"
-                      required={formData.tourType === 'private'}
-                    />
-                  </div>
-                )}
-
-                {/* Show minPax field only for joiners */}
-                {formData.tourType === 'joiners' && (
-                  <div className="epa-form-group">
-                    <label className="epa-label">Minimum Pax *</label>
-                    <input
-                      type="number"
-                      name="minPax"
-                      value={formData.minPax}
-                      onChange={handleInputChange}
-                      className="epa-input"
-                      placeholder="e.g., 4"
-                      min="1"
-                      required={formData.tourType === 'joiners'}
-                    />
-                  </div>
-                )}
-
+                {/* ✅ Duration — dropdown (matches AddPackage) */}
                 <div className="epa-form-group">
                   <label className="epa-label">Duration *</label>
-                  <input
-                    type="text"
+                  <select
                     name="duration"
                     value={formData.duration}
                     onChange={handleInputChange}
                     className="epa-input"
-                    placeholder="e.g., 3 Days 2 Nights"
                     required
-                  />
+                  >
+                    <option value="">Select Duration</option>
+                    <option value="2D1N">2D1N</option>
+                    <option value="3D2N">3D2N</option>
+                    <option value="4D3N">4D3N</option>
+                    <option value="5D4N">5D4N</option>
+                  </select>
                 </div>
 
+                {/* ✅ Category — updated labels to match AddPackage */}
                 <div className="epa-form-group">
-                  <label className="epa-label">Category *</label>
+                  <label className="epa-label">Tour Category *</label>
                   <select
                     name="category"
                     value={formData.category}
-                    onChange={handleInputChange}
+                    onChange={handleCategoryChange}
                     className="epa-input"
                     required
                   >
-                    <option value="Local">Local</option>
-                    <option value="International">International</option>
-                    <option value="International Tour">
-                      International Tour
-                    </option>
+                    <option value="Local">Local Tour</option>
+                    <option value="International">International Tour</option>
                   </select>
                 </div>
+
+                {/* ✅ Destination — dropdown with predefined list + "Other" */}
+                <div className="epa-form-group epa-form-group--full">
+                  <label className="epa-label">Destination *</label>
+                  <select
+                    value={isOtherDestination ? 'OTHER' : formData.destination}
+                    onChange={handleDestinationChange}
+                    className="epa-input"
+                    required={!isOtherDestination}
+                  >
+                    <option value="">Select Destination</option>
+                    {destinationList.map((d) => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                    <option value="OTHER">Other</option>
+                  </select>
+
+                  {isOtherDestination && (
+                    <input
+                      type="text"
+                      placeholder={isInternational ? 'Enter destination (e.g. Zurich, Switzerland)' : 'Enter destination (e.g. Zambales)'}
+                      value={formData.destination}
+                      onChange={(e) => setFormData(prev => ({ ...prev, destination: e.target.value }))}
+                      className="epa-input"
+                      style={{ marginTop: '10px' }}
+                      required
+                    />
+                  )}
+                </div>
+
+                {/* ✅ Tour Type — tag-based pill buttons (matches AddPackage / BasicInfo) */}
+                <div className="epa-form-group epa-form-group--full">
+                  <label className="epa-label">Tour Type *</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                    {PREDEFINED_TOUR_TYPES.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleTourTypeTag(tag)}
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: '20px',
+                          border: `1.5px solid ${!isOtherTourType && formData.tourType === tag ? '#001F3F' : '#cbd5e1'}`,
+                          background: !isOtherTourType && formData.tourType === tag ? '#001F3F' : '#f8fafc',
+                          color: !isOtherTourType && formData.tourType === tag ? '#ffffff' : '#475569',
+                          fontWeight: !isOtherTourType && formData.tourType === tag ? '600' : '500',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.18s ease',
+                          whiteSpace: 'nowrap',
+                          fontFamily: 'inherit',
+                          boxShadow: !isOtherTourType && formData.tourType === tag ? '0 2px 8px rgba(0,31,63,0.25)' : 'none',
+                        }}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                    {/* ✅ Other — custom tour type */}
+                    <button
+                      type="button"
+                      onClick={handleOtherTourTypeClick}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: '20px',
+                        border: `1.5px ${isOtherTourType ? 'solid' : 'dashed'} ${isOtherTourType ? '#0ea5e9' : '#cbd5e1'}`,
+                        background: isOtherTourType ? '#0ea5e9' : '#f8fafc',
+                        color: isOtherTourType ? '#ffffff' : '#64748b',
+                        fontWeight: '500',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.18s ease',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      + Other
+                    </button>
+                  </div>
+
+                  {/* ✅ Custom tour type text input */}
+                  {isOtherTourType && (
+                    <input
+                      type="text"
+                      placeholder="Enter custom tour type (e.g. With Island Hopping)"
+                      value={otherTourTypeValue}
+                      onChange={handleOtherTourTypeInput}
+                      className="epa-input"
+                      style={{ marginTop: '10px' }}
+                      required
+                    />
+                  )}
+
+                  {formData.tourType && (
+                    <span style={{ display: 'block', marginTop: '6px', fontSize: '12px', color: '#64748b' }}>
+                      Selected: <strong>{formData.tourType}</strong>
+                    </span>
+                  )}
+                </div>
+
               </div>
             </div>
 

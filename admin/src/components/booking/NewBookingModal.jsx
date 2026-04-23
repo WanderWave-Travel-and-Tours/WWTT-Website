@@ -349,17 +349,58 @@ const updatePassenger = (index, field, value) => {
     ? (formData.initialPaymentAmount || 0)
     : computeFinalTotal();
 
+  // ✅ RESTRICTED BOOKING DAYS — Solo/Joiners packages to specific destinations
+  // 3D2N → Fridays only (day=5) | 2D1N → Saturdays only (day=6)
+  const RESTRICTED_DESTINATIONS = ['sagada', 'baguio', 'la union', 'launion', 'bolinao', 'ilocos'];
+
+  const isRestrictedDestination = isSoloJoinersPkg &&
+    RESTRICTED_DESTINATIONS.some(dest => (selectedDestination || '').toLowerCase().replace(/\s+/g, ' ').trim().includes(dest));
+
+  const getDurationNights = (durationStr) => {
+    if (!durationStr) return 0;
+    const match = durationStr.match(/(\d+)N/i);
+    if (match) return parseInt(match[1]);
+    return getDurationDays(durationStr) - 1;
+  };
+
+  const isAllowedBookingDay = (dateStr) => {
+    if (!isRestrictedDestination || !dateStr) return true;
+    const date = new Date(dateStr);
+    const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+    const nights = getDurationNights(selectedPackage?.duration || '');
+    const days = getDurationDays(selectedPackage?.duration || '');
+    if (days === 3 && nights === 2) return dayOfWeek === 5; // Friday only
+    if (days === 2 && nights === 1) return dayOfWeek === 6; // Saturday only
+    return true;
+  };
+
+  const getAllowedDayLabel = () => {
+    if (!isRestrictedDestination || !selectedPackage) return null;
+    const nights = getDurationNights(selectedPackage.duration);
+    const days = getDurationDays(selectedPackage.duration);
+    if (days === 3 && nights === 2) return 'Fridays only (3D2N)';
+    if (days === 2 && nights === 1) return 'Saturdays only (2D1N)';
+    return null;
+  };
+
   const detectPackageType = (pkg) => {
   if (!pkg) return;
 
   const nameLower = (pkg.title || '').toLowerCase();
 
-  const titleIsSolo = /\bsolo\b/i.test(nameLower) && !/solo\s*\/\s*joiners/i.test(nameLower);
-  const titleIsSoloJoiners = /solo\s*\/\s*joiners/i.test(nameLower);
+  // ✅ EXPANDED: catches ALL solo/joiner title variations:
+  // "Solo/Joiners", "Solo Joiners", "Solo/Joiner", "Solo Joiner",
+  // "Joiners", "Joiner" (standalone), etc.
+  const titleIsSoloJoiners =
+    /solo\s*\/\s*joiners?\b/i.test(nameLower) ||  // Solo/Joiners, Solo/Joiner
+    /\bsolo\s+joiners?\b/i.test(nameLower)      ||  // Solo Joiners, Solo Joiner
+    /\bjoiners?\b/i.test(nameLower);                 // Joiners, Joiner (standalone)
+
+  const titleIsSolo = !titleIsSoloJoiners && /\bsolo\b/i.test(nameLower);
   const titleIsMinTwo = /min\s*of\s*2|min\.?\s*2|minimum\s*2|min 2 pax/i.test(nameLower);
 
-  const solo = titleIsSolo || pkg.pax === 1;
-  const soloJoiners = titleIsSoloJoiners || pkg.tourType === 'joiners';
+  const solo = !titleIsSoloJoiners && (titleIsSolo || pkg.pax === 1);
+  const soloJoiners = titleIsSoloJoiners || pkg.tourType === 'joiners' || pkg.tourType === 'Solo/Joiners';
   const minTwo = titleIsMinTwo || (pkg.tourType === 'private' && pkg.pax === 2);
 
   setIsSoloPkg(solo);
@@ -793,21 +834,21 @@ const handleRemovePromo = () => {
                         type="date"
                         value={departureDate}
                         onChange={e => {
-                          const date = new Date(e.target.value);
-                          const day = date.getDay();
-                          if (isSoloJoinersPkg && ![5, 6, 0].includes(day)) {
-                            toast.error('Solo/Joiners packages can only depart on Friday, Saturday, or Sunday.');
+                          const val = e.target.value;
+                          if (isRestrictedDestination && !isAllowedBookingDay(val)) {
+                            const label = getAllowedDayLabel();
+                            toast.error(`This package departs on ${label} only.`);
                             return;
                           }
-                          setDepartureDate(e.target.value);
+                          setDepartureDate(val);
                         }}
                         min={new Date().toISOString().split('T')[0]}
                         style={{ width: '100%' }}
                       />
 
-                      {isSoloJoinersPkg && (
-                        <p style={{ fontSize: '0.8rem', color: '#166534', margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          📅 Fri, Sat, or Sun only
+                      {isRestrictedDestination && getAllowedDayLabel() && (
+                        <p style={{ fontSize: '0.8rem', color: '#92400e', margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '5px 8px' }}>
+                          📅 {getAllowedDayLabel()}
                         </p>
                       )}
                     </div>
