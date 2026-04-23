@@ -27,11 +27,22 @@ const PricingCalculator = ({
     tourType,
     pax,
     minPax,
-    // ✅ Solo and Multiple Pax Price Props
+    // ✅ Solo Pax Pricing Breakdown Props
     soloPaxPrice,
-    handleSoloPaxPriceChange,
+    soloSupplierRate,
+    handleSoloSupplierRateChange,
+    soloMarkupValue,
+    handleSoloMarkupChange,
+    soloMarkupType,
+    toggleSoloMarkupType,
+    // ✅ Multiple Pax Pricing Breakdown Props
     multiplePaxPrice,
-    handleMultiplePaxPriceChange,
+    multipleSupplierRate,
+    handleMultipleSupplierRateChange,
+    multipleMarkupValue,
+    handleMultipleMarkupChange,
+    multipleMarkupType,
+    toggleMultipleMarkupType,
 }) => {
     
     const supplierRateNum = parseFloat(supplierRate) || 0;
@@ -61,6 +72,20 @@ const PricingCalculator = ({
 
     // Per-pax base amount for breakdown display
     const perPaxAmount = supplierRateNum + markupInPeso;
+
+    // ✅ Compute markup-in-peso for solo pax (display only inside this component)
+    const soloSupplierRateNum = parseFloat(soloSupplierRate) || 0;
+    const soloMarkupValueNum = parseFloat(soloMarkupValue) || 0;
+    const soloMarkupInPeso = soloMarkupType === "percentage"
+        ? (soloSupplierRateNum * soloMarkupValueNum) / 100
+        : soloMarkupValueNum;
+
+    // ✅ Compute markup-in-peso for multiple pax (display only inside this component)
+    const multipleSupplierRateNum = parseFloat(multipleSupplierRate) || 0;
+    const multipleMarkupValueNum = parseFloat(multipleMarkupValue) || 0;
+    const multipleMarkupInPeso = multipleMarkupType === "percentage"
+        ? (multipleSupplierRateNum * multipleMarkupValueNum) / 100
+        : multipleMarkupValueNum;
 
     return (
         <section className="apkg-section">
@@ -149,46 +174,7 @@ const PricingCalculator = ({
                     </div>
                 </div>
 
-                {/* ✅ PAX PRICING SECTION — Solo and Multiple Pax selling price input fields only */}
-                <div className="apkg-pax-price-section">
-                    <h3 className="apkg-pax-price-title">PAX PRICING</h3>
-                    <p className="apkg-pax-price-subtitle">Set the selling price per booking type</p>
-                    <div className="apkg-pax-price-inputs">
-                        {/* ✅ Solo Pax Price — custom price for 1-person booking */}
-                        <div className="apkg-field">
-                            <label className="apkg-pax-price-label">
-                                <span className="apkg-pax-price-icon">👤</span>
-                                Solo Pax Price (PHP)
-                            </label>
-                            <input
-                                type="number"
-                                placeholder="Price for 1 person"
-                                value={soloPaxPrice}
-                                onChange={handleSoloPaxPriceChange}
-                                onWheel={(e) => e.target.blur()}
-                                step="0.01"
-                                min="0"
-                            />
-                        </div>
-                        {/* ✅ Multiple Pax Price — custom price for group/multi-person booking */}
-                        <div className="apkg-field">
-                            <label className="apkg-pax-price-label">
-                                <span className="apkg-pax-price-icon">👥</span>
-                                Multiple Pax Price (PHP)
-                            </label>
-                            <input
-                                type="number"
-                                placeholder="Price for group booking"
-                                value={multiplePaxPrice}
-                                onChange={handleMultiplePaxPriceChange}
-                                onWheel={(e) => e.target.blur()}
-                                step="0.01"
-                                min="0"
-                            />
-                        </div>
-                    </div>
-                </div>
-
+                {/* ✅ TOTAL SELLING PRICE — shown above PAX PRICING for proper flow */}
                 <div className="apkg-total-price-box">
                     <div className="apkg-total-price-content">
                         <div className="apkg-total-price-label">
@@ -206,6 +192,157 @@ const PricingCalculator = ({
                         </div>
                     </div>
                 </div>
+
+                {/* ✅ PAX PRICING SECTION
+                    Each pax type (Solo / Multiple) now has its own
+                    Supplier Rate + Markup (with % or ₱ toggle) = computed Selling Price.
+                    Same pattern as the main pricing section above.
+                */}
+                <div className="apkg-pax-price-section">
+                    <h3 className="apkg-pax-price-title">PAX PRICING</h3>
+                    <p className="apkg-pax-price-subtitle">Set the supplier rate and markup per booking type</p>
+
+                    {/* ── SOLO PAX ── */}
+                    <div className="apkg-pax-price-card">
+                        <div className="apkg-pax-price-card-header">
+                            <span className="apkg-pax-price-icon">👤</span>
+                            <span className="apkg-pax-price-card-label">SOLO PAX</span>
+                        </div>
+                        <div className="apkg-pricing-inputs">
+                            <div className="apkg-field">
+                                <label>Supplier Rate (PHP)</label>
+                                <input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={soloSupplierRate}
+                                    onChange={handleSoloSupplierRateChange}
+                                    onWheel={(e) => e.target.blur()}
+                                    step="0.01"
+                                    min="0"
+                                />
+                            </div>
+                            <div className="apkg-field">
+                                <label>
+                                    Markup
+                                    <span className={`apkg-markup-badge apkg-markup-badge--${soloMarkupType}`}>
+                                        {soloMarkupType === "percentage" ? "% MODE" : "₱ PESO MODE"}
+                                    </span>
+                                </label>
+                                <div className="apkg-field-with-toggle">
+                                    <input
+                                        type="number"
+                                        placeholder={soloMarkupType === "percentage" ? "Enter %" : "Enter peso amount"}
+                                        value={soloMarkupValue}
+                                        onChange={handleSoloMarkupChange}
+                                        onWheel={(e) => e.target.blur()}
+                                        step="0.01"
+                                        min="0"
+                                        max={soloMarkupType === "percentage" ? "100" : undefined}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="apkg-toggle-markup"
+                                        onClick={toggleSoloMarkupType}
+                                        title={`Switch to ${soloMarkupType === "percentage" ? "Peso" : "Percentage"}`}
+                                    >
+                                        <IconCurrencyToggle />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="apkg-pax-total-box">
+                            <div className="apkg-pax-total-label">
+                                <IconPeso />
+                                SOLO PAX SELLING PRICE
+                            </div>
+                            <div className="apkg-pax-total-amount">
+                                ₱{soloPaxPrice
+                                    ? Number(soloPaxPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                    : "0.00"}
+                            </div>
+                            {soloSupplierRateNum > 0 && (
+                                <div className="apkg-pax-total-breakdown">
+                                    ₱{soloSupplierRateNum.toLocaleString("en-US", { minimumFractionDigits: 2 })} supplier
+                                    {" + "}₱{soloMarkupInPeso.toLocaleString("en-US", { minimumFractionDigits: 2 })} markup
+                                    {soloMarkupType === "percentage" && soloMarkupValueNum > 0 && (
+                                        <span> ({soloMarkupValueNum}%)</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── MULTIPLE PAX ── */}
+                    <div className="apkg-pax-price-card">
+                        <div className="apkg-pax-price-card-header">
+                            <span className="apkg-pax-price-icon">👥</span>
+                            <span className="apkg-pax-price-card-label">MULTIPLE PAX</span>
+                        </div>
+                        <div className="apkg-pricing-inputs">
+                            <div className="apkg-field">
+                                <label>Supplier Rate (PHP)</label>
+                                <input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={multipleSupplierRate}
+                                    onChange={handleMultipleSupplierRateChange}
+                                    onWheel={(e) => e.target.blur()}
+                                    step="0.01"
+                                    min="0"
+                                />
+                            </div>
+                            <div className="apkg-field">
+                                <label>
+                                    Markup
+                                    <span className={`apkg-markup-badge apkg-markup-badge--${multipleMarkupType}`}>
+                                        {multipleMarkupType === "percentage" ? "% MODE" : "₱ PESO MODE"}
+                                    </span>
+                                </label>
+                                <div className="apkg-field-with-toggle">
+                                    <input
+                                        type="number"
+                                        placeholder={multipleMarkupType === "percentage" ? "Enter %" : "Enter peso amount"}
+                                        value={multipleMarkupValue}
+                                        onChange={handleMultipleMarkupChange}
+                                        onWheel={(e) => e.target.blur()}
+                                        step="0.01"
+                                        min="0"
+                                        max={multipleMarkupType === "percentage" ? "100" : undefined}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="apkg-toggle-markup"
+                                        onClick={toggleMultipleMarkupType}
+                                        title={`Switch to ${multipleMarkupType === "percentage" ? "Peso" : "Percentage"}`}
+                                    >
+                                        <IconCurrencyToggle />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="apkg-pax-total-box">
+                            <div className="apkg-pax-total-label">
+                                <IconPeso />
+                                MULTIPLE PAX SELLING PRICE
+                            </div>
+                            <div className="apkg-pax-total-amount">
+                                ₱{multiplePaxPrice
+                                    ? Number(multiplePaxPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                    : "0.00"}
+                            </div>
+                            {multipleSupplierRateNum > 0 && (
+                                <div className="apkg-pax-total-breakdown">
+                                    ₱{multipleSupplierRateNum.toLocaleString("en-US", { minimumFractionDigits: 2 })} supplier
+                                    {" + "}₱{multipleMarkupInPeso.toLocaleString("en-US", { minimumFractionDigits: 2 })} markup
+                                    {multipleMarkupType === "percentage" && multipleMarkupValueNum > 0 && (
+                                        <span> ({multipleMarkupValueNum}%)</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
     );

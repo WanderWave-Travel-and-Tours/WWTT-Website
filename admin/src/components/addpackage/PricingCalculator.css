@@ -441,3 +441,76 @@
         font-size: 1rem;
     }
 }
+
+/* ============================================================
+   PAX PRICING CARDS — idagdag sa PricingCalculator.css
+   (Existing styles are untouched — append lang ito sa dulo)
+   ============================================================ */
+
+/* Card wrapper para sa bawat pax type (Solo / Multiple) */
+.apkg-pax-price-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+/* Card header — icon + label */
+.apkg-pax-price-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.apkg-pax-price-card-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #001F3F;
+    text-transform: uppercase;
+}
+
+/* Computed total box — mini version of apkg-total-price-box */
+.apkg-pax-total-box {
+    margin-top: 12px;
+    background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.apkg-pax-total-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+}
+
+.apkg-pax-total-label svg {
+    width: 13px;
+    height: 13px;
+    stroke: rgba(255, 255, 255, 0.7);
+}
+
+.apkg-pax-total-amount {
+    font-size: 20px;
+    font-weight: 900;
+    color: #ffffff;
+    font-family: 'Arial Black', 'Arial Bold', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+/* Breakdown hint text — e.g. "₱3,500 supplier + ₱500 markup (10%)" */
+.apkg-pax-total-breakdown {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    margin-top: 2px;
+}
