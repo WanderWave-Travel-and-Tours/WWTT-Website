@@ -487,6 +487,7 @@ function PackageCard({
             {/* ── SOLO PRICE ── */}
             {hasSoloPaxPrice && (
               <div className="price-block">
+                <span className="price-label">SOLO</span>
                 {/* Strikethrough original — only when timer is active (not expired) */}
                 {timerReady && !timerExpired && (
                   <span style={{

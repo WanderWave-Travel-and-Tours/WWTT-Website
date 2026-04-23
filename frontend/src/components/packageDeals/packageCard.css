@@ -149,12 +149,12 @@
 /* ================== TITLE + BADGE LAYOUT ================== */
 
 .card-title {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #1e293b;
   margin-bottom: 8px;
   line-height: 1.5;
-  min-height: 3.5em;
+  min-height: 3.2em;
 }
 
 /* Wrapper: badge inline-left, title wraps beside/below it naturally */
@@ -346,7 +346,7 @@
 }
 
 .price-label {
-  font-size: 0.68rem;
+  font-size: 0.60rem;
   color: #64748b;
   text-transform: uppercase;
   font-weight: 700;
@@ -380,7 +380,7 @@
 
 /* Strikethrough original price shown during active timer/discount */
 .price-original {
-  font-size: 0.92rem;
+  font-size: 0.80rem;
   color: #64748b;
   text-decoration: line-through;
   text-decoration-color: #ef4444;
@@ -391,13 +391,13 @@
 }
 
 .currency {
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #1e293b;
 }
 
 .price-value {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #ea580c;
 }
