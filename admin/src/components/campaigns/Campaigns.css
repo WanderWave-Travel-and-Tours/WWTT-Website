@@ -1,0 +1,450 @@
+/* ============================================================
+   CAMPAIGNS PAGE — Campaigns.css
+   Mirrors the layout patterns from Reporting.css
+   ============================================================ */
+
+/* ── LAYOUT ── */
+.cp-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fb;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.cp-main {
+  flex: 1;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.cp-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* ── HEADER ── */
+.cp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cp-header-icon-wrap {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+
+.cp-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #001F3F;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.cp-subtitle {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0.2rem 0 0;
+}
+
+.cp-btn-new {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #001F3F;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.65rem 1.2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.cp-btn-new:hover {
+  background: #003366;
+  box-shadow: 0 4px 12px rgba(0, 31, 63, 0.2);
+}
+
+/* ── SUMMARY CARDS ── */
+.cp-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+}
+
+.cp-summary-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s;
+}
+
+.cp-summary-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.cp-summary-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cp-icon--active  { background: #dcfce7; color: #16a34a; }
+.cp-icon--budget  { background: #dbeafe; color: #2563eb; }
+.cp-icon--spent   { background: #fef9c3; color: #d97706; }
+.cp-icon--reach   { background: #f3e8ff; color: #7c3aed; }
+.cp-icon--conv    { background: #ffe4e6; color: #e11d48; }
+
+.cp-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.cp-summary-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.cp-summary-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #001F3F;
+  line-height: 1.1;
+}
+
+.cp-summary-sub {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+/* ── FILTERS ── */
+.cp-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cp-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.cp-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.cp-search {
+  width: 100%;
+  padding: 0.6rem 0.75rem 0.6rem 2.2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #1f2937;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.cp-search:focus {
+  border-color: #001F3F;
+}
+
+.cp-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cp-filter-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.cp-select {
+  padding: 0.6rem 2rem 0.6rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  transition: border-color 0.2s;
+}
+
+.cp-select:focus {
+  border-color: #001F3F;
+}
+
+/* ── TABLE ── */
+.cp-table-wrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  overflow-x: auto;
+}
+
+.cp-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 960px;
+  font-size: 0.85rem;
+}
+
+.cp-table thead tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.cp-table thead th {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.cp-table tbody tr {
+  border-bottom: 1px solid #f9fafb;
+  transition: background 0.15s;
+}
+
+.cp-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.cp-table tbody tr:hover {
+  background-color: #fafafa;
+}
+
+.cp-table tbody td {
+  padding: 0.9rem 1rem;
+  vertical-align: middle;
+  color: #374151;
+}
+
+/* ── CELL TYPES ── */
+.cp-cell-name {
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp-cell-obj {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+
+.cp-cell-mono {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.cp-cell-conv {
+  font-weight: 700;
+  color: #001F3F;
+}
+
+.cp-cell-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+/* ── PLATFORM BADGE ── */
+.cp-platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── STATUS BADGE ── */
+.cp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── SPENT / PROGRESS ── */
+.cp-spent-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 90px;
+}
+
+.cp-progress-bar {
+  height: 5px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cp-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.cp-progress-pct {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
+/* ── ACTIONS ── */
+.cp-actions-wrap {
+  position: relative;
+}
+
+.cp-actions-btn {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 5px 7px;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.cp-actions-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.cp-actions-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  z-index: 100;
+  overflow: hidden;
+  min-width: 130px;
+}
+
+.cp-actions-item {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.15s;
+}
+
+.cp-actions-item:hover {
+  background: #f9fafb;
+}
+
+.cp-actions-item--danger {
+  color: #ef4444;
+}
+
+.cp-actions-item--danger:hover {
+  background: #fef2f2;
+}
+
+/* ── EMPTY STATE ── */
+.cp-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .cp-container {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .cp-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cp-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
