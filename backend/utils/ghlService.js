@@ -1,4 +1,6 @@
 const axios = require('axios');
+// ✅ Idagdag ito: I-import ang Destination model
+const Destination = require('../models/destination');
 
 const GHL_WEBHOOK_URL = process.env.GHL_NEW_USER_WEBHOOK_URL;
 
@@ -205,6 +207,33 @@ const sendBookingConfirmationToGHL = async (
   const promoCode           = booking.promoCode || '';
   const promoDiscount       = booking.promoDiscount || 0;
 
+  // ============================================================
+  // ✅ NEW: Fetch Destination Data for Personalization
+  // ============================================================
+  const destName = packageData?.destination || booking.destination || '';
+  let destinationPayload = {};
+
+  if (destName) {
+    try {
+      // Hanapin ang destination sa DB na nag-match sa pangalan (case-insensitive)
+      const destRecord = await Destination.findOne({
+        name: { $regex: `^${destName.trim()}$`, $options: 'i' },
+        isArchive: 'No'
+      });
+
+      if (destRecord) {
+        // Gamitin ang built-in method na ginawa mo sa destination.js model
+        // para makuha ang destination_greeting, tip1-5, at emergency_number
+        destinationPayload = destRecord.toWebhookPayload();
+        console.log(`✅ Destination data attached for Onboarding Kit: ${destName}`);
+      }
+    } catch (err) {
+      console.error('⚠️ Failed to fetch destination data for webhook:', err.message);
+      // Itutuloy pa rin ang webhook kahit mag-fail ito
+    }
+  }
+  // ============================================================
+
   const data = {
     type: 'BOOKING_CONFIRMATION',
     event: 'booking_confirmation',
@@ -224,8 +253,12 @@ const sendBookingConfirmationToGHL = async (
     service:            packageName,
     serviceName:        packageName,
     package_image_url:  packageData?.image || '',
-    package_destination: packageData?.destination || booking.destination || '',
+    package_destination: destName,
     package_duration:   packageData?.duration     || booking.duration    || '',
+
+    // ✅ I-spread ang destination data sa payload
+    ...destinationPayload,
+
     package_category:   packageData?.category     || '',
     package_tour_type:  packageData?.tourType     || booking.tourType    || '',
     package_min_pax:    packageData?.minPax       || '',
