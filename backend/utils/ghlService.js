@@ -2,6 +2,12 @@ const axios = require('axios');
 
 const GHL_WEBHOOK_URL = process.env.GHL_NEW_USER_WEBHOOK_URL;
 
+// ─── Destination webhook URL ───────────────────────────────────────────────
+// Add GHL_DESTINATION_WEBHOOK_URL to your .env file and paste this URL there.
+const GHL_DESTINATION_WEBHOOK_URL =
+    process.env.GHL_DESTINATION_WEBHOOK_URL ||
+    'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/59049139-9453-4291-88bf-f2cb8ea80926';
+
 const sendToGHLWebhook = async (webhookUrl, data) => {
   try {
     console.log('🚀 Attempting to send to GHL...');
@@ -107,7 +113,6 @@ const sendInquiryToGHL = async (email, fullName, serviceName, message) => {
 };
 
 // ✅ Helper: Format inclusions array into a readable string
-// Handles both plain strings and objects with a 'name' or 'text' field
 const formatInclusions = (inclusions) => {
   if (!inclusions || !Array.isArray(inclusions) || inclusions.length === 0) return '';
   return inclusions
@@ -120,7 +125,6 @@ const formatInclusions = (inclusions) => {
 };
 
 // ✅ Helper: Format itinerary array into a readable string
-// Handles day-by-day objects with day, title, activities/description fields
 const formatItinerary = (itinerary) => {
   if (!itinerary || !Array.isArray(itinerary) || itinerary.length === 0) return '';
   return itinerary
@@ -131,7 +135,6 @@ const formatItinerary = (itinerary) => {
         const title = day.title || day.name || '';
         const header = [dayLabel, title].filter(Boolean).join(': ');
 
-        // Activities can be an array or a string
         let activities = '';
         if (Array.isArray(day.activities)) {
           activities = day.activities
@@ -162,13 +165,12 @@ const sendBookingConfirmationToGHL = async (
   startDate,
   endDate,
   passengerCount,
-  packageData,   // ✅ Populated Package document (or null)
-  bookingData    // ✅ NEW: Full booking document for complete details
+  packageData,
+  bookingData
 ) => {
   const firstName = fullName.split(' ')[0] || '';
   const lastName = fullName.split(' ').slice(1).join(' ') || '';
 
-  // ─── Package fields ───────────────────────────────────────────────────────
   const inclusions  = packageData?.inclusions  || bookingData?.inclusions  || [];
   const itinerary   = packageData?.itinerary   || bookingData?.itinerary   || [];
   const hotels      = packageData?.hotels      || bookingData?.hotels      || [];
@@ -178,30 +180,25 @@ const sendBookingConfirmationToGHL = async (
   const inclusionsFormatted  = formatInclusions(inclusions);
   const itineraryFormatted   = formatItinerary(itinerary);
 
-  // ─── Booking fields ───────────────────────────────────────────────────────
   const booking = bookingData || {};
 
-  // Passenger / pax details
   const paxAdult    = booking.pax?.adult    || passengerCount || 1;
   const paxChild    = booking.pax?.child    || 0;
   const paxInfant   = booking.pax?.infant   || 0;
   const paxSenior   = booking.pax?.senior   || 0;
   const paxTotal    = paxAdult + paxChild + paxInfant + paxSenior;
 
-  // Passengers array (individual names, contact info, etc.)
   const passengersFormatted = Array.isArray(booking.passengers) && booking.passengers.length > 0
     ? booking.passengers
         .map((p, i) => `Passenger ${i + 1}: ${p.firstName || ''} ${p.lastName || ''}`.trim())
         .join('\n')
     : '';
 
-  // Payment details
   const paymentType         = booking.paymentType === 'partial' ? 'Partial Payment' : 'Full Payment';
   const initialPaymentAmount = booking.initialPaymentAmount || totalAmount;
   const remainingBalance    = booking.remainingBalance || 0;
   const includesAirfare     = booking.includesAirfare ? 'Yes' : 'No';
 
-  // Add-ons / customizations
   const selectedRoomType    = booking.selectedRoomType || '';
   const hotelName           = booking.hotelName || packageData?.defaultHotel || '';
   const numberOfRooms       = booking.numberOfRooms || '';
@@ -215,7 +212,6 @@ const sendBookingConfirmationToGHL = async (
     timestamp: new Date().toISOString(),
     created_at: new Date().toISOString(),
 
-    // ─── Contact Info ───────────────────────────────────────────────────────
     email:      email,
     fullName:   fullName,
     name:       fullName,
@@ -223,7 +219,6 @@ const sendBookingConfirmationToGHL = async (
     last_name:  lastName,
     phone:      booking.phone || booking.contactNumber || '',
 
-    // ─── Package Info ───────────────────────────────────────────────────────
     packageName:        packageName,
     package_name:       packageName,
     service:            packageName,
@@ -235,23 +230,16 @@ const sendBookingConfirmationToGHL = async (
     package_tour_type:  packageData?.tourType     || booking.tourType    || '',
     package_min_pax:    packageData?.minPax       || '',
 
-    // ─── Inclusions (full array + formatted string) ─────────────────────────
-    // Use package_inclusions_list for GHL custom fields that accept multi-line text
-    package_inclusions:      inclusionsFormatted,        // human-readable, line-separated
-    package_inclusions_raw:  JSON.stringify(inclusions), // raw array for advanced GHL workflows
+    package_inclusions:      inclusionsFormatted,
+    package_inclusions_raw:  JSON.stringify(inclusions),
 
-    // ─── Itinerary (full array + formatted string) ──────────────────────────
-    package_itinerary:      itineraryFormatted,           // human-readable, day-by-day
-    package_itinerary_raw:  JSON.stringify(itinerary),    // raw array for advanced GHL workflows
+    package_itinerary:      itineraryFormatted,
+    package_itinerary_raw:  JSON.stringify(itinerary),
 
-    // ─── Exclusions & Highlights ─────────────────────────────────────────────
     package_exclusions:  Array.isArray(exclusions) ? exclusions.join('\n') : exclusions,
     package_highlights:  Array.isArray(highlights) ? highlights.join('\n') : highlights,
-
-    // ─── Hotels ──────────────────────────────────────────────────────────────
     package_hotels:      JSON.stringify(hotels),
 
-    // ─── Travel Dates ───────────────────────────────────────────────────────
     startDate:     startDate,
     start_date:    startDate,
     travel_start:  startDate,
@@ -260,7 +248,6 @@ const sendBookingConfirmationToGHL = async (
     travel_end:    endDate,
     travel_dates:  `${startDate} to ${endDate}`,
 
-    // ─── Pax / Passenger Breakdown ──────────────────────────────────────────
     passengerCount:  passengerCount,
     passenger_count: passengerCount,
     passengers:      passengerCount,
@@ -270,9 +257,8 @@ const sendBookingConfirmationToGHL = async (
     pax_infant:      paxInfant,
     pax_senior:      paxSenior,
     pax_total:       paxTotal,
-    passengers_list: passengersFormatted,  // e.g. "Passenger 1: Juan Dela Cruz\nPassenger 2: ..."
+    passengers_list: passengersFormatted,
 
-    // ─── Payment Info ────────────────────────────────────────────────────────
     totalAmount:             `₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
     total_amount:            totalAmount,
     amount:                  totalAmount,
@@ -281,16 +267,13 @@ const sendBookingConfirmationToGHL = async (
     remaining_balance:       remainingBalance,
     includes_airfare:        includesAirfare,
 
-    // ─── Add-ons / Room Selection ─────────────────────────────────────────────
     selected_room_type:  selectedRoomType,
     hotel_name:          hotelName,
     number_of_rooms:     numberOfRooms,
 
-    // ─── Promo ────────────────────────────────────────────────────────────────
     promo_code:     promoCode,
     promo_discount: promoDiscount,
 
-    // ─── Booking Meta ─────────────────────────────────────────────────────────
     bookingId:    booking._id ? booking._id.toString() : '',
     booking_id:   booking._id ? booking._id.toString() : '',
     booking_status: booking.status || '',
@@ -311,9 +294,60 @@ const sendBookingConfirmationToGHL = async (
   return result;
 };
 
+// ============================================================
+// ✅ NEW: Send destination personalization data to GHL
+//
+// Triggered every time admin saves (creates or updates) a destination
+// in the Campaigns page. GHL automation receives this payload and
+// stores the destination fields as custom values — which are then
+// available in the "while you're traveling" email template.
+//
+// Payload shape sent to GHL:
+// {
+//   type:                    "DESTINATION_UPDATE",
+//   event:                   "destination_saved",
+//   source:                  "WanderWave",
+//   destination:             "Palawan",
+//   destination_greeting:    "Enjoy the crystal-clear waters...",
+//   destination_tip1:        "Bring reef-safe sunscreen",
+//   destination_tip2:        "...",
+//   destination_tip3:        "...",
+//   destination_tip4:        "...",
+//   destination_tip5:        "...",
+//   emergency_number:        "911 (Philippines)",
+//   timestamp:               "2026-04-24T..."
+// }
+// ============================================================
+const sendDestinationToGHL = async (destination) => {
+    // destination.toWebhookPayload() returns the standard shape from the model:
+    // { destination, destination_greeting, destination_tip1..5, emergency_number }
+    const destinationPayload = destination.toWebhookPayload();
+
+    const data = {
+        type:      'DESTINATION_UPDATE',
+        event:     'destination_saved',
+        source:    'WanderWave',
+        timestamp: new Date().toISOString(),
+        ...destinationPayload,
+    };
+
+    console.log('📤 Sending DESTINATION_UPDATE to GHL:');
+    console.log(JSON.stringify(data, null, 2));
+
+    const result = await sendToGHLWebhook(GHL_DESTINATION_WEBHOOK_URL, data);
+
+    if (!result.success) {
+        console.error('❌ Failed to send destination to GHL:', result.error);
+    } else {
+        console.log(`✅ Destination "${destination.name}" synced to GHL successfully.`);
+    }
+
+    return result;
+};
 
 module.exports = {
   sendNewUserToGHL,
   sendInquiryToGHL,
-  sendBookingConfirmationToGHL  
+  sendBookingConfirmationToGHL,
+  sendDestinationToGHL, // ✅ New export
 };

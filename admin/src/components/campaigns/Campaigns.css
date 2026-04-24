@@ -1136,3 +1136,61 @@
     grid-template-columns: 1fr;
   }
 }
+/* ============================================================
+   GHL SYNC TOAST
+   Appears at the top of the drawer/modal after save.
+   ============================================================ */
+.cp-ghl-toast {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  animation: cp-toast-slide-in 0.25s ease;
+}
+
+.cp-ghl-toast--success {
+  background: #f0fdf4;
+  color: #15803d;
+  border-bottom: 1px solid #bbf7d0;
+}
+
+.cp-ghl-toast--warn {
+  background: #fffbeb;
+  color: #b45309;
+  border-bottom: 1px solid #fde68a;
+}
+
+.cp-ghl-toast-icon {
+  flex-shrink: 0;
+}
+
+.cp-ghl-toast span {
+  flex: 1;
+}
+
+.cp-ghl-toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.cp-ghl-toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes cp-toast-slide-in {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
