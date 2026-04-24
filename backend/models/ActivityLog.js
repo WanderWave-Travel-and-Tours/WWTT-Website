@@ -42,6 +42,9 @@ const activityLogSchema = new mongoose.Schema({
             
             // ✅ ADDED: Feedback Module
             'Feedback',
+
+            // ✅ ADDED: Destinations Module
+            'Destinations',
             
             // System
             'System'
