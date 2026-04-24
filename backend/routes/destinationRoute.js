@@ -388,19 +388,17 @@ router.delete('/:id', async (req, res) => {
         }
 
         await ActivityLog.create({
-            action:      'DELETE',
-            module:      'Destinations',
-            user:         userEmail || 'System Admin',
-            userId:       logUserId,
-            severity:    'DANGER',
-            description: `Permanently deleted destination: ${dest.name}`,
-            details: {
-                recordTitle: dest.name,
-                recordId:    dest._id,
-                method:      'DELETE',
-                endpoint:    `/api/destinations/${req.params.id}`
-            }
-        });
+    action:      'CREATE',
+    module:      'Packages', // O 'Destination' (Subukan mo kung ano ang valid sa enum mo)
+    user:         userEmail || 'System Admin',
+    userId:       logUserId,
+    severity:    'SUCCESS',
+    description: `Synced ${addedCount} new destinations from Packages collection.`,
+    details: {
+        method:   'POST',
+        endpoint: '/api/destinations/sync-packages'
+    }
+});
 
         console.log('🗑️ Destination permanently deleted:', dest.name);
         res.status(200).json({ status: 'ok', message: 'Destination deleted successfully.' });
