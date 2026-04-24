@@ -41,7 +41,8 @@ import {
   UserCog,
   MessageSquare,
   BarChart2,
-  Car
+  Car,
+  Megaphone
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -310,6 +311,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 isCollapsed={isCollapsed}
                 isActive={location.pathname === '/reporting'}
                 onClick={() => navigate('/reporting')}
+            />
+
+            <MenuItem 
+                path="/campaigns" 
+                icon={Megaphone} 
+                label="Campaigns" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/campaigns'}
+                onClick={() => navigate('/campaigns')}
             />
 
             <MenuItem 

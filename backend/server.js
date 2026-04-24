@@ -151,6 +151,9 @@ const imagesRoutes = require('./routes/imagesRoute');
 const sellerRateRoutes = require('./routes/sellerRoute');
 const pageViewRoutes = require('./routes/pageViewRoute');
 const siteVisitRoutes = require('./routes/siteVisitRoute');
+const emailSyncRoute = require('./routes/Emailsyncroute');
+const destinationRoutes = require('./routes/destinationRoute');
+
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -314,7 +317,10 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/seller-rates', sellerRateRoutes);
 app.use('/api/page-views', pageViewRoutes);
-app.use('/api/site-visits', siteVisitRoutes); // ✅ Kept in same position — no conflicts found
+app.use('/api/site-visits', siteVisitRoutes); 
+app.use('/api/packages', emailSyncRoute);
+app.use('/api/destinations', destinationRoutes);
+// ✅ Kept in same position — no conflicts found
 
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
