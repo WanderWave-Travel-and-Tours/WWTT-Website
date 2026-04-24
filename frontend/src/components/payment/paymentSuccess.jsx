@@ -223,12 +223,33 @@ const PaymentSuccess = () => {
   };
 
   // ============================================
-  // ✅ UPDATED: triggerWebhook — COMPLETE flattened payload
+  // ✅ UPDATED: triggerWebhook — fetches destination payload from backend
+  //    so back_to_home_clicked and go_to_dashboard_clicked also carry
+  //    destination_greeting, destination_tip1-5, emergency_number
+  //    exactly like the backend BOOKING_CONFIRMATION webhook does.
   // ============================================
   const triggerWebhook = async (eventName) => {
     if (!details) return;
 
     try {
+      // ✅ Step 1: Fetch destination personalization data from backend
+      let destinationPayload = {};
+      if (details.id && type === 'booking') {
+        try {
+          const destRes = await fetch(
+            `https://wanderwaveph.onrender.com/api/bookings/${details.id}/destination-payload`
+          );
+          const destData = await destRes.json();
+          if (destData.success && destData.payload) {
+            destinationPayload = destData.payload;
+            console.log('✅ Destination payload fetched:', Object.keys(destinationPayload));
+          }
+        } catch (destErr) {
+          console.warn('⚠️ Could not fetch destination payload (non-fatal):', destErr);
+        }
+      }
+
+      // ✅ Step 2: Send enriched webhook to GHL
       await fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/2537b614-8763-4705-8aa7-295d73a6bdf5', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -266,6 +287,10 @@ const PaymentSuccess = () => {
           package_image: details.packageImage || '',
           inclusions: Array.isArray(details.inclusions) ? details.inclusions.join(', ') : '',
           itinerary: Array.isArray(details.itinerary) ? JSON.stringify(details.itinerary) : '',
+
+          // ✅ Destination personalization fields from backend
+          // Spreads: destination_greeting, destination_tip1-5, emergency_number
+          ...destinationPayload,
 
           // ── Travel dates ──────────────────────────────────────
           start_date: details.startDate || '',
@@ -306,7 +331,7 @@ const PaymentSuccess = () => {
           visa_country: details.visaCountry || '',
           inquiry_message: details.message || '',
 
-          // ── Formatted amount string (for email templates) ─────
+          // ── Formatted amount strings (for email templates) ────
           amount_paid_formatted: `₱${(details.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
           total_amount_formatted: `₱${(details.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
           remaining_balance_formatted: details.remainingBalance > 0
@@ -339,130 +364,104 @@ const PaymentSuccess = () => {
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>WanderWave Payment Receipt</title>
+    <title>WanderWave Receipt - ${details.reference}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 40px;
-            background: #f5f5f5;
-        }
-        .receipt { 
-            max-width: 700px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .header { 
-            text-align: center;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        .logo { 
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 8px;
-        }
-        .receipt-title { font-size: 20px; color: #2d3748; font-weight: 600; }
-        .status-badge {
-            display: inline-block;
-            background: #d4edda;
-            color: #155724;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            margin: 20px 0;
-        }
-        .info-section { margin: 25px 0; }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .info-label { color: #718096; font-weight: 500; }
-        .info-value { color: #2d3748; font-weight: 600; text-align: right; }
-        .amount-highlight { font-size: 24px; color: #22c55e; font-weight: bold; }
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #e2e8f0;
-            text-align: center;
-            color: #718096;
-            font-size: 14px;
-        }
-        @media print {
-            body { background: white; padding: 0; }
-            .receipt { box-shadow: none; }
-        }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #fc9c1b; padding-bottom: 20px; margin-bottom: 20px; }
+        .logo { font-size: 24px; font-weight: bold; color: #fc9c1b; }
+        .receipt-title { font-size: 18px; color: #333; margin-top: 10px; }
+        .reference { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .reference-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .reference-number { font-size: 20px; font-weight: bold; font-family: monospace; color: #333; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-size: 14px; font-weight: bold; color: #fc9c1b; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .info-label { color: #666; font-size: 14px; }
+        .info-value { font-weight: bold; color: #333; font-size: 14px; }
+        .amount-highlight { font-size: 22px; font-weight: bold; color: #22c55e; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
+        @media print { body { padding: 0; } }
     </style>
 </head>
 <body>
-    <div class="receipt">
-        <div class="header">
-            <div class="logo">WanderWave Travel & Tours</div>
-            <div class="receipt-title">PAYMENT RECEIPT</div>
-            <div class="status-badge">✓ PAYMENT CONFIRMED</div>
-        </div>
+    <div class="header">
+        <div class="logo">🌊 WanderWave</div>
+        <div class="receipt-title">Official Payment Receipt</div>
+        <div style="color: #666; font-size: 12px; margin-top: 5px;">Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+    </div>
 
-        <div class="info-section">
-            <div class="info-row">
-                <span class="info-label">Reference Number:</span>
-                <span class="info-value">${details.reference}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">${type === 'booking' ? 'Package' : 'Service'}:</span>
-                <span class="info-value">${details.title}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Customer Name:</span>
-                <span class="info-value">${details.fullName || 'N/A'}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Email:</span>
-                <span class="info-value">${details.email}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">${details.dateLabel}:</span>
-                <span class="info-value">${details.dateValue}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Payment Date:</span>
-                <span class="info-value">${new Date().toLocaleDateString('en-US', { 
-                  year: 'numeric', month: 'long', day: 'numeric' 
-                })}</span>
-            </div>
-            ${details.isPartial ? `
-            <div class="info-row">
-                <span class="info-label">Total Package Price:</span>
-                <span class="info-value">₱${details.totalAmount?.toLocaleString()}</span>
-            </div>
-            <div class="info-row" style="background: #d4edda; padding: 12px; border-radius: 8px; margin-top: 10px;">
-                <span class="info-label" style="color: #155724;">Amount Paid (Initial):</span>
-                <span class="amount-highlight">₱${details.amount?.toLocaleString()}</span>
-            </div>
-            <div class="info-row" style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 5px;">
-                <span class="info-label" style="color: #856404;">Remaining Balance:</span>
-                <span class="info-value" style="color: #856404; font-size: 18px;">₱${details.remainingBalance?.toLocaleString()}</span>
-            </div>
-            ` : `
-            <div class="info-row" style="background: #d4edda; padding: 12px; border-radius: 8px; margin-top: 10px;">
-                <span class="info-label" style="color: #155724;">Amount Paid (Full):</span>
-                <span class="amount-highlight">₱${details.amount?.toLocaleString()}</span>
-            </div>
-            `}
-        </div>
+    <div class="reference">
+        <div class="reference-label">Reference Number</div>
+        <div class="reference-number">${details.reference}</div>
+    </div>
 
-        <div class="footer">
-            <p><strong>WanderWave Travel and Tours OPC</strong></p>
-            <p>Thank you for choosing WanderWave! For inquiries, contact us at support@wanderwave.com</p>
-            <p style="margin-top: 10px; font-size: 12px;">This is a computer-generated receipt and does not require a signature.</p>
+    <div class="section">
+        <div class="section-title">Customer Information</div>
+        <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span class="info-value">${details.fullName}</span>
         </div>
+        <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span class="info-value">${details.email}</span>
+        </div>
+        ${details.phone ? `
+        <div class="info-row">
+            <span class="info-label">Phone:</span>
+            <span class="info-value">${details.phone}</span>
+        </div>` : ''}
+    </div>
+
+    <div class="section">
+        <div class="section-title">${type === 'booking' ? 'Booking Details' : 'Service Details'}</div>
+        <div class="info-row">
+            <span class="info-label">${type === 'booking' ? 'Package:' : 'Service:'}</span>
+            <span class="info-value">${details.title}</span>
+        </div>
+        ${details.dateValue && details.dateValue !== 'null - null' ? `
+        <div class="info-row">
+            <span class="info-label">${details.dateLabel}:</span>
+            <span class="info-value">${details.dateValue}</span>
+        </div>` : ''}
+        ${details.subTitle ? `
+        <div class="info-row">
+            <span class="info-label">Details:</span>
+            <span class="info-value">${details.subTitle}</span>
+        </div>` : ''}
+    </div>
+
+    <div class="section">
+        <div class="section-title">Payment Information</div>
+        <div class="info-row">
+            <span class="info-label">Payment Type:</span>
+            <span class="info-value">${details.isPartial ? 'Partial Payment' : 'Full Payment'
+        }</span>
+        </div>
+        ${details.isPartial ? `
+        <div class="info-row">
+            <span class="info-label">Total Package Price:</span>
+            <span class="info-value">₱${details.totalAmount?.toLocaleString()}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label" style="color: #155724;">Amount Paid (Initial):</span>
+            <span class="amount-highlight">₱${details.amount?.toLocaleString()}</span>
+        </div>
+        <div class="info-row" style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 5px;">
+            <span class="info-label" style="color: #856404;">Remaining Balance:</span>
+            <span class="info-value" style="color: #856404; font-size: 18px;">₱${details.remainingBalance?.toLocaleString()}</span>
+        </div>
+        ` : `
+        <div class="info-row" style="background: #d4edda; padding: 12px; border-radius: 8px; margin-top: 10px;">
+            <span class="info-label" style="color: #155724;">Amount Paid (Full):</span>
+            <span class="amount-highlight">₱${details.amount?.toLocaleString()}</span>
+        </div>
+        `}
+    </div>
+
+    <div class="footer">
+        <p><strong>WanderWave Travel and Tours OPC</strong></p>
+        <p>Thank you for choosing WanderWave! For inquiries, contact us at support@wanderwave.com</p>
+        <p style="margin-top: 10px; font-size: 12px;">This is a computer-generated receipt and does not require a signature.</p>
     </div>
 
     <script>

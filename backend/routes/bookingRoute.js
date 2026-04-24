@@ -70,10 +70,6 @@ router.get('/user/:email', async (req, res) => {
       .lean();
 
     // ── Destination fallback (mirrors /active route) ──────────────────────
-    // For bookings where packageId is null or has no destination (e.g. the
-    // package existed at booking time but packageId wasn't stored, or was
-    // later deleted), we do a secondary lookup by packageName title so the
-    // frontend always has a destination to work with.
     const missingNames = [...new Set(
       bookings
         .filter(b => !b.packageId?.destination && b.packageName)
@@ -89,15 +85,12 @@ router.get('/user/:email', async (req, res) => {
       fallbackPkgs.forEach(p => { fallbackMap[p.title] = p; });
     }
 
-    // Attach destination + package data to each booking that needs it
     const enriched = bookings.map(b => {
-      if (b.packageId?.destination) return b; // already populated — no change
+      if (b.packageId?.destination) return b;
       const fallbackPkg = fallbackMap[b.packageName];
       if (!fallbackPkg) return b;
       return {
         ...b,
-        // Inject a synthetic populated packageId so the frontend
-        // can read .packageId.destination without any special casing
         packageId: {
           _id:         fallbackPkg._id,
           title:       fallbackPkg.title,
@@ -171,14 +164,9 @@ router.get('/init-archive', async (req, res) => {
 
 // ============================================
 // GET /backfill-itinerary
-// ✅ One-time admin utility: fills in missing itinerary (and inclusions) for
-// existing bookings by matching each booking's packageId or packageName
-// against the Package collection. Safe to run multiple times — skips any
-// booking that already has itinerary data.
 // ============================================
 router.get('/backfill-itinerary', async (req, res) => {
   try {
-    // Only target bookings with empty itinerary
     const bookings = await Booking.find({ itinerary: { $size: 0 } }).lean();
     console.log(`🔧 Backfill: found ${bookings.length} booking(s) with empty itinerary`);
 
@@ -188,28 +176,24 @@ router.get('/backfill-itinerary', async (req, res) => {
     for (const booking of bookings) {
       let pkgSnapshot = null;
 
-      // 1. By packageId
       if (booking.packageId) {
         pkgSnapshot = await Package.findById(booking.packageId)
           .select('itinerary inclusions title')
           .lean();
       }
 
-      // 2. Exact title
       if (!pkgSnapshot && booking.packageName) {
         pkgSnapshot = await Package.findOne({ title: booking.packageName })
           .select('itinerary inclusions title')
           .lean();
       }
 
-      // 3. Case-insensitive exact
       if (!pkgSnapshot && booking.packageName) {
         pkgSnapshot = await Package.findOne({
           title: { $regex: new RegExp(`^${booking.packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
         }).select('itinerary inclusions title').lean();
       }
 
-      // 4. Strip pax suffixes and retry
       if (!pkgSnapshot && booking.packageName) {
         const coreTitle = booking.packageName
           .replace(/\s*\(solo\)\s*/gi, '')
@@ -225,7 +209,6 @@ router.get('/backfill-itinerary', async (req, res) => {
         }
       }
 
-      // 5. First segment before parenthesis
       if (!pkgSnapshot && booking.packageName) {
         const firstSegment = booking.packageName.split('(')[0].trim();
         if (firstSegment && firstSegment.length >= 4) {
@@ -240,7 +223,6 @@ router.get('/backfill-itinerary', async (req, res) => {
         continue;
       }
 
-      // Update booking with snapshotted itinerary (and inclusions if also missing)
       const updateFields = { itinerary: pkgSnapshot.itinerary };
       if ((!booking.originalInclusions || booking.originalInclusions.length === 0) && pkgSnapshot.inclusions?.length > 0) {
         updateFields.originalInclusions = pkgSnapshot.inclusions;
@@ -272,14 +254,12 @@ router.get('/active', async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
-        // Collect packageNames that still have no destination (packageId was null/missing)
         const missingNames = [...new Set(
             bookings
                 .filter(b => !b.packageId?.destination && b.packageName)
                 .map(b => b.packageName)
         )];
 
-        // Fallback: look up packages by title to fill in destination
         let fallbackMap = {};
         if (missingNames.length > 0) {
             const fallbackPkgs = await Package.find(
@@ -289,7 +269,6 @@ router.get('/active', async (req, res) => {
             fallbackPkgs.forEach(p => { fallbackMap[p.title] = p.destination; });
         }
 
-        // Attach destination to each booking
         const enriched = bookings.map(b => ({
             ...b,
             destination: b.packageId?.destination
@@ -337,16 +316,11 @@ router.post('/:id/archive', async (req, res) => {
         booking.isArchive = newStatus;
         await booking.save();
 
-        // ── Sync View-to-Book Rate ────────────────────────────────────
-        // Archiving → remove its BookingCount so the rate goes down
-        // Restoring → re-create it so the rate reflects reality again
         try {
             if (newStatus === 'Yes') {
-                // Delete the BookingCount tied to this booking
                 const deleted = await BookingCount.deleteOne({ bookingId: booking._id });
                 console.log(`📊 BookingCount removed on archive (deleted: ${deleted.deletedCount})`);
             } else {
-                // Re-create the BookingCount on restore (avoid duplicates)
                 const exists = await BookingCount.findOne({ bookingId: booking._id });
                 if (!exists) {
                     const totalPax = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
@@ -362,12 +336,9 @@ router.post('/:id/archive', async (req, res) => {
                 }
             }
         } catch (syncErr) {
-            // Non-fatal — archive still succeeds even if BookingCount sync fails
             console.error('⚠️ BookingCount sync failed (non-fatal):', syncErr.message);
         }
-        // ─────────────────────────────────────────────────────────────
 
-        // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
         try {
             const { userEmail, adminId } = req.body;
             if (userEmail) {
@@ -392,7 +363,6 @@ router.post('/:id/archive', async (req, res) => {
         } catch (logError) {
             console.error('⚠️ Failed to save activity log:', logError.message);
         }
-        // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
         res.json({ 
             status: "ok", 
@@ -406,11 +376,7 @@ router.post('/:id/archive', async (req, res) => {
 
 // ============================================
 // GET /check-voucher-usage
-// ✅ Checks if a logged-in user already has any booking using a specific voucher.
-// Includes pending — blocks re-use before payment is even completed.
-// Called by frontend BEFORE the promo validate API call.
-// ⚠️ IMPORTANT: Must be declared BEFORE router.get('/:id') to prevent Express
-//    from treating "check-voucher-usage" as an ObjectId for the :id param.
+// ⚠️ Must be declared BEFORE router.get('/:id')
 // ============================================
 router.get('/check-voucher-usage', async (req, res) => {
   try {
@@ -433,7 +399,6 @@ router.get('/check-voucher-usage', async (req, res) => {
       return res.status(200).json({ success: true, hasUsed: false });
     }
 
-    // ✅ Case-insensitive email, includes pending, checks both promoId and promoCode fields
     const safeEmail = email.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const existingUsage = await Booking.findOne({
       $or: [
@@ -458,6 +423,62 @@ router.get('/check-voucher-usage', async (req, res) => {
   }
 });
 
+// ============================================
+// GET /:id/destination-payload
+// ✅ NEW: Returns destination personalization fields (greeting, tips, emergency number)
+// for a given booking. Called by the frontend triggerWebhook (paymentSuccess.jsx)
+// so that back_to_home_clicked and other frontend-triggered GHL webhooks also carry
+// the full destination data — same as the backend BOOKING_CONFIRMATION webhook.
+// ⚠️ Must be declared BEFORE router.get('/:id') to avoid Express treating
+//    "destination-payload" as an ObjectId for the :id param.
+// ============================================
+router.get('/:id/destination-payload', async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id).lean();
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // 1. Try destination stored directly on the booking
+    let destName = booking.destination || '';
+
+    // 2. Fallback: look up via packageId
+    if (!destName && booking.packageId) {
+      const pkg = await Package.findById(booking.packageId).select('destination').lean();
+      destName = pkg?.destination || '';
+    }
+
+    // 3. Fallback: look up via packageName title
+    if (!destName && booking.packageName) {
+      const pkg = await Package.findOne({ title: booking.packageName }).select('destination').lean();
+      destName = pkg?.destination || '';
+    }
+
+    // No destination found — return empty payload (non-fatal)
+    if (!destName) {
+      console.log(`⚠️ No destination found for booking ${req.params.id} — returning empty payload`);
+      return res.json({ success: true, payload: {} });
+    }
+
+    const destRecord = await Destination.findOne({
+      name: { $regex: `^${destName.trim()}$`, $options: 'i' },
+      isArchive: 'No'
+    });
+
+    if (!destRecord) {
+      console.log(`⚠️ Destination "${destName}" not found in DB — returning empty payload`);
+      return res.json({ success: true, payload: {} });
+    }
+
+    console.log(`✅ Destination payload fetched for frontend webhook: ${destName}`);
+    return res.json({ success: true, payload: destRecord.toWebhookPayload() });
+
+  } catch (err) {
+    console.error('❌ Error fetching destination payload:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -472,7 +493,6 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Add customization summary if customized
     const response = booking.toObject();
     if (booking.isCustomized) {
       response.customizationSummary = booking.getCustomizationSummary();
@@ -512,57 +532,51 @@ router.post('/', upload.any(), async (req, res) => {
         });
     }
 
- // ===== DETERMINE CREATOR =====
-const bookingToSave = {
-  ...bookingData,
-  createdByType: bookingData.createdByType || (bookingData.isWalkin ? 'sales' : 'user'),
-  createdByEmail: bookingData.createdByEmail || (bookingData.isWalkin ? 'houston@wanderwaveph.com' : bookingData.email),
-};
+  // ===== DETERMINE CREATOR =====
+  const bookingToSave = {
+    ...bookingData,
+    createdByType: bookingData.createdByType || (bookingData.isWalkin ? 'sales' : 'user'),
+    createdByEmail: bookingData.createdByEmail || (bookingData.isWalkin ? 'houston@wanderwaveph.com' : bookingData.email),
+  };
 
-
-// ✅ PRICE VALIDATION - Verify submitted price matches expected price
-if (bookingData.packageId) {
-  try {
-    const pkg = await Package.findById(bookingData.packageId);
-    
-    if (pkg) {
-      const basePrice = pkg.price;
-      const markupPrice = Math.round(basePrice * 1.10);
-      const submittedPrice = bookingData.price;
+  // ✅ PRICE VALIDATION
+  if (bookingData.packageId) {
+    try {
+      const pkg = await Package.findById(bookingData.packageId);
       
-      console.log('🔍 ===== BACKEND PRICE VALIDATION =====');
-      console.log('Package Base Price:', basePrice);
-      console.log('Markup Price (10%):', markupPrice);
-      console.log('Submitted Price:', submittedPrice);
-      console.log('Timer Expired:', bookingData.timerExpiredAtBooking);
-      console.log('Price Type:', bookingData.priceType);
-      console.log('Is Customized:', bookingData.isCustomized);
-      console.log('====================================');
-      
-      // Validate that submitted price is reasonable
-      // Allow flexibility for customization and room upgrades
-      const isValidPrice = 
-        Math.abs(submittedPrice - basePrice) < 100 ||  // Close to base price
-        Math.abs(submittedPrice - markupPrice) < 100 || // Close to markup price
-        bookingData.isCustomized; // Allow any price if customized
-      
-      if (!isValidPrice) {
-        console.warn('⚠️ Price validation warning:', {
-          expected: `${basePrice} (discounted) or ${markupPrice} (markup)`,
-          received: submittedPrice,
-          difference: Math.abs(submittedPrice - basePrice)
-        });
-        // Note: We log a warning but don't fail the booking
-        // This allows room upgrades and customization to work
-      } else {
-        console.log('✅ Price validation passed');
+      if (pkg) {
+        const basePrice = pkg.price;
+        const markupPrice = Math.round(basePrice * 1.10);
+        const submittedPrice = bookingData.price;
+        
+        console.log('🔍 ===== BACKEND PRICE VALIDATION =====');
+        console.log('Package Base Price:', basePrice);
+        console.log('Markup Price (10%):', markupPrice);
+        console.log('Submitted Price:', submittedPrice);
+        console.log('Timer Expired:', bookingData.timerExpiredAtBooking);
+        console.log('Price Type:', bookingData.priceType);
+        console.log('Is Customized:', bookingData.isCustomized);
+        console.log('====================================');
+        
+        const isValidPrice = 
+          Math.abs(submittedPrice - basePrice) < 100 ||
+          Math.abs(submittedPrice - markupPrice) < 100 ||
+          bookingData.isCustomized;
+        
+        if (!isValidPrice) {
+          console.warn('⚠️ Price validation warning:', {
+            expected: `${basePrice} (discounted) or ${markupPrice} (markup)`,
+            received: submittedPrice,
+            difference: Math.abs(submittedPrice - basePrice)
+          });
+        } else {
+          console.log('✅ Price validation passed');
+        }
       }
+    } catch (priceValidationError) {
+      console.error('⚠️ Price validation error (non-fatal):', priceValidationError);
     }
-  } catch (priceValidationError) {
-    console.error('⚠️ Price validation error (non-fatal):', priceValidationError);
-    // Don't fail the booking due to validation error
   }
-}
 
     // Promo validation
     if (bookingData.promoId) {
@@ -625,16 +639,15 @@ if (bookingData.packageId) {
       }
     }
 
-    // ✅ HANDLE WALK-IN BOOKINGS (NO PASSENGER VALIDATION)
+    // ✅ HANDLE WALK-IN BOOKINGS
     let passengers = [];
     
     if (bookingData.isWalkin) {
       console.log('🏢 Processing walk-in booking');
 
       const rawWalkinPassengers = bookingData.passengers || [];
-console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length);
+      console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length);
       if (rawWalkinPassengers.length > 0) {
-        // ✅ Use actual passengers submitted from the form
         console.log(`📋 Walk-in: using ${rawWalkinPassengers.length} actual passenger(s) from form`);
 
         for (let index = 0; index < rawWalkinPassengers.length; index++) {
@@ -643,7 +656,7 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
             passengerNumber: p.passengerNumber || index + 1,
             firstName: p.firstName || 'Walk-in',
             lastName: p.lastName || 'Customer',
-            email: p.email && p.email.trim() !== '' ? p.email.trim() : null, // ✅ null if empty
+            email: p.email && p.email.trim() !== '' ? p.email.trim() : null,
             phone: p.phone || '0000000000',
             dateOfBirth: p.dateOfBirth || '2000-01-01',
             age: parseInt(p.age) || 0,
@@ -655,7 +668,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
 
         console.log(`✅ Walk-in: ${passengers.length} passenger(s) processed from form`);
       } else {
-        // ✅ Fallback: create a single placeholder from primary contact info
         passengers = [{
           passengerNumber: 1,
           firstName: bookingData.fullName?.split(' ')[0] || 'Walk-in',
@@ -672,7 +684,7 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         console.log(`✅ Walk-in: placeholder passenger created (no form passengers provided)`);
       }
     } else {
-      // ✅ REGULAR BOOKING - COMPLETE PASSENGER PROCESSING LOGIC
+      // ✅ REGULAR BOOKING
       const rawPassengers = bookingData.passengers || []; 
       const totalExpectedPassengers = bookingData.pax?.adult || 1;
 
@@ -691,7 +703,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
 
       for (let index = 0; index < rawPassengers.length; index++) {
         const passengerData = rawPassengers[index];
-          // Validate required fields for regular bookings
           if (!passengerData.firstName || !passengerData.lastName || 
                !passengerData.phone || 
               !passengerData.dateOfBirth) {
@@ -702,12 +713,11 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
               });
           }
 
-          // Build passenger object
           const passenger = {
               passengerNumber: passengerData.passengerNumber || index + 1,
               firstName: passengerData.firstName,
               lastName: passengerData.lastName,
-              email: passengerData.email && passengerData.email.trim() !== '' ? passengerData.email.trim() : null, // ✅ null if empty
+              email: passengerData.email && passengerData.email.trim() !== '' ? passengerData.email.trim() : null,
               phone: passengerData.phone,
               dateOfBirth: passengerData.dateOfBirth,
               age: parseInt(passengerData.age) || 0,
@@ -716,7 +726,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
               nationality: passengerData.nationality || 'Filipino'
           };
 
-          // Handle file uploads
           const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
           const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
 
@@ -740,11 +749,9 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
             console.log(`  📄 Passport uploaded for passenger ${index + 1}: ${passportFile.originalname}`);
           }
 
-          // ✅ ADD PASSENGER TO ARRAY
           passengers.push(passenger);
       }
 
-      // ✅ STRICT VALIDATION: Only for regular bookings (non-walk-in)
       if (passengers.length !== totalExpectedPassengers) {
           req.files?.forEach(file => {
             try {
@@ -761,12 +768,10 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       console.log(`✅ Successfully processed ${passengers.length} passengers for regular booking`);
     }
 
-    // Get primary contact
     const primaryEmail = bookingData.email || bookingData.primaryContact?.email || passengers[0]?.email;
     const primaryName = bookingData.fullName || bookingData.primaryContact?.fullName || 
                        `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
     
-    // User creation/lookup (skip for walk-in)
     let existingUser = await User.findOne({ email: primaryEmail });
     let isNewUser = false;
     let tempPassword = null;
@@ -792,7 +797,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         }
       } else {
         try {
-          // ✅ Fetch the full Package document to get Cloudinary image + details for GHL
           let packageData = null;
           if (bookingData.packageId) {
             try {
@@ -810,8 +814,8 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
             bookingData.startDate,
             bookingData.endDate,
             passengers.length,
-            packageData, // ✅ Pass full package object so GHL gets image, destination, inclusions, etc.
-            bookingData  // ✅ Pass bookingData so ghlService can fetch destination personalization (greeting, tips, emergency number)
+            packageData,
+            bookingData
           );
           console.log('✅ Booking confirmation email sent');
         } catch (e) {
@@ -820,7 +824,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       }
     }
 
-    // Parse flight details
     let flightDetailsObject = bookingData.flightDetails;
     if (flightDetailsObject && typeof flightDetailsObject === 'string') {
         try {
@@ -838,13 +841,11 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
     console.log('  - Promo:', bookingData.promoCode || 'None');
     console.log('  - Total Amount:', bookingData.totalAmount);
 
-    // ✅ SANITIZE CUSTOMIZED INCLUSIONS - Ensure all have required 'source' field
+    // ✅ SANITIZE CUSTOMIZED INCLUSIONS
     let sanitizedCustomizedInclusions = [];
     if (bookingData.customizedInclusions && Array.isArray(bookingData.customizedInclusions)) {
       sanitizedCustomizedInclusions = bookingData.customizedInclusions.map(inclusion => {
-        // Ensure source field exists
         if (!inclusion.source) {
-          // Determine source based on available data
           if (inclusion.sellerRateId || inclusion.supplier) {
             inclusion.source = 'seller-rate';
           } else {
@@ -852,7 +853,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
           }
         }
         
-        // Ensure all required fields exist with defaults
         return {
           id: inclusion.id || `inc-${Date.now()}-${Math.random()}`,
           name: inclusion.name || 'Unknown Inclusion',
@@ -866,7 +866,7 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
           notes: inclusion.notes || null,
           isOriginal: inclusion.isOriginal !== undefined ? inclusion.isOriginal : false,
           isChecked: inclusion.isChecked !== undefined ? inclusion.isChecked : true,
-          source: inclusion.source, // Now guaranteed to exist
+          source: inclusion.source,
           sellerRateId: inclusion.sellerRateId || null
         };
       });
@@ -874,15 +874,13 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       console.log(`✅ Sanitized ${sanitizedCustomizedInclusions.length} customized inclusions`);
     }
 
-    // ✅ ITINERARY + INCLUSIONS SNAPSHOT — always fetch from DB (source of truth)
-    // DB lookup runs unconditionally so empty arrays from frontend never block the fetch.
+    // ✅ ITINERARY + INCLUSIONS SNAPSHOT
     let bookingItinerary = [];
     let bookingInclusions = [];
 
     try {
       let pkgSnapshot = null;
 
-      // 1. Try by packageId (most reliable)
       if (bookingData.packageId) {
         pkgSnapshot = await Package.findById(bookingData.packageId)
           .select('itinerary inclusions title')
@@ -890,7 +888,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         console.log(`🔍 Package lookup by ID (${bookingData.packageId}): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
       }
 
-      // 2. Fallback: exact title match
       if (!pkgSnapshot && bookingData.packageName) {
         pkgSnapshot = await Package.findOne({ title: bookingData.packageName })
           .select('itinerary inclusions title')
@@ -898,7 +895,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         console.log(`🔍 Package lookup by exact title ("${bookingData.packageName}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
       }
 
-      // 3. Fallback: case-insensitive exact title match
       if (!pkgSnapshot && bookingData.packageName) {
         pkgSnapshot = await Package.findOne({
           title: { $regex: new RegExp(`^${bookingData.packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
@@ -908,10 +904,7 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         console.log(`🔍 Package lookup by case-insensitive title ("${bookingData.packageName}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
       }
 
-      // 4. Fallback: partial/fuzzy title match — strips pax suffixes like "(solo)", "(Solo)", etc.
-      // This handles cases where packageName was appended with extra labels at booking time
       if (!pkgSnapshot && bookingData.packageName) {
-        // Extract the core title by stripping common suffixes: (solo), (Solo), (group), (pax), etc.
         const coreTitle = bookingData.packageName
           .replace(/\s*\(solo\)\s*/gi, '')
           .replace(/\s*\(group\)\s*/gi, '')
@@ -930,9 +923,7 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         }
       }
 
-      // 5. Last resort: partial match using the first meaningful segment of packageName
       if (!pkgSnapshot && bookingData.packageName) {
-        // Use the first 20 chars or up to the first parenthesis as search term
         const firstSegment = bookingData.packageName.split('(')[0].trim();
         if (firstSegment && firstSegment.length >= 4) {
           pkgSnapshot = await Package.findOne({
@@ -945,9 +936,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       }
 
       if (pkgSnapshot) {
-        // ✅ FIX: Strip _id from each itinerary item — package.js ItineraryItemSchema has _id enabled,
-        // but booking.js itineraryItemSchema has { _id: false }. Copying raw items with _id causes
-        // Mongoose to either reject or silently drop the array on save.
         const rawItinerary = pkgSnapshot.itinerary && pkgSnapshot.itinerary.length > 0
           ? pkgSnapshot.itinerary
           : (bookingData.itinerary || []);
@@ -958,8 +946,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
           : (bookingData.originalInclusions || bookingData.inclusions || []);
         console.log(`✅ Snapshot from "${pkgSnapshot.title}" — itinerary: ${bookingItinerary.length} day(s), inclusions: ${bookingInclusions.length} item(s)`);
       } else {
-        // Last resort: use whatever the frontend sent (may be empty)
-        // ✅ FIX: Strip _id just in case the frontend sent raw package itinerary items
         bookingItinerary = (bookingData.itinerary || []).map(item => ({
           day: item.day,
           title: item.title,
@@ -978,7 +964,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       bookingInclusions = bookingData.originalInclusions || bookingData.inclusions || [];
     }
 
-    // ✅ Create booking with all fields
     const newBooking = new Booking({
       packageName: bookingData.packageName,
       packageId: bookingData.packageId || null,
@@ -994,45 +979,35 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
       numberOfRooms: bookingData.numberOfRooms,
       packageTotal: bookingData.packageTotal || bookingData.totalAmount,
       timerExpiredAtBooking: bookingData.timerExpiredAtBooking || false,
-  priceType: bookingData.priceType || 'discounted',
-  originalPackagePrice: bookingData.originalPackagePrice || bookingData.price || 0,
-  appliedMarkup: bookingData.appliedMarkup || 0,
-      // Customization fields
+      priceType: bookingData.priceType || 'discounted',
+      originalPackagePrice: bookingData.originalPackagePrice || bookingData.price || 0,
+      appliedMarkup: bookingData.appliedMarkup || 0,
       isCustomized: bookingData.isCustomized || false,
-      customizedInclusions: sanitizedCustomizedInclusions, // ✅ FIXED: Use sanitized inclusions
+      customizedInclusions: sanitizedCustomizedInclusions,
       customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
       originalInclusions: bookingInclusions,
-
-      // ✅ Itinerary — snapshot from package at time of booking
       itinerary: bookingItinerary,
-      
       includesAirfare: bookingData.includesAirfare || false,
       flightDetails: flightDetailsObject, 
       airfareTotal: bookingData.airfareTotal || 0,
       totalAmount: bookingData.totalAmount,
-
       paymentType: bookingData.paymentType || 'full',
       initialPaymentAmount: bookingData.initialPaymentAmount || bookingData.totalAmount,
       remainingBalance: bookingData.remainingBalance || 0,
       balancePaidAmount: 0,
-
       fullName: primaryName,
       email: primaryEmail,
       message: bookingData.message || '',
-      passengers: passengers, // ✅ Now populated correctly (or placeholder for walk-in)
+      passengers: passengers,
       status: 'pending',
       createdAt: new Date(),
       promoCode: bookingData.promoCode || null,
       promoId: bookingData.promoId || null,
       discountAmount: bookingData.discountAmount || 0,
       finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount,
-      
-      // Walk-in fields
       isWalkin: bookingData.isWalkin || false,
       appointmentDate: bookingData.appointmentDate || null,
       appointmentTime: bookingData.appointmentTime || null,
-
-      // Creator type + email
       createdByType: bookingData.createdByType || (bookingData.isWalkin === true ? 'sales' : 'user'),
       createdByEmail: bookingData.createdByEmail || (bookingData.isWalkin === true
         ? 'houston@wanderwaveph.com'
@@ -1044,7 +1019,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
 
     console.log(`💰 Booking saved successfully! ID: ${newBooking._id}`);
 
-    // Activity Log
     try {
         const userEmail = bookingData.userEmail || bookingData.adminEmail || 'System';
         const adminId = bookingData.adminId || null;
@@ -1071,7 +1045,6 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
 
-    // ✅ Return booking ID for payment processing
     res.json({
       success: true,
       message: bookingData.isWalkin 
@@ -1137,7 +1110,6 @@ router.get('/', async (req, res) => {
       .populate('promoId')
       .sort({ createdAt: -1 });
 
-    // Add customization summaries
     const bookingsWithSummary = bookings.map(booking => {
       const bookingObj = booking.toObject();
       if (booking.isCustomized) {
@@ -1171,7 +1143,6 @@ router.get('/stats/customization', async (req, res) => {
       ? ((customizedBookings / totalBookings) * 100).toFixed(2) 
       : 0;
 
-    // Average additional price from customizations
     const customizationRevenue = await Booking.aggregate([
       { 
         $match: { 
@@ -1190,7 +1161,6 @@ router.get('/stats/customization', async (req, res) => {
       }
     ]);
 
-    // Most popular added inclusions
     const popularInclusions = await Booking.aggregate([
       { $match: { isCustomized: true, isArchive: 'No' } },
       { $unwind: '$customizedInclusions' },
@@ -1258,7 +1228,6 @@ router.post('/:id/cancel', async (req, res) => {
     booking.cancelledAt = new Date();
     await booking.save();
 
-    // 👇👇👇 ACTIVITY LOG START (CANCEL BOOKING) 👇👇👇
     try {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
@@ -1282,7 +1251,6 @@ router.post('/:id/cancel', async (req, res) => {
     } catch (logError) {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
-    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({
       success: true,
@@ -1321,13 +1289,11 @@ router.post('/:id/confirm-payment', async (req, res) => {
       });
     }
 
-    // For full payment
     if (booking.paymentType === 'full') {
       booking.status = 'confirmed';
       booking.paidAt = new Date();
       booking.paymentId = paymentId;
     } 
-    // For partial payment (initial)
     else if (booking.paymentType === 'partial') {
       booking.status = 'partial_paid';
       booking.paidAt = new Date();
@@ -1339,7 +1305,6 @@ router.post('/:id/confirm-payment', async (req, res) => {
 
     console.log(`✅ Payment confirmed for booking ${id}`);
 
-    // 👇👇👇 ACTIVITY LOG START (PAYMENT CONFIRMATION) 👇👇👇
     try {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
@@ -1364,7 +1329,6 @@ router.post('/:id/confirm-payment', async (req, res) => {
     } catch (logError) {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
-    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({
       success: true,
@@ -1475,7 +1439,6 @@ router.put('/:id/confirm-balance-payment', async (req, res) => {
 
     console.log(`✅ Balance payment confirmed for booking ${id}`);
 
-    // 👇👇👇 ACTIVITY LOG START (BALANCE PAYMENT) 👇👇👇
     try {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
@@ -1499,7 +1462,6 @@ router.put('/:id/confirm-balance-payment', async (req, res) => {
     } catch (logError) {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
-    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({
       success: true,
@@ -1564,45 +1526,31 @@ router.patch('/:id/customization', async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // ── Snapshot before update (for activity log) ──────────────────────────
     const prevTotalAmount   = booking.totalAmount;
     const prevRemaining     = booking.remainingBalance;
     const prevCustomization = booking.customizationAdditionalPrice;
 
-    // ── Derive the clean base amount ────────────────────────────────────────
-    // "Base" = totalAmount before any previous customization adjustment.
-    // We strip out the OLD customizationAdditionalPrice so we always compute
-    // from a clean starting point regardless of prior saves.
-    //
-    // Also account for any discount that was applied at booking time.
     const oldCustomization = booking.customizationAdditionalPrice || 0;
     const baseAmount       = booking.totalAmount - oldCustomization;
 
-    // ── New amounts ─────────────────────────────────────────────────────────
     const newCustomizationPrice = Number(customizationAdditionalPrice) || 0;
     const newTotalAmount        = baseAmount + newCustomizationPrice;
 
-    // ── Recalculate remaining balance ───────────────────────────────────────
-    // totalAlreadyPaid = initial payment made + any balance payments made
-    // For partial bookings this is the amount the client has actually paid so far.
-    // For full-payment bookings remainingBalance stays 0 (nothing owed).
-    let newRemainingBalance = booking.remainingBalance; // default: unchanged
+    let newRemainingBalance = booking.remainingBalance;
 
     if (booking.paymentType === 'partial') {
       const totalAlreadyPaid =
         (booking.initialPaymentAmount || 0) +
         (booking.balancePaidAmount    || 0);
 
-      // Remaining = what they still owe on the NEW total
       newRemainingBalance = Math.max(0, newTotalAmount - totalAlreadyPaid);
     }
 
-    // ── Apply all updates ───────────────────────────────────────────────────
     booking.customizedInclusions          = customizedInclusions;
     booking.customizationAdditionalPrice  = newCustomizationPrice;
     booking.isCustomized                  = true;
     booking.totalAmount                   = newTotalAmount;
-    booking.finalPackageTotal             = newTotalAmount;   // keep in sync
+    booking.finalPackageTotal             = newTotalAmount;
     booking.packageTotal                  = (booking.packageTotal || 0) +
                                             (newCustomizationPrice - oldCustomization);
     booking.remainingBalance              = newRemainingBalance;
@@ -1611,10 +1559,6 @@ router.patch('/:id/customization', async (req, res) => {
     await booking.save();
     await booking.populate('packageId');
 
-    // ── Destination fallback ─────────────────────────────────────────────
-    // If packageId is null in the DB (stored as null or never set), populate
-    // returns nothing. Do a secondary title-based lookup so the frontend
-    // always receives a synthetic populated packageId with destination intact.
     let responseBooking = booking.toObject ? booking.toObject() : booking;
     if (!responseBooking.packageId?.destination && responseBooking.packageName) {
       try {
@@ -1641,7 +1585,6 @@ router.patch('/:id/customization', async (req, res) => {
       }
     }
 
-    // ── Activity log (non-fatal) ────────────────────────────────────────────
     try {
       const priceDelta = newTotalAmount - prevTotalAmount;
       const sign       = priceDelta >= 0 ? '+' : '';
@@ -1688,8 +1631,6 @@ router.patch('/:id/customization', async (req, res) => {
     res.json({
       message: 'Booking customization updated successfully',
       booking: responseBooking,
-      // Surface the key computed values so the frontend can update its display
-      // without needing a full page refresh
       summary: {
         prevTotalAmount,
         newTotalAmount,
@@ -1708,14 +1649,12 @@ router.patch('/:id/customization', async (req, res) => {
   }
 });
 
-// Sa loob ng bookingRoute.js
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
-    // I-update ang fields (gaya ng passengers)
     Object.assign(booking, req.body);
     booking.updatedAt = new Date();
     await booking.save();
@@ -1726,79 +1665,9 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Cancel booking route
-router.post('/:id/cancel', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const booking = await Booking.findById(id);
-    
-    if (!booking) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Booking not found' 
-      });
-    }
-
-    // Check if booking can be cancelled
-    if (booking.status === 'cancelled') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Booking is already cancelled' 
-      });
-    }
-
-    // Update booking status to cancelled
-    booking.status = 'cancelled';
-    booking.updatedAt = new Date();
-    await booking.save();
-
-    // 👇👇👇 ACTIVITY LOG START (CANCEL BOOKING) 👇👇👇
-    try {
-      const { userEmail, adminId } = req.body;
-      if (userEmail) {
-        await ActivityLog.create({
-          action: 'UPDATE',
-          module: 'Bookings',
-          user: userEmail,
-          userId: adminId || null,
-          description: `Cancelled booking: ${booking.packageName} (${booking.fullName})`,
-          severity: 'WARNING',
-          details: {
-            recordTitle: `${booking.packageName} - ${booking.fullName}`,
-            recordId: booking._id.toString(),
-            method: 'POST',
-            previousStatus: 'pending',
-            newStatus: 'cancelled'
-          }
-        });
-        console.log('✅ Activity Log saved for Cancel Booking');
-      }
-    } catch (logError) {
-      console.error('⚠️ Failed to save activity log:', logError.message);
-    }
-    // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
-    res.json({ 
-      success: true, 
-      message: 'Booking cancelled successfully', 
-      booking 
-    });
-
-  } catch (error) {
-    console.error('❌ Error cancelling booking:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to cancel booking',
-      error: error.message 
-    });
-  }
-});
-
-// ============================================
+// ─────────────────────────────────────────────────────────────
 // PATCH /:id/details — UPDATE BOOKING DETAILS
-// Called by BookingCustomizer when admin edits
-// Package Name, Duration, Travel Dates, or Pax
-// ============================================
+// ─────────────────────────────────────────────────────────────
 router.patch('/:id/details', async (req, res) => {
   try {
     const { id } = req.params;
@@ -1812,13 +1681,11 @@ router.patch('/:id/details', async (req, res) => {
       adminId,
     } = req.body;
 
-    // 1. Find the existing booking
     const booking = await Booking.findById(id);
     if (!booking) {
       return res.status(404).json({ status: 'error', error: 'Booking not found' });
     }
 
-    // 2. Build update object — only include fields that were actually sent
     const updateData = {};
     const changedFields = [];
 
@@ -1851,7 +1718,6 @@ router.patch('/:id/details', async (req, res) => {
       changedFields.push('Pax updated');
     }
 
-    // 3. Nothing to update
     if (Object.keys(updateData).length === 0) {
       return res.status(200).json({
         status: 'ok',
@@ -1860,14 +1726,12 @@ router.patch('/:id/details', async (req, res) => {
       });
     }
 
-    // 4. Apply update (runValidators: false to avoid triggering unrelated validators)
     const updatedBooking = await Booking.findByIdAndUpdate(
       id,
       { $set: updateData },
       { new: true, runValidators: false }
-    ).populate('packageId'); // ✅ Keep packageId populated so frontend destination check works
+    ).populate('packageId');
 
-    // ── Destination fallback ─────────────────────────────────────────────
     let responseBookingDetails = updatedBooking.toObject ? updatedBooking.toObject() : updatedBooking;
     if (!responseBookingDetails.packageId?.destination && responseBookingDetails.packageName) {
       try {
@@ -1894,7 +1758,6 @@ router.patch('/:id/details', async (req, res) => {
       }
     }
 
-    // 5. Activity log (non-fatal)
     try {
       if (userEmail) {
         await ActivityLog.create({
@@ -1935,8 +1798,6 @@ router.patch('/:id/details', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // PATCH /:id/hotel — UPDATE HOTEL SELECTION FROM USER DASHBOARD
-// Called by HotelCustomizer when the user picks a room tier and saves.
-// Updates selectedRoomType, hotelName, numberOfRooms on the booking.
 // ─────────────────────────────────────────────────────────────
 router.patch('/:id/hotel', async (req, res) => {
   try {
@@ -1963,7 +1824,6 @@ router.patch('/:id/hotel', async (req, res) => {
       return res.status(404).json({ status: 'error', error: 'Booking not found' });
     }
 
-    // ── Destination fallback ─────────────────────────────────────────────
     let responseBookingHotel = updatedBooking.toObject ? updatedBooking.toObject() : updatedBooking;
     if (!responseBookingHotel.packageId?.destination && responseBookingHotel.packageName) {
       try {
@@ -2006,15 +1866,12 @@ router.patch('/:id/hotel', async (req, res) => {
 
 // ============================================
 // POST /abandoned — ABANDONED BOOKING + GHL WEBHOOK
-// Triggered after booking is saved + payment link is generated.
-// Updates the booking with abandoned tracking fields and fires GHL webhook
-// so the automation can send follow-up emails if payment is not completed.
 // ============================================
 router.post('/abandoned', async (req, res) => {
   try {
     const {
-      existingBookingId, // ✅ ID of the already-created booking
-      checkoutUrl,       // ✅ PayMongo checkout URL to include in GHL email
+      existingBookingId,
+      checkoutUrl,
       email,
       fullName,
       packageName,
@@ -2022,12 +1879,11 @@ router.post('/abandoned', async (req, res) => {
       startDate,
       endDate,
       pax,
-      paymentType,       // ✅ FIXED: "Full Payment" or "Partial Payment" — needed for GHL email template
+      paymentType,
     } = req.body;
 
     const GHL_ABANDONED_WEBHOOK_URL = process.env.GHL_ABANDONED_BOOKING_WEBHOOK_URL;
 
-    // ✅ We only update an EXISTING booking — never create a duplicate
     if (!existingBookingId) {
       return res.status(400).json({ success: false, message: 'existingBookingId is required.' });
     }
@@ -2051,14 +1907,11 @@ router.post('/abandoned', async (req, res) => {
 
     console.log('✅ Abandoned tracking set for booking:', targetBooking._id);
 
-    // ✅ Kunin ang contact info mula sa targetBooking (database) o sa request body
     const resolvedEmail = email || targetBooking.email || "";
     const resolvedPhone = targetBooking.phone || "";
     const resolvedFullName = fullName || targetBooking.fullName || "";
 
-    // 🔥 Trigger GHL Webhook for follow-up automation
     if (GHL_ABANDONED_WEBHOOK_URL) {
-      // ✅ I-split ang fullName para makuha ang first at last name
       const nameParts = resolvedFullName.trim().split(" ");
       const firstName = nameParts[0] || "Guest";
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "User";
@@ -2067,11 +1920,10 @@ router.post('/abandoned', async (req, res) => {
         type: 'ABANDONED_BOOKING',
         event: 'booking_form_submitted',
         bookingId: targetBooking._id.toString(),
-        // ✅ Gamitin ang mga hiwalay na fields na ito
         first_name: firstName, 
         last_name: lastName,
         email: resolvedEmail,
-        phone: resolvedPhone, // ✅ Ngayon, defined na itong 'phone'
+        phone: resolvedPhone,
         packageName: packageName || targetBooking.packageName,
         totalAmount: totalAmount || targetBooking.totalAmount,
         startDate: startDate || targetBooking.startDate,
@@ -2091,7 +1943,7 @@ router.post('/abandoned', async (req, res) => {
       });
 
       console.log('✅ GHL abandoned webhook fired for booking:', targetBooking._id);
-} else {
+    } else {
       console.warn('⚠️ GHL_ABANDONED_BOOKING_WEBHOOK_URL not set in .env — skipping GHL notification.');
     }
 
