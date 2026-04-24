@@ -407,10 +407,10 @@ router.delete('/:id', async (req, res) => {
 
         await ActivityLog.create({
             action:      'DELETE',
-            module:      'Packages', // 'Packages' gamitin natin para safe sa enum
+            module:      'Destinations',
             user:         userEmail || 'System Admin',
             userId:       logUserId,
-            severity:    'DANGER',
+            severity:    'CRITICAL',
             description: `Permanently deleted destination: ${dest.name}`,
             details: {
                 recordTitle: dest.name,
