@@ -1,419 +1,781 @@
-import React, { useState } from 'react';
-import Sidebar from '../sidebar/sidebar.jsx';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import axios from 'axios';
 import {
-  Megaphone,
-  PlusCircle,
+  MapPin,
+  Globe,
+  Plus,
   Search,
-  Filter,
-  Facebook,
-  Instagram,
-  TrendingUp,
-  Eye,
-  MousePointerClick,
-  Users,
-  DollarSign,
-  ChevronDown,
-  MoreHorizontal,
-  Play,
-  Pause,
-  CheckCircle,
-  Clock,
-  XCircle,
-  ArrowUpRight,
-  ArrowDownRight,
-  BarChart2,
-  Calendar,
-  Tag,
+  LayoutGrid,
+  List,
+  Edit3,
+  Archive,
+  RotateCcw,
+  ChevronRight,
+  Phone,
+  MessageSquare,
+  Lightbulb,
+  X,
+  Save,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Trash2,
+  MoreVertical,
 } from 'lucide-react';
 import './Campaigns.css';
+import Sidebar from '../sidebar/sidebar';
 
-// ─── TIKTOK ICON ──────────────────────────────────────────────────────────────
-const TikTokIcon = ({ size = 16, color = '#010101' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg">
-    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.89a8.18 8.18 0 0 0 4.78 1.52V7a4.85 4.85 0 0 1-1.01-.31z"/>
-  </svg>
+const API_BASE = import.meta.env?.VITE_API_URL || '';
+
+// ─────────────────────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────────────────────
+const statusColor = (isArchive) =>
+  isArchive === 'Yes'
+    ? { bg: '#fef2f2', color: '#ef4444', dot: '#ef4444' }
+    : { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' };
+
+const TipBadge = ({ count }) => (
+  <span className="cp-tip-badge">
+    <Lightbulb size={10} />
+    {count} tip{count !== 1 ? 's' : ''}
+  </span>
 );
 
-// ─── MOCK DATA ─────────────────────────────────────────────────────────────────
-const CAMPAIGNS_DATA = [
-  {
-    id: 1,
-    name: 'Summer Beach Getaway Promo',
-    platform: 'Facebook',
-    status: 'active',
-    budget: 15000,
-    spent: 9250,
-    reach: 42800,
-    clicks: 3140,
-    conversions: 87,
-    startDate: '2025-06-01',
-    endDate: '2025-06-30',
-    objective: 'Conversions',
-  },
-  {
-    id: 2,
-    name: 'Boracay Package — Instagram Reel',
-    platform: 'Instagram',
-    status: 'active',
-    budget: 8000,
-    spent: 5600,
-    reach: 31500,
-    clicks: 2280,
-    conversions: 54,
-    startDate: '2025-06-10',
-    endDate: '2025-07-10',
-    objective: 'Traffic',
-  },
-  {
-    id: 3,
-    name: 'Japan Tour TikTok Awareness',
-    platform: 'TikTok',
-    status: 'paused',
-    budget: 12000,
-    spent: 4300,
-    reach: 88200,
-    clicks: 5100,
-    conversions: 29,
-    startDate: '2025-05-15',
-    endDate: '2025-06-15',
-    objective: 'Awareness',
-  },
-  {
-    id: 4,
-    name: 'Holy Week Travel Deals',
-    platform: 'Facebook',
-    status: 'completed',
-    budget: 20000,
-    spent: 20000,
-    reach: 95600,
-    clicks: 7800,
-    conversions: 212,
-    startDate: '2025-03-20',
-    endDate: '2025-04-10',
-    objective: 'Conversions',
-  },
-  {
-    id: 5,
-    name: 'Palawan Discovery Package',
-    platform: 'Instagram',
-    status: 'draft',
-    budget: 10000,
-    spent: 0,
-    reach: 0,
-    clicks: 0,
-    conversions: 0,
-    startDate: '2025-07-01',
-    endDate: '2025-07-31',
-    objective: 'Traffic',
-  },
-  {
-    id: 6,
-    name: 'Siargao Surf Camp — August',
-    platform: 'TikTok',
-    status: 'active',
-    budget: 9500,
-    spent: 2100,
-    reach: 54000,
-    clicks: 3900,
-    conversions: 41,
-    startDate: '2025-07-15',
-    endDate: '2025-08-15',
-    objective: 'Awareness',
-  },
-];
+// ─────────────────────────────────────────────────────────────
+//  EMPTY TIP TEMPLATE
+// ─────────────────────────────────────────────────────────────
+const emptyForm = () => ({
+  name: '',
+  country: '',
+  destinationGreeting: '',
+  emergencyNumber: '911 (Philippines)',
+  isArchive: 'No',
+  tips: [{ text: '' }],
+});
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const PLATFORM_CONFIG = {
-  Facebook:  { Icon: Facebook,  color: '#1877F2', bg: '#e7f0fd' },
-  Instagram: { Icon: Instagram, color: '#E1306C', bg: '#fde8ef' },
-  TikTok:    { Icon: TikTokIcon, color: '#010101', bg: '#f0f0f0' },
+// ─────────────────────────────────────────────────────────────
+//  DESTINATION FORM  (used in both Add and Edit mode)
+// ─────────────────────────────────────────────────────────────
+const DestinationForm = ({ initial, onSave, onCancel, saving, error }) => {
+  const [form, setForm] = useState(initial || emptyForm());
+
+  const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
+
+  const setTip = (idx, val) =>
+    setForm((f) => {
+      const tips = [...f.tips];
+      tips[idx] = { text: val };
+      return { ...f, tips };
+    });
+
+  const addTip = () => {
+    if (form.tips.length < 5)
+      setForm((f) => ({ ...f, tips: [...f.tips, { text: '' }] }));
+  };
+
+  const removeTip = (idx) =>
+    setForm((f) => ({ ...f, tips: f.tips.filter((_, i) => i !== idx) }));
+
+  return (
+    <div className="cp-form-body">
+      {error && (
+        <div className="cp-alert cp-alert--error">
+          <AlertCircle size={14} /> {error}
+        </div>
+      )}
+
+      {/* Row 1 */}
+      <div className="cp-form-row">
+        <div className="cp-form-field">
+          <label className="cp-form-label">
+            <MapPin size={12} /> Destination Name *
+          </label>
+          <input
+            className="cp-form-input"
+            value={form.name}
+            onChange={(e) => set('name', e.target.value)}
+            placeholder="e.g. Palawan"
+          />
+        </div>
+        <div className="cp-form-field">
+          <label className="cp-form-label">
+            <Globe size={12} /> Country / Region
+          </label>
+          <input
+            className="cp-form-input"
+            value={form.country}
+            onChange={(e) => set('country', e.target.value)}
+            placeholder="e.g. Philippines"
+          />
+        </div>
+      </div>
+
+      {/* Greeting */}
+      <div className="cp-form-field">
+        <label className="cp-form-label">
+          <MessageSquare size={12} /> Destination Greeting
+        </label>
+        <textarea
+          className="cp-form-input cp-form-textarea"
+          value={form.destinationGreeting}
+          onChange={(e) => set('destinationGreeting', e.target.value)}
+          placeholder="e.g. Enjoy the crystal-clear waters and limestone cliffs of Palawan"
+          rows={2}
+        />
+        <span className="cp-form-hint">
+          Injected into the hero subtext of the personalized travel email.
+        </span>
+      </div>
+
+      {/* Emergency + Archive */}
+      <div className="cp-form-row">
+        <div className="cp-form-field">
+          <label className="cp-form-label">
+            <Phone size={12} /> Emergency Number
+          </label>
+          <input
+            className="cp-form-input"
+            value={form.emergencyNumber}
+            onChange={(e) => set('emergencyNumber', e.target.value)}
+            placeholder="e.g. 911 (Philippines)"
+          />
+        </div>
+        <div className="cp-form-field">
+          <label className="cp-form-label">Status</label>
+          <select
+            className="cp-form-select"
+            value={form.isArchive}
+            onChange={(e) => set('isArchive', e.target.value)}
+          >
+            <option value="No">Active</option>
+            <option value="Yes">Archived</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Tips */}
+      <div className="cp-form-field">
+        <div className="cp-tips-header">
+          <label className="cp-form-label">
+            <Lightbulb size={12} /> Travel Tips
+            <span className="cp-tips-count">({form.tips.length}/5)</span>
+          </label>
+          {form.tips.length < 5 && (
+            <button type="button" className="cp-tips-add" onClick={addTip}>
+              <Plus size={12} /> Add Tip
+            </button>
+          )}
+        </div>
+        {form.tips.map((tip, i) => (
+          <div key={i} className="cp-tip-row">
+            <span className="cp-tip-num">{i + 1}</span>
+            <input
+              className="cp-form-input cp-tip-input"
+              value={tip.text}
+              onChange={(e) => setTip(i, e.target.value)}
+              placeholder={`Tip ${i + 1}…`}
+            />
+            <button
+              type="button"
+              className="cp-tip-remove"
+              onClick={() => removeTip(i)}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        ))}
+        {form.tips.length === 0 && (
+          <p className="cp-form-hint">No tips yet. Click "Add Tip" to add up to 5.</p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="cp-form-footer">
+        <button className="cp-btn-ghost" onClick={onCancel} disabled={saving}>
+          Cancel
+        </button>
+        <button
+          className="cp-btn-save"
+          onClick={() => onSave(form)}
+          disabled={saving || !form.name.trim()}
+        >
+          {saving ? <Loader2 size={14} className="cp-spin" /> : <Save size={14} />}
+          {saving ? 'Saving…' : 'Save Destination'}
+        </button>
+      </div>
+    </div>
+  );
 };
 
-const STATUS_CONFIG = {
-  active:    { label: 'Active',    Icon: Play,        color: '#16a34a', bg: '#dcfce7' },
-  paused:    { label: 'Paused',    Icon: Pause,       color: '#d97706', bg: '#fef9c3' },
-  completed: { label: 'Completed', Icon: CheckCircle, color: '#2563eb', bg: '#dbeafe' },
-  draft:     { label: 'Draft',     Icon: Clock,       color: '#6b7280', bg: '#f3f4f6' },
+// ─────────────────────────────────────────────────────────────
+//  DRAWER  (Detail + Edit)
+// ─────────────────────────────────────────────────────────────
+const Drawer = ({ destination, onClose, onUpdated }) => {
+  const [mode, setMode]       = useState('view'); // 'view' | 'edit'
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState(null);
+
+  if (!destination) return null;
+  const s = statusColor(destination.isArchive);
+
+  const handleSave = async (form) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const { data } = await axios.put(
+        `${API_BASE}/api/destinations/${destination._id}`,
+        form
+      );
+      onUpdated(data.data || data);
+      setMode('view');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Save failed. Try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="cp-drawer-overlay" onClick={onClose} />
+      <aside className="cp-drawer">
+        {/* Drawer Header */}
+        <div className="cp-drawer-head">
+          <div className="cp-drawer-head-left">
+            <div className="cp-drawer-icon">
+              <MapPin size={18} color="#001F3F" />
+            </div>
+            <div>
+              <h3 className="cp-drawer-name">{destination.name}</h3>
+              {destination.country && (
+                <span className="cp-drawer-country">
+                  <Globe size={11} /> {destination.country}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="cp-drawer-head-right">
+            <span
+              className="cp-status-badge"
+              style={{ background: s.bg, color: s.color }}
+            >
+              <span
+                className="cp-status-dot"
+                style={{ background: s.dot }}
+              />
+              {destination.isArchive === 'Yes' ? 'Archived' : 'Active'}
+            </span>
+            <button className="cp-drawer-close" onClick={onClose}>
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Drawer Body */}
+        <div className="cp-drawer-body">
+          {mode === 'view' ? (
+            <>
+              {/* Greeting */}
+              {destination.destinationGreeting && (
+                <div className="cp-detail-section">
+                  <span className="cp-detail-label">
+                    <MessageSquare size={12} /> Greeting
+                  </span>
+                  <p className="cp-detail-text cp-detail-greeting">
+                    "{destination.destinationGreeting}"
+                  </p>
+                </div>
+              )}
+
+              {/* Emergency */}
+              <div className="cp-detail-section">
+                <span className="cp-detail-label">
+                  <Phone size={12} /> Emergency Number
+                </span>
+                <p className="cp-detail-text">{destination.emergencyNumber || '—'}</p>
+              </div>
+
+              {/* Tips */}
+              <div className="cp-detail-section">
+                <span className="cp-detail-label">
+                  <Lightbulb size={12} /> Travel Tips
+                </span>
+                {destination.tips?.length > 0 ? (
+                  <ol className="cp-detail-tips">
+                    {destination.tips.map((t, i) => (
+                      <li key={i} className="cp-detail-tip-item">
+                        <span className="cp-detail-tip-num">{i + 1}</span>
+                        <span>{t.text}</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="cp-detail-empty">No travel tips added yet.</p>
+                )}
+              </div>
+
+              {/* Timestamps */}
+              <div className="cp-detail-section cp-detail-meta">
+                <span className="cp-detail-meta-item">
+                  Created:{' '}
+                  {new Date(destination.createdAt).toLocaleDateString('en-PH', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                  })}
+                </span>
+                <span className="cp-detail-meta-item">
+                  Updated:{' '}
+                  {new Date(destination.updatedAt).toLocaleDateString('en-PH', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                  })}
+                </span>
+              </div>
+
+              {/* Edit CTA */}
+              <div className="cp-drawer-view-footer">
+                <button
+                  className="cp-btn-edit"
+                  onClick={() => setMode('edit')}
+                >
+                  <Edit3 size={14} /> Edit Destination
+                </button>
+              </div>
+            </>
+          ) : (
+            <DestinationForm
+              initial={{
+                name: destination.name,
+                country: destination.country || '',
+                destinationGreeting: destination.destinationGreeting || '',
+                emergencyNumber: destination.emergencyNumber || '911 (Philippines)',
+                isArchive: destination.isArchive || 'No',
+                tips: destination.tips?.length > 0
+                  ? destination.tips.map((t) => ({ text: t.text }))
+                  : [],
+              }}
+              onSave={handleSave}
+              onCancel={() => { setMode('view'); setError(null); }}
+              saving={saving}
+              error={error}
+            />
+          )}
+        </div>
+      </aside>
+    </>
+  );
 };
 
-const formatCurrency = (n) =>
-  n >= 1000 ? `₱${(n / 1000).toFixed(1)}K` : `₱${n.toLocaleString()}`;
+// ─────────────────────────────────────────────────────────────
+//  ADD MODAL
+// ─────────────────────────────────────────────────────────────
+const AddModal = ({ onClose, onCreated }) => {
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState(null);
 
-const formatCount = (n) =>
-  n >= 1000 ? `${(n / 1000).toFixed(1)}K` : n.toLocaleString();
+  const handleSave = async (form) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const { data } = await axios.post(`${API_BASE}/api/destinations`, form);
+      onCreated(data.data || data);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not create destination.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-const ctr = (clicks, reach) =>
-  reach > 0 ? ((clicks / reach) * 100).toFixed(2) + '%' : '—';
-
-const budgetPct = (spent, budget) =>
-  budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
-
-// ─── SUMMARY STATS ────────────────────────────────────────────────────────────
-const buildSummary = (data) => {
-  const active = data.filter((c) => c.status === 'active').length;
-  const totalBudget = data.reduce((s, c) => s + c.budget, 0);
-  const totalSpent = data.reduce((s, c) => s + c.spent, 0);
-  const totalReach = data.reduce((s, c) => s + c.reach, 0);
-  const totalConversions = data.reduce((s, c) => s + c.conversions, 0);
-  return { active, totalBudget, totalSpent, totalReach, totalConversions };
+  return (
+    <>
+      <div className="cp-drawer-overlay" onClick={onClose} />
+      <aside className="cp-drawer">
+        <div className="cp-drawer-head">
+          <div className="cp-drawer-head-left">
+            <div className="cp-drawer-icon">
+              <Plus size={18} color="#001F3F" />
+            </div>
+            <div>
+              <h3 className="cp-drawer-name">New Destination</h3>
+              <span className="cp-drawer-country">Fill in the details below</span>
+            </div>
+          </div>
+          <button className="cp-drawer-close" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+        <div className="cp-drawer-body">
+          <DestinationForm
+            initial={emptyForm()}
+            onSave={handleSave}
+            onCancel={onClose}
+            saving={saving}
+            error={error}
+          />
+        </div>
+      </aside>
+    </>
+  );
 };
 
-// ─── COMPONENT ────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  GRID CARD
+// ─────────────────────────────────────────────────────────────
+const DestCard = ({ dest, onClick }) => {
+  const s = statusColor(dest.isArchive);
+  return (
+    <button className="cp-dest-card" onClick={() => onClick(dest)}>
+      <div className="cp-dest-card-top">
+        <div className="cp-dest-card-icon">
+          <MapPin size={20} color="#001F3F" />
+        </div>
+        <span
+          className="cp-status-badge cp-status-badge--sm"
+          style={{ background: s.bg, color: s.color }}
+        >
+          <span className="cp-status-dot" style={{ background: s.dot }} />
+          {dest.isArchive === 'Yes' ? 'Archived' : 'Active'}
+        </span>
+      </div>
+      <div className="cp-dest-card-body">
+        <h4 className="cp-dest-card-name">{dest.name}</h4>
+        {dest.country && (
+          <span className="cp-dest-card-country">
+            <Globe size={11} /> {dest.country}
+          </span>
+        )}
+        {dest.destinationGreeting && (
+          <p className="cp-dest-card-greeting">"{dest.destinationGreeting}"</p>
+        )}
+      </div>
+      <div className="cp-dest-card-footer">
+        <TipBadge count={dest.tips?.length || 0} />
+        <span className="cp-dest-card-arrow">
+          <ChevronRight size={14} />
+        </span>
+      </div>
+    </button>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+//  MAIN PAGE
+// ─────────────────────────────────────────────────────────────
 const Campaigns = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [search, setSearch] = useState('');
-  const [filterPlatform, setFilterPlatform] = useState('All');
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [openMenu, setOpenMenu] = useState(null);
+  const [destinations, setDestinations] = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [fetchError, setFetchError]     = useState(null);
 
-  const toggleSidebar = () => setIsCollapsed((prev) => !prev);
+  // View + filter
+  const [viewMode, setViewMode]         = useState('list'); // 'list' | 'grid'
+  const [search, setSearch]             = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  const filtered = CAMPAIGNS_DATA.filter((c) => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
-    const matchPlatform = filterPlatform === 'All' || c.platform === filterPlatform;
-    const matchStatus = filterStatus === 'All' || c.status === filterStatus;
-    return matchSearch && matchPlatform && matchStatus;
+  // Drawer / modal
+  const [selected, setSelected]         = useState(null);
+  const [showAdd, setShowAdd]           = useState(false);
+
+  // ── Fetch all destinations ─────────────────────────────
+  const fetchDestinations = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const { data } = await axios.get(`${API_BASE}/api/destinations`);
+      const list = Array.isArray(data) ? data : (data.data || []);
+      setDestinations(list);
+    } catch (err) {
+      setFetchError('Could not load destinations. Check your API connection.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchDestinations(); }, [fetchDestinations]);
+
+  // ── Filter logic ───────────────────────────────────────
+  const filtered = destinations.filter((d) => {
+    const matchSearch =
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      (d.country || '').toLowerCase().includes(search.toLowerCase());
+    const matchStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && d.isArchive === 'No') ||
+      (statusFilter === 'archived' && d.isArchive === 'Yes');
+    return matchSearch && matchStatus;
   });
 
-  const summary = buildSummary(CAMPAIGNS_DATA);
+  const total    = destinations.length;
+  const active   = destinations.filter((d) => d.isArchive === 'No').length;
+  const archived = destinations.filter((d) => d.isArchive === 'Yes').length;
+
+  // ── Handlers ──────────────────────────────────────────
+  const handleUpdated = (updated) => {
+    setDestinations((prev) =>
+      prev.map((d) => (d._id === updated._id ? updated : d))
+    );
+    setSelected(updated);
+  };
+
+  const handleCreated = (created) => {
+    setDestinations((prev) => [created, ...prev]);
+  };
 
   return (
     <div className="cp-layout">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
-
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(v => !v)} />
       <main
         className="cp-main"
         style={{ marginLeft: isCollapsed ? '88px' : '280px' }}
       >
         <div className="cp-container">
 
-          {/* ── HEADER ── */}
-          <div className="cp-header">
+          {/* ── Header ── */}
+          <header className="cp-header">
             <div className="cp-header-left">
               <div className="cp-header-icon-wrap">
-                <Megaphone size={22} color="#001F3F" />
+                <MapPin size={22} color="#001F3F" />
               </div>
               <div>
-                <h1 className="cp-title">Campaigns</h1>
-                <p className="cp-subtitle">Track and manage your marketing campaigns across all platforms.</p>
+                <h1 className="cp-title">Destinations</h1>
+                <p className="cp-subtitle">
+                  Manage travel destinations and their email personalization content.
+                </p>
               </div>
             </div>
-            <button className="cp-btn-new">
-              <PlusCircle size={16} />
-              New Campaign
+            <button className="cp-btn-new" onClick={() => setShowAdd(true)}>
+              <Plus size={15} /> Add Destination
             </button>
-          </div>
+          </header>
 
-          {/* ── SUMMARY CARDS ── */}
+          {/* ── Summary Cards ── */}
           <div className="cp-summary-grid">
             <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--active"><Play size={18} /></div>
+              <div className="cp-summary-icon cp-icon--active">
+                <MapPin size={18} />
+              </div>
               <div className="cp-summary-body">
-                <span className="cp-summary-label">Active Campaigns</span>
-                <span className="cp-summary-value">{summary.active}</span>
+                <span className="cp-summary-label">Total</span>
+                <span className="cp-summary-value">{total}</span>
+                <span className="cp-summary-sub">destinations</span>
               </div>
             </div>
             <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--budget"><DollarSign size={18} /></div>
+              <div className="cp-summary-icon cp-icon--budget">
+                <Globe size={18} />
+              </div>
               <div className="cp-summary-body">
-                <span className="cp-summary-label">Total Budget</span>
-                <span className="cp-summary-value">{formatCurrency(summary.totalBudget)}</span>
+                <span className="cp-summary-label">Active</span>
+                <span className="cp-summary-value">{active}</span>
+                <span className="cp-summary-sub">live destinations</span>
               </div>
             </div>
             <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--spent"><BarChart2 size={18} /></div>
+              <div className="cp-summary-icon cp-icon--spent">
+                <Archive size={18} />
+              </div>
               <div className="cp-summary-body">
-                <span className="cp-summary-label">Total Spent</span>
-                <span className="cp-summary-value">{formatCurrency(summary.totalSpent)}</span>
-                <span className="cp-summary-sub">{budgetPct(summary.totalSpent, summary.totalBudget)}% of budget</span>
+                <span className="cp-summary-label">Archived</span>
+                <span className="cp-summary-value">{archived}</span>
+                <span className="cp-summary-sub">hidden from packages</span>
               </div>
             </div>
             <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--reach"><Eye size={18} /></div>
-              <div className="cp-summary-body">
-                <span className="cp-summary-label">Total Reach</span>
-                <span className="cp-summary-value">{formatCount(summary.totalReach)}</span>
+              <div className="cp-summary-icon cp-icon--reach">
+                <Lightbulb size={18} />
               </div>
-            </div>
-            <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--conv"><MousePointerClick size={18} /></div>
               <div className="cp-summary-body">
-                <span className="cp-summary-label">Total Conversions</span>
-                <span className="cp-summary-value">{summary.totalConversions.toLocaleString()}</span>
+                <span className="cp-summary-label">With Tips</span>
+                <span className="cp-summary-value">
+                  {destinations.filter((d) => d.tips?.length > 0).length}
+                </span>
+                <span className="cp-summary-sub">have travel tips</span>
               </div>
             </div>
           </div>
 
-          {/* ── FILTERS ── */}
+          {/* ── Filters + View Toggle ── */}
           <div className="cp-filters">
             <div className="cp-search-wrap">
-              <Search size={15} className="cp-search-icon" />
+              <Search size={14} className="cp-search-icon" />
               <input
                 className="cp-search"
-                placeholder="Search campaigns..."
+                placeholder="Search by name or country…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-
             <div className="cp-filter-group">
-              <Filter size={14} className="cp-filter-icon" />
-
               <select
                 className="cp-select"
-                value={filterPlatform}
-                onChange={(e) => setFilterPlatform(e.target.value)}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="All">All Platforms</option>
-                <option value="Facebook">Facebook</option>
-                <option value="Instagram">Instagram</option>
-                <option value="TikTok">TikTok</option>
-              </select>
-
-              <select
-                className="cp-select"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="All">All Statuses</option>
+                <option value="all">All Status</option>
                 <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="completed">Completed</option>
-                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
               </select>
+            </div>
+            <div className="cp-view-toggle">
+              <button
+                className={`cp-view-btn ${viewMode === 'list' ? 'cp-view-btn--active' : ''}`}
+                onClick={() => setViewMode('list')}
+                title="List view"
+              >
+                <List size={15} />
+              </button>
+              <button
+                className={`cp-view-btn ${viewMode === 'grid' ? 'cp-view-btn--active' : ''}`}
+                onClick={() => setViewMode('grid')}
+                title="Grid view"
+              >
+                <LayoutGrid size={15} />
+              </button>
             </div>
           </div>
 
-          {/* ── TABLE ── */}
-          <div className="cp-table-wrap">
-            <table className="cp-table">
-              <thead>
-                <tr>
-                  <th>Campaign</th>
-                  <th>Platform</th>
-                  <th>Status</th>
-                  <th>Budget</th>
-                  <th>Spent</th>
-                  <th>Reach</th>
-                  <th>Clicks</th>
-                  <th>CTR</th>
-                  <th>Conversions</th>
-                  <th>Schedule</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
+          {/* ── Error Banner ── */}
+          {fetchError && (
+            <div className="cp-alert cp-alert--error">
+              <AlertCircle size={14} /> {fetchError}
+            </div>
+          )}
+
+          {/* ── Loading ── */}
+          {loading ? (
+            <div className="cp-loading">
+              <Loader2 size={24} className="cp-spin" />
+              <span>Loading destinations…</span>
+            </div>
+          ) : viewMode === 'list' ? (
+            /* ── LIST VIEW ── */
+            <div className="cp-table-wrap">
+              <table className="cp-table">
+                <thead>
                   <tr>
-                    <td colSpan={11} className="cp-empty">No campaigns found.</td>
+                    <th>Destination</th>
+                    <th>Country</th>
+                    <th>Greeting</th>
+                    <th>Emergency</th>
+                    <th>Tips</th>
+                    <th>Status</th>
+                    <th></th>
                   </tr>
-                ) : (
-                  filtered.map((c) => {
-                    const plt = PLATFORM_CONFIG[c.platform];
-                    const sts = STATUS_CONFIG[c.status];
-                    const pct = budgetPct(c.spent, c.budget);
-                    return (
-                      <tr key={c.id}>
-                        {/* Name + Objective */}
-                        <td>
-                          <div className="cp-cell-name">{c.name}</div>
-                          <div className="cp-cell-obj">
-                            <Tag size={11} /> {c.objective}
-                          </div>
-                        </td>
-
-                        {/* Platform */}
-                        <td>
-                          <span
-                            className="cp-platform-badge"
-                            style={{ background: plt.bg, color: plt.color }}
-                          >
-                            <plt.Icon size={13} color={plt.color} />
-                            {c.platform}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td>
-                          <span
-                            className="cp-status-badge"
-                            style={{ background: sts.bg, color: sts.color }}
-                          >
-                            <sts.Icon size={12} />
-                            {sts.label}
-                          </span>
-                        </td>
-
-                        {/* Budget */}
-                        <td className="cp-cell-mono">{formatCurrency(c.budget)}</td>
-
-                        {/* Spent + progress */}
-                        <td>
-                          <div className="cp-spent-wrap">
-                            <span className="cp-cell-mono">{formatCurrency(c.spent)}</span>
-                            <div className="cp-progress-bar">
-                              <div
-                                className="cp-progress-fill"
-                                style={{
-                                  width: `${pct}%`,
-                                  background: pct >= 90 ? '#ef4444' : pct >= 60 ? '#f59e0b' : '#001F3F',
-                                }}
-                              />
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <div className="cp-empty">
+                          No destinations found.{' '}
+                          {search || statusFilter !== 'all'
+                            ? 'Try adjusting your filters.'
+                            : 'Click "Add Destination" to get started.'}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((dest) => {
+                      const s = statusColor(dest.isArchive);
+                      return (
+                        <tr
+                          key={dest._id}
+                          className="cp-dest-row"
+                          onClick={() => setSelected(dest)}
+                        >
+                          <td>
+                            <div className="cp-dest-name-cell">
+                              <div className="cp-dest-row-icon">
+                                <MapPin size={13} color="#001F3F" />
+                              </div>
+                              <span className="cp-cell-name">{dest.name}</span>
                             </div>
-                            <span className="cp-progress-pct">{pct}%</span>
-                          </div>
-                        </td>
-
-                        {/* Reach */}
-                        <td className="cp-cell-mono">{formatCount(c.reach)}</td>
-
-                        {/* Clicks */}
-                        <td className="cp-cell-mono">{formatCount(c.clicks)}</td>
-
-                        {/* CTR */}
-                        <td className="cp-cell-mono">{ctr(c.clicks, c.reach)}</td>
-
-                        {/* Conversions */}
-                        <td className="cp-cell-mono cp-cell-conv">{c.conversions.toLocaleString()}</td>
-
-                        {/* Schedule */}
-                        <td>
-                          <div className="cp-cell-date">
-                            <Calendar size={11} />
-                            {c.startDate} → {c.endDate}
-                          </div>
-                        </td>
-
-                        {/* Actions */}
-                        <td>
-                          <div className="cp-actions-wrap">
+                          </td>
+                          <td>
+                            <span className="cp-cell-mono">
+                              {dest.country || <span style={{ color: '#d1d5db' }}>—</span>}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="cp-dest-greeting-cell">
+                              {dest.destinationGreeting
+                                ? `"${dest.destinationGreeting.slice(0, 55)}${dest.destinationGreeting.length > 55 ? '…' : ''}"`
+                                : <span style={{ color: '#d1d5db' }}>—</span>
+                              }
+                            </span>
+                          </td>
+                          <td>
+                            <span className="cp-cell-mono" style={{ fontSize: '0.8rem' }}>
+                              {dest.emergencyNumber || '—'}
+                            </span>
+                          </td>
+                          <td>
+                            <TipBadge count={dest.tips?.length || 0} />
+                          </td>
+                          <td>
+                            <span
+                              className="cp-status-badge"
+                              style={{ background: s.bg, color: s.color }}
+                            >
+                              <span className="cp-status-dot" style={{ background: s.dot }} />
+                              {dest.isArchive === 'Yes' ? 'Archived' : 'Active'}
+                            </span>
+                          </td>
+                          <td onClick={(e) => e.stopPropagation()}>
                             <button
                               className="cp-actions-btn"
-                              onClick={() => setOpenMenu(openMenu === c.id ? null : c.id)}
+                              onClick={() => setSelected(dest)}
+                              title="View & Edit"
                             >
-                              <MoreHorizontal size={16} />
+                              <Edit3 size={14} />
                             </button>
-                            {openMenu === c.id && (
-                              <div className="cp-actions-menu">
-                                <button className="cp-actions-item">Edit</button>
-                                <button className="cp-actions-item">
-                                  {c.status === 'active' ? 'Pause' : 'Activate'}
-                                </button>
-                                <button className="cp-actions-item cp-actions-item--danger">Delete</button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* ── GRID VIEW ── */
+            filtered.length === 0 ? (
+              <div className="cp-table-wrap">
+                <div className="cp-empty">
+                  No destinations found.{' '}
+                  {search || statusFilter !== 'all'
+                    ? 'Try adjusting your filters.'
+                    : 'Click "Add Destination" to get started.'}
+                </div>
+              </div>
+            ) : (
+              <div className="cp-dest-grid">
+                {filtered.map((dest) => (
+                  <DestCard key={dest._id} dest={dest} onClick={setSelected} />
+                ))}
+              </div>
+            )
+          )}
 
         </div>
       </main>
+
+      {/* ── Detail / Edit Drawer ── */}
+      {selected && (
+        <Drawer
+          destination={selected}
+          onClose={() => setSelected(null)}
+          onUpdated={handleUpdated}
+        />
+      )}
+
+      {/* ── Add Destination Modal ── */}
+      {showAdd && (
+        <AddModal
+          onClose={() => setShowAdd(false)}
+          onCreated={handleCreated}
+        />
+      )}
     </div>
   );
 };
