@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Trash2,
   MoreVertical,
+  Zap,        // ✅ GHL sync icon
 } from 'lucide-react';
 import './Campaigns.css';
 import Sidebar from '../sidebar/sidebar';
@@ -41,6 +42,36 @@ const TipBadge = ({ count }) => (
     {count} tip{count !== 1 ? 's' : ''}
   </span>
 );
+
+// ─────────────────────────────────────────────────────────────
+//  GHL SYNC TOAST
+//  Shows a brief "Synced to GHL ✓" banner after save.
+//  webhookSent: true  → green success
+//  webhookSent: false → yellow warning (saved but webhook failed)
+// ─────────────────────────────────────────────────────────────
+const GhlSyncToast = ({ webhookSent, destName, onDismiss }) => {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  return (
+    <div
+      className={`cp-ghl-toast ${webhookSent ? 'cp-ghl-toast--success' : 'cp-ghl-toast--warn'}`}
+    >
+      <Zap size={14} className="cp-ghl-toast-icon" />
+      <span>
+        {webhookSent
+          ? <><strong>{destName}</strong> synced to GHL ✓</>
+          : <><strong>{destName}</strong> saved — GHL sync failed (check webhook)</>
+        }
+      </span>
+      <button className="cp-ghl-toast-close" onClick={onDismiss}>
+        <X size={12} />
+      </button>
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────
 //  EMPTY TIP TEMPLATE
@@ -212,9 +243,11 @@ const DestinationForm = ({ initial, onSave, onCancel, saving, error }) => {
 //  DRAWER  (Detail + Edit)
 // ─────────────────────────────────────────────────────────────
 const Drawer = ({ destination, onClose, onUpdated }) => {
-  const [mode, setMode]       = useState('view'); // 'view' | 'edit'
-  const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState(null);
+  const [mode, setMode]           = useState('view'); // 'view' | 'edit'
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState(null);
+  // ✅ GHL sync toast state
+  const [ghlToast, setGhlToast]   = useState(null); // null | { webhookSent, destName }
 
   if (!destination) return null;
   const s = statusColor(destination.isArchive);
@@ -227,8 +260,15 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
         `${API_BASE}/destinations/edit/${destination._id}`,
         form
       );
-      onUpdated(data.data || data);
+      const saved = data.data || data;
+      onUpdated(saved);
       setMode('view');
+
+      // ✅ Show GHL sync toast based on webhookSent flag from backend
+      setGhlToast({
+        webhookSent: data.webhookSent === true,
+        destName: saved.name || form.name,
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Save failed. Try again.');
     } finally {
@@ -240,6 +280,15 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
     <>
       <div className="cp-drawer-overlay" onClick={onClose} />
       <aside className="cp-drawer">
+        {/* ✅ GHL Sync Toast — rendered inside drawer, above everything */}
+        {ghlToast && (
+          <GhlSyncToast
+            webhookSent={ghlToast.webhookSent}
+            destName={ghlToast.destName}
+            onDismiss={() => setGhlToast(null)}
+          />
+        )}
+
         {/* Drawer Header */}
         <div className="cp-drawer-head">
           <div className="cp-drawer-head-left">
@@ -369,19 +418,29 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
 //  ADD MODAL
 // ─────────────────────────────────────────────────────────────
 const AddModal = ({ onClose, onCreated }) => {
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState(null);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState(null);
+  // ✅ GHL sync toast state
+  const [ghlToast, setGhlToast]   = useState(null); // null | { webhookSent, destName }
 
   const handleSave = async (form) => {
     setSaving(true);
     setError(null);
     try {
       const { data } = await axios.post(`${API_BASE}/destinations/add`, form);
-      onCreated(data.data || data);
-      onClose();
+      const created = data.data || data;
+      onCreated(created);
+
+      // ✅ Show GHL sync toast, then close modal after toast duration
+      setGhlToast({
+        webhookSent: data.webhookSent === true,
+        destName: created.name || form.name,
+      });
+
+      // Close modal after toast shows briefly (1.5s delay so user sees it)
+      setTimeout(() => onClose(), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not create destination.');
-    } finally {
       setSaving(false);
     }
   };
@@ -390,6 +449,15 @@ const AddModal = ({ onClose, onCreated }) => {
     <>
       <div className="cp-drawer-overlay" onClick={onClose} />
       <aside className="cp-drawer">
+        {/* ✅ GHL Sync Toast */}
+        {ghlToast && (
+          <GhlSyncToast
+            webhookSent={ghlToast.webhookSent}
+            destName={ghlToast.destName}
+            onDismiss={() => setGhlToast(null)}
+          />
+        )}
+
         <div className="cp-drawer-head">
           <div className="cp-drawer-head-left">
             <div className="cp-drawer-icon">

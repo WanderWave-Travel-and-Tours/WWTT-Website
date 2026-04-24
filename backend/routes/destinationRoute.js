@@ -1,7 +1,9 @@
 const router = require('express').Router();
 const Destination = require('../models/destination');
 const ActivityLog = require('../models/ActivityLog');
-const Package = require('../models/package'); // Import package model
+const Package = require('../models/package');
+const { sendDestinationToGHL } = require('../utils/ghlService'); // ✅ Import
+
 // HELPER: Sanitize Admin ID
 const getValidAdminId = (id) => {
     if (id && id !== 'null' && id !== 'undefined' && id !== '') return id;
@@ -10,12 +12,6 @@ const getValidAdminId = (id) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Parse & validate tips from request body.
-//
-// Accepts either:
-//   - tips as a JSON string:  '[{"text":"Tip one"},{"text":"Tip two"}]'
-//   - tips as a plain array already parsed by express.json()
-//
-// Always returns an array of { text } objects, capped at 5.
 // ─────────────────────────────────────────────────────────────────────────────
 const parseTips = (raw) => {
     if (!raw) return [];
@@ -74,11 +70,24 @@ router.post('/add', async (req, res) => {
             }
         });
 
-        console.log('✅ Destination created:', saved.name);
-        res.status(201).json({ status: 'ok', message: 'Destination created successfully!', data: saved });
+        // ✅ Fire GHL webhook — non-blocking, won't fail the save if GHL is down
+        let webhookSent = false;
+        try {
+            const ghlResult = await sendDestinationToGHL(saved);
+            webhookSent = ghlResult.success;
+        } catch (ghlErr) {
+            console.error('⚠️ GHL webhook failed (destination still saved):', ghlErr.message);
+        }
+
+        console.log('✅ Destination created:', saved.name, '| GHL synced:', webhookSent);
+        res.status(201).json({
+            status: 'ok',
+            message: 'Destination created successfully!',
+            data: saved,
+            webhookSent, // ✅ Returned to frontend so UI can show sync status
+        });
 
     } catch (err) {
-        // Mongoose duplicate-key error (name already exists)
         if (err.code === 11000) {
             return res.status(409).json({ status: 'error', error: 'A destination with that name already exists.' });
         }
@@ -135,8 +144,22 @@ router.put('/edit/:id', async (req, res) => {
             }
         });
 
-        console.log('✅ Destination updated:', updated.name);
-        res.status(200).json({ status: 'ok', message: 'Destination updated successfully!', data: updated });
+        // ✅ Fire GHL webhook — non-blocking, won't fail the save if GHL is down
+        let webhookSent = false;
+        try {
+            const ghlResult = await sendDestinationToGHL(updated);
+            webhookSent = ghlResult.success;
+        } catch (ghlErr) {
+            console.error('⚠️ GHL webhook failed (destination still saved):', ghlErr.message);
+        }
+
+        console.log('✅ Destination updated:', updated.name, '| GHL synced:', webhookSent);
+        res.status(200).json({
+            status: 'ok',
+            message: 'Destination updated successfully!',
+            data: updated,
+            webhookSent, // ✅ Returned to frontend so UI can show sync status
+        });
 
     } catch (err) {
         if (err.code === 11000) {
@@ -208,10 +231,11 @@ router.post('/:id/archive', async (req, res) => {
 router.get('/all', async (req, res) => {
     try {
         const destinations = await Destination.find({ isArchive: 'No' }).sort({ name: 1 });
+        console.log(`📦 Found ${destinations.length} active destinations`);
         res.status(200).json({ status: 'ok', data: destinations });
     } catch (err) {
-        console.error('❌ Error fetching destinations:', err);
-        res.status(500).json({ status: 'error', error: 'Failed to retrieve destinations.' });
+        console.error('❌ Error fetching active destinations:', err);
+        res.status(500).json({ status: 'error', error: err.message });
     }
 });
 
@@ -233,25 +257,6 @@ router.get('/archived-list', async (req, res) => {
 // ============================================================
 // 6. GET WEBHOOK PAYLOAD BY DESTINATION NAME
 // GET /api/destinations/webhook-payload?name=Palawan
-//
-// This is the key endpoint your website/backend calls when a
-// booking is confirmed. It returns the fully-shaped webhook
-// payload ready to POST straight to GHL.
-//
-// Response shape:
-// {
-//   "status": "ok",
-//   "data": {
-//     "destination":          "Palawan",
-//     "destination_greeting": "Enjoy the crystal-clear waters...",
-//     "destination_tip1":     "...",
-//     "destination_tip2":     "...",
-//     "destination_tip3":     "...",
-//     "destination_tip4":     "...",
-//     "destination_tip5":     "...",
-//     "emergency_number":     "911 (Philippines)"
-//   }
-// }
 // ============================================================
 router.get('/webhook-payload', async (req, res) => {
     try {
@@ -261,7 +266,6 @@ router.get('/webhook-payload', async (req, res) => {
             return res.status(400).json({ status: 'error', error: 'Query param "name" is required.' });
         }
 
-        // Case-insensitive exact match on name
         const dest = await Destination.findOne({
             name:      { $regex: `^${name.trim()}$`, $options: 'i' },
             isArchive: 'No'
@@ -284,6 +288,7 @@ router.get('/webhook-payload', async (req, res) => {
         res.status(500).json({ status: 'error', error: err.message });
     }
 });
+
 // ============================================================
 // EXTRA: SYNC UNIQUE DESTINATIONS FROM PACKAGES
 // POST /api/destinations/sync-packages
@@ -293,31 +298,27 @@ router.post('/sync-packages', async (req, res) => {
         const { userEmail, adminId } = req.body;
         const logUserId = getValidAdminId(adminId);
 
-        // 1. Kunin lahat ng unique destination strings gamit ang .distinct()
         const uniqueDestinations = await Package.distinct('destination');
 
         let addedCount = 0;
         let skippedCount = 0;
 
-        // 2. I-loop ang bawat unique destination at i-save kung wala pa
         for (const destName of uniqueDestinations) {
-            if (!destName || !destName.trim()) continue; // Skip empty destinations
+            if (!destName || !destName.trim()) continue;
             
             const cleanName = destName.trim();
 
-            // Check kung nag-eexist na siya (Case-insensitive check)
             const existingDest = await Destination.findOne({
                 name: { $regex: `^${cleanName}$`, $options: 'i' }
             });
 
             if (!existingDest) {
-                // Save new destination record
                 await Destination.create({
                     name: cleanName,
-                    country: '', // Leave blank for admin to update later
+                    country: '',
                     destinationGreeting: '',
                     tips: [],
-                    emergencyNumber: '911 (Philippines)', // Default emergency number
+                    emergencyNumber: '911 (Philippines)',
                     isArchive: 'No'
                 });
                 addedCount++;
@@ -326,7 +327,6 @@ router.post('/sync-packages', async (req, res) => {
             }
         }
 
-        // 3. I-log ang activity
         if (addedCount > 0) {
             await ActivityLog.create({
                 action:      'CREATE',
@@ -359,12 +359,10 @@ router.post('/sync-packages', async (req, res) => {
         res.status(500).json({ status: 'error', error: err.message });
     }
 });
+
 // ============================================================
 // 7. FETCH ALL DESTINATIONS (active + archived) — used by admin UI
 // GET /api/destinations
-// ✅ FIX: Added so the Campaigns page can load all destinations
-//         including archived ones (needed for the archived status filter).
-//         Must stay ABOVE the /:id route to avoid being swallowed by it.
 // ============================================================
 router.get('/', async (req, res) => {
     try {
@@ -391,10 +389,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // ============================================================
-// 8. DELETE DESTINATION (permanent)
+// 9. DELETE DESTINATION (permanent)
 // DELETE /api/destinations/:id
 // ============================================================
-// DAPAT GANITO ANG ITSURA NG DELETE ROUTE MO:
 router.delete('/:id', async (req, res) => {
     try {
         const { userEmail, adminId } = req.body;
