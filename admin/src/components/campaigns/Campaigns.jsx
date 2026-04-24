@@ -224,7 +224,7 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
     setError(null);
     try {
       const { data } = await axios.put(
-        `${API_BASE}/api/destinations/${destination._id}`,
+        `${API_BASE}/destinations/edit/${destination._id}`,
         form
       );
       onUpdated(data.data || data);
@@ -376,7 +376,7 @@ const AddModal = ({ onClose, onCreated }) => {
     setSaving(true);
     setError(null);
     try {
-      const { data } = await axios.post(`${API_BASE}/api/destinations`, form);
+      const { data } = await axios.post(`${API_BASE}/destinations/add`, form);
       onCreated(data.data || data);
       onClose();
     } catch (err) {
@@ -481,7 +481,7 @@ const Campaigns = () => {
     setLoading(true);
     setFetchError(null);
     try {
-      const { data } = await axios.get(`${API_BASE}/api/destinations`);
+      const { data } = await axios.get(`${API_BASE}/destinations`);
       const list = Array.isArray(data) ? data : (data.data || []);
       setDestinations(list);
     } catch (err) {

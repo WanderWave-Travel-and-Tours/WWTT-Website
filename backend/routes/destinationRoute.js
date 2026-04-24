@@ -360,7 +360,24 @@ router.post('/sync-packages', async (req, res) => {
     }
 });
 // ============================================================
-// 7. FETCH SINGLE DESTINATION BY ID  ← keep at the bottom
+// 7. FETCH ALL DESTINATIONS (active + archived) — used by admin UI
+// GET /api/destinations
+// ✅ FIX: Added so the Campaigns page can load all destinations
+//         including archived ones (needed for the archived status filter).
+//         Must stay ABOVE the /:id route to avoid being swallowed by it.
+// ============================================================
+router.get('/', async (req, res) => {
+    try {
+        const destinations = await Destination.find().sort({ name: 1 });
+        res.status(200).json({ status: 'ok', data: destinations });
+    } catch (err) {
+        console.error('❌ Error fetching all destinations:', err);
+        res.status(500).json({ status: 'error', error: 'Failed to retrieve destinations.' });
+    }
+});
+
+// ============================================================
+// 8. FETCH SINGLE DESTINATION BY ID  ← keep at the bottom
 // GET /api/destinations/:id
 // ============================================================
 router.get('/:id', async (req, res) => {
