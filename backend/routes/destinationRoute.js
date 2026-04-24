@@ -377,6 +377,7 @@ router.get('/:id', async (req, res) => {
 // 8. DELETE DESTINATION (permanent)
 // DELETE /api/destinations/:id
 // ============================================================
+// DAPAT GANITO ANG ITSURA NG DELETE ROUTE MO:
 router.delete('/:id', async (req, res) => {
     try {
         const { userEmail, adminId } = req.body;
@@ -388,23 +389,22 @@ router.delete('/:id', async (req, res) => {
         }
 
         await ActivityLog.create({
-    action:      'CREATE',
-    module:      'Packages', // O 'Destination' (Subukan mo kung ano ang valid sa enum mo)
-    user:         userEmail || 'System Admin',
-    userId:       logUserId,
-    severity:    'SUCCESS',
-    description: `Synced ${addedCount} new destinations from Packages collection.`,
-    details: {
-        method:   'POST',
-        endpoint: '/api/destinations/sync-packages'
-    }
-});
+            action:      'DELETE',
+            module:      'Packages', // 'Packages' gamitin natin para safe sa enum
+            user:         userEmail || 'System Admin',
+            userId:       logUserId,
+            severity:    'DANGER',
+            description: `Permanently deleted destination: ${dest.name}`,
+            details: {
+                recordTitle: dest.name,
+                recordId:    dest._id,
+                method:      'DELETE',
+                endpoint:    `/api/destinations/${req.params.id}`
+            }
+        });
 
-        console.log('🗑️ Destination permanently deleted:', dest.name);
         res.status(200).json({ status: 'ok', message: 'Destination deleted successfully.' });
-
     } catch (err) {
-        console.error('❌ Error deleting destination:', err);
         res.status(500).json({ status: 'error', error: err.message });
     }
 });
