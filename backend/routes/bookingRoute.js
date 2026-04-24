@@ -8,6 +8,7 @@ const Booking = require('../models/booking');
 const User = require('../models/user');
 const Promo = require('../models/promo');
 const Package = require('../models/package');
+const Destination = require('../models/destination'); // ✅ Import Destination model for GHL personalization
 const ActivityLog = require('../models/ActivityLog');
 const { BookingCount } = require('../models/PageView');
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
@@ -809,7 +810,8 @@ console.log('📥 Walk-in raw passengers received:', rawWalkinPassengers.length)
             bookingData.startDate,
             bookingData.endDate,
             passengers.length,
-            packageData // ✅ Pass full package object so GHL gets image, destination, inclusions, etc.
+            packageData, // ✅ Pass full package object so GHL gets image, destination, inclusions, etc.
+            bookingData  // ✅ Pass bookingData so ghlService can fetch destination personalization (greeting, tips, emergency number)
           );
           console.log('✅ Booking confirmation email sent');
         } catch (e) {
