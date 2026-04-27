@@ -35,6 +35,7 @@ router.post('/add', async (req, res) => {
         const {
             name, country,
             destinationGreeting, tips, emergencyNumber,
+            isInternational,
             userEmail, adminId
         } = req.body;
 
@@ -50,6 +51,7 @@ router.post('/add', async (req, res) => {
             destinationGreeting: destinationGreeting?.trim() || '',
             tips:                parseTips(tips),
             emergencyNumber:     emergencyNumber?.trim() || '911 (Philippines)',
+            isInternational:     isInternational === true || isInternational === 'true',
             isArchive:           'No'
         });
 
@@ -105,6 +107,7 @@ router.put('/edit/:id', async (req, res) => {
         const {
             name, country,
             destinationGreeting, tips, emergencyNumber,
+            isInternational,
             userEmail, adminId, changes
         } = req.body;
 
@@ -121,6 +124,7 @@ router.put('/edit/:id', async (req, res) => {
         if (destinationGreeting !== undefined) updateData.destinationGreeting = destinationGreeting.trim();
         if (tips !== undefined)                updateData.tips                = parseTips(tips);
         if (emergencyNumber !== undefined)     updateData.emergencyNumber     = emergencyNumber.trim();
+        if (isInternational !== undefined)     updateData.isInternational     = isInternational === true || isInternational === 'true';
 
         const updated = await Destination.findByIdAndUpdate(
             req.params.id,
