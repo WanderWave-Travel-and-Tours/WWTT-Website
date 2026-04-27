@@ -50,7 +50,7 @@ router.post('/add', async (req, res) => {
             country:             country?.trim() || '',
             destinationGreeting: destinationGreeting?.trim() || '',
             tips:                parseTips(tips),
-            emergencyNumber:     emergencyNumber?.trim() || '911 (Philippines)',
+            emergencyNumber:     emergencyNumber?.trim() ?? '',
             isInternational:     isInternational === true || isInternational === 'true',
             isArchive:           'No'
         });
@@ -107,7 +107,7 @@ router.put('/edit/:id', async (req, res) => {
         const {
             name, country,
             destinationGreeting, tips, emergencyNumber,
-            isInternational,
+            isInternational, isArchive,
             userEmail, adminId, changes
         } = req.body;
 
@@ -125,6 +125,13 @@ router.put('/edit/:id', async (req, res) => {
         if (tips !== undefined)                updateData.tips                = parseTips(tips);
         if (emergencyNumber !== undefined)     updateData.emergencyNumber     = emergencyNumber.trim();
         if (isInternational !== undefined)     updateData.isInternational     = isInternational === true || isInternational === 'true';
+
+        // ✅ Handle isArchive — also track archivedAt timestamp when archiving/restoring
+        if (isArchive !== undefined) {
+            const newStatus = isArchive === 'Yes' ? 'Yes' : 'No';
+            updateData.isArchive   = newStatus;
+            updateData.archivedAt  = newStatus === 'Yes' ? (existing.archivedAt || new Date()) : null;
+        }
 
         const updated = await Destination.findByIdAndUpdate(
             req.params.id,

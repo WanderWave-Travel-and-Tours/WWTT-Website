@@ -231,26 +231,65 @@ const DestinationForm = ({ initial, onSave, onCancel, saving, error }) => {
 //  MODAL  (Detail + Edit) — floating centered modal
 // ─────────────────────────────────────────────────────────────
 const Drawer = ({ destination, onClose, onUpdated }) => {
-  const [mode, setMode]           = useState('view'); // 'view' | 'edit'
-  const [saving, setSaving]       = useState(false);
-  const [error, setError]         = useState(null);
+  const [mode, setMode]     = useState('view'); // 'view' | 'edit'
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState(null);
+
+  // ✅ Snapshot of destination data taken at the moment Edit is clicked.
+  // This is completely isolated from the `destination` prop so parent re-renders
+  // (e.g. setSelected after save) cannot overwrite what the user typed.
+  const [snapshot, setSnapshot] = useState(null);
 
   if (!destination) return null;
   const s = statusColor(destination.isArchive);
+
+  const openEdit = () => {
+    // Take a deep snapshot of current destination data
+    setSnapshot({
+      _editTs:             Date.now(), // forces DestinationForm to remount fresh every edit session
+      name:                destination.name,
+      country:             destination.country || '',
+      destinationGreeting: destination.destinationGreeting || '',
+      emergencyNumber:     destination.emergencyNumber ?? '', // ?? not || so empty string is preserved
+      isArchive:           destination.isArchive || 'No',
+      isInternational:     destination.isInternational === true,
+      tips:                destination.tips?.length > 0
+                             ? destination.tips.map((t) => ({ text: t.text }))
+                             : [],
+    });
+    setError(null);
+    setMode('edit');
+  };
+
+  const cancelEdit = () => {
+    setSnapshot(null);
+    setError(null);
+    setMode('view');
+  };
 
   const handleSave = async (form) => {
     setSaving(true);
     setError(null);
     try {
+      const payload = {
+        name:                form.name.trim(),
+        country:             form.country?.trim() || '',
+        destinationGreeting: form.destinationGreeting?.trim() || '',
+        emergencyNumber:     form.emergencyNumber?.trim() ?? '',
+        isInternational:     form.isInternational === true,
+        isArchive:           form.isArchive || 'No',
+        tips:                (form.tips || []).filter(t => t.text?.trim() !== ''),
+      };
       const { data } = await axios.put(
         `${API_BASE}/destinations/edit/${destination._id}`,
-        form
+        payload
       );
       const saved = data.data || data;
       onUpdated(saved);
+      setSnapshot(null);
       setMode('view');
     } catch (err) {
-      setError(err.response?.data?.message || 'Save failed. Try again.');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Save failed. Try again.');
     } finally {
       setSaving(false);
     }
@@ -353,32 +392,24 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
 
               {/* Edit CTA */}
               <div className="cp-drawer-view-footer">
-                <button
-                  className="cp-btn-edit"
-                  onClick={() => setMode('edit')}
-                >
+                <button className="cp-btn-edit" onClick={openEdit}>
                   <Edit3 size={14} /> Edit Destination
                 </button>
               </div>
             </>
           ) : (
-            <DestinationForm
-              initial={{
-                name: destination.name,
-                country: destination.country || '',
-                destinationGreeting: destination.destinationGreeting || '',
-                emergencyNumber: destination.emergencyNumber || '911 (Philippines)',
-                isArchive: destination.isArchive || 'No',
-                isInternational: destination.isInternational === true,
-                tips: destination.tips?.length > 0
-                  ? destination.tips.map((t) => ({ text: t.text }))
-                  : [],
-              }}
-              onSave={handleSave}
-              onCancel={() => { setMode('view'); setError(null); }}
-              saving={saving}
-              error={error}
-            />
+            // ✅ key=snapshot ensures DestinationForm mounts exactly once per edit session
+            // and never re-mounts due to parent re-renders — snapshot is set once in openEdit()
+            snapshot && (
+              <DestinationForm
+                key={JSON.stringify({ id: destination._id, ts: snapshot._editTs })}
+                initial={snapshot}
+                onSave={handleSave}
+                onCancel={cancelEdit}
+                saving={saving}
+                error={error}
+              />
+            )
           )}
         </div>
       </div>
@@ -515,6 +546,7 @@ const Campaigns = () => {
     setDestinations((prev) =>
       prev.map((d) => (d._id === updated._id ? updated : d))
     );
+    // ✅ Update selected so the view modal shows fresh data immediately
     setSelected(updated);
   };
 
@@ -624,6 +656,7 @@ const Campaigns = () => {
       {/* ── Detail / Edit Modal ── */}
       {selected && (
         <Drawer
+          key={selected._id}
           destination={selected}
           onClose={() => setSelected(null)}
           onUpdated={handleUpdated}
