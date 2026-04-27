@@ -52,6 +52,14 @@ const DestinationSchema = new mongoose.Schema({
         default: '911 (Philippines)' 
     },
 
+    // ─── Destination Type ─────────────────────────────────────────────
+    // true  = International destination (outside Philippines)
+    // false = Local destination (within Philippines)
+    isInternational: {
+        type: Boolean,
+        default: false
+    },
+
     // ─── Archive Fields ───────────────────────────────────────────────
     isArchive: { 
         type: String, 

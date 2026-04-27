@@ -18,10 +18,8 @@ import {
   Save,
   Loader2,
   AlertCircle,
-  CheckCircle2,
   Trash2,
   MoreVertical,
-  Zap,        // ✅ GHL sync icon
 } from 'lucide-react';
 import './Campaigns.css';
 import Sidebar from '../sidebar/sidebar';
@@ -36,43 +34,6 @@ const statusColor = (isArchive) =>
     ? { bg: '#fef2f2', color: '#ef4444', dot: '#ef4444' }
     : { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' };
 
-const TipBadge = ({ count }) => (
-  <span className="cp-tip-badge">
-    <Lightbulb size={10} />
-    {count} tip{count !== 1 ? 's' : ''}
-  </span>
-);
-
-// ─────────────────────────────────────────────────────────────
-//  GHL SYNC TOAST
-//  Shows a brief "Synced to GHL ✓" banner after save.
-//  webhookSent: true  → green success
-//  webhookSent: false → yellow warning (saved but webhook failed)
-// ─────────────────────────────────────────────────────────────
-const GhlSyncToast = ({ webhookSent, destName, onDismiss }) => {
-  useEffect(() => {
-    const t = setTimeout(onDismiss, 4000);
-    return () => clearTimeout(t);
-  }, [onDismiss]);
-
-  return (
-    <div
-      className={`cp-ghl-toast ${webhookSent ? 'cp-ghl-toast--success' : 'cp-ghl-toast--warn'}`}
-    >
-      <Zap size={14} className="cp-ghl-toast-icon" />
-      <span>
-        {webhookSent
-          ? <><strong>{destName}</strong> synced to GHL ✓</>
-          : <><strong>{destName}</strong> saved — GHL sync failed (check webhook)</>
-        }
-      </span>
-      <button className="cp-ghl-toast-close" onClick={onDismiss}>
-        <X size={12} />
-      </button>
-    </div>
-  );
-};
-
 // ─────────────────────────────────────────────────────────────
 //  EMPTY TIP TEMPLATE
 // ─────────────────────────────────────────────────────────────
@@ -82,6 +43,7 @@ const emptyForm = () => ({
   destinationGreeting: '',
   emergencyNumber: '911 (Philippines)',
   isArchive: 'No',
+  isInternational: false,
   tips: [{ text: '' }],
 });
 
@@ -185,6 +147,32 @@ const DestinationForm = ({ initial, onSave, onCancel, saving, error }) => {
         </div>
       </div>
 
+      {/* Destination Type Toggle */}
+      <div className="cp-form-field">
+        <label className="cp-form-label">
+          <Globe size={12} /> Destination Type
+        </label>
+        <div className="cp-type-toggle" style={{ width: 'fit-content' }}>
+          <button
+            type="button"
+            className={`cp-type-btn ${!form.isInternational ? 'cp-type-btn--active' : ''}`}
+            onClick={() => set('isInternational', false)}
+          >
+            <MapPin size={13} /> Local
+          </button>
+          <button
+            type="button"
+            className={`cp-type-btn ${form.isInternational ? 'cp-type-btn--active' : ''}`}
+            onClick={() => set('isInternational', true)}
+          >
+            <Globe size={13} /> International
+          </button>
+        </div>
+        <span className="cp-form-hint">
+          Local = within the Philippines. International = outside the Philippines.
+        </span>
+      </div>
+
       {/* Tips */}
       <div className="cp-form-field">
         <div className="cp-tips-header">
@@ -240,14 +228,12 @@ const DestinationForm = ({ initial, onSave, onCancel, saving, error }) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-//  DRAWER  (Detail + Edit)
+//  MODAL  (Detail + Edit) — floating centered modal
 // ─────────────────────────────────────────────────────────────
 const Drawer = ({ destination, onClose, onUpdated }) => {
   const [mode, setMode]           = useState('view'); // 'view' | 'edit'
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState(null);
-  // ✅ GHL sync toast state
-  const [ghlToast, setGhlToast]   = useState(null); // null | { webhookSent, destName }
 
   if (!destination) return null;
   const s = statusColor(destination.isArchive);
@@ -263,12 +249,6 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
       const saved = data.data || data;
       onUpdated(saved);
       setMode('view');
-
-      // ✅ Show GHL sync toast based on webhookSent flag from backend
-      setGhlToast({
-        webhookSent: data.webhookSent === true,
-        destName: saved.name || form.name,
-      });
     } catch (err) {
       setError(err.response?.data?.message || 'Save failed. Try again.');
     } finally {
@@ -279,17 +259,8 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
   return (
     <>
       <div className="cp-drawer-overlay" onClick={onClose} />
-      <aside className="cp-drawer">
-        {/* ✅ GHL Sync Toast — rendered inside drawer, above everything */}
-        {ghlToast && (
-          <GhlSyncToast
-            webhookSent={ghlToast.webhookSent}
-            destName={ghlToast.destName}
-            onDismiss={() => setGhlToast(null)}
-          />
-        )}
-
-        {/* Drawer Header */}
+      <div className="cp-modal">
+        {/* Modal Header */}
         <div className="cp-drawer-head">
           <div className="cp-drawer-head-left">
             <div className="cp-drawer-icon">
@@ -321,7 +292,7 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
           </div>
         </div>
 
-        {/* Drawer Body */}
+        {/* Modal Body */}
         <div className="cp-drawer-body">
           {mode === 'view' ? (
             <>
@@ -398,6 +369,7 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
                 destinationGreeting: destination.destinationGreeting || '',
                 emergencyNumber: destination.emergencyNumber || '911 (Philippines)',
                 isArchive: destination.isArchive || 'No',
+                isInternational: destination.isInternational === true,
                 tips: destination.tips?.length > 0
                   ? destination.tips.map((t) => ({ text: t.text }))
                   : [],
@@ -409,19 +381,17 @@ const Drawer = ({ destination, onClose, onUpdated }) => {
             />
           )}
         </div>
-      </aside>
+      </div>
     </>
   );
 };
 
 // ─────────────────────────────────────────────────────────────
-//  ADD MODAL
+//  ADD MODAL — floating centered modal
 // ─────────────────────────────────────────────────────────────
 const AddModal = ({ onClose, onCreated }) => {
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState(null);
-  // ✅ GHL sync toast state
-  const [ghlToast, setGhlToast]   = useState(null); // null | { webhookSent, destName }
 
   const handleSave = async (form) => {
     setSaving(true);
@@ -430,15 +400,7 @@ const AddModal = ({ onClose, onCreated }) => {
       const { data } = await axios.post(`${API_BASE}/destinations/add`, form);
       const created = data.data || data;
       onCreated(created);
-
-      // ✅ Show GHL sync toast, then close modal after toast duration
-      setGhlToast({
-        webhookSent: data.webhookSent === true,
-        destName: created.name || form.name,
-      });
-
-      // Close modal after toast shows briefly (1.5s delay so user sees it)
-      setTimeout(() => onClose(), 1500);
+      onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Could not create destination.');
       setSaving(false);
@@ -448,16 +410,7 @@ const AddModal = ({ onClose, onCreated }) => {
   return (
     <>
       <div className="cp-drawer-overlay" onClick={onClose} />
-      <aside className="cp-drawer">
-        {/* ✅ GHL Sync Toast */}
-        {ghlToast && (
-          <GhlSyncToast
-            webhookSent={ghlToast.webhookSent}
-            destName={ghlToast.destName}
-            onDismiss={() => setGhlToast(null)}
-          />
-        )}
-
+      <div className="cp-modal">
         <div className="cp-drawer-head">
           <div className="cp-drawer-head-left">
             <div className="cp-drawer-icon">
@@ -481,46 +434,33 @@ const AddModal = ({ onClose, onCreated }) => {
             error={error}
           />
         </div>
-      </aside>
+      </div>
     </>
   );
 };
 
 // ─────────────────────────────────────────────────────────────
-//  GRID CARD
+//  GRID CARD — image background + location icon + name ONLY
+//  (no greeting shown on card)
 // ─────────────────────────────────────────────────────────────
+const DEFAULT_DEST_IMG = 'https://assets.cdn.filesafe.space/yTzQYPFRZAWXGWiXtIt2/media/69eecdb605d4199001dc799e.png';
+
 const DestCard = ({ dest, onClick }) => {
-  const s = statusColor(dest.isArchive);
+  const imgSrc = dest.imageUrl || DEFAULT_DEST_IMG;
+
   return (
     <button className="cp-dest-card" onClick={() => onClick(dest)}>
-      <div className="cp-dest-card-top">
-        <div className="cp-dest-card-icon">
-          <MapPin size={20} color="#001F3F" />
+      {/* Image Background — full card, no body below */}
+      <div
+        className="cp-dest-card-img"
+        style={{ backgroundImage: `url(${imgSrc})` }}
+      >
+        <div className="cp-dest-card-overlay">
+          <div className="cp-dest-card-header">
+            <MapPin size={16} color="#fff" strokeWidth={2.5} />
+            <span className="cp-dest-card-name">{dest.name}</span>
+          </div>
         </div>
-        <span
-          className="cp-status-badge cp-status-badge--sm"
-          style={{ background: s.bg, color: s.color }}
-        >
-          <span className="cp-status-dot" style={{ background: s.dot }} />
-          {dest.isArchive === 'Yes' ? 'Archived' : 'Active'}
-        </span>
-      </div>
-      <div className="cp-dest-card-body">
-        <h4 className="cp-dest-card-name">{dest.name}</h4>
-        {dest.country && (
-          <span className="cp-dest-card-country">
-            <Globe size={11} /> {dest.country}
-          </span>
-        )}
-        {dest.destinationGreeting && (
-          <p className="cp-dest-card-greeting">"{dest.destinationGreeting}"</p>
-        )}
-      </div>
-      <div className="cp-dest-card-footer">
-        <TipBadge count={dest.tips?.length || 0} />
-        <span className="cp-dest-card-arrow">
-          <ChevronRight size={14} />
-        </span>
       </div>
     </button>
   );
@@ -535,10 +475,8 @@ const Campaigns = () => {
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState(null);
 
-  // View + filter
-  const [viewMode, setViewMode]         = useState('list'); // 'list' | 'grid'
+  // Filter
   const [search, setSearch]             = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
 
   // Drawer / modal
   const [selected, setSelected]         = useState(null);
@@ -563,19 +501,14 @@ const Campaigns = () => {
 
   // ── Filter logic ───────────────────────────────────────
   const filtered = destinations.filter((d) => {
-    const matchSearch =
+    return (
       d.name.toLowerCase().includes(search.toLowerCase()) ||
-      (d.country || '').toLowerCase().includes(search.toLowerCase());
-    const matchStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'active' && d.isArchive === 'No') ||
-      (statusFilter === 'archived' && d.isArchive === 'Yes');
-    return matchSearch && matchStatus;
+      (d.country || '').toLowerCase().includes(search.toLowerCase())
+    );
   });
 
-  const total    = destinations.length;
-  const active   = destinations.filter((d) => d.isArchive === 'No').length;
-  const archived = destinations.filter((d) => d.isArchive === 'Yes').length;
+  // ── Stats derived from all destinations ───────────────
+  const total = destinations.length;
 
   // ── Handlers ──────────────────────────────────────────
   const handleUpdated = (updated) => {
@@ -612,11 +545,12 @@ const Campaigns = () => {
               </div>
             </div>
             <button className="cp-btn-new" onClick={() => setShowAdd(true)}>
-              <Plus size={15} /> Add Destination
+              <Plus size={15} />
+              <span>Add Destination</span>
             </button>
           </header>
 
-          {/* ── Summary Cards ── */}
+          {/* ── Stats / Summary Section ── */}
           <div className="cp-summary-grid">
             <div className="cp-summary-card">
               <div className="cp-summary-icon cp-icon--active">
@@ -628,77 +562,28 @@ const Campaigns = () => {
                 <span className="cp-summary-sub">destinations</span>
               </div>
             </div>
-            <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--budget">
-                <Globe size={18} />
-              </div>
-              <div className="cp-summary-body">
-                <span className="cp-summary-label">Active</span>
-                <span className="cp-summary-value">{active}</span>
-                <span className="cp-summary-sub">live destinations</span>
-              </div>
-            </div>
-            <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--spent">
-                <Archive size={18} />
-              </div>
-              <div className="cp-summary-body">
-                <span className="cp-summary-label">Archived</span>
-                <span className="cp-summary-value">{archived}</span>
-                <span className="cp-summary-sub">hidden from packages</span>
-              </div>
-            </div>
-            <div className="cp-summary-card">
-              <div className="cp-summary-icon cp-icon--reach">
-                <Lightbulb size={18} />
-              </div>
-              <div className="cp-summary-body">
-                <span className="cp-summary-label">With Tips</span>
-                <span className="cp-summary-value">
-                  {destinations.filter((d) => d.tips?.length > 0).length}
-                </span>
-                <span className="cp-summary-sub">have travel tips</span>
-              </div>
-            </div>
           </div>
 
-          {/* ── Filters + View Toggle ── */}
+          {/* ── Filters ── */}
           <div className="cp-filters">
+            {/* Search Bar */}
             <div className="cp-search-wrap">
-              <Search size={14} className="cp-search-icon" />
+              <Search size={15} className="cp-search-icon" />
               <input
                 className="cp-search"
-                placeholder="Search by name or country…"
+                placeholder="Search destinations…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-            </div>
-            <div className="cp-filter-group">
-              <select
-                className="cp-select"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-            <div className="cp-view-toggle">
-              <button
-                className={`cp-view-btn ${viewMode === 'list' ? 'cp-view-btn--active' : ''}`}
-                onClick={() => setViewMode('list')}
-                title="List view"
-              >
-                <List size={15} />
-              </button>
-              <button
-                className={`cp-view-btn ${viewMode === 'grid' ? 'cp-view-btn--active' : ''}`}
-                onClick={() => setViewMode('grid')}
-                title="Grid view"
-              >
-                <LayoutGrid size={15} />
-              </button>
+              {search && (
+                <button
+                  className="cp-search-clear"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear search"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -709,126 +594,34 @@ const Campaigns = () => {
             </div>
           )}
 
-          {/* ── Loading ── */}
+          {/* ── Loading / Grid ── */}
           {loading ? (
             <div className="cp-loading">
               <Loader2 size={24} className="cp-spin" />
               <span>Loading destinations…</span>
             </div>
-          ) : viewMode === 'list' ? (
-            /* ── LIST VIEW ── */
+          ) : filtered.length === 0 ? (
             <div className="cp-table-wrap">
-              <table className="cp-table">
-                <thead>
-                  <tr>
-                    <th>Destination</th>
-                    <th>Country</th>
-                    <th>Greeting</th>
-                    <th>Emergency</th>
-                    <th>Tips</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={7}>
-                        <div className="cp-empty">
-                          No destinations found.{' '}
-                          {search || statusFilter !== 'all'
-                            ? 'Try adjusting your filters.'
-                            : 'Click "Add Destination" to get started.'}
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((dest) => {
-                      const s = statusColor(dest.isArchive);
-                      return (
-                        <tr
-                          key={dest._id}
-                          className="cp-dest-row"
-                          onClick={() => setSelected(dest)}
-                        >
-                          <td>
-                            <div className="cp-dest-name-cell">
-                              <div className="cp-dest-row-icon">
-                                <MapPin size={13} color="#001F3F" />
-                              </div>
-                              <span className="cp-cell-name">{dest.name}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="cp-cell-mono">
-                              {dest.country || <span style={{ color: '#d1d5db' }}>—</span>}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="cp-dest-greeting-cell">
-                              {dest.destinationGreeting
-                                ? `"${dest.destinationGreeting.slice(0, 55)}${dest.destinationGreeting.length > 55 ? '…' : ''}"`
-                                : <span style={{ color: '#d1d5db' }}>—</span>
-                              }
-                            </span>
-                          </td>
-                          <td>
-                            <span className="cp-cell-mono" style={{ fontSize: '0.8rem' }}>
-                              {dest.emergencyNumber || '—'}
-                            </span>
-                          </td>
-                          <td>
-                            <TipBadge count={dest.tips?.length || 0} />
-                          </td>
-                          <td>
-                            <span
-                              className="cp-status-badge"
-                              style={{ background: s.bg, color: s.color }}
-                            >
-                              <span className="cp-status-dot" style={{ background: s.dot }} />
-                              {dest.isArchive === 'Yes' ? 'Archived' : 'Active'}
-                            </span>
-                          </td>
-                          <td onClick={(e) => e.stopPropagation()}>
-                            <button
-                              className="cp-actions-btn"
-                              onClick={() => setSelected(dest)}
-                              title="View & Edit"
-                            >
-                              <Edit3 size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+              <div className="cp-empty">
+                {search
+                  ? `No destinations match "${search}".`
+                  : 'No destinations yet. Add one to get started.'
+                }
+              </div>
             </div>
           ) : (
             /* ── GRID VIEW ── */
-            filtered.length === 0 ? (
-              <div className="cp-table-wrap">
-                <div className="cp-empty">
-                  No destinations found.{' '}
-                  {search || statusFilter !== 'all'
-                    ? 'Try adjusting your filters.'
-                    : 'Click "Add Destination" to get started.'}
-                </div>
-              </div>
-            ) : (
-              <div className="cp-dest-grid">
-                {filtered.map((dest) => (
-                  <DestCard key={dest._id} dest={dest} onClick={setSelected} />
-                ))}
-              </div>
-            )
+            <div className="cp-dest-grid">
+              {filtered.map((dest) => (
+                <DestCard key={dest._id} dest={dest} onClick={setSelected} />
+              ))}
+            </div>
           )}
 
         </div>
       </main>
 
-      {/* ── Detail / Edit Drawer ── */}
+      {/* ── Detail / Edit Modal ── */}
       {selected && (
         <Drawer
           destination={selected}

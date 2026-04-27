@@ -68,25 +68,34 @@
   margin: 0.2rem 0 0;
 }
 
+/* ── ADD DESTINATION BUTTON — improved ── */
 .cp-btn-new {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   background: #001F3F;
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 0.65rem 1.2rem;
+  border-radius: 12px;
+  padding: 0.7rem 1.3rem;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, box-shadow 0.25s, transform 0.15s;
   white-space: nowrap;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.18), 0 4px 14px rgba(0, 31, 63, 0.18);
+  letter-spacing: 0.01em;
 }
 
 .cp-btn-new:hover {
-  background: #003366;
-  box-shadow: 0 4px 12px rgba(0, 31, 63, 0.2);
+  background: #002d5a;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.22), 0 8px 22px rgba(0, 31, 63, 0.28);
+  transform: translateY(-1px);
+}
+
+.cp-btn-new:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.18), 0 2px 6px rgba(0, 31, 63, 0.18);
 }
 
 /* ── SUMMARY CARDS ── */
@@ -105,11 +114,12 @@
   align-items: center;
   gap: 1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .cp-summary-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.09);
+  transform: translateY(-2px);
 }
 
 .cp-summary-icon {
@@ -162,6 +172,7 @@
   flex-wrap: wrap;
 }
 
+/* ── SEARCH BAR — improved ── */
 .cp-search-wrap {
   position: relative;
   flex: 1;
@@ -170,28 +181,65 @@
 
 .cp-search-icon {
   position: absolute;
-  left: 12px;
+  left: 13px;
   top: 50%;
   transform: translateY(-50%);
   color: #9ca3af;
   pointer-events: none;
+  transition: color 0.2s;
 }
 
 .cp-search {
   width: 100%;
-  padding: 0.6rem 0.75rem 0.6rem 2.2rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  padding: 0.65rem 2.4rem 0.65rem 2.4rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
   font-size: 0.875rem;
   background: #fff;
   color: #1f2937;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.cp-search::placeholder {
+  color: #b0b9c6;
 }
 
 .cp-search:focus {
   border-color: #001F3F;
+  box-shadow: 0 0 0 3px rgba(0, 31, 63, 0.07);
+}
+
+.cp-search:focus ~ .cp-search-icon,
+.cp-search-wrap:focus-within .cp-search-icon {
+  color: #001F3F;
+}
+
+/* Clear button inside search */
+.cp-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #e5e7eb;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cp-search-clear:hover {
+  background: #d1d5db;
+  color: #111827;
 }
 
 .cp-filter-group {
@@ -225,7 +273,72 @@
   border-color: #001F3F;
 }
 
-/* ── VIEW TOGGLE ── */
+/* ── LOCAL / INTERNATIONAL TOGGLE — improved pill style ── */
+.cp-type-toggle {
+  display: flex;
+  align-items: center;
+  background: #edf0f4;
+  border-radius: 14px;
+  padding: 4px;
+  gap: 3px;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.cp-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 1.1rem;
+  background: transparent;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.cp-type-btn:hover {
+  color: #374151;
+  background: rgba(255,255,255,0.6);
+}
+
+.cp-type-btn--active {
+  background: #001F3F;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 31, 63, 0.25);
+}
+
+.cp-type-btn--active:hover {
+  background: #002d5a;
+  color: #fff;
+}
+
+/* Count badge inside toggle buttons */
+.cp-toggle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.18);
+  line-height: 1;
+}
+
+.cp-type-btn:not(.cp-type-btn--active) .cp-toggle-count {
+  background: rgba(0,0,0,0.08);
+  color: #374151;
+}
+
+/* ── VIEW TOGGLE (kept for backward compat) ── */
 .cp-view-toggle {
   display: flex;
   align-items: center;
@@ -574,30 +687,125 @@
 /* ── GRID VIEW ── */
 .cp-dest-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1.25rem;
 }
 
+/* ── DESTINATION CARD — image only, uniform height, no body ── */
 .cp-dest-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 1.25rem;
+  background: #001F3F;
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
   cursor: pointer;
   text-align: left;
-  transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 0;
+  /* Smooth multi-property hover */
+  transition:
+    box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.3s ease;
+  box-shadow: 0 4px 14px rgba(0, 31, 63, 0.12);
+  /* No border — full bleed image */
 }
 
 .cp-dest-card:hover {
-  box-shadow: 0 6px 20px rgba(0, 31, 63, 0.1);
-  border-color: #c7d2fe;
-  transform: translateY(-2px);
+  box-shadow:
+    0 16px 40px rgba(0, 31, 63, 0.22),
+    0 4px 12px rgba(0, 31, 63, 0.1);
+  transform: translateY(-6px) scale(1.015);
 }
 
+.cp-dest-card:active {
+  transform: translateY(-2px) scale(1.005);
+  box-shadow: 0 8px 20px rgba(0, 31, 63, 0.16);
+}
+
+/* Image section — fills the whole card, fixed height */
+.cp-dest-card-img {
+  width: 100%;
+  height: 210px;
+  background-size: cover;
+  background-position: center;
+  background-color: #001F3F;
+  position: relative;
+  flex-shrink: 0;
+  /* Subtle zoom on hover */
+  transition: transform 0.4s ease;
+}
+
+.cp-dest-card:hover .cp-dest-card-img {
+  transform: scale(1.04);
+}
+
+/* Dark gradient overlay for readability */
+.cp-dest-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 10, 30, 0.82) 0%,
+    rgba(0, 10, 30, 0.35) 50%,
+    transparent 100%
+  );
+  display: flex;
+  align-items: flex-end;
+  padding: 1.1rem 1.2rem;
+  /* Overlay brightens slightly on hover */
+  transition: background 0.3s ease;
+}
+
+.cp-dest-card:hover .cp-dest-card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 20, 50, 0.88) 0%,
+    rgba(0, 10, 30, 0.4) 50%,
+    transparent 100%
+  );
+}
+
+/* Location icon + name row on image */
+.cp-dest-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+}
+
+.cp-dest-card:hover .cp-dest-card-header {
+  transform: translateY(-3px);
+}
+
+.cp-dest-card-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+/* Greeting body — REMOVED from card display (kept for legacy compat only) */
+.cp-dest-card-body {
+  display: none;
+}
+
+.cp-dest-card-greeting {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.5;
+}
+
+/* Legacy card classes (kept for backward compat) */
 .cp-dest-card-top {
   display: flex;
   align-items: center;
@@ -614,39 +822,12 @@
   justify-content: center;
 }
 
-.cp-dest-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  flex: 1;
-}
-
-.cp-dest-card-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0;
-  line-height: 1.2;
-}
-
 .cp-dest-card-country {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 0.76rem;
   color: #6b7280;
-}
-
-.cp-dest-card-greeting {
-  font-size: 0.78rem;
-  color: #9ca3af;
-  font-style: italic;
-  margin: 0;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.4;
 }
 
 .cp-dest-card-footer {
@@ -663,11 +844,11 @@
   align-items: center;
 }
 
-/* ── DRAWER ── */
+/* ── DRAWER (legacy — kept for compat) ── */
 .cp-drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 200;
   animation: cp-fade-in 0.2s ease;
 }
@@ -695,6 +876,38 @@
 @keyframes cp-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* ── FLOATING MODAL (centered, fixed) ── */
+.cp-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 560px;
+  max-width: 95vw;
+  max-height: 88vh;
+  background: #fff;
+  border-radius: 20px;
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 20px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: cp-modal-in 0.25s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+@keyframes cp-modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .cp-drawer-head {
@@ -1124,8 +1337,21 @@
 }
 
 @media (max-width: 540px) {
-  .cp-drawer {
+  .cp-modal {
     width: 100vw;
+    max-width: 100vw;
+    max-height: 95vh;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    border-radius: 20px 20px 0 0;
+    animation: cp-modal-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes cp-modal-slide-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
   }
 
   .cp-form-row {
@@ -1135,10 +1361,21 @@
   .cp-dest-grid {
     grid-template-columns: 1fr;
   }
+
+  .cp-type-toggle {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .cp-type-btn {
+    flex: 1;
+    justify-content: center;
+  }
 }
+
 /* ============================================================
    GHL SYNC TOAST
-   Appears at the top of the drawer/modal after save.
+   Appears at the top of the modal after save.
    ============================================================ */
 .cp-ghl-toast {
   position: absolute;
