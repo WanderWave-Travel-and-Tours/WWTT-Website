@@ -615,7 +615,7 @@ function MainLayout() {
                       className="book-now-btn"
                       onClick={handleBookNowClick}
                     >
-                      Book Now
+                      Log In
                     </button>
                   )}
                 </div>
