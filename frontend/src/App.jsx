@@ -714,7 +714,7 @@ function MainLayout() {
                   setIsMobileMenuOpen(false);
                 }}
               >
-                Book Now
+                Log In
               </button>
             )}
           </div>
