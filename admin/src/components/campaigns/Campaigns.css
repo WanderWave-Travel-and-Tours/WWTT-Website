@@ -849,7 +849,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 200;
+  z-index: 1000;
   animation: cp-fade-in 0.2s ease;
 }
 
@@ -861,7 +861,7 @@
   width: 480px;
   max-width: 100vw;
   background: #fff;
-  z-index: 201;
+  z-index: 1001;
   display: flex;
   flex-direction: column;
   box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12);
@@ -889,7 +889,7 @@
   max-height: 88vh;
   background: #fff;
   border-radius: 20px;
-  z-index: 201;
+  z-index: 1001;
   display: flex;
   flex-direction: column;
   box-shadow:
