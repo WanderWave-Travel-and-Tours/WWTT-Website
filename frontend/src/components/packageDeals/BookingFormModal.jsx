@@ -331,6 +331,25 @@ const BookingFormModal = ({
   // ============================================
   const [showBookingCompletedModal, setShowBookingCompletedModal] = useState(false);
 
+  // ✅ FORCE paymentType to 'full' when departure is today or 1 day away
+  // Must be before the early return so hooks are always called consistently
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!selectedDate || !currentMonth) return;
+    const departureDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      typeof selectedDate === 'number' ? selectedDate : parseInt(selectedDate, 10)
+    );
+    departureDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((departureDate - today) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 1) {
+      setPaymentType('full');
+    }
+  }, [isOpen, selectedDate, currentMonth]);
+
   if (!isOpen) return null;
 
   // ✅ Helper function for consistent number formatting
@@ -378,6 +397,24 @@ const BookingFormModal = ({
   // Dynamic percentage based on airfare
   const partialPercentage = selectedFlight ? 85 : 50;
   const partialPercentageText = selectedFlight ? '85%' : '50%';
+
+  // ✅ CHECK IF DEPARTURE IS TODAY OR TOMORROW — restrict to full payment only
+  const isDepartureSoon = (() => {
+    if (!selectedDate) return false;
+    // selectedDate is a day number (1-31) from the current month/year context
+    // Build the full departure date using currentMonth's year and month
+    const departureDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      typeof selectedDate === 'number' ? selectedDate : parseInt(selectedDate, 10)
+    );
+    departureDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((departureDate - today) / (1000 * 60 * 60 * 24));
+    // 0 = today, 1 = tomorrow → restrict to full payment
+    return diffDays <= 1;
+  })();
 
   // ============================================
   // HANDLE FORM SUBMISSION WITH CONFIRMATION
@@ -945,8 +982,29 @@ const BookingFormModal = ({
                   <Wallet size={18} />
                   <h3>Select Payment Option</h3>
                 </div>
+
+                {/* ✅ NOTICE: Show when departure is today or tomorrow */}
+                {isDepartureSoon && (
+                  <div style={{
+                    background: '#fff7ed',
+                    border: '1.5px solid #fb923c',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    fontSize: '0.875rem',
+                    color: '#9a3412',
+                  }}>
+                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>⚠️</span>
+                    <span>
+                      <strong>Full payment required.</strong> Your departure date is today or within 1 day — partial payment is no longer available for this booking.
+                    </span>
+                  </div>
+                )}
                 
-                <div className="bfm-payment-options">
+                <div className="bfm-payment-options" style={isDepartureSoon ? { gridTemplateColumns: '1fr' } : {}}>
                   {/* PAY IN FULL */}
                   <div 
                     className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
@@ -977,41 +1035,43 @@ const BookingFormModal = ({
                     </div>
                   </div>
 
-                  {/* PARTIAL PAYMENT */}
-                  <div 
-                    className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
-                    onClick={() => setPaymentType('partial')}
-                  >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <Wallet size={16} />
-                        <span>Partial Payment</span>
-                        <span className="bfm-flexible-badge">Flexible</span>
-                      </div>
-                    </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">
-                        {currencySymbol}{formatCurrency(partialAmount)}
-                        <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
-                      </div>
-                      <div className="bfm-payment-description">
-                        Pay {partialPercentageText} now, remaining balance before departure
-                      </div>
-                      <div className="bfm-payment-breakdown">
-                        <div className="bfm-breakdown-row">
-                          <span>Now ({partialPercentageText}):</span>
-                          <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
+                  {/* PARTIAL PAYMENT — hidden when departure is today or tomorrow */}
+                  {!isDepartureSoon && (
+                    <div 
+                      className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
+                      onClick={() => setPaymentType('partial')}
+                    >
+                      <div className="bfm-payment-card-header">
+                        <div className="bfm-payment-radio">
+                          <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
                         </div>
-                        <div className="bfm-breakdown-row">
-                          <span>Later ({100 - partialPercentage}%):</span>
-                          <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
+                        <div className="bfm-payment-card-title">
+                          <Wallet size={16} />
+                          <span>Partial Payment</span>
+                          <span className="bfm-flexible-badge">Flexible</span>
                         </div>
                       </div>
+                      <div className="bfm-payment-card-body">
+                        <div className="bfm-payment-amount">
+                          {currencySymbol}{formatCurrency(partialAmount)}
+                          <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
+                        </div>
+                        <div className="bfm-payment-description">
+                          Pay {partialPercentageText} now, remaining balance before departure
+                        </div>
+                        <div className="bfm-payment-breakdown">
+                          <div className="bfm-breakdown-row">
+                            <span>Now ({partialPercentageText}):</span>
+                            <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
+                          </div>
+                          <div className="bfm-breakdown-row">
+                            <span>Later ({100 - partialPercentage}%):</span>
+                            <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Payment Summary */}
@@ -1022,7 +1082,7 @@ const BookingFormModal = ({
                       {currencySymbol}{formatCurrency(paymentType === 'full' ? finalAmount : partialAmount)}
                     </strong>
                   </div>
-                  {paymentType === 'partial' && (
+                  {paymentType === 'partial' && !isDepartureSoon && (
                     <div className="bfm-summary-row bfm-remaining">
                       <span>Remaining balance:</span>
                       <span>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</span>
