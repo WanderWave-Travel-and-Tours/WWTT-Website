@@ -60,7 +60,7 @@ const resolveBookingStatus = (booking, paymentType, isInitialPayment) => {
 // ✅ Routes
 router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutSession);
 router.post('/create-intent', paymentController.createBookingPaymentIntent); // ✅ Updated to use checkout session
-router.post('/create-balance-intent', paymentController.createBalancePaymentLink);
+router.post('/create-balance-intent', paymentController.createBalanceCheckoutSession); // ✅ Updated to use Checkout Session
 
 // ✅ UPDATED WEBHOOK - Handle both checkout sessions and payment links
 router.post('/webhook', async (req, res) => {
@@ -170,24 +170,40 @@ router.post('/webhook', async (req, res) => {
         const isInitialPayment = metadata?.is_initial_payment === true
                               || metadata?.is_initial_payment === 'true'
                               || metadata?.is_initial_payment === 1;
+        const isBalancePayment = metadata?.is_balance_payment === true
+                              || metadata?.is_balance_payment === 'true';
 
-        console.log('🔍 Payment metadata:', { paymentType, isInitialPayment });
+        console.log('🔍 Payment metadata:', { paymentType, isInitialPayment, isBalancePayment });
 
-        // ✅ UPDATED: Base status on remaining balance, not just payment type
-        const newStatus = resolveBookingStatus(booking, paymentType, isInitialPayment);
-        booking.status = newStatus;
-
-        if (newStatus === 'confirmed') {
+        if (isBalancePayment) {
+          // ✅ BALANCE PAYMENT via Checkout Session
+          console.log('✅ Detected balance payment — updating booking as fully paid');
+          booking.balancePaidAmount = booking.remainingBalance;
+          booking.remainingBalance = 0;
+          booking.balancePaymentPaid = true;
+          booking.balancePaymentPaidAt = new Date();
+          booking.status = 'confirmed';
           booking.fullyPaid = true;
           booking.fullyPaidAt = new Date();
-          booking.initialPaymentPaid = true;
-          booking.initialPaymentPaidAt = new Date();
-          console.log('✅ Updated to CONFIRMED (remainingBalance <= 0 or full payment)');
+          console.log('✅ Updated to CONFIRMED (balance payment completed)');
         } else {
-          // partial_paid
-          booking.initialPaymentPaid = true;
-          booking.initialPaymentPaidAt = new Date();
-          console.log('✅ Updated to PARTIAL_PAID (remaining balance:', booking.remainingBalance, ')');
+          // ✅ INITIAL PAYMENT via Checkout Session
+          // Base status on remaining balance, not just payment type
+          const newStatus = resolveBookingStatus(booking, paymentType, isInitialPayment);
+          booking.status = newStatus;
+
+          if (newStatus === 'confirmed') {
+            booking.fullyPaid = true;
+            booking.fullyPaidAt = new Date();
+            booking.initialPaymentPaid = true;
+            booking.initialPaymentPaidAt = new Date();
+            console.log('✅ Updated to CONFIRMED (remainingBalance <= 0 or full payment)');
+          } else {
+            // partial_paid
+            booking.initialPaymentPaid = true;
+            booking.initialPaymentPaidAt = new Date();
+            console.log('✅ Updated to PARTIAL_PAID (remaining balance:', booking.remainingBalance, ')');
+          }
         }
 
         booking.paidAt = new Date();
@@ -273,12 +289,15 @@ router.post('/webhook', async (req, res) => {
       console.log('📦 packageData resolved:', packageData ? `id=${packageData._id} title=${packageData.title} image=${packageData.image}` : 'NULL — packageId missing or not populated');
 
       if (metadata.is_balance_payment === true || metadata.is_balance_payment === 'true') {
-        // This is a balance payment
-        booking.status = 'confirmed';
+        // ✅ This is a balance payment — clear remaining balance and mark fully paid
+        booking.balancePaidAmount = booking.remainingBalance;
+        booking.remainingBalance = 0;
         booking.balancePaymentPaid = true;
         booking.balancePaymentPaidAt = new Date();
+        booking.status = 'confirmed';
         booking.fullyPaid = true;
         booking.fullyPaidAt = new Date();
+        console.log('✅ Balance payment via link — booking marked as fully paid');
       } else {
         // Regular payment link (if any)
         booking.status = 'confirmed';

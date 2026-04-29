@@ -11,6 +11,8 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
     const [showPassengers, setShowPassengers] = useState(false);
     const [isPayingBalance, setIsPayingBalance] = useState(false);
+    const [isPayingInitial, setIsPayingInitial] = useState(false);
+    const [payingInitialType, setPayingInitialType] = useState(null); // 'partial' | 'full'
     const [editingPassenger, setEditingPassenger] = useState(null);
     const [passengerFormData, setPassengerFormData] = useState(null);
     const [isSavingPassenger, setIsSavingPassenger] = useState(false);
@@ -38,6 +40,37 @@ const BookingDetails = ({ booking, onUpdate }) => {
     // Also handle lowercase variants from raw API responses as a safety net
     const _status = (booking.status || booking.bookingStatus || '').toUpperCase();
     const isLocked = ['CANCELLED', 'CONFIRMED', 'FULLY_PAID', 'PARTIAL_PAID'].includes(_status);
+
+    // ✅ Compute balance display values
+    const _isPending = _status === 'PENDING';
+    const _isPartialPaid = _status === 'PARTIAL_PAID';
+    const _isPartialPayment = booking.paymentType === 'partial';
+
+    // The full outstanding amount shown in the balance card header.
+    // IMPORTANT: For PENDING bookings, NEVER use remainingBalance from DB —
+    // the controller writes remainingBalance = totalAmount - initialPayment
+    // at checkout session creation time, BEFORE the customer actually pays.
+    // This makes a pending partial look like "half already paid" — which is wrong.
+    // Only trust remainingBalance once the booking is PARTIAL_PAID (initial payment confirmed).
+    const _effectiveBalance = (() => {
+        const total = booking.totalAmount || booking.finalPackageTotal || 0;
+        if (_isPartialPaid && booking.remainingBalance > 0) return booking.remainingBalance;
+        if (total > 0) return total;
+        return 0;
+    })();
+
+    // The amount charged when clicking Pay — partial: initial payment amount, full: total
+    const _payButtonAmount = (() => {
+        const total = _effectiveBalance;
+        if (_isPartialPayment) {
+            // Use stored initialPaymentAmount if already set (checkout session was created)
+            if (booking.initialPaymentAmount > 0) return booking.initialPaymentAmount;
+            // Otherwise compute: 85% with airfare, 50% without
+            const pct = booking.includesAirfare ? 0.85 : 0.50;
+            return Math.round(total * pct);
+        }
+        return total;
+    })();
 
     // ✅ FIXED: Extract destination from all available sources.
     // Priority: populated packageId.destination → parse from packageName pattern → fallback
@@ -113,24 +146,30 @@ const BookingDetails = ({ booking, onUpdate }) => {
     };
 
     const handlePayBalance = () => {
-        if (!booking.remainingBalance || booking.remainingBalance <= 0) {
+        if (!_effectiveBalance || _effectiveBalance <= 0) {
             showErrorToast('No balance remaining to pay.');
             return;
         }
 
         showConfirm({
             title:   'Pay Remaining Balance',
-            message: `Proceed to pay the remaining balance of ₱${booking.remainingBalance.toLocaleString()}?`,
+            message: _isPartialPayment && _payButtonAmount < _effectiveBalance
+                ? `Proceed to pay the initial amount of ₱${_payButtonAmount.toLocaleString()}? (Total balance: ₱${_effectiveBalance.toLocaleString()})`
+                : `Proceed to pay the remaining balance of ₱${_payButtonAmount.toLocaleString()}?`,
             type:    'primary',
             onConfirm: async () => {
                 closeConfirm();
                 try {
                     setIsPayingBalance(true);
-                    const response = await fetch(`${API_BASE_URL}/api/bookings/${booking._id}/create-balance-payment`, {
+                    const response = await fetch(`${API_BASE_URL}/api/payment/create-balance-intent`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({
+                            bookingId: booking._id,
+                            amount: _payButtonAmount
+                        })
                     });
 
                     const data = await response.json();
@@ -145,6 +184,53 @@ const BookingDetails = ({ booking, onUpdate }) => {
                     console.error('Error creating balance payment:', error);
                     showErrorToast('Failed to process payment. Please try again.');
                     setIsPayingBalance(false);
+                }
+            },
+        });
+    };
+
+    // ── Initial Payment (PENDING bookings — choose partial or full) ──────────
+    const handleInitialPayment = (chosenType) => {
+        const total = booking.totalAmount || booking.finalPackageTotal || 0;
+        const pct = booking.includesAirfare ? 0.85 : 0.50;
+        // Always compute fresh for PENDING — never trust stored initialPaymentAmount
+        // because the backend may have saved totalAmount there before any payment was made.
+        const partialAmt = Math.round(total * pct);
+        const amountToPay = chosenType === 'partial' ? partialAmt : total;
+
+        showConfirm({
+            title:   chosenType === 'partial' ? 'Pay Partial Amount' : 'Pay Full Amount',
+            message: chosenType === 'partial'
+                ? `Proceed to pay the initial ${booking.includesAirfare ? '85%' : '50%'} of ₱${amountToPay.toLocaleString()}? (Total: ₱${total.toLocaleString()})`
+                : `Proceed to pay the full amount of ₱${amountToPay.toLocaleString()}?`,
+            type: 'primary',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    setIsPayingInitial(true);
+                    setPayingInitialType(chosenType);
+                    const response = await fetch(`${API_BASE_URL}/api/payment/create-intent`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bookingId: booking._id,
+                            paymentType: chosenType,
+                            paymentAmount: amountToPay,
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success && data.checkoutUrl) {
+                        window.location.href = data.checkoutUrl;
+                    } else {
+                        showErrorToast('Failed to create payment link. Please try again.');
+                        setIsPayingInitial(false);
+                        setPayingInitialType(null);
+                    }
+                } catch (error) {
+                    console.error('Error creating initial payment:', error);
+                    showErrorToast('Failed to process payment. Please try again.');
+                    setIsPayingInitial(false);
+                    setPayingInitialType(null);
                 }
             },
         });
@@ -372,105 +458,212 @@ const BookingDetails = ({ booking, onUpdate }) => {
                 onCancel={closeConfirm}
             />
 
-            {/* Main Grid */}
-            <div className="bd-grid">
-            {/* ── BOOKING INFORMATION — PREMIUM REDESIGN ── */}
-            <div className="bd-card bd-info-premium-card">
-              <div className="bd-info-premium-header">
-                <div className="bd-info-premium-accent" />
-                <div className="bd-info-premium-title-wrap">
-                  <h3 className="bd-info-premium-title">Booking Information</h3>
-                </div>
-              </div>
+            {/* ── TOP ROW: Booking Info + Remaining Balance side by side ── */}
+            <div className="bd-top-row">
 
-              <div className="bd-info-rows">
-                {/* Destination */}
-                <div className="bd-info-row">
-                  <div className="bd-info-row-icon bd-info-icon-dest">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                    </svg>
-                  </div>
-                  <div className="bd-info-row-text">
-                    <span className="bd-info-row-label">Destination</span>
-                    <span className="bd-info-row-value bd-info-dest-value">{getDestination()}</span>
+              {/* BOOKING INFORMATION */}
+              <div className="bd-card bd-info-premium-card">
+                <div className="bd-info-premium-header">
+                  <div className="bd-info-premium-accent" />
+                  <div className="bd-info-premium-title-wrap">
+                    <h3 className="bd-info-premium-title">Booking Information</h3>
                   </div>
                 </div>
 
-                {/* Package */}
-                <div className="bd-info-row">
-                  <div className="bd-info-row-icon bd-info-icon-pkg">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    </svg>
+                <div className="bd-info-rows">
+                  {/* Destination */}
+                  <div className="bd-info-row">
+                    <div className="bd-info-row-icon bd-info-icon-dest">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                      </svg>
+                    </div>
+                    <div className="bd-info-row-text">
+                      <span className="bd-info-row-label">Destination</span>
+                      <span className="bd-info-row-value bd-info-dest-value">{getDestination()}</span>
+                    </div>
                   </div>
-                  <div className="bd-info-row-text">
-                    <span className="bd-info-row-label">Package</span>
-                    <span className="bd-info-row-value">{getFormattedPackageName()}</span>
-                  </div>
-                </div>
 
-                {/* Travel Dates */}
-                <div className="bd-info-row">
-                  <div className="bd-info-row-icon bd-info-icon-date">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
+                  {/* Package */}
+                  <div className="bd-info-row">
+                    <div className="bd-info-row-icon bd-info-icon-pkg">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      </svg>
+                    </div>
+                    <div className="bd-info-row-text">
+                      <span className="bd-info-row-label">Package</span>
+                      <span className="bd-info-row-value">{getFormattedPackageName()}</span>
+                    </div>
                   </div>
-                  <div className="bd-info-row-text">
-                    <span className="bd-info-row-label">Travel Dates</span>
-                    <span className="bd-info-row-value">{formatDate(booking.startDate)} – {formatDate(booking.endDate)}</span>
-                  </div>
-                </div>
 
-                {/* Travelers */}
-                <div className="bd-info-row">
-                  <div className="bd-info-row-icon bd-info-icon-pax">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
+                  {/* Travel Dates */}
+                  <div className="bd-info-row">
+                    <div className="bd-info-row-icon bd-info-icon-date">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                    </div>
+                    <div className="bd-info-row-text">
+                      <span className="bd-info-row-label">Travel Dates</span>
+                      <span className="bd-info-row-value">{formatDate(booking.startDate)} – {formatDate(booking.endDate)}</span>
+                    </div>
                   </div>
-                  <div className="bd-info-row-text">
-                    <span className="bd-info-row-label">Number of Travelers</span>
-                    <div>
-                      <span className="bd-info-row-value">
-                        {getTotalPax()} person{getTotalPax() > 1 ? 's' : ''}
-                      </span>
-                      {booking.pax && (
-                        <span className="bd-info-pax-chip">
-                          {booking.pax.adult} Adult{booking.pax.adult > 1 ? 's' : ''}
-                          {booking.pax.children > 0 && ` · ${booking.pax.children} Child${booking.pax.children > 1 ? 'ren' : ''}`}
-                          {booking.pax.infants > 0 && ` · ${booking.pax.infants} Infant${booking.pax.infants > 1 ? 's' : ''}`}
+
+                  {/* Travelers */}
+                  <div className="bd-info-row">
+                    <div className="bd-info-row-icon bd-info-icon-pax">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                    </div>
+                    <div className="bd-info-row-text">
+                      <span className="bd-info-row-label">Number of Travelers</span>
+                      <div>
+                        <span className="bd-info-row-value">
+                          {getTotalPax()} person{getTotalPax() > 1 ? 's' : ''}
                         </span>
-                      )}
+                        {booking.pax && (
+                          <span className="bd-info-pax-chip">
+                            {booking.pax.adult} Adult{booking.pax.adult > 1 ? 's' : ''}
+                            {booking.pax.children > 0 && ` · ${booking.pax.children} Child${booking.pax.children > 1 ? 'ren' : ''}`}
+                            {booking.pax.infants > 0 && ` · ${booking.pax.infants} Infant${booking.pax.infants > 1 ? 's' : ''}`}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {booking.flightDetails && (
+                  <div className="bd-flight-section">
+                    <div className="bd-flight-header">
+                      <span className="bd-flight-icon">✈️</span>
+                      <h4>Flight Details</h4>
+                    </div>
+                    <div className="bd-flight-info">
+                      <p><strong>Airline:</strong> {booking.flightDetails.airline || 'N/A'}</p>
+                      <p><strong>Flight Number:</strong> {booking.flightDetails.flightNumber || 'N/A'}</p>
+                      <p><strong>Route:</strong> {booking.flightDetails.route || 'N/A'}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bd-info-footer">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Booked on {formatDate(booking.createdAt)}
+                </div>
               </div>
 
-              {booking.flightDetails && (
-                <div className="bd-flight-section">
-                  <div className="bd-flight-header">
-                    <span className="bd-flight-icon">✈️</span>
-                    <h4>Flight Details</h4>
+              {/* ── PAY REMAINING BALANCE — right column ── */}
+              {_effectiveBalance > 0 &&
+                ['PARTIAL_PAID', 'PENDING', 'CONFIRMED'].includes(_status) && (
+                  <div className="bd-balance-card">
+                    {/* Dark gradient header */}
+                    <div className="bd-balance-header">
+                      <div className="bd-balance-header-left">
+                        <div className="bd-balance-label-row">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                            <line x1="1" y1="10" x2="23" y2="10"/>
+                          </svg>
+                          <span>Remaining Balance</span>
+                        </div>
+                        <p className="bd-balance-amount">
+                          ₱{_effectiveBalance.toLocaleString()}
+                        </p>
+                        {_isPartialPayment && _payButtonAmount < _effectiveBalance && (
+                          <span className="bd-balance-sublabel">
+                            Initial payment: ₱{_payButtonAmount.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="bd-balance-header-right">
+                        <div className="bd-balance-due-badge">
+                          <span className="bd-balance-due-dot"></span>
+                          Due
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* White action body */}
+                    <div className="bd-balance-body">
+                      {_isPending ? (
+                        /* ── PENDING: show Partial + Full buttons ── */
+                        <div className="bd-balance-dual-btns">
+                          {/* Partial Payment button */}
+                          <button
+                            onClick={() => handleInitialPayment('partial')}
+                            disabled={isPayingInitial}
+                            className="bd-balance-pay-btn bd-balance-pay-btn--outline"
+                          >
+                            {isPayingInitial && payingInitialType === 'partial' ? (
+                              <>
+                                <span className="bd-spinner-small"></span>
+                                Processing…
+                              </>
+                            ) : (
+                              <>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                  <line x1="1" y1="10" x2="23" y2="10"/>
+                                </svg>
+                                Pay {booking.includesAirfare ? '85%' : '50%'} — ₱{Math.round((_effectiveBalance) * (booking.includesAirfare ? 0.85 : 0.50)).toLocaleString()}
+                              </>
+                            )}
+                          </button>
+                          {/* Full Payment button */}
+                          <button
+                            onClick={() => handleInitialPayment('full')}
+                            disabled={isPayingInitial}
+                            className="bd-balance-pay-btn"
+                          >
+                            {isPayingInitial && payingInitialType === 'full' ? (
+                              <>
+                                <span className="bd-spinner-small"></span>
+                                Processing…
+                              </>
+                            ) : (
+                              <>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                  <line x1="1" y1="10" x2="23" y2="10"/>
+                                </svg>
+                                Pay Full — ₱{_effectiveBalance.toLocaleString()}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        /* ── PARTIAL_PAID / CONFIRMED: single Pay Balance button ── */
+                        <button
+                          onClick={handlePayBalance}
+                          disabled={isPayingBalance}
+                          className="bd-balance-pay-btn"
+                        >
+                          {isPayingBalance ? (
+                            <>
+                              <span className="bd-spinner-small"></span>
+                              Processing…
+                            </>
+                          ) : (
+                            <>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                <line x1="1" y1="10" x2="23" y2="10"/>
+                              </svg>
+                              Pay ₱{_payButtonAmount.toLocaleString()} Now
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="bd-flight-info">
-                    <p><strong>Airline:</strong> {booking.flightDetails.airline || 'N/A'}</p>
-                    <p><strong>Flight Number:</strong> {booking.flightDetails.flightNumber || 'N/A'}</p>
-                    <p><strong>Route:</strong> {booking.flightDetails.route || 'N/A'}</p>
-                  </div>
-                </div>
               )}
 
-              <div className="bd-info-footer">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                Booked on {formatDate(booking.createdAt)}
-              </div>
-            </div>
-
-            </div>
+            </div>{/* end bd-top-row */}
 
             {booking.passengers && booking.passengers.length > 0 && (
                 <div className="bd-card bd-passengers-card">
