@@ -17,6 +17,11 @@ const BookingDetails = ({ booking, onUpdate }) => {
     const [passengerFormData, setPassengerFormData] = useState(null);
     const [isSavingPassenger, setIsSavingPassenger] = useState(false);
 
+    // ── Live balance from BookingCustomizer price summary ──────────
+    // Reflects unsaved inclusion/hotel changes in real-time so the
+    // Remaining Balance card always shows the latest preview amount.
+    const [liveBalance, setLiveBalance] = useState(null); // null = use DB value
+
     // ── Confirm Modal State ──────────────────────────────────────
     const [confirmModal, setConfirmModal] = useState({
         isOpen:    false,
@@ -52,12 +57,46 @@ const BookingDetails = ({ booking, onUpdate }) => {
     // at checkout session creation time, BEFORE the customer actually pays.
     // This makes a pending partial look like "half already paid" — which is wrong.
     // Only trust remainingBalance once the booking is PARTIAL_PAID (initial payment confirmed).
+    //
+    // liveBalance — real-time preview from BookingCustomizer price summary.
+    // When set (partial bookings only), override _effectiveBalance so the card
+    // reflects pending inclusion/hotel changes before they are saved.
     const _effectiveBalance = (() => {
+        // Live preview from BookingCustomizer (PARTIAL_PAID only, while user has unsaved changes)
+        if (_isPartialPaid && liveBalance !== null) return liveBalance;
         const total = booking.totalAmount || booking.finalPackageTotal || 0;
+        // PARTIAL_PAID: trust DB remainingBalance — initial payment has already been confirmed
         if (_isPartialPaid && booking.remainingBalance > 0) return booking.remainingBalance;
+        // PENDING: NEVER use remainingBalance from DB — the backend writes
+        // remainingBalance = totalAmount - initialPayment at checkout session creation,
+        // BEFORE the customer actually pays. Always show the full totalAmount instead.
         if (total > 0) return total;
         return 0;
     })();
+
+    // ✅ Balance payment deadline: 2 days before departure (startDate)
+    // If today >= startDate - 2 days, disable payment and show non-refundable note
+    const _balanceDeadline = (() => {
+        if (!booking.startDate) return null;
+        const departure = new Date(booking.startDate);
+        departure.setHours(0, 0, 0, 0);
+        const deadline = new Date(departure);
+        deadline.setDate(deadline.getDate() - 2);
+        return deadline;
+    })();
+
+    const _today = (() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    })();
+
+    const _isBalanceDeadlinePassed = _balanceDeadline ? _today >= _balanceDeadline : false;
+
+    const _formatDeadlineDate = (date) => {
+        if (!date) return 'N/A';
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
 
     // The amount charged when clicking Pay — partial: initial payment amount, full: total
     const _payButtonAmount = (() => {
@@ -240,6 +279,8 @@ const BookingDetails = ({ booking, onUpdate }) => {
         if (onUpdate) {
             onUpdate(updatedBooking);
         }
+        // Reset live balance preview — saved values are now in the booking object
+        setLiveBalance(null);
         showSuccessToast('Booking customization saved successfully!');
     };
 
@@ -596,7 +637,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                           {/* Partial Payment button */}
                           <button
                             onClick={() => handleInitialPayment('partial')}
-                            disabled={isPayingInitial}
+                            disabled={isPayingInitial || _isBalanceDeadlinePassed}
                             className="bd-balance-pay-btn bd-balance-pay-btn--outline"
                           >
                             {isPayingInitial && payingInitialType === 'partial' ? (
@@ -617,7 +658,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                           {/* Full Payment button */}
                           <button
                             onClick={() => handleInitialPayment('full')}
-                            disabled={isPayingInitial}
+                            disabled={isPayingInitial || _isBalanceDeadlinePassed}
                             className="bd-balance-pay-btn"
                           >
                             {isPayingInitial && payingInitialType === 'full' ? (
@@ -640,7 +681,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         /* ── PARTIAL_PAID / CONFIRMED: single Pay Balance button ── */
                         <button
                           onClick={handlePayBalance}
-                          disabled={isPayingBalance}
+                          disabled={isPayingBalance || _isBalanceDeadlinePassed}
                           className="bd-balance-pay-btn"
                         >
                           {isPayingBalance ? (
@@ -659,11 +700,33 @@ const BookingDetails = ({ booking, onUpdate }) => {
                           )}
                         </button>
                       )}
+
                     </div>
                   </div>
               )}
 
             </div>{/* end bd-top-row */}
+
+            {/* ── Balance Deadline Note — shown below both Booking Info and Remaining Balance cards ── */}
+            {_balanceDeadline && _effectiveBalance > 0 &&
+              ['PARTIAL_PAID', 'PENDING', 'CONFIRMED'].includes(_status) && (
+                <div className={`bd-balance-deadline-note ${_isBalanceDeadlinePassed ? 'bd-balance-deadline-note--expired' : ''}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {_isBalanceDeadlinePassed ? (
+                    <span>
+                      Payment deadline has passed ({_formatDeadlineDate(_balanceDeadline)}). The initial payment made is <strong>non-refundable</strong>.
+                    </span>
+                  ) : (
+                    <span>
+                      Balance must be settled by <strong>{_formatDeadlineDate(_balanceDeadline)}</strong> (2 days before departure). After this date, the initial payment becomes <strong>non-refundable</strong>.
+                    </span>
+                  )}
+                </div>
+            )}
 
             {booking.passengers && booking.passengers.length > 0 && (
                 <div className="bd-card bd-passengers-card">
@@ -986,6 +1049,13 @@ const BookingDetails = ({ booking, onUpdate }) => {
                 <BookingCustomizer 
                     booking={booking}
                     onUpdate={handleCustomizerUpdate}
+                    effectiveBalance={_effectiveBalance}
+                    alreadyPaid={
+                        _isPartialPaid
+                            ? (booking.initialPaymentAmount || 0) + (booking.balancePaidAmount || 0)
+                            : 0
+                    }
+                    onLiveBalanceChange={_isPartialPaid ? setLiveBalance : null}
                 />
             ) : (
                 booking.customizedInclusions?.filter(inc => inc.isChecked !== false).length > 0 && (

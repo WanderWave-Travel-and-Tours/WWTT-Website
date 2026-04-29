@@ -12,8 +12,9 @@ import HotelCustomizer from './HotelCustomizer';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 const BookingCustomizer = ({ 
-  booking,      // ✅ booking object from parent
-  onUpdate      // ✅ callback to update parent when changes saved
+  booking,             // ✅ booking object from parent
+  onUpdate,            // ✅ callback to update parent when changes saved
+  onLiveBalanceChange  // ✅ callback(balance|null) — pushes live remaining balance up to BookingDetails
 }) => {
   const [customizedInclusions, setCustomizedInclusions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +110,72 @@ const BookingCustomizer = ({
   // ─────────────────────────────────────────────────────────────
   const sellerRatesCacheRef = useRef({});   // destKey → matchingRates[]
   const availActCacheRef    = useRef({});   // destKey → deduplicatedRates[]
+
+  // ── Emit live remaining balance to BookingDetails ─────────────
+  // Runs whenever inclusions or hotel price info changes so the
+  // Remaining Balance card in BookingDetails shows a live preview.
+  // Only active for PARTIAL_PAID bookings (onLiveBalanceChange is null otherwise).
+  useEffect(() => {
+    if (!onLiveBalanceChange) return;
+
+    const isPartial = booking?.paymentType === 'partial';
+    if (!isPartial) { onLiveBalanceChange(null); return; }
+
+    // For PENDING: backend pre-writes remainingBalance before payment is confirmed,
+    // so it is already halved. Use totalAmount for PENDING; trust remainingBalance only for PARTIAL_PAID.
+    const _leStatus = (booking?.status || booking?.bookingStatus || '').toUpperCase();
+    const _leIsPartialPaid = _leStatus === 'PARTIAL_PAID';
+    const currentBalance = _leIsPartialPaid && booking?.remainingBalance > 0
+      ? booking.remainingBalance
+      : (booking?.totalAmount || booking?.finalPackageTotal || 0);
+
+    // Net inclusion delta vs. what is saved in DB
+    const savedInclusions   = booking?.customizedInclusions || [];
+    const savedCheckedCost  = savedInclusions
+      .filter(inc => inc.isChecked !== false)
+      .reduce((sum, inc) => sum + (inc.price || 0), 0);
+    const currentCheckedCost = customizedInclusions
+      .filter(inc => inc.isChecked)
+      .reduce((sum, inc) => sum + (inc.price || 0), 0);
+    const netInclusionChange = customizedInclusions.length > 0
+      ? currentCheckedCost - savedCheckedCost
+      : 0;
+
+    // Hotel delta — only when user picked a different unsaved tier
+    const hotelDelta = (() => {
+      if (!hotelPriceInfo?.isUnsaved) return 0;
+      const getRate = (type) => {
+        const t = (type || '').toUpperCase();
+        if (t.includes('5')) return 2500;
+        if (t.includes('4')) return 1660;
+        return 0;
+      };
+      const norm = (type) =>
+        type?.toLowerCase().includes('budget') ? 'Standard' : (type || '');
+      const dNights = (() => {
+        const m = (booking?.duration || '').match(/(\d+)N/i);
+        return m ? parseInt(m[1]) : 1;
+      })();
+      const pendingCost = hotelPriceInfo.totalHotelCost || 0;
+      const savedCost   = getRate(norm(booking?.selectedRoomType || '')) *
+                          (booking?.numberOfRooms || hotelPriceInfo.numberOfRooms || 1) *
+                          dNights;
+      return pendingCost - savedCost;
+    })();
+
+    const netChange = netInclusionChange + hotelDelta;
+    if (netChange !== 0) {
+      onLiveBalanceChange(Math.max(0, currentBalance + netChange));
+    } else {
+      onLiveBalanceChange(null); // no changes → BookingDetails uses DB value
+    }
+  }, [
+    customizedInclusions, hotelPriceInfo,
+    booking?.remainingBalance, booking?.customizedInclusions,
+    booking?.paymentType, booking?.selectedRoomType,
+    booking?.numberOfRooms, booking?.duration,
+    onLiveBalanceChange,
+  ]);
 
   // ✅ API Configuration
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
@@ -1456,19 +1523,35 @@ const BookingCustomizer = ({
               <div className="bc-hotel-only-sidebar">
                 {/* Merged Hotel Overview + Price Summary card */}
                 {(() => {
-                  const savedCustomization = booking?.customizationAdditionalPrice || 0;
-                  const basePrice = (booking?.totalAmount || 0) - savedCustomization;
+                  const currentTotal = booking?.totalAmount || 0;
                   const hotelDelta = (() => {
                     if (!hotelPriceInfo?.isUnsaved) return 0;
-                    return hotelPriceInfo.totalHotelCost || 0;
+                    const getRate = (type) => {
+                      const t = (type || '').toUpperCase();
+                      if (t.includes('5')) return 2500;
+                      if (t.includes('4')) return 1660;
+                      return 0;
+                    };
+                    const norm = (type) =>
+                      type?.toLowerCase().includes('budget') ? 'Standard' : (type || '');
+                    const dNights = (() => {
+                      const m = (booking?.duration || '').match(/(\d+)N/i);
+                      return m ? parseInt(m[1]) : 1;
+                    })();
+                    const pendingCost = hotelPriceInfo.totalHotelCost || 0;
+                    const savedCost   = getRate(norm(booking?.selectedRoomType || '')) *
+                                        (booking?.numberOfRooms || hotelPriceInfo.numberOfRooms || 1) *
+                                        dNights;
+                    return pendingCost - savedCost;
                   })();
-                  const netChange = hotelDelta;
-                  const newTotal = Math.max(0, basePrice + netChange);
-                  const hasChanges = hotelPriceInfo?.isUnsaved && hotelDelta !== 0;
-                  const isPartial = booking?.paymentType === 'partial';
-                  const alreadyPaid = (booking?.initialPaymentAmount || 0) + (booking?.balancePaidAmount || 0);
-                  const newBalance = isPartial ? Math.max(0, newTotal - alreadyPaid) : null;
+                  const netChange      = hotelDelta;
+                  const newTotal       = Math.max(0, currentTotal + netChange);
+                  const hasChanges     = hotelPriceInfo?.isUnsaved && hotelDelta !== 0;
+                  const isPartial      = booking?.paymentType === 'partial';
                   const currentBalance = booking?.remainingBalance || 0;
+                  const newBalance     = isPartial
+                    ? Math.max(0, currentBalance + netChange)
+                    : null;
 
                   return (
                     <div className="bc-merged-summary">
@@ -1547,22 +1630,27 @@ const BookingCustomizer = ({
                           </span>
                         </div>
                         {isPartial && (
-                          <>
-                            <div className="bc-price-row bc-payment-row">
-                              <span>Already Paid</span>
-                              <span style={{ fontWeight: 700, color: '#059669' }}>₱{alreadyPaid.toLocaleString()}</span>
-                            </div>
-                            <div className="bc-price-row bc-balance-row">
-                              <span style={{ fontWeight: 800 }}>Remaining Balance</span>
-                              <span style={{
-                                fontWeight: 900,
-                                fontSize: '1rem',
-                                color: newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b'
-                              }}>
-                                ₱{(newBalance ?? currentBalance).toLocaleString()}
-                              </span>
-                            </div>
-                          </>
+                          <div className="bc-price-row bc-balance-row">
+                            <span style={{ fontWeight: 800 }}>Remaining Balance</span>
+                            <span style={{
+                              fontWeight: 900,
+                              fontSize: '1rem',
+                              color: hasChanges
+                                ? (newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b')
+                                : '#1e293b'
+                            }}>
+                              ₱{(hasChanges ? newBalance : currentBalance).toLocaleString()}
+                              {hasChanges && newBalance !== currentBalance && (
+                                <span className="bc-price-delta" style={{
+                                  color: newBalance < currentBalance ? '#059669' : '#dc2626',
+                                  fontSize: '0.76rem',
+                                  marginLeft: '6px'
+                                }}>
+                                  (was ₱{currentBalance.toLocaleString()})
+                                </span>
+                              )}
+                            </span>
+                          </div>
                         )}
                         {!hasChanges && (
                           <p className="bc-price-hint">
@@ -1637,41 +1725,72 @@ const BookingCustomizer = ({
 
           {/* ── LIVE PRICE SUMMARY ── below hotel selector ── */}
           {customizedInclusions.length > 0 && (() => {
-            const savedCustomization = booking?.customizationAdditionalPrice || 0;
-            const basePrice = (booking?.totalAmount || 0) - savedCustomization;
+            const basePrice = booking?.totalAmount || 0;
 
-            // ── Inclusion changes ────────────────────────────────────
+            // ── Inclusion changes vs. what's saved in DB ─────────────
+            const savedInclusions    = booking?.customizedInclusions || [];
+            const savedCheckedCost   = savedInclusions
+              .filter(inc => inc.isChecked !== false)
+              .reduce((sum, inc) => sum + (inc.price || 0), 0);
+            const currentCheckedCost = customizedInclusions
+              .filter(inc => inc.isChecked)
+              .reduce((sum, inc) => sum + (inc.price || 0), 0);
+            const netInclusionChange = customizedInclusions.length > 0
+              ? currentCheckedCost - savedCheckedCost
+              : 0;
+
+            // For display rows only (deductions / additions badges)
             const deductions = customizedInclusions
               .filter(inc => inc.isOriginal && !inc.isChecked && inc.price > 0)
               .reduce((sum, inc) => sum + inc.price, 0);
             const additions = customizedInclusions
               .filter(inc => !inc.isOriginal && inc.isChecked && inc.price > 0)
               .reduce((sum, inc) => sum + inc.price, 0);
-            const netInclusionChange = additions - deductions;
 
-            // ── Hotel cost delta ─────────────────────────────────────
+            // ── Hotel delta: pending minus already-saved hotel cost ───
             const hotelDelta = (() => {
-              if (!hotelPriceInfo) return 0;
-              if (!hotelPriceInfo.isUnsaved) return 0;
-              const pendingCost = hotelPriceInfo.totalHotelCost || 0;
-              const savedCost   = (() => {
-                const savedType = hotelPriceInfo.savedRoomType;
-                if (!savedType) return 0;
+              if (!hotelPriceInfo?.isUnsaved) return 0;
+              const getRate = (type) => {
+                const t = (type || '').toUpperCase();
+                if (t.includes('5')) return 2500;
+                if (t.includes('4')) return 1660;
                 return 0;
+              };
+              const norm = (type) =>
+                type?.toLowerCase().includes('budget') ? 'Standard' : (type || '');
+              const dNights = (() => {
+                const m = (booking?.duration || '').match(/(\d+)N/i);
+                return m ? parseInt(m[1]) : 1;
               })();
+              const pendingCost = hotelPriceInfo.totalHotelCost || 0;
+              const savedCost   = getRate(norm(booking?.selectedRoomType || '')) *
+                                  (booking?.numberOfRooms || hotelPriceInfo.numberOfRooms || 1) *
+                                  dNights;
               return pendingCost - savedCost;
             })();
 
-            const netChange    = netInclusionChange + hotelDelta;
-            const newTotal     = Math.max(0, basePrice + netChange);
-            const hasInclusionChanges = deductions > 0 || additions > 0;
+            const netChange           = netInclusionChange + hotelDelta;
+            const newTotal            = Math.max(0, basePrice + netChange);
+            const hasInclusionChanges = netInclusionChange !== 0;
             const hasHotelChange      = hotelPriceInfo?.isUnsaved && hotelDelta !== 0;
             const hasChanges          = hasInclusionChanges || hasHotelChange;
 
             const isPartial      = booking?.paymentType === 'partial';
-            const alreadyPaid    = (booking?.initialPaymentAmount || 0) + (booking?.balancePaidAmount || 0);
-            const newBalance     = isPartial ? Math.max(0, newTotal - alreadyPaid) : null;
-            const currentBalance = booking?.remainingBalance || 0;
+            // For PENDING: backend pre-writes remainingBalance = totalAmount - initialPayment
+            // at checkout session creation BEFORE payment is made, so remainingBalance is
+            // already halved even though no money has changed hands yet.
+            // Use totalAmount for PENDING; only trust remainingBalance once PARTIAL_PAID.
+            const _bcBookingStatus = (booking?.status || booking?.bookingStatus || '').toUpperCase();
+            const _bcIsPartialPaid = _bcBookingStatus === 'PARTIAL_PAID';
+            const currentBalance = isPartial
+              ? (_bcIsPartialPaid && booking?.remainingBalance > 0
+                  ? booking.remainingBalance
+                  : (booking?.totalAmount || booking?.finalPackageTotal || 0))
+              : 0;
+            // Remaining balance delta mirrors the net price change exactly
+            const newBalance     = isPartial
+              ? Math.max(0, currentBalance + netChange)
+              : null;
 
             return (
               <div className="bc-price-summary bc-price-summary-right">
@@ -1751,12 +1870,14 @@ const BookingCustomizer = ({
                         ({hotelPriceInfo.selectedRoomType?.type} · {hotelPriceInfo.numberOfRooms} rm × {hotelPriceInfo.durationNights} nights)
                       </span>
                     </span>
-                    <span className="bc-price-added">+₱{(hotelPriceInfo.totalHotelCost || 0).toLocaleString()}</span>
+                    <span className={hotelDelta >= 0 ? 'bc-price-added' : 'bc-price-discount'}>
+                      {hotelDelta >= 0 ? '+' : '−'}₱{Math.abs(hotelDelta).toLocaleString()}
+                    </span>
                   </div>
                 )}
 
                 <div className="bc-price-row total">
-                  <span>Updated Total</span>
+                  <span>{hasChanges ? 'Updated Total' : 'Total'}</span>
                   <span className="bc-price-total" style={{
                     color: netChange > 0 ? '#b45309' : netChange < 0 ? '#059669' : '#047857'
                   }}>
@@ -1772,31 +1893,27 @@ const BookingCustomizer = ({
                 </div>
 
                 {isPartial && (
-                  <>
-                    <div className="bc-price-row bc-payment-row">
-                      <span>Already Paid</span>
-                      <span style={{ fontWeight: 700, color: '#059669' }}>₱{alreadyPaid.toLocaleString()}</span>
-                    </div>
-                    <div className="bc-price-row bc-balance-row">
-                      <span style={{ fontWeight: 800 }}>Remaining Balance</span>
-                      <span style={{
-                        fontWeight: 900,
-                        fontSize: '1rem',
-                        color: newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b'
-                      }}>
-                        ₱{(newBalance ?? currentBalance).toLocaleString()}
-                        {hasChanges && newBalance !== null && newBalance !== currentBalance && (
-                          <span className="bc-price-delta" style={{
-                            color: newBalance < currentBalance ? '#059669' : '#dc2626',
-                            fontSize: '0.76rem',
-                            marginLeft: '6px'
-                          }}>
-                            (was ₱{currentBalance.toLocaleString()})
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </>
+                  <div className="bc-price-row bc-balance-row">
+                    <span style={{ fontWeight: 800 }}>Remaining Balance</span>
+                    <span style={{
+                      fontWeight: 900,
+                      fontSize: '1rem',
+                      color: hasChanges
+                        ? (newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b')
+                        : '#1e293b'
+                    }}>
+                      ₱{(hasChanges ? newBalance : currentBalance).toLocaleString()}
+                      {hasChanges && newBalance !== currentBalance && (
+                        <span className="bc-price-delta" style={{
+                          color: newBalance < currentBalance ? '#059669' : '#dc2626',
+                          fontSize: '0.76rem',
+                          marginLeft: '6px'
+                        }}>
+                          (was ₱{currentBalance.toLocaleString()})
+                        </span>
+                      )}
+                    </span>
+                  </div>
                 )}
 
                 {!hasChanges && (
