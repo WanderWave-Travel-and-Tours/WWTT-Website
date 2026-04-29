@@ -1523,7 +1523,8 @@ const BookingCustomizer = ({
               <div className="bc-hotel-only-sidebar">
                 {/* Merged Hotel Overview + Price Summary card */}
                 {(() => {
-                  const currentTotal = booking?.totalAmount || 0;
+                  const basePrice    = booking?.totalAmount || 0; // alias so JSX rows below can use basePrice
+                  const currentTotal = basePrice;
                   const hotelDelta = (() => {
                     if (!hotelPriceInfo?.isUnsaved) return 0;
                     const getRate = (type) => {
@@ -1548,7 +1549,14 @@ const BookingCustomizer = ({
                   const newTotal       = Math.max(0, currentTotal + netChange);
                   const hasChanges     = hotelPriceInfo?.isUnsaved && hotelDelta !== 0;
                   const isPartial      = booking?.paymentType === 'partial';
-                  const currentBalance = booking?.remainingBalance || 0;
+                  // Use totalAmount for PENDING; only trust remainingBalance once PARTIAL_PAID
+                  const _hoStatus = (booking?.status || booking?.bookingStatus || '').toUpperCase();
+                  const _hoIsPartialPaid = _hoStatus === 'PARTIAL_PAID';
+                  const currentBalance = isPartial
+                    ? (_hoIsPartialPaid && booking?.remainingBalance > 0
+                        ? booking.remainingBalance
+                        : (booking?.totalAmount || booking?.finalPackageTotal || 0))
+                    : 0;
                   const newBalance     = isPartial
                     ? Math.max(0, currentBalance + netChange)
                     : null;
@@ -1776,10 +1784,8 @@ const BookingCustomizer = ({
             const hasChanges          = hasInclusionChanges || hasHotelChange;
 
             const isPartial      = booking?.paymentType === 'partial';
-            // For PENDING: backend pre-writes remainingBalance = totalAmount - initialPayment
-            // at checkout session creation BEFORE payment is made, so remainingBalance is
-            // already halved even though no money has changed hands yet.
-            // Use totalAmount for PENDING; only trust remainingBalance once PARTIAL_PAID.
+            // For PENDING: backend pre-writes remainingBalance before payment is confirmed,
+            // so it is already halved. Use totalAmount for PENDING; trust remainingBalance only for PARTIAL_PAID.
             const _bcBookingStatus = (booking?.status || booking?.bookingStatus || '').toUpperCase();
             const _bcIsPartialPaid = _bcBookingStatus === 'PARTIAL_PAID';
             const currentBalance = isPartial
