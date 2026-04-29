@@ -533,7 +533,7 @@ const BookingLeftColumn = ({
                 <div style={{ paddingLeft: '16px' }}>
                   <div className={`blc-day-card ${isOpen ? 'active' : ''}`} onClick={() => toggleDay(idx)}>
                     <h4 className="blc-day-title">
-                      Day {day.day}: <span style={{ color: '#f97316' }}>{day.title}</span>
+                      Day {day.day}: <span style={{ color: '#f97316' }}>{(day.title || '').replace(/^Day \d+:\s*/i, '').trim()}</span>
                     </h4>
                     <div className={`blc-chevron ${isOpen ? 'rotated' : ''}`}>
                       <ChevronDown size={20} />

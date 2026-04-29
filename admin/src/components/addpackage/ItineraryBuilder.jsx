@@ -43,9 +43,8 @@ const ItineraryBuilder = ({
                                 <input
                                     type="text"
                                     className="apkg-day-title"
-                                    placeholder={dayIdx === 0 ? "e.g. Arrival" : "Day title"}
-                                    // Remove the "Day N: " prefix for user input field value
-                                    value={day.title.replace(`Day ${day.day}: `, "")}
+                                    placeholder={dayIdx === 0 ? "Arrival / Day Title" : "Day title"}
+                                    value={day.title}
                                     onChange={(e) => handleDayTitle(dayIdx, e.target.value)}
                                     required
                                 />

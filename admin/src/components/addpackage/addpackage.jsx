@@ -68,7 +68,7 @@ const AddPackage = () => {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [inclusions, setInclusions] = useState([""]);
     const [itinerary, setItinerary] = useState([
-        { day: 1, title: "Day 1: Arrival", activities: [""] },
+        { day: 1, title: "Arrival", activities: [""] },
     ]);
     const [isPasteActive, setIsPasteActive] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -129,7 +129,7 @@ const AddPackage = () => {
                 !duration && 
                 category === "Local Tour" && 
                 (inclusions.length === 1 && inclusions[0] === "") && 
-                (itinerary.length === 1 && itinerary[0].title === "Day 1: Arrival" && itinerary[0].activities.length === 1 && itinerary[0].activities[0] === "") && 
+                (itinerary.length === 1 && itinerary[0].title === "Arrival" && itinerary[0].activities.length === 1 && itinerary[0].activities[0] === "") && 
                 !file;
 
             if (isFormEmpty) {
@@ -218,7 +218,7 @@ const AddPackage = () => {
         setMultipleMarkupValue(data.multipleMarkupValue || "");
         setMultipleMarkupType(data.multipleMarkupType || "peso");
         setInclusions(data.inclusions || [""]);
-        setItinerary(data.itinerary || [{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
+        setItinerary(data.itinerary || [{ day: 1, title: "Arrival", activities: [""] }]);
 
         if (data.image && data.imageMeta) {
             try {
@@ -442,6 +442,7 @@ const AddPackage = () => {
     // --- ITINERARY ---
     const handleDayTitle = (dayIndex, value) => {
         const updated = [...itinerary];
+        // Store raw user input only — prefix "Day N: " is added at submit time in cleanedItinerary
         updated[dayIndex].title = value;
         setItinerary(updated);
     };
@@ -494,13 +495,17 @@ const AddPackage = () => {
 
     const addDay = () => {
         const nextDay = itinerary.length + 1;
-        setItinerary([...itinerary, { day: nextDay, title: `Day ${nextDay}`, activities: [""] }]);
+        setItinerary([...itinerary, { 
+            day: nextDay, 
+            title: "",   // prefix "Day N: " is added at submit time; display shows raw title
+            activities: [""] 
+        }]);
     };
 
     const removeDay = (dayIndex) => {
         const updated = itinerary.filter((_, i) => i !== dayIndex);
         const renumbered = updated.map((d, i) => ({ ...d, day: i + 1 }));
-        setItinerary(renumbered.length ? renumbered : [{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
+        setItinerary(renumbered.length ? renumbered : [{ day: 1, title: "Arrival", activities: [""] }]);
     };
 
     // --- SUBMIT ---
@@ -547,11 +552,22 @@ const AddPackage = () => {
             return;
         }
 
-        const cleanedItinerary = itinerary.map(d => ({
-            day: d.day,
-            title: d.title,
-            activities: d.activities.filter(a => a.trim())
-        })).filter(d => d.activities.length > 0);
+        const cleanedItinerary = itinerary
+            .map((d, idx) => ({
+                day: d.day || (idx + 1),
+                // Add "Day N: " prefix here — title in state is stored WITHOUT prefix
+                title: d.title?.trim()
+                    ? `Day ${d.day || (idx + 1)}: ${d.title.trim()}`
+                    : `Day ${d.day || (idx + 1)}`,
+                activities: d.activities
+                    .map(a => a?.trim())
+                    .filter(a => a && a.length > 0)
+            }))
+            .filter(d => d.activities.length > 0 || d.title.trim() !== `Day ${d.day}`);
+
+        console.log("=== ITINERARY BEFORE SUBMIT ===");
+        console.log("Raw itinerary state:", JSON.stringify(itinerary, null, 2));
+        console.log("Cleaned itinerary:", JSON.stringify(cleanedItinerary, null, 2));
 
         if (cleanedItinerary.length === 0) {
             toast.warning("Please add at least one day with activities.", "Missing Itinerary");
@@ -650,7 +666,7 @@ const AddPackage = () => {
                 setFile(null);
                 setPreviewUrl(null);
                 setInclusions([""]);
-                setItinerary([{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
+                setItinerary([{ day: 1, title: "Arrival", activities: [""] }]);
                 setMarkupType("peso");
                 
             } else {

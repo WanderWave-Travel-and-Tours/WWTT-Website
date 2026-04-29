@@ -386,11 +386,11 @@ const createBookingPaymentIntent = async (req, res) => {
   }
 };
 
-// ✅ Keep Payment Link option for balance payments
-const createBalancePaymentLink = async (req, res) => {
+// ✅ UPDATED: Balance payment now uses Checkout Session (consistent with initial payment)
+const createBalanceCheckoutSession = async (req, res) => {
   try {
     console.log('=======================================');
-    console.log('BALANCE PAYMENT LINK REQUEST');
+    console.log('BALANCE PAYMENT CHECKOUT SESSION START');
     console.log('=======================================');
 
     const { bookingId, amount } = req.body;
@@ -402,8 +402,8 @@ const createBalancePaymentLink = async (req, res) => {
       });
     }
 
-    const booking = await Booking.findById(bookingId);
-    
+    const booking = await Booking.findById(bookingId).populate('packageId');
+
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -425,84 +425,92 @@ const createBalancePaymentLink = async (req, res) => {
       });
     }
 
-    if (booking.balancePaymentLinkId) {
-      console.warn('Balance payment link already exists');
-      return res.status(400).json({
-        success: false,
-        message: 'Balance payment link already exists',
-        existingLinkId: booking.balancePaymentLinkId
-      });
-    }
-
     const amountInCentavos = Math.round(amount * 100);
 
     console.log('Balance Payment Details:', {
-      bookingId: bookingId,
+      bookingId,
       balanceAmount: amount,
-      amountInCentavos: amountInCentavos
+      amountInCentavos
     });
 
-    const paymentLinkResponse = await axios.post(
-      `${PAYMONGO_API}/links`,
-      {
+    const checkoutOptions = {
+      method: 'POST',
+      url: `${PAYMONGO_API}/checkout_sessions`,
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+        authorization: `Basic ${authHeader}`
+      },
+      data: {
         data: {
           attributes: {
-            amount: amountInCentavos,
-            description: `Payment for ${booking.packageName} - ${booking.fullName} (${booking.startDate} - ${booking.endDate})`,
-            remarks: `Balance Payment for ${booking.fullName}`,
+            line_items: [
+              {
+                currency: 'PHP',
+                amount: amountInCentavos,
+                name: `Balance Payment - ${booking.packageName}`,
+                description: `Remaining balance for booking ${booking._id}`,
+                quantity: 1
+              }
+            ],
+            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'],
+            reference_number: booking._id.toString(),
+            send_email_receipt: true,
+            show_description: true,
+            description: `Balance Payment for ${booking.fullName}`,
+            success_url: `${FRONTEND_URL}/payment-success?booking_id=${booking._id}&paymentType=balance`,
+            cancel_url: `${FRONTEND_URL}/dashboard`,
             metadata: {
-              booking_id: bookingId,
-              customer_name: booking.fullName,
-              customer_email: booking.email,
-              package: booking.packageName,
-              payment_amount: amount,
-              payment_type: 'balance',
-              is_balance_payment: true,
-              total_amount: booking.totalAmount,
-              initial_payment: booking.initialPaymentAmount
+              booking_id:           booking._id.toString(),
+              payment_type:         'balance',
+              is_balance_payment:   'true',
+              remaining_balance:    String(booking.remainingBalance),
+              customer_name:        booking.fullName,
+              customer_email:       booking.email,
+              package:              booking.packageName,
+              total_amount:         String(booking.totalAmount),
+              initial_payment:      String(booking.initialPaymentAmount),
+              start_date:           booking.startDate,
+              end_date:             booking.endDate,
             }
           }
         }
-      },
-      {
-        headers: {
-          'Authorization': `Basic ${authHeader}`,
-          'Content-Type': 'application/json'
-        }
       }
-    );
+    };
 
-    const paymentLink = paymentLinkResponse.data.data;
-    
-    console.log('Balance Payment Link Created:', {
-      linkId: paymentLink.id,
-      checkoutUrl: paymentLink.attributes.checkout_url
+    const response = await axios.request(checkoutOptions);
+    const checkoutSession = response.data.data;
+
+    console.log('Balance Checkout Session Created:', {
+      sessionId: checkoutSession.id,
+      checkoutUrl: checkoutSession.attributes.checkout_url
     });
 
-    booking.balancePaymentLinkId = paymentLink.id;
+    // ✅ Save the balance checkout session ID to the booking
+    booking.balancePaymentId = checkoutSession.id;
     await booking.save();
 
-    console.log('Booking updated with balance payment link');
+    console.log('Booking updated with balance checkout session ID');
     console.log('=======================================');
 
     return res.json({
       success: true,
-      checkoutUrl: paymentLink.attributes.checkout_url,
-      paymentLinkId: paymentLink.id,
+      checkoutUrl: checkoutSession.attributes.checkout_url,
+      checkoutSessionId: checkoutSession.id,
       amount: amount,
-      message: 'Balance payment link created successfully'
+      message: 'Balance checkout session created successfully'
     });
 
   } catch (error) {
-    console.error('Balance Payment Link Error:', error.message);
-    
+    console.error('Balance Checkout Session Error:', error.message);
+
     if (error.response) {
       console.error('PayMongo API Error:', error.response.data);
     }
-    
+
     res.status(500).json({
       success: false,
-      message: 'Failed to create balance payment link',
+      message: 'Failed to create balance checkout session',
       error: error.response?.data?.errors || error.message
     });
   }
@@ -511,5 +519,5 @@ const createBalancePaymentLink = async (req, res) => {
 module.exports = { 
     createInquiryCheckoutSession, 
     createBookingPaymentIntent,  // ✅ Updated export name
-    createBalancePaymentLink 
+    createBalanceCheckoutSession // ✅ Updated: uses Checkout Session instead of Payment Link
 };
