@@ -107,19 +107,19 @@ router.post('/webhook', async (req, res) => {
       let booking = null;
 
       // ✅ FIX: Helper to search Booking, TourBooking, and TransferBooking collections
-      // Chains .populate('packageId') at the query level for reliable population
+      // Only populate 'packageId' for Booking and TourBooking — TransferBooking has no packageId field
       const findBooking = async (findFn) => {
-        const populatingFindFn = (Model) => {
+        const populatingFindFn = (Model, shouldPopulate = true) => {
           const query = findFn(Model);
-          // Chain .populate() before awaiting so Mongoose resolves it in one round-trip
-          if (query && typeof query.populate === 'function') {
+          // Chain .populate() only for models that have packageId in their schema
+          if (shouldPopulate && query && typeof query.populate === 'function') {
             return query.populate('packageId');
           }
           return query;
         };
-        let result = await populatingFindFn(Booking);
-        if (!result) result = await populatingFindFn(TourBooking);
-        if (!result) result = await populatingFindFn(TransferBooking);
+        let result = await populatingFindFn(Booking, true);
+        if (!result) result = await populatingFindFn(TourBooking, true);
+        if (!result) result = await populatingFindFn(TransferBooking, false); // ✅ no packageId on TransferBooking
         return result;
       };
 
