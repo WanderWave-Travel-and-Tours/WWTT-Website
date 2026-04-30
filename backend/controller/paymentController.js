@@ -158,7 +158,7 @@ const createBookingPaymentIntent = async (req, res) => {
     }
     if (!booking) {
       console.log('Not found in TourBooking collection, trying TransferBooking...');
-      booking = await TransferBooking.findById(bookingId).populate('packageId');
+      booking = await TransferBooking.findById(bookingId); // ✅ FIX: TransferBooking has no packageId field
     }
     if (!booking) {
       console.error('Booking not found in database (checked both Booking and TourBooking)');
