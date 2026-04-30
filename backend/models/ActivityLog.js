@@ -5,7 +5,7 @@ const activityLogSchema = new mongoose.Schema({
     action: {
         type: String,
         required: true,
-        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'EXPORT', 'IMPORT', 'UPLOAD', 'FEATURE', 'UNFEATURE', 'SUCCESS']
+        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'READ', 'EXPORT', 'IMPORT', 'UPLOAD', 'FEATURE', 'UNFEATURE', 'SUCCESS']
     },
 
     module: {
@@ -45,6 +45,9 @@ const activityLogSchema = new mongoose.Schema({
 
             // ✅ ADDED: Destinations Module
             'Destinations',
+
+            // ✅ ADDED: Seller Rates Module
+            'Seller Rates',
             
             // System
             'System'
