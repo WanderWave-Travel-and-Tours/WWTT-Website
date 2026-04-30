@@ -92,6 +92,13 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 `https://wanderwaveph.onrender.com/api/bookings/user/${user.email}`
             ).then(res => res.json());
 
+            // Small delay before next request
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            const tourBookingsData = await fetch(
+                `https://wanderwaveph.onrender.com/api/tour-bookings?email=${user.email}`
+            ).then(res => res.json());
+
             let combinedData = [];
 
             if (inquiriesData.success) {
@@ -102,12 +109,26 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 const formattedBookings = bookingsData.data.map(booking => ({
                     ...booking,
                     serviceName: booking.packageName, 
-                    inquiryType: 'BOOKING', 
+                    inquiryType: 'BOOKING',
+                    bookingType: 'package',
                     status: booking.status ? booking.status.toUpperCase() : 'PENDING', 
                     estimatedPrice: booking.totalAmount, 
                     message: booking.message || `Booking for ${booking.packageName}`
                 }));
                 combinedData = [...combinedData, ...formattedBookings];
+            }
+
+            if (tourBookingsData.success) {
+                const formattedTourBookings = tourBookingsData.data.map(booking => ({
+                    ...booking,
+                    serviceName: booking.packageName,
+                    inquiryType: 'BOOKING',
+                    bookingType: 'tour',
+                    status: booking.status ? booking.status.toUpperCase() : 'PENDING',
+                    estimatedPrice: booking.totalAmount,
+                    message: booking.message || `Tour Booking for ${booking.packageName}`
+                }));
+                combinedData = [...combinedData, ...formattedTourBookings];
             }
 
             combinedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

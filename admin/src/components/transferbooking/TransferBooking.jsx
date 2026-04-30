@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Car, Users, Eye, CheckCircle, AlertCircle, Mail,
+  Calendar, Users, Eye, CheckCircle, AlertCircle, Mail,
   ChevronLeft, ChevronRight, FileText, CreditCard,
-  Wallet, MapPin, Clock, Archive
+  Wallet, Archive, Car, MapPin, Clock, Navigation
 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import BookingStats from '../booking/BookingStats';
@@ -12,7 +12,6 @@ import TransferBookingDetailModal from './TransferBookingDetailModal';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
-// Reuse the same base CSS as booking + tour additions (same classes apply)
 import '../booking/booking.css';
 import '../booking/BookingTable.css';
 import './transferBooking.css';
@@ -20,10 +19,10 @@ import './transferBooking.css';
 const BASE_URL = 'https://wanderwaveph.onrender.com';
 
 const STAT_IMAGES = {
-  TOTAL:   'https://picsum.photos/seed/transfercar/800/600',
-  PENDING: 'https://picsum.photos/seed/transferroad/800/600',
-  CONFIRM: 'https://picsum.photos/seed/transfercity/800/600',
-  REVENUE: 'https://picsum.photos/seed/transfernight/800/600',
+  TOTAL:   'https://picsum.photos/seed/transfer1/800/600',
+  PENDING: 'https://picsum.photos/seed/transfer2/800/600',
+  CONFIRM: 'https://picsum.photos/seed/transfer3/800/600',
+  REVENUE: 'https://picsum.photos/seed/transfer4/800/600',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,12 +30,11 @@ const STAT_IMAGES = {
 // ─────────────────────────────────────────────────────────────────────────────
 const getStatusBadgeClass = (s) => {
   switch ((s || '').toLowerCase()) {
-    case 'confirmed':    return 'badge-confirmed';
-    case 'pending':      return 'badge-pending';
-    case 'cancelled':    return 'badge-cancelled';
-    case 'completed':    return 'badge-confirmed';
-    case 'partial_paid': return 'badge-pending';
-    default:             return 'badge-pending';
+    case 'confirmed': return 'badge-confirmed';
+    case 'pending':   return 'badge-pending';
+    case 'cancelled': return 'badge-cancelled';
+    case 'completed': return 'badge-confirmed';
+    default:          return 'badge-pending';
   }
 };
 
@@ -68,10 +66,10 @@ const TransferBookingDashboard = () => {
   const [selected,       setSelected]      = useState(null);
 
   // Filters
-  const [searchTerm,    setSearchTerm]   = useState('');
-  const [filterStatus,  setFilterStatus] = useState('ALL');
+  const [searchTerm,    setSearchTerm]    = useState('');
+  const [filterStatus,  setFilterStatus]  = useState('ALL');
   const [paymentFilter, setPaymentFilter] = useState('ALL');
-  const [typeFilter,    setTypeFilter]   = useState('ALL'); // unused but keeps BookingFilters API consistent
+  const [typeFilter,    setTypeFilter]    = useState('ALL');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,33 +86,32 @@ const TransferBookingDashboard = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res  = await fetch(`${BASE_URL}/api/transfer-bookings?limit=200`);
+      const res = await fetch(`${BASE_URL}/api/transfer-bookings?limit=200`);
       if (!res.ok) throw new Error('Failed to fetch transfer bookings');
       const json = await res.json();
 
-      const raw   = json.data || json.bookings || [];
+      const raw = json.data || json.bookings || [];
       const total = json.total || raw.length;
 
-      const formatted = raw.map((b, i) => ({
+      const activeRaw = raw.filter(b => b.isArchive !== 'Yes');
+
+      const formatted = activeRaw.map((b, i) => ({
         id:               `TR${String(total - i).padStart(4, '0')}`,
         mongoId:          b._id,
         customerName:     b.fullName      || 'N/A',
         email:            b.email         || 'N/A',
-        phone:            b.phone         || '',
-        activityName:     b.activityName  || 'Unknown Transfer',
-        supplierName:     b.supplierName  || '',
-        destination:      b.destination   || '',
-        pax:              b.pax           || '',
-        travelDate:       b.travelDate    || 'Not specified',
-        pickupTime:       b.pickupTime    || '',
-        pickupLocation:   b.pickupLocation  || '',
-        dropoffLocation:  b.dropoffLocation || '',
-        passengerCount:   b.passengerCount  || 1,
-        totalAmount:      b.totalAmount     || 0,
-        status:           b.status          || 'pending',
-        paymentType:      b.paymentType     || 'full',
-        initialPaymentAmount: b.initialPaymentAmount || 0,
-        remainingBalance:     b.remainingBalance     || 0,
+        phone:            b.phone         || b.contactNumber || 'N/A',
+        vehicleType:      b.vehicleType   || b.vehicle       || 'N/A',
+        transferType:     b.transferType  || 'airport',   // airport | point-to-point | hotel
+        pickupLocation:   b.pickupLocation  || b.pickup  || 'N/A',
+        dropoffLocation:  b.dropoffLocation || b.dropoff || 'N/A',
+        pickupDate:       b.pickupDate    || b.travelDate || 'Not specified',
+        pickupTime:       b.pickupTime    || b.departureTime || '',
+        passengers:       b.passengers   || b.pax?.adult || 1,
+        totalAmount:      b.totalAmount   || 0,
+        status:           b.status        || 'pending',
+        paymentType:      b.paymentType   || 'full',
+        remainingBalance: b.remainingBalance || 0,
         bookingDate:      new Date(b.createdAt).toLocaleDateString('en-CA'),
         rawData:          b,
       }));
@@ -149,19 +146,28 @@ const TransferBookingDashboard = () => {
       list = list.filter(b => b.paymentType === 'partial');
     }
 
+    if (typeFilter === 'AIRPORT') {
+      list = list.filter(b => (b.transferType || '').toLowerCase().includes('airport'));
+    } else if (typeFilter === 'POINT_TO_POINT') {
+      list = list.filter(b => (b.transferType || '').toLowerCase().includes('point'));
+    } else if (typeFilter === 'HOTEL') {
+      list = list.filter(b => (b.transferType || '').toLowerCase().includes('hotel'));
+    }
+
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       list = list.filter(b =>
-        b.customerName.toLowerCase().includes(q)   ||
-        b.id.toLowerCase().includes(q)             ||
-        b.activityName.toLowerCase().includes(q)   ||
-        b.email.toLowerCase().includes(q)          ||
-        b.destination.toLowerCase().includes(q)
+        b.customerName.toLowerCase().includes(q) ||
+        b.id.toLowerCase().includes(q) ||
+        b.email.toLowerCase().includes(q) ||
+        b.pickupLocation.toLowerCase().includes(q) ||
+        b.dropoffLocation.toLowerCase().includes(q) ||
+        b.vehicleType.toLowerCase().includes(q)
       );
     }
 
     return list;
-  }, [bookings, filterStatus, paymentFilter, searchTerm]);
+  }, [bookings, filterStatus, paymentFilter, typeFilter, searchTerm]);
 
   useEffect(() => { setCurrentPage(1); }, [filteredBookings]);
 
@@ -173,10 +179,10 @@ const TransferBookingDashboard = () => {
     const totalBal   = pendingBal.reduce((s, b) => s + b.remainingBalance, 0);
 
     return [
-      { label: 'Total Transfers',       value: bookings.length,               icon: <FileText   size={24} />, image: STAT_IMAGES.TOTAL   },
-      { label: 'Pending Balance',        value: pendingBal.length,             icon: <Wallet     size={24} />, image: STAT_IMAGES.PENDING, subtext: `₱${totalBal.toLocaleString()} total` },
-      { label: 'Confirmed',              value: confirmed.length,              icon: <CheckCircle size={24}/>, image: STAT_IMAGES.CONFIRM  },
-      { label: 'Revenue (Confirmed)',    value: `₱${revenue.toLocaleString()}`,icon: <CreditCard size={24} />, image: STAT_IMAGES.REVENUE  },
+      { label: 'Total Transfers',       value: bookings.length,                  icon: <Car         size={24} />, image: STAT_IMAGES.TOTAL   },
+      { label: 'Pending Balance',       value: pendingBal.length,                icon: <Wallet      size={24} />, image: STAT_IMAGES.PENDING, subtext: `₱${totalBal.toLocaleString()} total` },
+      { label: 'Confirmed',             value: confirmed.length,                 icon: <CheckCircle size={24} />, image: STAT_IMAGES.CONFIRM  },
+      { label: 'Revenue (Confirmed)',   value: `₱${revenue.toLocaleString()}`,   icon: <CreditCard  size={24} />, image: STAT_IMAGES.REVENUE  },
     ];
   }, [bookings]);
 
@@ -217,7 +223,7 @@ const TransferBookingDashboard = () => {
   const handleConfirm = (booking) =>
     askConfirmation(
       'Confirm Transfer Booking',
-      `Confirm booking ${booking.id} for ${booking.customerName}?`,
+      `Confirm transfer booking ${booking.id} for ${booking.customerName}?`,
       () => updateStatus(booking, 'confirmed'),
       'primary'
     );
@@ -225,18 +231,47 @@ const TransferBookingDashboard = () => {
   const handleCancel = (booking) =>
     askConfirmation(
       'Cancel Transfer Booking',
-      `Cancel booking ${booking.id} for ${booking.customerName}? This cannot be undone.`,
+      `Cancel transfer booking ${booking.id} for ${booking.customerName}? This cannot be undone.`,
       () => updateStatus(booking, 'cancelled'),
       'danger'
     );
 
   const handleViewDetails = (booking) => { setSelected(booking); setShowModal(true); };
 
+  const handleArchive = (booking) => {
+    askConfirmation(
+      'Archive Transfer Booking',
+      `Archive booking ${booking.id} for ${booking.customerName}? It will be moved to the Archive section.`,
+      async () => {
+        setActionLoading(true);
+        try {
+          const res = await fetch(`${BASE_URL}/api/transfer-bookings/archive/${booking.mongoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.message || `Server returned ${res.status}`);
+          await fetchBookings();
+          toast.success(
+            `Transfer booking ${booking.id} for ${booking.customerName} has been archived.`,
+            'Booking Archived',
+            4000
+          );
+        } catch (err) {
+          toast.error(err.message || 'Archive failed', 'Error', 5000);
+        } finally {
+          setActionLoading(false);
+        }
+      },
+      'danger'
+    );
+  };
+
   // ── Filters config ────────────────────────────────────────────────────────
   const statusOptions = useMemo(() => {
     const opts = ['ALL'];
     const unique = new Set(bookings.map(b => b.status));
-    ['pending', 'confirmed', 'cancelled', 'completed', 'partial_paid'].forEach(s => unique.has(s) && opts.push(s));
+    ['pending', 'confirmed', 'cancelled', 'completed'].forEach(s => unique.has(s) && opts.push(s));
     return opts;
   }, [bookings]);
 
@@ -248,13 +283,24 @@ const TransferBookingDashboard = () => {
   ];
 
   const typeOptions = [
-    { value: 'ALL', label: 'All Types' },
+    { value: 'ALL',            label: 'All Types'       },
+    { value: 'AIRPORT',        label: 'Airport Transfer'},
+    { value: 'POINT_TO_POINT', label: 'Point to Point'  },
+    { value: 'HOTEL',          label: 'Hotel Transfer'  },
   ];
 
   // ── Pagination ─────────────────────────────────────────────────────────────
-  const totalPages      = Math.ceil(filteredBookings.length / itemsPerPage);
   const startIndex      = (currentPage - 1) * itemsPerPage;
   const currentBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
+
+  // ── Transfer type badge helper ─────────────────────────────────────────────
+  const getTransferTypeBadge = (type) => {
+    const t = (type || '').toLowerCase();
+    if (t.includes('airport'))  return { cls: 'trk-type-airport',  label: '✈ Airport'       };
+    if (t.includes('point'))    return { cls: 'trk-type-p2p',      label: '📍 Point to Point' };
+    if (t.includes('hotel'))    return { cls: 'trk-type-hotel',    label: '🏨 Hotel'          };
+    return                             { cls: 'trk-type-default',  label: type || 'Transfer'  };
+  };
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -268,7 +314,7 @@ const TransferBookingDashboard = () => {
           <div className="bkm-header">
             <div className="bkm-title">
               <h1>Transfer Booking Management</h1>
-              <p>View and manage all airport and ground transfer bookings</p>
+              <p>View and manage all vehicle transfer bookings</p>
             </div>
           </div>
 
@@ -294,9 +340,10 @@ const TransferBookingDashboard = () => {
                   <th style={{ width: 50 }}>No.</th>
                   <th>Booking ID</th>
                   <th>Customer</th>
-                  <th>Transfer</th>
-                  <th>Travel Date</th>
-                  <th>PAX</th>
+                  <th>Route</th>
+                  <th>Vehicle</th>
+                  <th>Pickup Schedule</th>
+                  <th>Pax</th>
                   <th>Amount</th>
                   <th>Payment</th>
                   <th>Status</th>
@@ -307,19 +354,20 @@ const TransferBookingDashboard = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       Loading transfer bookings...
                     </td>
                   </tr>
                 ) : currentBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       No transfer bookings found
                     </td>
                   </tr>
                 ) : (
                   currentBookings.map((booking, i) => {
-                    const payBadge = getPaymentBadge(booking);
+                    const payBadge      = getPaymentBadge(booking);
+                    const typeBadge     = getTransferTypeBadge(booking.transferType);
 
                     return (
                       <tr key={booking.mongoId || booking.id}>
@@ -343,47 +391,49 @@ const TransferBookingDashboard = () => {
                           </div>
                         </td>
 
-                        {/* Transfer */}
+                        {/* Route */}
                         <td>
-                          <div className="tbk-package-cell">
-                            <div className="package-name-cell">
-                              <div className="package-initials-badge" style={{ background: '#ede9fe', color: '#7c3aed' }}>TR</div>
-                              <span className="tbk-package-name">{booking.activityName}</span>
-                            </div>
-                            <div className="tbk-package-meta">
-                              {booking.pickupLocation && (
-                                <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-                                  <MapPin size={10} /> {booking.pickupLocation}
-                                </span>
-                              )}
-                              {booking.destination && (
-                                <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
-                                  → {booking.destination}
-                                </span>
-                              )}
+                          <div className="trk-route-cell">
+                            <span className={`trk-type-badge ${typeBadge.cls}`}>{typeBadge.label}</span>
+                            <div className="trk-route-detail">
+                              <div className="trk-route-point">
+                                <Navigation size={11} className="trk-icon-pickup" />
+                                <span title={booking.pickupLocation}>{booking.pickupLocation}</span>
+                              </div>
+                              <div className="trk-route-arrow">↓</div>
+                              <div className="trk-route-point">
+                                <MapPin size={11} className="trk-icon-dropoff" />
+                                <span title={booking.dropoffLocation}>{booking.dropoffLocation}</span>
+                              </div>
                             </div>
                           </div>
                         </td>
 
-                        {/* Travel Date */}
+                        {/* Vehicle */}
                         <td>
-                          {booking.travelDate}
+                          <div className="trk-vehicle-cell">
+                            <Car size={14} style={{ color: '#0284c7', flexShrink: 0 }} />
+                            <span className="trk-vehicle-name">{booking.vehicleType}</span>
+                          </div>
+                        </td>
+
+                        {/* Pickup Schedule */}
+                        <td>
+                          {booking.pickupDate}
                           {booking.pickupTime && (
-                            <div className="booking-date-small" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <Clock size={11} /> {booking.pickupTime}
+                            <div className="booking-date-small">
+                              <Clock size={11} style={{ display: 'inline', marginRight: 3 }} />
+                              {booking.pickupTime}
                             </div>
                           )}
                         </td>
 
-                        {/* PAX */}
+                        {/* Passengers */}
                         <td>
                           <div className="guests-cell">
                             <Users size={15} />
-                            {booking.passengerCount}
+                            {booking.passengers}
                           </div>
-                          {booking.pax && (
-                            <div className="booking-date-small">{booking.pax}</div>
-                          )}
                         </td>
 
                         {/* Amount */}
@@ -429,6 +479,14 @@ const TransferBookingDashboard = () => {
                               title="View Details"
                             >
                               <Eye size={16} /> View
+                            </button>
+                            <button
+                              className="bkm-action-btn bkm-archive-btn"
+                              onClick={() => handleArchive(booking)}
+                              disabled={actionLoading}
+                              title="Archive Booking"
+                            >
+                              <Archive size={16} /> Archive
                             </button>
                           </div>
                         </td>

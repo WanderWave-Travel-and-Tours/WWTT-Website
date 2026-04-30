@@ -1,0 +1,113 @@
+/* ============================================================
+   TRANSFER BOOKING DASHBOARD — Extends booking.css (bkm- classes)
+   Transfer-specific additions use trk- prefix
+   ============================================================ */
+
+/* ── Payment status badges ── */
+.payment-status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.payment-badge-full    { background: #dcfce7; color: #16a34a; }
+.payment-badge-partial { background: #fef3c7; color: #d97706; }
+.payment-badge-pending { background: #f1f5f9; color: #64748b; }
+
+/* ── Transfer type badge ── */
+.trk-type-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.trk-type-airport  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.trk-type-p2p      { background: #fdf4ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+.trk-type-hotel    { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.trk-type-default  { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+/* ── Route cell ── */
+.trk-route-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.trk-route-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trk-route-point {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.trk-route-point span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.trk-icon-pickup  { color: #0284c7; flex-shrink: 0; }
+.trk-icon-dropoff { color: #dc2626; flex-shrink: 0; }
+
+.trk-route-arrow {
+  font-size: 11px;
+  color: #94a3b8;
+  padding-left: 4px;
+  line-height: 1;
+}
+
+/* ── Vehicle cell ── */
+.trk-vehicle-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.trk-vehicle-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+/* ── Amount display (reused from tourBooking) ── */
+.tbk-amount-paid   { font-weight: 700; color: #059669; font-size: 14px; }
+.tbk-amount-total  { font-size: 12px; color: #94a3b8; }
+.tbk-balance-due {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #d97706; font-weight: 600;
+  background: #fffbeb; padding: 2px 8px; border-radius: 20px; margin-top: 2px;
+}
+
+/* ── Archive action button ── */
+.bkm-archive-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 700;
+  border: 1px solid #fca5a5;
+  background: #fff1f2; color: #dc2626;
+  cursor: pointer; transition: all 0.2s;
+}
+.bkm-archive-btn:hover:not(:disabled) {
+  background: #fee2e2; border-color: #f87171; transform: translateY(-1px);
+}
+.bkm-archive-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Stat subtext ── */
+.stat-subtext {
+  display: block;
+  font-size: 11px !important;
+  opacity: 0.75;
+  margin-top: 2px;
+}

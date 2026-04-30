@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import {
   X, CheckCircle, AlertCircle, XCircle, Check,
   User, Mail, Calendar, Users, MapPin, Clock,
-  CreditCard, Wallet, Plane, Tag, FileText, PhoneCall
+  CreditCard, Wallet, Plane, Tag, FileText, PhoneCall, ReceiptText
 } from 'lucide-react';
 import './TourBookingDetailModal.css';
 import VoucherPreviewModal from '../booking/VoucherPreviewModal';
+import TourOrderSlipModal from './TourOrderSlipModal';
 
 const formatDate = (d) => {
   if (!d) return 'N/A';
@@ -59,6 +60,7 @@ const TourBookingDetailModal = ({
   const [showVoucherPreview, setShowVoucherPreview] = useState(false);
   const [voucherData, setVoucherData] = useState(null);
   const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
+  const [showOrderSlip, setShowOrderSlip] = useState(false);
 
   if (!showModal || !selectedBooking) return null;
 
@@ -497,6 +499,21 @@ const TourBookingDetailModal = ({
           <div className="modal-footer">
             <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
 
+            {/* ✅ ORDER SLIP BUTTON — available for all bookings */}
+            <button
+              className="cnm-btn cnm-btn-left"
+              style={{
+                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
+                marginRight: 'auto',
+              }}
+              onClick={() => setShowOrderSlip(true)}
+            >
+              <ReceiptText size={16} />
+              Order Slip
+            </button>
+
             {/* View Voucher — confirmed only */}
             {status === 'CONFIRMED' && (
               <button
@@ -544,6 +561,14 @@ const TourBookingDetailModal = ({
           voucherData={voucherData}
           onClose={() => setShowVoucherPreview(false)}
           onEdit={(updatedData) => setVoucherData(updatedData)}
+        />
+      )}
+
+      {/* ✅ TOUR ORDER SLIP MODAL */}
+      {showOrderSlip && (
+        <TourOrderSlipModal
+          booking={selectedBooking}
+          onClose={() => setShowOrderSlip(false)}
         />
       )}
     </>

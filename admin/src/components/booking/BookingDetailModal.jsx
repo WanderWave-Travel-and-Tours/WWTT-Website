@@ -792,80 +792,70 @@ const generateVoucherData = async (booking) => {
                     </div>
 
                     {/* FOOTER ACTIONS */}
-                    {/* FOOTER ACTIONS */}
 <div className="modal-footer">
-    <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
-
-    {/* ✅ ORDER SLIP BUTTON — available for all bookings */}
     <button
-        className="cnm-btn cnm-btn-left"
+        className="cnm-btn"
         style={{
             background: 'linear-gradient(135deg, #0f172a, #1e293b)',
             color: 'white',
+            border: 'none',
             boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
-            marginRight: 'auto',
         }}
         onClick={() => setShowOrderSlip(true)}
     >
-        <ReceiptText size={16} />
+        <ReceiptText size={15} />
         Order Slip
     </button>
 
-    {/* View Voucher (para sa Confirmed) */}
     {status === 'CONFIRMED' && (
         <button 
-            className="cnm-btn cnm-btn-primary cnm-btn-left"
+            className="cnm-btn cnm-btn-primary"
             onClick={() => generateVoucherData(selectedBooking)}
             disabled={isGeneratingVoucher}
         >
-            <FileText size={16} />
+            <FileText size={15} />
             {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
         </button>
     )}
 
-    {/* ✅ ARCHIVE / UNARCHIVE BUTTON – gagana na sa CONFIRMED at lahat ng status */}
     {selectedBooking && (
         <button
-            className={`cnm-btn ${selectedBooking.isArchive === 'Yes' ? 'cnm-btn-ghost' : 'cnm-btn-outline'}`}
+            className="cnm-btn cnm-btn-outline"
             onClick={() => {
-                closeModal();                    // optional: isara muna ang modal
-                handleArchive(selectedBooking);  // gamitin ang function mula sa parent
+                closeModal();
+                handleArchive(selectedBooking);
             }}
             disabled={actionLoading}
-            style={{ marginLeft: '8px' }}
         >
             {selectedBooking.isArchive === 'Yes' ? (
                 <>
-                    <RotateCcwIcon size={16} />
+                    <RotateCcwIcon size={15} />
                     Unarchive
                 </>
             ) : (
                 <>
-                    <ArchiveIcon size={16} />
+                    <ArchiveIcon size={15} />
                     Archive
                 </>
             )}
         </button>
     )}
 
-    {/* Confirm / Cancel buttons (existing) */}
     {status === 'PENDING' && !selectedBooking.isWalkin && (
         <>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button 
-                    className="cnm-btn cnm-btn-success"
-                    onClick={() => handleConfirmAndClose(selectedBooking)}
-                    disabled={actionLoading}
-                >
-                    <CheckIcon size={16} /> Confirm Booking
-                </button>
-            </div>
+            <button 
+                className="cnm-btn cnm-btn-success"
+                onClick={() => handleConfirmAndClose(selectedBooking)}
+                disabled={actionLoading}
+            >
+                <CheckIcon size={15} /> Confirm Booking
+            </button>
             <button 
                 className="cnm-btn cnm-btn-danger cnm-btn-outline"
                 onClick={() => handleCancelAndClose(selectedBooking)}
                 disabled={actionLoading}
             >
-                <XIcon size={16} /> Cancel Booking
+                <XIcon size={15} /> Cancel Booking
             </button>
         </>
     )}
@@ -876,9 +866,10 @@ const generateVoucherData = async (booking) => {
             onClick={() => handleCancelAndClose(selectedBooking)}
             disabled={actionLoading}
         >
-            <XIcon size={16} /> Cancel Booking
+            <XIcon size={15} /> Cancel Booking
         </button>
     )}
+
 </div>
                 </div>
             </div> 
