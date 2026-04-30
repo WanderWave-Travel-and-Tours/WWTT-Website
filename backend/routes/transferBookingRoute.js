@@ -11,8 +11,9 @@ router.post('/', async (req, res) => {
   try {
     const data = req.body;
 
+    // activityName fallback: derive from destination or supplierName if not provided
     if (!data.activityName) {
-      return res.status(400).json({ success: false, message: 'activityName is required.' });
+      data.activityName = data.destination || data.supplierName || 'Transfer Booking';
     }
     if (!data.fullName) {
       return res.status(400).json({ success: false, message: 'fullName is required.' });

@@ -149,7 +149,7 @@ const TransferBookingFormModal = ({
       const bookingData = {
         bookingType:     'transfer',
         transferId:      transfer._id || null,
-        activityName:    transfer.activity,
+        activityName:    transfer.activity || transfer.activityName || transfer.name || transfer.title || '',
         supplierName:    transfer.supplierName || '',
         destination:     transfer.destination  || '',
         pax:             transfer.pax          || '',
