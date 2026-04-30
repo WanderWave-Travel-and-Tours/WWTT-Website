@@ -32,6 +32,7 @@ import AddTour from './components/addtours/addtours.jsx';
 import ViewTours from './components/viewtours/viewtours.jsx';
 import EditTour from './components/viewtours/EditTour.jsx';
 import TourBookingDashboard from './components/tourbooking/tourBooking.jsx'; // ✅ Tour Booking Dashboard
+import TransferBookingDashboard from './components/transferbooking/TransferBooking.jsx'; // ✅ Transfer Booking Dashboard
 
 // Promos & Posters
 import AddPromo from './components/addpromo/addpromo.jsx';
@@ -133,7 +134,8 @@ const VALID_PROTECTED_ROUTES = [
   '/services/marriagecert',
   '/services/travelinsurance',
   '/services/billspayment',
-  '/seller-rate'
+  '/seller-rate',
+  '/services/transfers'
 ];
 
 // ============================================================
@@ -595,6 +597,7 @@ function App() {
           <Route path="/tour-booking" element={<ProtectedRoute><TourBookingDashboard /></ProtectedRoute>} />
           <Route path="/services/tourarrangements" element={<ProtectedRoute><TourBookingDashboard /></ProtectedRoute>} />
           <Route path="/services/ferrybooking" element={<ProtectedRoute><FerryBooking /></ProtectedRoute>} />
+          <Route path="/services/transfers" element={<ProtectedRoute><TransferBookingDashboard /></ProtectedRoute>} />
           <Route path="/services/marriagecert" element={<ProtectedRoute><MarriageCertificate /></ProtectedRoute>} />
           <Route path="/services/travelinsurance" element={<ProtectedRoute><TravelInsurance /></ProtectedRoute>} />
           <Route path="/services/billspayment" element={<ProtectedRoute><BillsPayment /></ProtectedRoute>} />

@@ -13,6 +13,7 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
     
     // --- STATE FOR FILTERING & UI ---
     const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL', 'SERVICES', 'BOOKINGS'
+    const [bookingSubFilter, setBookingSubFilter] = useState('ALL'); // 'ALL', 'PACKAGE', 'TOUR', 'TRANSFER'
     const [searchQuery, setSearchQuery] = useState('');
     
     // Manage collapsible sections (Attention & Process Open by default, History Closed)
@@ -55,8 +56,14 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
             // A. Type Filter
             const isBooking = inq.inquiryType === 'FLIGHT_BOOKING' || inq.inquiryType === 'BOOKING';
             let typeMatch = true;
-            if (activeFilter === 'BOOKINGS') typeMatch = isBooking;
-            if (activeFilter === 'SERVICES') typeMatch = !isBooking; 
+            if (activeFilter === 'BOOKINGS') {
+                typeMatch = isBooking;
+                // Sub-filter when BOOKINGS is active
+                if (bookingSubFilter === 'PACKAGE') typeMatch = inq.bookingType === 'package';
+                if (bookingSubFilter === 'TOUR')    typeMatch = inq.bookingType === 'tour';
+                if (bookingSubFilter === 'TRANSFER') typeMatch = inq.bookingType === 'transfer';
+            }
+            if (activeFilter === 'SERVICES') typeMatch = !isBooking;
 
             // B. Search Filter
             let searchMatch = true;
@@ -111,7 +118,7 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
         history.sort(sortFn);
 
         return { needsAttention, onProcess, history };
-    }, [inquiries, userInteractions, activeFilter, searchQuery]);
+    }, [inquiries, userInteractions, activeFilter, bookingSubFilter, searchQuery]);
 
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -127,9 +134,17 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
         </svg>
     );
 
+    const getBookingTag = (inquiry) => {
+        if (inquiry.bookingType === 'tour') return 'tour';
+        if (inquiry.bookingType === 'package') return 'package';
+        if (inquiry.bookingType === 'transfer') return 'transfer';
+        return null;
+    };
+
     const renderCard = (inquiry, category) => {
         const { type, msg } = inquiry.uiState;
         const isActive = selectedInquiry?._id === inquiry._id;
+        const bookingTag = getBookingTag(inquiry);
         
         let cardClass = `ud-notify-card`;
         if (category === 'attention') {
@@ -149,6 +164,34 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                         <span className="ud-notify-time">{formatDate(inquiry.createdAt)}</span>
                     </div>
                     <p className="ud-notify-desc">{inquiry.serviceName}</p>
+                    {bookingTag === 'tour' && (
+                        <span className="ud-booking-tag ud-tour-booking-tag">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            Tour Booking
+                        </span>
+                    )}
+                    {bookingTag === 'package' && (
+                        <span className="ud-booking-tag ud-package-booking-tag">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                            Package Booking
+                        </span>
+                    )}
+                    {bookingTag === 'transfer' && (
+                        <span className="ud-booking-tag ud-transfer-booking-tag">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="1" y="3" width="15" height="13"></rect>
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                            </svg>
+                            Transfer
+                        </span>
+                    )}
                 </div>
             </div>
         );
@@ -183,23 +226,45 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                 <div className="ud-filter-tabs">
                     <button 
                         className={`ud-filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`}
-                        onClick={() => setActiveFilter('ALL')}
+                        onClick={() => { setActiveFilter('ALL'); setBookingSubFilter('ALL'); }}
                     >
                         All
                     </button>
                     <button 
                         className={`ud-filter-btn ${activeFilter === 'SERVICES' ? 'active' : ''}`}
-                        onClick={() => setActiveFilter('SERVICES')}
+                        onClick={() => { setActiveFilter('SERVICES'); setBookingSubFilter('ALL'); }}
                     >
                         Services
                     </button>
                     <button 
                         className={`ud-filter-btn ${activeFilter === 'BOOKINGS' ? 'active' : ''}`}
-                        onClick={() => setActiveFilter('BOOKINGS')}
+                        onClick={() => { setActiveFilter('BOOKINGS'); setBookingSubFilter('ALL'); }}
                     >
                         Bookings
                     </button>
                 </div>
+
+                {/* --- BOOKING SUB-FILTER TABS (visible only when BOOKINGS is active) --- */}
+                {activeFilter === 'BOOKINGS' && (
+                    <div className="ud-subfilter-tabs">
+                        <button
+                            className={`ud-subfilter-btn ${bookingSubFilter === 'ALL' ? 'active' : ''}`}
+                            onClick={() => setBookingSubFilter('ALL')}
+                        >All</button>
+                        <button
+                            className={`ud-subfilter-btn ${bookingSubFilter === 'PACKAGE' ? 'active' : ''}`}
+                            onClick={() => setBookingSubFilter('PACKAGE')}
+                        >Package</button>
+                        <button
+                            className={`ud-subfilter-btn ${bookingSubFilter === 'TOUR' ? 'active' : ''}`}
+                            onClick={() => setBookingSubFilter('TOUR')}
+                        >Tour</button>
+                        <button
+                            className={`ud-subfilter-btn ${bookingSubFilter === 'TRANSFER' ? 'active' : ''}`}
+                            onClick={() => setBookingSubFilter('TRANSFER')}
+                        >Transfer</button>
+                    </div>
+                )}
             </div>
 
             <div className="ud-applications-list">

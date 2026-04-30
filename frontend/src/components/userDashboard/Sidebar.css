@@ -411,3 +411,87 @@
         padding: 8px 6px;
     }
 }
+/* --- BOOKING SUB-FILTER TABS --- */
+.ud-subfilter-tabs {
+    display: flex;
+    padding: 0 24px 16px;
+    gap: 6px;
+    animation: ud-subfilter-slide 0.2s ease-out;
+}
+
+@keyframes ud-subfilter-slide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.ud-subfilter-btn {
+    flex: 1;
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.ud-subfilter-btn:hover {
+    border-color: #f97316;
+    color: #f97316;
+    background: #fff7ed;
+}
+
+.ud-subfilter-btn.active {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(249, 115, 22, 0.3);
+}
+
+/* --- BOOKING TAGS (Tour, Package, Transfer) --- */
+.ud-booking-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 3px 8px;
+    font-size: 0.67rem;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-radius: 6px;
+    width: fit-content;
+    border: 1.5px solid;
+}
+
+.ud-booking-tag svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    display: block;
+}
+
+.ud-tour-booking-tag {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border-color: #fdba74;
+    color: #c2410c;
+}
+
+.ud-package-booking-tag {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.ud-transfer-booking-tag {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #86efac;
+    color: #15803d;
+}
