@@ -576,7 +576,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                   </div>
                 </div>
 
-                {booking.flightDetails && (
+                {booking.bookingType !== 'transfer' && booking.flightDetails && (
                   <div className="bd-flight-section">
                     <div className="bd-flight-header">
                       <span className="bd-flight-icon">✈️</span>
@@ -1043,38 +1043,41 @@ const BookingDetails = ({ booking, onUpdate }) => {
             )}
 
             {/* Package Inclusions Section — handled by BookingCustomizer below */}
+            {/* Hidden entirely for transfer bookings (no hotel or package inclusions apply) */}
 
-            {/* Customize Your Booking - hidden when booking is locked (cancelled/confirmed) */}
-            {!isLocked ? (
-                <BookingCustomizer 
-                    booking={booking}
-                    onUpdate={handleCustomizerUpdate}
-                    effectiveBalance={_effectiveBalance}
-                    alreadyPaid={
-                        _isPartialPaid
-                            ? (booking.initialPaymentAmount || 0) + (booking.balancePaidAmount || 0)
-                            : 0
-                    }
-                    onLiveBalanceChange={_isPartialPaid ? setLiveBalance : null}
-                />
-            ) : (
-                booking.customizedInclusions?.filter(inc => inc.isChecked !== false).length > 0 && (
-                    <div className="bd-card bd-inclusions-summary-card">
-                        <h3 className="bd-card-title">Package Inclusions</h3>
-                        <div className="bd-inclusions-summary-list">
-                            {booking.customizedInclusions
-                                .filter(inc => inc.isChecked !== false)
-                                .map((inc, idx) => (
-                                    <div key={inc.id || idx} className="bd-inclusion-summary-item">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#10b981', flexShrink: 0, marginTop: 2 }}>
-                                            <polyline points="20 6 9 17 4 12"/>
-                                        </svg>
-                                        <span>{inc.name}</span>
-                                    </div>
-                                ))
-                            }
+            {/* Customize Your Booking - hidden when booking is locked (cancelled/confirmed) or is a transfer */}
+            {booking.bookingType !== 'transfer' && (
+                !isLocked ? (
+                    <BookingCustomizer 
+                        booking={booking}
+                        onUpdate={handleCustomizerUpdate}
+                        effectiveBalance={_effectiveBalance}
+                        alreadyPaid={
+                            _isPartialPaid
+                                ? (booking.initialPaymentAmount || 0) + (booking.balancePaidAmount || 0)
+                                : 0
+                        }
+                        onLiveBalanceChange={_isPartialPaid ? setLiveBalance : null}
+                    />
+                ) : (
+                    booking.customizedInclusions?.filter(inc => inc.isChecked !== false).length > 0 && (
+                        <div className="bd-card bd-inclusions-summary-card">
+                            <h3 className="bd-card-title">Package Inclusions</h3>
+                            <div className="bd-inclusions-summary-list">
+                                {booking.customizedInclusions
+                                    .filter(inc => inc.isChecked !== false)
+                                    .map((inc, idx) => (
+                                        <div key={inc.id || idx} className="bd-inclusion-summary-item">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#10b981', flexShrink: 0, marginTop: 2 }}>
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                            <span>{inc.name}</span>
+                                        </div>
+                                    ))
+                                }
+                            </div>
                         </div>
-                    </div>
+                    )
                 )
             )}
 
