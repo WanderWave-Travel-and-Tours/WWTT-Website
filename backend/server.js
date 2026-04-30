@@ -153,6 +153,7 @@ const pageViewRoutes = require('./routes/pageViewRoute');
 const siteVisitRoutes = require('./routes/siteVisitRoute');
 const emailSyncRoute = require('./routes/Emailsyncroute');
 const destinationRoutes = require('./routes/destinationRoute');
+const transferBookingRoute = require('./routes/transferBookingRoute');
 
 
 const uploadDir = path.join(__dirname, 'uploads');
@@ -320,6 +321,7 @@ app.use('/api/page-views', pageViewRoutes);
 app.use('/api/site-visits', siteVisitRoutes); 
 app.use('/api/packages', emailSyncRoute);
 app.use('/api/destinations', destinationRoutes);
+app.use('/api/transfer-bookings', transferBookingRoute);
 // ✅ Kept in same position — no conflicts found
 
 
