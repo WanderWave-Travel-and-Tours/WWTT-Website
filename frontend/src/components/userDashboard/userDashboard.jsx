@@ -99,6 +99,14 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 `https://wanderwaveph.onrender.com/api/tour-bookings?email=${user.email}`
             ).then(res => res.json());
 
+            // Small delay before next request
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // ── NEW: Fetch transfer bookings ──────────────────────────────
+            const transferBookingsData = await fetch(
+                `https://wanderwaveph.onrender.com/api/transfer-bookings?email=${user.email}`
+            ).then(res => res.json());
+
             let combinedData = [];
 
             if (inquiriesData.success) {
@@ -129,6 +137,20 @@ const UserDashboardInner = ({ user, onLogout }) => {
                     message: booking.message || `Tour Booking for ${booking.packageName}`
                 }));
                 combinedData = [...combinedData, ...formattedTourBookings];
+            }
+
+            // ── NEW: Format & merge transfer bookings ─────────────────────
+            if (transferBookingsData.success) {
+                const formattedTransferBookings = transferBookingsData.data.map(booking => ({
+                    ...booking,
+                    serviceName: booking.activityName,
+                    inquiryType: 'BOOKING',
+                    bookingType: 'transfer',
+                    status: booking.status ? booking.status.toUpperCase() : 'PENDING',
+                    estimatedPrice: booking.totalAmount,
+                    message: booking.message || `Transfer Booking for ${booking.activityName}`
+                }));
+                combinedData = [...combinedData, ...formattedTransferBookings];
             }
 
             combinedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

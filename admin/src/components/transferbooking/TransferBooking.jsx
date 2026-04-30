@@ -393,19 +393,14 @@ const TransferBookingDashboard = () => {
 
                         {/* Route */}
                         <td>
-                          <div className="trk-route-cell">
+                          <div className="trk-route-inline" title={`${booking.pickupLocation} → ${booking.dropoffLocation}`}>
                             <span className={`trk-type-badge ${typeBadge.cls}`}>{typeBadge.label}</span>
-                            <div className="trk-route-detail">
-                              <div className="trk-route-point">
-                                <Navigation size={11} className="trk-icon-pickup" />
-                                <span title={booking.pickupLocation}>{booking.pickupLocation}</span>
-                              </div>
-                              <div className="trk-route-arrow">↓</div>
-                              <div className="trk-route-point">
-                                <MapPin size={11} className="trk-icon-dropoff" />
-                                <span title={booking.dropoffLocation}>{booking.dropoffLocation}</span>
-                              </div>
-                            </div>
+                            <span className="trk-route-sep">—</span>
+                            <Navigation size={11} className="trk-icon-pickup" />
+                            <span className="trk-route-text">{booking.pickupLocation}</span>
+                            <span className="trk-route-sep">→</span>
+                            <MapPin size={11} className="trk-icon-dropoff" />
+                            <span className="trk-route-text">{booking.dropoffLocation}</span>
                           </div>
                         </td>
 

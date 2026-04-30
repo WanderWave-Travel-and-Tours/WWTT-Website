@@ -25,44 +25,26 @@
 .trk-type-hotel    { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 .trk-type-default  { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
-/* ── Route cell ── */
-.trk-route-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 160px;
-}
-
-.trk-route-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.trk-route-point {
+/* ── Route cell (inline) ── */
+.trk-route-inline {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
-  color: #334155;
-  font-weight: 500;
-}
-
-.trk-route-point span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-wrap: nowrap;
   white-space: nowrap;
-  max-width: 140px;
 }
 
-.trk-icon-pickup  { color: #0284c7; flex-shrink: 0; }
-.trk-icon-dropoff { color: #dc2626; flex-shrink: 0; }
-
-.trk-route-arrow {
+.trk-route-sep {
   font-size: 11px;
   color: #94a3b8;
-  padding-left: 4px;
-  line-height: 1;
+  flex-shrink: 0;
+}
+
+.trk-route-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
 }
 
 /* ── Vehicle cell ── */
