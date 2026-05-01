@@ -199,15 +199,6 @@ const TransferBookingLeftColumn = ({
             </div>
           )}
         </div>
-
-        {/* Icon row — always show transfer icon */}
-        <div className="blc-icons-row">
-          <Bus size={22} className="blc-icon blc-icon--active" />
-          {transfer.category?.toLowerCase().includes('international') && (
-            <span style={{ fontSize: '22px' }}>✈️</span>
-          )}
-          <span style={{ fontSize: '22px' }}>🗺️</span>
-        </div>
       </div>
 
       {/* ── Confirm Modal ─────────────────────────────────────────────────── */}
