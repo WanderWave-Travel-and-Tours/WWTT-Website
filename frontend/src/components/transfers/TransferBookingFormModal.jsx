@@ -1,5 +1,5 @@
 // src/components/Transfers/TransferBookingFormModal.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import {
   X, CheckCircle, Wallet, CreditCard,
@@ -8,14 +8,13 @@ import {
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import './TransferBookingFormModal.css';
-import '../packageDeals/PaymentOption.css';
 
-// ── Custom Date Picker (copied from TourBookingFormModal) ─────────────────────
+// ── Custom Date Picker ────────────────────────────────────────────────────────
 const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) => {
-  const [isOpen,     setIsOpen]     = useState(false);
+  const [isOpen,       setIsOpen]       = useState(false);
   const [selectedDate, setSelectedDate] = useState(value || '');
-  const [viewMonth,  setViewMonth]  = useState(new Date().getMonth());
-  const [viewYear,   setViewYear]   = useState(new Date().getFullYear());
+  const [viewMonth,    setViewMonth]    = useState(new Date().getMonth());
+  const [viewYear,     setViewYear]     = useState(new Date().getFullYear());
   const calendarRef = useRef(null);
 
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -41,39 +40,88 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
   const firstDay    = getFirstDay(viewMonth, viewYear);
   const todayStr    = new Date().toISOString().split('T')[0];
 
+  // Close calendar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
   return (
-    <div style={{ position: 'relative' }}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: selectedDate ? '#1f2937' : '#9ca3af' }}
-      >
-        <CalendarIcon size={16} color="#FF8C00" />
-        {selectedDate ? formatDisplay(selectedDate) : placeholder || 'Select date'}
-      </button>
+    <div className="tbfm-date-picker-wrapper" ref={calendarRef}>
+      <div onClick={() => setIsOpen(!isOpen)} className="tbfm-calendar-trigger">
+        <span className={selectedDate ? 'tbfm-date-value' : 'tbfm-date-placeholder'}>
+          {selectedDate ? formatDisplay(selectedDate) : placeholder || 'Select date'}
+        </span>
+        <CalendarIcon size={16} className="tbfm-trigger-icon" />
+      </div>
 
       {isOpen && (
-        <div ref={calendarRef} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 9999, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.12)', padding: '16px', minWidth: '280px', marginTop: '4px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <button type="button" onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><ChevronLeft size={18} /></button>
-            <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{monthNames[viewMonth]} {viewYear}</span>
-            <button type="button" onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><ChevronRight size={18} /></button>
+        <div className="tbfm-custom-calendar">
+          <div className="tbfm-calendar-header">
+            <button
+              type="button"
+              className="tbfm-cal-nav-btn"
+              onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <div className="tbfm-calendar-selectors">
+              <select
+                className="tbfm-month-select"
+                value={viewMonth}
+                onChange={(e) => setViewMonth(parseInt(e.target.value))}
+              >
+                {monthNames.map((name, idx) => (
+                  <option key={idx} value={idx}>{name}</option>
+                ))}
+              </select>
+              <select
+                className="tbfm-year-select"
+                value={viewYear}
+                onChange={(e) => setViewYear(parseInt(e.target.value))}
+              >
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className="tbfm-cal-nav-btn"
+              onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }}
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '8px' }}>
-            {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', color: '#9ca3af', padding: '4px' }}>{d}</div>)}
+
+          <div className="tbfm-calendar-weekdays">
+            {weekDays.map(d => (
+              <div key={d} className="tbfm-cal-weekday">{d}</div>
+            ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-            {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} />)}
+
+          <div className="tbfm-calendar-days">
+            {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} className="tbfm-cal-day empty" />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day  = i + 1;
               const dStr = formatDate(viewYear, viewMonth, day);
               const isSelected = dStr === selectedDate;
               const isDisabled = minDate ? dStr < minDate : dStr < todayStr;
               return (
-                <button
-                  key={day} type="button" onClick={() => !isDisabled && handleDayClick(day)} disabled={isDisabled}
-                  style={{ padding: '6px 2px', borderRadius: '6px', border: 'none', background: isSelected ? '#FF8C00' : 'transparent', color: isSelected ? '#fff' : isDisabled ? '#d1d5db' : '#374151', fontWeight: isSelected ? '700' : '400', fontSize: '0.85rem', cursor: isDisabled ? 'not-allowed' : 'pointer', textAlign: 'center' }}
-                >{day}</button>
+                <div
+                  key={day}
+                  className={`tbfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                  onClick={() => !isDisabled && handleDayClick(day)}
+                >
+                  {day}
+                </div>
               );
             })}
           </div>
@@ -85,18 +133,26 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
 
 // ── Booking Completed Modal ───────────────────────────────────────────────────
 const BookingCompletedModal = ({ isOpen, onClose, activityName }) => {
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => { onClose(); }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '32px', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-        <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#1f2937', marginBottom: '8px' }}>Booking Confirmed!</h3>
-        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '24px' }}>
+    <div className="tbfm-overlay" style={{ zIndex: 10001 }}>
+      <div className="tbfm-modal-card" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <CheckCircle size={64} color="#22c55e" strokeWidth={2} />
+        </div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+          Booking Confirmed!
+        </h2>
+        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
           Your transfer booking for <strong>{activityName}</strong> has been submitted successfully.
         </p>
-        <button onClick={onClose} style={{ background: '#FF8C00', color: '#fff', border: 'none', padding: '12px 32px', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer' }}>
-          Close
-        </button>
       </div>
     </div>
   );
@@ -118,15 +174,23 @@ const TransferBookingFormModal = ({
   currency = 'PHP', exchangeRate = 58, currencySymbol = '₱',
 }) => {
   const toast = useToast();
-  const [localLoading,             setLocalLoading]             = useState(false);
-  const [showConfirmModal,         setShowConfirmModal]         = useState(false);
+  const overlayRef = useRef(null);
+  const [localLoading,              setLocalLoading]             = useState(false);
+  const [showConfirmModal,          setShowConfirmModal]         = useState(false);
   const [showBookingCompletedModal, setShowBookingCompletedModal] = useState(false);
 
   // Contact form state
-  const [fullName,    setFullName]    = useState('');
-  const [email,       setEmail]       = useState('');
-  const [phone,       setPhone]       = useState('');
-  const [message,     setMessage]     = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email,    setEmail]    = useState('');
+  const [phone,    setPhone]    = useState('');
+  const [message,  setMessage]  = useState('');
+
+  // ── Lock body scroll while modal is open so the page never shifts under the overlay
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -157,11 +221,9 @@ const TransferBookingFormModal = ({
         pax:             transfer.pax          || '',
         transferType,
         travelDate,
-        // One-way: arrivalTime only. Roundtrip: both arrivalTime + departureTime
         arrivalTime:     arrivalTime || '',
         departureTime:   transferType === 'roundtrip' ? (departureTime || '') : '',
         pickupLocation,
-        // One-way: no dropoff. Roundtrip: dropoffLocation included
         dropoffLocation: transferType === 'roundtrip' ? dropoffLocation : '',
         specialRequests,
         fullName,
@@ -227,74 +289,108 @@ const TransferBookingFormModal = ({
   const handleCloseBookingCompleted = () => { setShowBookingCompletedModal(false); onClose(); };
 
   return (
-    <div className="bfm-overlay">
-      <div className="bfm-modal-card">
+    <div className="tbfm-overlay" ref={overlayRef}>
+      <div className="tbfm-modal-card">
 
-        <button className="bfm-close-btn" onClick={onClose} aria-label="Close Modal">
+        {/* ── CLOSE BUTTON ── */}
+        <button className="tbfm-close-btn" onClick={onClose} aria-label="Close Modal">
           <X size={20} strokeWidth={2.5} />
         </button>
 
-        {/* HEADER */}
-        <div className="bfm-modal-header">
-          <img src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" alt="Wanderwave Logo" className="bfm-modal-logo" />
-          <h2 className="bfm-modal-title">Book Your Transfer</h2>
-          <p className="bfm-modal-subtitle">
-            Complete your details below to secure your transfer for <strong>{transfer.activity}</strong>.
-          </p>
+        {/* ── HEADER ── */}
+        <div className="tbfm-modal-header">
+          <img
+            src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
+            alt="Wanderwave Logo"
+            className="tbfm-modal-logo"
+          />
+          <h2 className="tbfm-modal-title">Your Transfer Awaits!</h2>
+          <span className="tbfm-modal-subtitle">
+            Complete your details below. We'll secure your transfer for{' '}
+            <strong>{transfer.activity}</strong>.
+          </span>
 
-          <div className="bfm-trip-summary">
-            <div className="bfm-summary-item">
-              <span className="bfm-summary-label">Transfer</span>
-              <strong className="bfm-summary-value">{transfer.activity}</strong>
-              <span className="bfm-summary-subtext">{transfer.destination}</span>
+          {/* Summary cards — Travel Date / Passengers / Type / Total Amount */}
+          <div className="tbfm-trip-summary">
+            <div className="tbfm-summary-card">
+              <span className="tbfm-summary-label">Travel Date</span>
+              <strong className="tbfm-summary-value">
+                {travelDate
+                  ? new Date(travelDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : '—'}
+              </strong>
             </div>
-            <div className="bfm-summary-item">
-              <span className="bfm-summary-label">Transfer Price</span>
-              <strong className="bfm-summary-value bfm-price">
+            <div className="tbfm-summary-card">
+              <span className="tbfm-summary-label">Passengers</span>
+              <strong className="tbfm-summary-value">{passengerCount} pax</strong>
+            </div>
+            <div className="tbfm-summary-card">
+              <span className="tbfm-summary-label">Type</span>
+              <strong className="tbfm-summary-value">
+                {transferType === 'roundtrip' ? '⇆ Round Trip' : '→ One Way'}
+              </strong>
+            </div>
+            <div className="tbfm-summary-card">
+              <span className="tbfm-summary-label">Total Amount</span>
+              <strong className="tbfm-summary-value tbfm-price">
                 {currencySymbol}{formatCurrency(totalAmount)}
               </strong>
-              <span className="bfm-summary-subtext">{passengerCount} pax</span>
             </div>
           </div>
         </div>
 
-        {/* FORM */}
-        <form onSubmit={handleFormSubmit} className="bfm-form">
-          <div className="bfm-form-body">
+        {/* ── SCROLLABLE FORM ── */}
+        <form onSubmit={handleFormSubmit} className="tbfm-form">
+          <div className="tbfm-form-body">
 
-            <h3 className="bfm-passenger-title">Contact & Transfer Details</h3>
+            {/* ── CONTACT INFORMATION ── */}
+            <div className="tbfm-section-header">
+              <Car size={16} className="tbfm-section-icon" />
+              <span>Contact Information</span>
+            </div>
+            <div className="tbfm-section-divider" />
 
             {/* Full Name / Email */}
-            <div className="bfm-form-row">
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">Full Name *</label>
-                <input type="text" className="bfm-form-input" required
-                  placeholder="Juan dela Cruz"
+            <div className="tbfm-form-grid">
+              <div className="tbfm-form-group">
+                <label className="tbfm-form-label">Full Name <span className="tbfm-required">*</span></label>
+                <input type="text" className="tbfm-form-input" required
+                  placeholder="Juan Dela Cruz"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)} />
               </div>
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">Email Address *</label>
-                <input type="email" className="bfm-form-input" required
+
+              <div className="tbfm-form-group">
+                <label className="tbfm-form-label">Email Address <span className="tbfm-required">*</span></label>
+                <input type="email" className="tbfm-form-input" required
                   placeholder="juan@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)} />
               </div>
-            </div>
 
-            {/* Phone */}
-            <div className="bfm-form-group">
-              <label className="bfm-form-label">Phone Number *</label>
-              <input type="tel" className="bfm-form-input" required
-                placeholder="09XXXXXXXXX"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)} />
-            </div>
+              <div className="tbfm-form-group">
+                <label className="tbfm-form-label">Phone Number <span className="tbfm-required">*</span></label>
+                <input type="tel" className="tbfm-form-input" required
+                  placeholder="+63 912 345 6789"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)} />
+              </div>
 
-            {/* Travel Date + Time(s) */}
-            <div className="bfm-form-row">
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">Travel Date *</label>
+              <div className="tbfm-form-group">
+                <label className="tbfm-form-label">
+                  {transferType === 'roundtrip'
+                    ? <>Arrival Time <span className="tbfm-required">*</span></>
+                    : 'Pickup Time'}
+                </label>
+                <input type="time" className="tbfm-form-input"
+                  required={transferType === 'roundtrip'}
+                  value={arrivalTime}
+                  onChange={(e) => setArrivalTime(e.target.value)} />
+              </div>
+
+              {/* Travel Date — full width */}
+              <div className="tbfm-form-group tbfm-full-width">
+                <label className="tbfm-form-label">Travel Date <span className="tbfm-required">*</span></label>
                 <CustomDatePicker
                   value={travelDate}
                   onChange={setTravelDate}
@@ -302,176 +398,143 @@ const TransferBookingFormModal = ({
                   placeholder="Select travel date"
                 />
               </div>
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">
-                  {transferType === 'roundtrip' ? 'Arrival Time *' : 'Pickup Time'}
-                </label>
-                <input type="time" className="bfm-form-input"
-                  required={transferType === 'roundtrip'}
-                  value={arrivalTime}
-                  onChange={(e) => setArrivalTime(e.target.value)} />
-              </div>
-            </div>
 
-            {/* Departure Time (roundtrip only) */}
-            {transferType === 'roundtrip' && (
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">Departure Time *</label>
-                <input type="time" className="bfm-form-input"
-                  required
-                  value={departureTime}
-                  onChange={(e) => setDepartureTime(e.target.value)} />
-              </div>
-            )}
+              {/* Departure Time (roundtrip only) */}
+              {transferType === 'roundtrip' && (
+                <div className="tbfm-form-group">
+                  <label className="tbfm-form-label">Departure Time <span className="tbfm-required">*</span></label>
+                  <input type="time" className="tbfm-form-input"
+                    required
+                    value={departureTime}
+                    onChange={(e) => setDepartureTime(e.target.value)} />
+                </div>
+              )}
 
-            {/* Pickup Location (always shown) + Drop-off (roundtrip only) */}
-            <div className={transferType === 'roundtrip' ? 'bfm-form-row' : 'bfm-form-group'}>
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">Pickup Location *</label>
-                <input type="text" className="bfm-form-input" required
-                  placeholder="e.g. Airport Terminal 1"
+              {/* Pickup + Drop-off */}
+              <div className="tbfm-form-group">
+                <label className="tbfm-form-label">Pickup Location <span className="tbfm-required">*</span></label>
+                <input type="text" className="tbfm-form-input" required
+                  placeholder="Hotel name, address, or landmark"
                   value={pickupLocation}
                   onChange={(e) => setPickupLocation(e.target.value)} />
               </div>
+
               {transferType === 'roundtrip' && (
-                <div className="bfm-form-group">
-                  <label className="bfm-form-label">Drop-off Location *</label>
-                  <input type="text" className="bfm-form-input" required
-                    placeholder="e.g. Hotel Name"
+                <div className="tbfm-form-group">
+                  <label className="tbfm-form-label">Drop-off Location <span className="tbfm-required">*</span></label>
+                  <input type="text" className="tbfm-form-input" required
+                    placeholder="Hotel name, address, or landmark"
                     value={dropoffLocation}
                     onChange={(e) => setDropoffLocation(e.target.value)} />
                 </div>
               )}
+
             </div>
 
-            {/* Special Requests */}
-            <div className="bfm-form-group">
-              <label className="bfm-form-label">Special Requests</label>
-              <textarea className="bfm-form-input" rows="3"
-                placeholder="Any special requirements (e.g. child seat, extra luggage)..."
-                value={specialRequests}
-                onChange={(e) => setSpecialRequests(e.target.value)}
-                style={{ resize: 'vertical' }}
-              />
+            {/* ── PAYMENT OPTION ── */}
+            <div className="tbfm-section-header" style={{ marginTop: '8px' }}>
+              <CreditCard size={16} className="tbfm-section-icon" />
+              <span>Payment Option</span>
             </div>
+            <div className="tbfm-section-divider" />
 
-            {/* Message */}
-            <div className="bfm-form-group">
-              <label className="bfm-form-label">Additional Message</label>
-              <textarea className="bfm-form-input" rows="2"
-                placeholder="Anything else we should know?"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                style={{ resize: 'vertical' }}
-              />
-            </div>
-
-            {/* PAYMENT OPTIONS */}
-            <div className="bfm-payment-section">
-              <div className="bfm-payment-header">
-                <Wallet size={22} />
-                <h3>Choose Payment Plan</h3>
-              </div>
-
-              <div className="bfm-payment-options">
-                {/* Full Payment */}
-                <div
-                  className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
-                  onClick={() => setPaymentType('full')}
-                >
-                  <div className="bfm-payment-card-header">
-                    <div className="bfm-payment-radio">
-                      <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                    </div>
-                    <div className="bfm-payment-card-title">
-                      <CreditCard size={20} />
-                      <span>Full Payment</span>
-                      <span className="bfm-recommended-badge">Recommended</span>
-                    </div>
-                  </div>
-                  <div className="bfm-payment-card-body">
-                    <div className="bfm-payment-amount">
-                      {currencySymbol}{formatCurrency(totalAmount)}
-                      <span className="bfm-payment-percentage">100%</span>
-                    </div>
-                    <p className="bfm-payment-description">Pay the full amount now and you're all set!</p>
-                    <ul className="bfm-payment-benefits">
-                      <li>✅ Booking confirmed immediately</li>
-                      <li>✅ No remaining balance</li>
-                      <li>✅ Priority slot reservation</li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Partial Payment */}
-                <div
-                  className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
-                  onClick={() => setPaymentType('partial')}
-                >
-                  <div className="bfm-payment-card-header">
-                    <div className="bfm-payment-radio">
-                      <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
-                    </div>
-                    <div className="bfm-payment-card-title">
-                      <Wallet size={20} />
-                      <span>Partial Payment</span>
-                      <span className="bfm-flexible-badge">Flexible</span>
-                    </div>
-                  </div>
-                  <div className="bfm-payment-card-body">
-                    <div className="bfm-payment-amount">
-                      {currencySymbol}{formatCurrency(partialAmount)}
-                      <span className="bfm-payment-percentage">50% now</span>
-                    </div>
-                    <p className="bfm-payment-description">Pay 50% now, rest before your transfer.</p>
-                    <ul className="bfm-payment-benefits">
-                      <li>✅ Lower upfront cost</li>
-                      <li>✅ Slot secured immediately</li>
-                      <li>⚠️ Remaining balance due before transfer</li>
-                    </ul>
-                    <div className="bfm-payment-breakdown">
-                      <div className="bfm-breakdown-row">
-                        <span>Pay now (50%)</span>
-                        <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
-                      </div>
-                      <div className="bfm-breakdown-row">
-                        <span>Remaining balance</span>
-                        <strong>{currencySymbol}{formatCurrency(totalAmount - partialAmount)}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bfm-payment-summary">
-                <div className="bfm-summary-row">
-                  <span>Amount to pay now:</span>
-                  <strong className="bfm-amount-highlight">
-                    {currencySymbol}{formatCurrency(amountToPay)}
-                  </strong>
-                </div>
-                {paymentType === 'partial' && (
-                  <div className="bfm-summary-row bfm-remaining">
-                    <span>Remaining balance:</span>
-                    <span>{currencySymbol}{formatCurrency(totalAmount - partialAmount)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <div className="bfm-actions">
-              <button
-                type="submit"
-                disabled={localLoading}
-                className="bfm-submit-btn"
-                style={{ flex: 1 }}
+            <div className="tbfm-payment-options">
+              {/* Full Payment */}
+              <div
+                className={`tbfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
+                onClick={() => setPaymentType('full')}
               >
-                {localLoading ? 'PROCESSING...' : 'CONFIRM BOOKING'}
-              </button>
+                <div className="tbfm-payment-card-header">
+                  <div className="tbfm-payment-radio">
+                    <div className={`tbfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                  </div>
+                  <div className="tbfm-payment-card-title">
+                    <CreditCard size={15} className="tbfm-card-icon" />
+                    <span>Pay in Full</span>
+                    <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+                  </div>
+                </div>
+                <div className="tbfm-payment-card-body">
+                  <div className="tbfm-payment-amount">
+                    {currencySymbol}{formatCurrency(totalAmount)}
+                  </div>
+                  <p className="tbfm-payment-description">
+                    Complete payment now and secure your booking
+                  </p>
+                  <ul className="tbfm-payment-benefits">
+                    <li>Instant confirmation</li>
+                    <li>No further payments needed</li>
+                    <li>Priority processing</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Partial Payment */}
+              <div
+                className={`tbfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
+                onClick={() => setPaymentType('partial')}
+              >
+                <div className="tbfm-payment-card-header">
+                  <div className="tbfm-payment-radio">
+                    <div className={`tbfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
+                  </div>
+                  <div className="tbfm-payment-card-title">
+                    <Wallet size={15} className="tbfm-card-icon" />
+                    <span>Partial Payment</span>
+                    <span className="tbfm-badge tbfm-badge-flexible">Flexible</span>
+                  </div>
+                </div>
+                <div className="tbfm-payment-card-body">
+                  <div className="tbfm-payment-amount">
+                    {currencySymbol}{formatCurrency(partialAmount)}
+                    <span className="tbfm-payment-percentage">50% Down Payment</span>
+                  </div>
+                  <p className="tbfm-payment-description">
+                    Pay 50% now, remaining balance before your transfer.
+                  </p>
+                  <div className="tbfm-payment-breakdown">
+                    <div className="tbfm-breakdown-row">
+                      <span>Now (50%):</span>
+                      <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
+                    </div>
+                    <div className="tbfm-breakdown-row">
+                      <span>Later (50%):</span>
+                      <strong>{currencySymbol}{formatCurrency(totalAmount - partialAmount)}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="tbfm-payment-summary">
+              <div className="tbfm-summary-row">
+                <span>Amount to pay now:</span>
+                <strong className="tbfm-amount-highlight">
+                  {currencySymbol}{formatCurrency(amountToPay)}
+                </strong>
+              </div>
+              {paymentType === 'partial' && (
+                <div className="tbfm-summary-row tbfm-remaining">
+                  <span>Remaining balance:</span>
+                  <span>{currencySymbol}{formatCurrency(totalAmount - partialAmount)}</span>
+                </div>
+              )}
             </div>
 
           </div>
+
+          {/* ── STICKY CONFIRM BUTTON ── */}
+          <div className="tbfm-actions">
+            <button
+              type="submit"
+              disabled={localLoading}
+              className="tbfm-submit-btn"
+            >
+              {localLoading ? 'PROCESSING...' : 'CONFIRM BOOKING'}
+            </button>
+          </div>
+
         </form>
       </div>
 

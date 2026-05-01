@@ -1,13 +1,13 @@
 // src/components/Transfers/TransferBookingRightForm.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Ticket,
   ArrowRight, ArrowLeftRight
 } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-import axios from 'axios';
+// ✅ Modal import REMOVED — modal is now rendered in TransferBooking.jsx (root level)
+//    to avoid being clipped by overflow:hidden on pb-unified-card
 import './TransferBookingRightForm.css';
 
 const TransferBookingRightForm = ({
@@ -16,16 +16,24 @@ const TransferBookingRightForm = ({
   exchangeRate = 58,
   currentUser = null,
   onPassengerCountChange,
+  // ── lifted modal opener from TransferBooking.jsx ──
+  onOpenModal,
+  // ── lifted form field state from TransferBooking.jsx ──
+  arrivalTime,      setArrivalTime,
+  departureTime,    setDepartureTime,
+  pickupLocation,   setPickupLocation,
+  dropoffLocation,  setDropoffLocation,
+  specialRequests,  setSpecialRequests,
+  paymentType,      setPaymentType,
 }) => {
-  const navigate = useNavigate();
-  const toast    = useToast();
+  const toast = useToast();
 
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const closeConfirmModal = () => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
 
   // ── Calendar state ────────────────────────────────────────────────────────
-  const [selectedDate,   setSelectedDate]   = useState(null);
-  const [currentMonth,   setCurrentMonth]   = useState(new Date());
+  const [selectedDate,  setSelectedDate]  = useState(null);
+  const [currentMonth,  setCurrentMonth]  = useState(new Date());
 
   // ── Transfer type selection (one-way / roundtrip) ─────────────────────────
   const hasRoundtrip = (transfer.roundtripPrice || 0) > 0;
@@ -34,28 +42,15 @@ const TransferBookingRightForm = ({
   // ── Passenger count ───────────────────────────────────────────────────────
   const [passengerCount, setPassengerCount] = useState(1);
 
-  // ── Booking form fields ───────────────────────────────────────────────────
-  const [arrivalTime,      setArrivalTime]      = useState('');
-  const [departureTime,    setDepartureTime]    = useState('');
-  const [pickupLocation,   setPickupLocation]   = useState('');
-  const [dropoffLocation,  setDropoffLocation]  = useState('');
-  const [specialRequests,  setSpecialRequests]  = useState('');
-  const [fullName,         setFullName]         = useState('');
-  const [email,            setEmail]            = useState('');
-  const [phone,            setPhone]            = useState('');
-  const [message,          setMessage]          = useState('');
-  const [paymentType,      setPaymentType]      = useState('full');
-
-  // ── UI state ──────────────────────────────────────────────────────────────
-  const [loading,          setLoading]          = useState(false);
-  const [showBookingForm,  setShowBookingForm]  = useState(false);
+  // ── Local travelDate (derived from calendar selection) ───────────────────
+  const [travelDate, setTravelDate] = useState('');
 
   // ── Promo state ───────────────────────────────────────────────────────────
-  const [promoCode,        setPromoCode]        = useState('');
-  const [appliedPromo,     setAppliedPromo]     = useState(null);
-  const [promoError,       setPromoError]       = useState('');
-  const [promoWarning,     setPromoWarning]     = useState('');
-  const [isCheckingPromo,  setIsCheckingPromo]  = useState(false);
+  const [promoCode,       setPromoCode]       = useState('');
+  const [appliedPromo,    setAppliedPromo]    = useState(null);
+  const [promoError,      setPromoError]      = useState('');
+  const [promoWarning,    setPromoWarning]    = useState('');
+  const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 
   // Notify parent of passenger count changes
   useEffect(() => {
@@ -66,7 +61,7 @@ const TransferBookingRightForm = ({
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice   = (phpPrice) => currency === 'PHP' ? (phpPrice || 0) : ((phpPrice || 0) / exchangeRate);
 
-  // ── Price from Transfer model — based on selected type ────────────────────
+  // ── Price from Transfer model ─────────────────────────────────────────────
   const oneWayPrice    = transfer.oneWayPrice    || 0;
   const roundtripPrice = transfer.roundtripPrice || 0;
 
@@ -82,14 +77,13 @@ const TransferBookingRightForm = ({
       : val;
   })();
 
-  const finalAmount    = Math.max(0, basePrice - discountAmount);
-  const partialAmount  = Math.round(finalAmount * 0.50);
-  const hasValidTotal  = finalAmount > 0;
+  const finalAmount   = Math.max(0, basePrice - discountAmount);
+  const partialAmount = Math.round(finalAmount * 0.50);
+  const hasValidTotal = finalAmount > 0;
 
   const convertedTotal    = convertPrice(basePrice);
   const convertedDiscount = convertPrice(discountAmount);
   const convertedFinal    = convertPrice(finalAmount);
-  const convertedPartial  = convertPrice(partialAmount);
 
   // ── Calendar helpers ──────────────────────────────────────────────────────
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
@@ -110,9 +104,9 @@ const TransferBookingRightForm = ({
 
   const formatTravelDateStr = () => {
     if (!selectedDate) return '';
-    const yr  = currentMonth.getFullYear();
-    const mo  = String(currentMonth.getMonth() + 1).padStart(2, '0');
-    const dy  = String(selectedDate).padStart(2, '0');
+    const yr = currentMonth.getFullYear();
+    const mo = String(currentMonth.getMonth() + 1).padStart(2, '0');
+    const dy = String(selectedDate).padStart(2, '0');
     return `${yr}-${mo}-${dy}`;
   };
 
@@ -221,101 +215,27 @@ const TransferBookingRightForm = ({
     if (typeof window.openGHLChat === 'function') window.openGHLChat();
   };
 
-  // ── Book click ────────────────────────────────────────────────────────────
+  // ── Book click — validate date then call onOpenModal (root-level) ─────────
   const handleBookClick = () => {
     if (!selectedDate) { toast.error('Please select a travel date first!'); return; }
-    setShowBookingForm(true);
-  };
-
-  // ── Submit booking ────────────────────────────────────────────────────────
-  const handleSubmitBooking = async (e) => {
-    e.preventDefault();
-    if (!fullName.trim()) { toast.error('Please enter your full name'); return; }
-    if (!email.trim())    { toast.error('Please enter your email'); return; }
-
-    setLoading(true);
-    try {
-      const bookingData = {
-        transferId:      transfer._id || transfer.id || null,
-        activityName:    transfer.title || '',
-        bookingType:     'transfer',
-        destination:     transfer.packageDestination || '',
-        category:        transfer.category || '',
-        transferType,                               // 'oneway' | 'roundtrip'
-        travelDate:      formatTravelDateStr(),
-        // One-way: arrivalTime only. Roundtrip: both arrivalTime + departureTime
-        arrivalTime:     arrivalTime.trim(),
-        departureTime:   transferType === 'roundtrip' ? departureTime.trim() : '',
-        pickupLocation:  pickupLocation.trim(),
-        // One-way: no dropoff. Roundtrip: dropoffLocation included
-        dropoffLocation: transferType === 'roundtrip' ? dropoffLocation.trim() : '',
-        specialRequests: specialRequests.trim(),
-        fullName:        fullName.trim(),
-        email:           email.trim(),
-        phone:           phone.trim(),
-        message:         message.trim(),
-        passengerCount,
-        oneWayPrice,
-        roundtripPrice,
-        sellingPrice:    basePrice,                 // price of selected type
-        totalAmount:     finalAmount,
-        currency,
-        paymentType,
-        initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalAmount,
-        remainingBalance:     paymentType === 'partial' ? (finalAmount - partialAmount) : 0,
-      };
-
-      const RENDER_BASE = 'https://wanderwaveph.onrender.com';
-      try { await axios.get(RENDER_BASE, { timeout: 25000 }); } catch (_) {}
-
-      const postBooking = () => axios.post(`${RENDER_BASE}/api/transfer-bookings`, bookingData, { timeout: 90000 });
-
-      let bookingResponse;
-      try {
-        bookingResponse = await postBooking();
-      } catch (firstErr) {
-        const isRetryable = firstErr.code === 'ECONNABORTED' || firstErr.message?.includes('timeout') || firstErr.message?.includes('Network Error');
-        if (isRetryable) {
-          toast.info('Server is starting up, retrying...');
-          await new Promise(r => setTimeout(r, 4000));
-          bookingResponse = await postBooking();
-        } else throw firstErr;
-      }
-
-      if (bookingResponse.data.success) {
-        const bookingId = bookingResponse.data.bookingId;
-        toast.success('Booking saved! Preparing payment link...');
-
-        const paymentResponse = await axios.post(
-          `${RENDER_BASE}/api/payment/create-intent`,
-          {
-            bookingId,
-            paymentType,
-            paymentAmount: paymentType === 'partial' ? partialAmount : finalAmount,
-          },
-          { timeout: 60000 }
-        );
-
-        if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
-          const checkoutUrl = paymentResponse.data.checkoutUrl;
-          setShowBookingForm(false);
-          setConfirmModal({
-            isOpen: true,
-            title:   'Proceed to Payment',
-            message: 'Your booking has been saved. You will now be redirected to PayMongo to complete your payment. Do you want to continue?',
-            onConfirm: () => { closeConfirmModal(); window.location.href = checkoutUrl; },
-          });
-        } else {
-          toast.error('Payment link failed. Please pay manually on your dashboard.');
-          setTimeout(() => navigate('/dashboard'), 1500);
-        }
-      } else {
-        throw new Error(bookingResponse.data.message || 'Booking failed');
-      }
-    } catch (error) {
-      const msg = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
-      toast.error(msg);
-    } finally { setLoading(false); }
+    const dateStr = formatTravelDateStr();
+    setTravelDate(dateStr);
+    // ✅ Pass all modal data up to TransferBooking.jsx so modal renders
+    //    outside pb-unified-card (fixes overflow:hidden clipping)
+    if (onOpenModal) {
+      onOpenModal({
+        transferType,
+        travelDate:      dateStr,
+        arrivalTime:     arrivalTime     ?? '',
+        departureTime:   departureTime   ?? '',
+        pickupLocation:  pickupLocation  ?? '',
+        dropoffLocation: dropoffLocation ?? '',
+        specialRequests: specialRequests ?? '',
+        paymentType:     paymentType     ?? 'full',
+        totalAmount:     convertedFinal,
+        partialAmount:   convertedFinal * 0.5,
+      });
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -325,6 +245,79 @@ const TransferBookingRightForm = ({
         <h2>Book Your Transfer</h2>
         <p className="brf-subtitle">Select your travel date and passenger details</p>
         <br />
+      </div>
+
+      {/* ── Calendar ─────────────────────────────────────────────────────── */}
+      <div className="brf-calendar-wrapper">
+        <div className="brf-calendar-box">
+          <div className="brf-calendar-header">
+            <button onClick={() => changeMonth(-1)} className="brf-month-nav"><ChevronLeft size={20} /></button>
+            <h3 className="brf-month-year">{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
+            <button onClick={() => changeMonth(1)} className="brf-month-nav"><ChevronRight size={20} /></button>
+          </div>
+
+          {selectedDate && (
+            <div className="brf-selected-date-display">
+              <div className="brf-date-icon">📅</div>
+              <div>
+                <div style={{ fontWeight: '600', color: '#1f2937' }}>{formatSelectedDate()}</div>
+                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '4px' }}>Travel Date Selected</div>
+              </div>
+            </div>
+          )}
+
+          <div className="brf-calendar-grid">
+            {['S','M','T','W','T','F','S'].map((d, i) => (
+              <div key={i} className="brf-calendar-day-label">{d}</div>
+            ))}
+            {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} />)}
+            {[...Array(daysInMonth)].map((_, i) => {
+              const day         = i + 1;
+              const dateToCheck = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              dateToCheck.setHours(0, 0, 0, 0);
+              const today = new Date(); today.setHours(0, 0, 0, 0);
+              const isPast     = dateToCheck < today;
+              const isSelected = selectedDate === day;
+              return (
+                <button
+                  key={day}
+                  disabled={isPast}
+                  onClick={() => !isPast && setSelectedDate(day)}
+                  className={`brf-calendar-day ${isSelected ? 'brf-selected' : ''} ${isPast ? 'brf-disabled-date' : ''}`}
+                >{day}</button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Passenger Count ──────────────────────────────────────────────── */}
+      <div className="brf-quantity-section">
+        <div className="brf-quantity-item">
+          <div>
+            <span className="brf-quantity-label">Passengers</span>
+            <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Number of passengers</div>
+          </div>
+          <div className="brf-quantity-controls">
+            <button
+              onClick={() => setPassengerCount(prev => Math.max(1, prev - 1))}
+              className="brf-quantity-btn"
+              type="button"
+              disabled={passengerCount <= 1}
+              style={passengerCount <= 1 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+            >
+              <Minus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+            </button>
+            <span className="brf-quantity-value">{passengerCount}</span>
+            <button
+              onClick={() => setPassengerCount(prev => Math.min(20, prev + 1))}
+              className="brf-quantity-btn"
+              type="button"
+            >
+              <Plus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ── Transfer Type Selector (only if roundtrip price exists) ─────── */}
@@ -385,79 +378,6 @@ const TransferBookingRightForm = ({
           </div>
         </div>
       )}
-
-      {/* ── Calendar ─────────────────────────────────────────────────────── */}
-      <div className="brf-calendar-wrapper">
-        <div className="brf-calendar-box">
-          <div className="brf-calendar-header">
-            <button onClick={() => changeMonth(-1)} className="brf-month-nav"><ChevronLeft size={20} /></button>
-            <h3 className="brf-month-year">{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
-            <button onClick={() => changeMonth(1)} className="brf-month-nav"><ChevronRight size={20} /></button>
-          </div>
-
-          {selectedDate && (
-            <div className="brf-selected-date-display">
-              <div className="brf-date-icon">📅</div>
-              <div>
-                <div style={{ fontWeight: '600', color: '#1f2937' }}>{formatSelectedDate()}</div>
-                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '4px' }}>Travel Date Selected</div>
-              </div>
-            </div>
-          )}
-
-          <div className="brf-calendar-grid">
-            {['S','M','T','W','T','F','S'].map((d, i) => (
-              <div key={i} className="brf-calendar-day-label">{d}</div>
-            ))}
-            {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} />)}
-            {[...Array(daysInMonth)].map((_, i) => {
-              const day         = i + 1;
-              const dateToCheck = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-              dateToCheck.setHours(0,0,0,0);
-              const today = new Date(); today.setHours(0,0,0,0);
-              const isPast     = dateToCheck < today;
-              const isSelected = selectedDate === day;
-              return (
-                <button
-                  key={day}
-                  disabled={isPast}
-                  onClick={() => !isPast && setSelectedDate(day)}
-                  className={`brf-calendar-day ${isSelected ? 'brf-selected' : ''} ${isPast ? 'brf-disabled-date' : ''}`}
-                >{day}</button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Passenger Count ──────────────────────────────────────────────── */}
-      <div className="brf-quantity-section">
-        <div className="brf-quantity-item">
-          <div>
-            <span className="brf-quantity-label">Passengers</span>
-            <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Number of passengers</div>
-          </div>
-          <div className="brf-quantity-controls">
-            <button
-              onClick={() => setPassengerCount(prev => Math.max(1, prev - 1))}
-              className="brf-quantity-btn"
-              type="button"
-              disabled={passengerCount <= 1}
-              style={passengerCount <= 1 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-            >
-              <Minus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
-            </button>
-            <span className="brf-quantity-value">{passengerCount}</span>
-            <button
-              onClick={() => setPassengerCount(prev => Math.min(20, prev + 1))}
-              className="brf-quantity-btn"
-              type="button"
-            >
-              <Plus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* ── Promo Code ───────────────────────────────────────────────────── */}
       <div className="brf-promo-section">
@@ -568,217 +488,6 @@ const TransferBookingRightForm = ({
           No payment required today.
         </p>
       </div>
-
-      {/* ── Booking Form Modal ────────────────────────────────────────────── */}
-      {showBookingForm && (
-        <div className="brf-modal-overlay" onClick={() => setShowBookingForm(false)}>
-          <div className="brf-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button className="brf-modal-close-btn" onClick={() => setShowBookingForm(false)}>✕</button>
-
-            {/* Header */}
-            <div className="brf-modal-header">
-              <h2 className="brf-modal-title">Complete Your Booking</h2>
-              <p className="brf-modal-subtitle">
-                {transfer.title || 'Transfer'}
-              </p>
-              <div className="brf-modal-trip-summary">
-                <div className="brf-summary-item">
-                  <span className="brf-summary-label">Travel Date</span>
-                  <span className="brf-summary-value">{formatSelectedDate()}</span>
-                </div>
-                <div className="brf-summary-item">
-                  <span className="brf-summary-label">Passengers</span>
-                  <span className="brf-summary-value">{passengerCount} pax</span>
-                </div>
-                <div className="brf-summary-item">
-                  <span className="brf-summary-label">Type</span>
-                  <span className="brf-summary-value">
-                    {transferType === 'roundtrip' ? '↔ Roundtrip' : '→ One Way'}
-                  </span>
-                </div>
-                <div className="brf-summary-item">
-                  <span className="brf-summary-label">Total Amount</span>
-                  <span className="brf-summary-value brf-price">
-                    {currencySymbol}{convertedFinal.toLocaleString(undefined, {
-                      minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                      maximumFractionDigits: currency === 'USD' ? 2 : 0,
-                    })}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Scrollable form */}
-            <div className="brf-modal-form-wrapper">
-              <form onSubmit={handleSubmitBooking}>
-
-                {/* Contact Info */}
-                <h3 className="brf-form-section-header">👤 Contact Information</h3>
-                <div className="brf-form-grid" style={{ marginBottom: '20px' }}>
-                  <div className="brf-form-group">
-                    <label>Full Name <span className="brf-required-asterisk">*</span></label>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={e => setFullName(e.target.value)}
-                      required
-                      placeholder="Juan Dela Cruz"
-                    />
-                  </div>
-                  <div className="brf-form-group">
-                    <label>Email Address <span className="brf-required-asterisk">*</span></label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                      placeholder="juan@email.com"
-                    />
-                  </div>
-                  <div className="brf-form-group">
-                    <label>Phone Number</label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      placeholder="+63 912 345 6789"
-                    />
-                  </div>
-
-                  {/* ── Time fields: 1 for one-way, 2 for roundtrip ── */}
-                  {transferType === 'roundtrip' ? (
-                    <>
-                      <div className="brf-form-group">
-                        <label>Arrival Time <span className="brf-required-asterisk">*</span></label>
-                        <input
-                          type="time"
-                          value={arrivalTime}
-                          onChange={e => setArrivalTime(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="brf-form-group">
-                        <label>Departure Time <span className="brf-required-asterisk">*</span></label>
-                        <input
-                          type="time"
-                          value={departureTime}
-                          onChange={e => setDepartureTime(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="brf-form-group">
-                      <label>Pickup Time</label>
-                      <input
-                        type="time"
-                        value={arrivalTime}
-                        onChange={e => setArrivalTime(e.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  {/* ── Location fields: pickup only for one-way, both for roundtrip ── */}
-                  <div className="brf-form-group brf-full-width">
-                    <label>Pickup Location</label>
-                    <input
-                      type="text"
-                      value={pickupLocation}
-                      onChange={e => setPickupLocation(e.target.value)}
-                      placeholder="Hotel name, address, or landmark"
-                    />
-                  </div>
-                  {transferType === 'roundtrip' && (
-                    <div className="brf-form-group brf-full-width">
-                      <label>Drop-off Location</label>
-                      <input
-                        type="text"
-                        value={dropoffLocation}
-                        onChange={e => setDropoffLocation(e.target.value)}
-                        placeholder="Hotel name, address, or landmark"
-                      />
-                    </div>
-                  )}
-                  <div className="brf-form-group brf-full-width">
-                    <label>Special Requests / Notes</label>
-                    <textarea
-                      value={specialRequests}
-                      onChange={e => setSpecialRequests(e.target.value)}
-                      rows={3}
-                      placeholder="Any special requests, flight details, or notes for our driver..."
-                      style={{ resize: 'vertical' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Payment Option */}
-                <h3 className="brf-form-section-header">💳 Payment Option</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '28px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentType('full')}
-                    style={{
-                      padding: '16px 12px',
-                      borderRadius: '12px',
-                      border: `2px solid ${paymentType === 'full' ? '#fc9c1b' : '#e2e8f0'}`,
-                      background: paymentType === 'full' ? '#fff7ed' : 'white',
-                      cursor: 'pointer',
-                      fontWeight: '700',
-                      color: paymentType === 'full' ? '#c2410c' : '#374151',
-                      transition: 'all 0.2s',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <div style={{ fontSize: '1.4rem', marginBottom: '6px' }}>💳</div>
-                    <div style={{ fontSize: '0.95rem' }}>Full Payment</div>
-                    <div style={{ fontSize: '0.85rem', marginTop: '4px', color: paymentType === 'full' ? '#ea580c' : '#6b7280' }}>
-                      {currencySymbol}{convertedFinal.toLocaleString(undefined, {
-                        minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                        maximumFractionDigits: currency === 'USD' ? 2 : 0,
-                      })}
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentType('partial')}
-                    style={{
-                      padding: '16px 12px',
-                      borderRadius: '12px',
-                      border: `2px solid ${paymentType === 'partial' ? '#fc9c1b' : '#e2e8f0'}`,
-                      background: paymentType === 'partial' ? '#fff7ed' : 'white',
-                      cursor: 'pointer',
-                      fontWeight: '700',
-                      color: paymentType === 'partial' ? '#c2410c' : '#374151',
-                      transition: 'all 0.2s',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <div style={{ fontSize: '1.4rem', marginBottom: '6px' }}>🔖</div>
-                    <div style={{ fontSize: '0.95rem' }}>50% Deposit</div>
-                    <div style={{ fontSize: '0.85rem', marginTop: '4px', color: paymentType === 'partial' ? '#ea580c' : '#6b7280' }}>
-                      {currencySymbol}{convertedPartial.toLocaleString(undefined, {
-                        minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                        maximumFractionDigits: currency === 'USD' ? 2 : 0,
-                      })}
-                    </div>
-                  </button>
-                </div>
-
-                {/* Actions */}
-                <div className="brf-modal-actions">
-                  <button type="button" className="brf-back-btn" onClick={() => setShowBookingForm(false)}>
-                    ← Back
-                  </button>
-                  <button type="submit" className="brf-modal-submit-btn" disabled={loading}>
-                    {loading ? 'Processing...' : '🎫 Confirm & Pay'}
-                  </button>
-                </div>
-
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Confirm Modal ─────────────────────────────────────────────────── */}
       <CustomConfirmModal

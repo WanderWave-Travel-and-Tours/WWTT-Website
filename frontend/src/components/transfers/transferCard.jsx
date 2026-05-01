@@ -70,13 +70,24 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
           className="transfer-image-content"
           onError={() => setImgError(true)}
         />
-        {/* Category badge */}
-        <span
-          className="transfer-category-badge"
-          style={{ backgroundColor: categoryStyle.bg }}
-        >
-          <Car size={11} /> {categoryStyle.label}
-        </span>
+
+        {/* ── Badges row: Category + Destination ── */}
+        <div className="transfer-badges-row">
+          {/* Category badge */}
+          <span
+            className="transfer-category-badge"
+            style={{ backgroundColor: categoryStyle.bg }}
+          >
+            <Car size={11} /> {categoryStyle.label}
+          </span>
+
+          {/* Destination tag */}
+          {transfer.packageDestination && (
+            <span className="transfer-destination-badge">
+              <MapPin size={10} /> {transfer.packageDestination}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
@@ -88,16 +99,6 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
               <span className="transfer-title-text">{transfer.title}</span>
             </h3>
           </div>
-
-          {/* Destination row */}
-          {transfer.packageDestination && (
-            <div className="transfer-meta-row">
-              <div className="transfer-detail-row">
-                <MapPin className="transfer-detail-icon" />
-                <span className="transfer-detail-text">{transfer.packageDestination}</span>
-              </div>
-            </div>
-          )}
 
           {/* Pricing rows */}
           <div className="transfer-pricing-block">
