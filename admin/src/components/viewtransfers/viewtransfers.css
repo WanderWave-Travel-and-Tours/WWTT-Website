@@ -1,0 +1,151 @@
+/* ========================================
+   VIEW TRANSFERS - RESPONSIVE LAYOUT (vtx-)
+   Based on ViewTours Module Standards
+   ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* GLOBAL RESET */
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; overflow-x: hidden; }
+
+/* --- MAIN PAGE WRAPPER --- */
+.vtx-page {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    position: relative;
+}
+
+/* --- MAIN CONTENT LOGIC --- */
+.vtx-main {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    padding: 40px 60px;
+    min-height: 100vh;
+    transition: all 0.3s ease;
+}
+
+.vtx-main.expanded {
+    margin-left: 80px !important;
+    width: calc(100% - 80px) !important;
+    padding: 40px 60px;
+}
+
+.vtx-container { max-width: 1600px; width: 100%; margin: 0 auto; }
+
+/* --- HEADER SECTION --- */
+.vtx-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background: url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    min-height: 180px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.vtx-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 31, 63, 0.95) 0%, rgba(0, 31, 63, 0.7) 100%);
+    z-index: 1;
+}
+
+.vtx-header-content { position: relative; z-index: 2; }
+
+.vtx-title {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 8px 0;
+}
+
+.vtx-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vtx-subtitle::before { content: ''; width: 40px; height: 4px; background: #FF8C42; border-radius: 2px; }
+
+.vtx-btn-add {
+    position: relative;
+    z-index: 2;
+    background-color: #f59e0b;
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+.vtx-btn-add:hover {
+    background-color: #d97706;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+/* --- LOADING & EMPTY STATES --- */
+.vtx-loading, .vtx-empty {
+    text-align: center;
+    padding: 60px;
+    color: #64748b;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    margin-top: 20px;
+}
+
+.vtx-spinner {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f4f6;
+    border-top-color: #f59e0b;
+    border-radius: 50%;
+    animation: vtx-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes vtx-spin { to { transform: rotate(360deg); } }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+    .vtx-main, .vtx-main.expanded { padding: 30px; }
+    .vtx-header { padding: 35px 30px; text-align: center; justify-content: center; flex-direction: column; }
+    .vtx-subtitle { justify-content: center; }
+    .vtx-btn-add { width: 100%; max-width: 300px; justify-content: center; }
+}
+
+@media (max-width: 640px) {
+    .vtx-main { margin-left: 0 !important; width: 100% !important; padding: 20px; }
+    .vtx-header { padding: 25px 20px; min-height: 140px; align-items: flex-start; text-align: left; }
+    .vtx-subtitle { justify-content: flex-start; }
+    .vtx-title { font-size: 24px; }
+}

@@ -1,0 +1,156 @@
+/* WRAPPER & SCROLL CONTAINER */
+.txt-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.txt-table-container {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+/* TABLE BASIC STYLES */
+.txt-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px;
+}
+
+/* HEADER STYLES */
+.txt-table th {
+    background-color: #0f172a;
+    color: white;
+    text-align: left;
+    padding: 16px 24px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* COLUMN WIDTHS */
+.txt-col-transfer { width: 280px; }
+.txt-col-category { width: 160px; }
+.txt-col-destination { width: 160px; }
+.txt-col-oneway { width: 140px; }
+.txt-col-roundtrip { width: 140px; }
+.txt-col-status { width: 110px; }
+.txt-col-date { width: 140px; }
+.txt-col-actions { width: 200px; text-align: right !important; }
+
+/* CELL STYLES */
+.txt-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 500;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* ZEBRA STRIPING */
+.txt-table tbody tr:nth-child(odd) { background-color: white; }
+.txt-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+.txt-table tr:hover td { background-color: #f1f5f9; }
+.txt-table tr:last-child td { border-bottom: none; }
+
+/* CONTENT STYLES */
+.txt-transfer-cell { display: flex; align-items: center; gap: 12px; }
+
+.txt-image-preview {
+    width: 44px; height: 44px; border-radius: 8px;
+    overflow: hidden; flex-shrink: 0; border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+}
+.txt-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.txt-no-image {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    color: #94a3b8; font-size: 18px;
+}
+
+.txt-transfer-name {
+    font-weight: 700; color: #0f172a; max-width: 200px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+    font-size: 14px;
+}
+
+.txt-meta-cell { display: flex; align-items: center; gap: 8px; }
+.txt-icon { color: #94a3b8; flex-shrink: 0; }
+
+/* Pricing cells */
+.txt-price-cell { display: flex; flex-direction: column; gap: 2px; }
+.txt-price-main { font-weight: 700; color: #0f172a; font-size: 14px; }
+.txt-price-sub { font-size: 11px; color: #94a3b8; font-weight: 500; }
+.txt-price-na { color: #cbd5e1; font-size: 13px; font-weight: 500; }
+
+/* Date cell */
+.txt-date-cell { display: flex; align-items: center; gap: 8px; }
+
+/* Status Badge */
+.txt-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.txt-status-badge.active {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.txt-status-badge.inactive {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.txt-status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.txt-status-badge.active .txt-status-dot { background: #16a34a; }
+.txt-status-badge.inactive .txt-status-dot { background: #b91c1c; }
+
+/* ACTIONS */
+.txt-action-group { display: flex; justify-content: flex-end; gap: 8px; min-width: 180px; }
+
+.txt-action-btn {
+    height: 38px; padding: 0 16px; border-radius: 6px; font-size: 13px;
+    font-weight: 600; cursor: pointer; display: flex; align-items: center;
+    gap: 8px; transition: all 0.2s ease; white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.txt-view-btn { background: white; border: 1px solid #0f172a; color: #0f172a; }
+.txt-view-btn:hover { background: #0f172a; color: white; transform: translateY(-1px); }
+
+.txt-toggle-btn-active { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
+.txt-toggle-btn-active:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
+
+.txt-toggle-btn-inactive { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+.txt-toggle-btn-inactive:hover { background: #dcfce7; border-color: #86efac; color: #166534; transform: translateY(-1px); }
+
+.txt-empty-cell { text-align: center; padding: 60px; color: #64748b; font-size: 15px; }
+
+/* Scrollbar */
+.txt-table-container::-webkit-scrollbar { height: 8px; }
+.txt-table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.txt-table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.txt-table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
