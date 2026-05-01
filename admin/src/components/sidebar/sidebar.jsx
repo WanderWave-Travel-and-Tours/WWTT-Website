@@ -55,7 +55,8 @@ const MENU_PATHS = {
     ],
     list: [
         '/view-packages', '/view-tours', '/view-promos', '/view-posters', 
-        '/view-blogs', '/view-hotels', '/view-images', '/view-testimonials'
+        '/view-blogs', '/view-hotels', '/view-images', '/view-testimonials',
+        '/view-transfers'
     ],
     services: [
         '/view-services', '/services/visa', '/services/psa', '/services/cenomar',
@@ -373,6 +374,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Hotels', path: '/view-hotels', icon: Hotel },
                 { name: 'Gallery', path: '/view-images', icon: Grid }, 
                 { name: 'Testimonials', path: '/view-testimonials', icon: ClipboardList },
+                { name: 'Transfers', path: '/view-transfers', icon: Car },
               ]}
             />
             <DropdownMenu 
