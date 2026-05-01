@@ -31,29 +31,23 @@ function TransferPackagesContent() {
   const [selectedTransfer, setSelectedTransfer] = useState(null);
 
   // ============================================================
-  // FETCH TRANSFERS FROM SELLER RATES (activity contains "transfer")
+  // FETCH TRANSFERS FROM /api/transfers
   // ============================================================
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
         setLoading(true);
-        // Fetch all active (non-archived) seller rates
-        const response = await fetch('https://wanderwaveph.onrender.com/api/seller-rates');
+        // Fetch all active transfers from the transfers collection
+        const response = await fetch('https://wanderwaveph.onrender.com/api/transfers');
         const data = await response.json();
 
-        if (Array.isArray(data)) {
-          // Filter: only entries where "transfer" appears in the activity field (case-insensitive)
-          const transferRates = data.filter(rate =>
-            rate.activity?.toLowerCase().includes('transfer') &&
-            rate.isArchive !== 'Yes' &&
-            rate.status !== 'archived'
-          );
-          setTransfers(transferRates);
+        if (data.success && Array.isArray(data.data)) {
+          setTransfers(data.data);
         } else {
-          setError('Failed to load transfer rates.');
+          setError('Failed to load transfer listings.');
         }
       } catch (err) {
-        console.error('Error fetching transfer rates:', err);
+        console.error('Error fetching transfers:', err);
         setError('Unable to connect. Please try again.');
       } finally {
         setLoading(false);
@@ -96,11 +90,11 @@ function TransferPackagesContent() {
   }, [ghlEnabled]);
 
   // ============================================================
-  // DERIVED FILTER OPTIONS
+  // DERIVED FILTER OPTIONS — use packageDestination field
   // ============================================================
   const allDestinations = useMemo(() => {
     const destinations = new Set();
-    transfers.forEach(t => { if (t.destination) destinations.add(t.destination); });
+    transfers.forEach(t => { if (t.packageDestination) destinations.add(t.packageDestination); });
     return Array.from(destinations).sort();
   }, [transfers]);
 
@@ -110,25 +104,25 @@ function TransferPackagesContent() {
   const filteredTransfers = useMemo(() => {
     let result = [...transfers];
 
-    // Search query
+    // Search query — match on title, packageDestination, category
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(t =>
-        t.activity?.toLowerCase().includes(q) ||
-        t.destination?.toLowerCase().includes(q) ||
-        t.supplierName?.toLowerCase().includes(q)
+        t.title?.toLowerCase().includes(q) ||
+        t.packageDestination?.toLowerCase().includes(q) ||
+        t.category?.toLowerCase().includes(q)
       );
     }
 
-    // Price range
+    // Price range — filter against oneWayPrice (starting price)
     const min = parseFloat(priceRange.min);
     const max = parseFloat(priceRange.max);
-    if (!isNaN(min)) result = result.filter(t => (t.sellingPrice || 0) >= min);
-    if (!isNaN(max)) result = result.filter(t => (t.sellingPrice || 0) <= max);
+    if (!isNaN(min)) result = result.filter(t => (t.oneWayPrice || 0) >= min);
+    if (!isNaN(max)) result = result.filter(t => (t.oneWayPrice || 0) <= max);
 
     // Destination checkboxes
     if (selectedDestinations.length > 0) {
-      result = result.filter(t => selectedDestinations.includes(t.destination));
+      result = result.filter(t => selectedDestinations.includes(t.packageDestination));
     }
 
     return result;

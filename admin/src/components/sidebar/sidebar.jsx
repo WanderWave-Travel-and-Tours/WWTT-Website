@@ -50,7 +50,8 @@ import './sidebar.css';
 const MENU_PATHS = {
     add: [
         '/add-package', '/add-tour', '/add-promo', '/add-poster', 
-        '/add-hotel', '/add-blog', '/add-image', '/add-testimonial', '/add-service'
+        '/add-hotel', '/add-blog', '/add-image', '/add-testimonial', '/add-service',
+        '/add-transfer'
     ],
     list: [
         '/view-packages', '/view-tours', '/view-promos', '/view-posters', 
@@ -350,6 +351,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Image', path: '/add-image', icon: UploadCloud }, 
                 { name: 'Testimonial', path: '/add-testimonial', icon: Star },
                 { name: 'Service', path: '/add-service', icon: Briefcase },
+                { name: 'Transfer', path: '/add-transfer', icon: Car },
               ]}
             />
 

@@ -1,0 +1,292 @@
+.atrn-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    transition: all 0.2s ease;
+}
+
+.atrn-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.08);
+}
+
+.atrn-section-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.atrn-section-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #FF8C42 0%, #ff6b1a 100%);
+    border-radius: 2px;
+}
+
+/* ================== PRICING LAYOUT ================== */
+
+.atrn-pricing-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ================== TRIP CARD ================== */
+
+.atrn-trip-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.atrn-trip-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.atrn-trip-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.atrn-trip-card-label {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 2px;
+}
+
+.atrn-trip-card-sub {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin-top: 2px;
+}
+
+/* ================== INPUTS ================== */
+
+.atrn-pricing-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 0;
+}
+
+.atrn-field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.atrn-field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+}
+
+.atrn-field input {
+    padding: 14px 18px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.atrn-field input:hover {
+    border-color: #cbd5e1;
+}
+
+.atrn-field input:focus {
+    outline: none;
+    border-color: #FF8C42;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.atrn-field input::placeholder {
+    color: #94a3b8;
+}
+
+/* ================== MARKUP BADGE ================== */
+
+.atrn-markup-badge {
+    margin-left: 10px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.atrn-markup-badge--percentage {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 1px solid #fbbf24;
+}
+
+.atrn-markup-badge--peso {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    border: 1px solid #22c55e;
+}
+
+/* ================== FIELD WITH TOGGLE ================== */
+
+.atrn-field-with-toggle {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.atrn-field-with-toggle input {
+    flex: 1;
+}
+
+.atrn-toggle-markup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.atrn-toggle-markup:hover {
+    border-color: #FF8C42;
+    background: linear-gradient(135deg, #fffaf6 0%, #fff4ec 100%);
+    transform: scale(1.05);
+}
+
+.atrn-toggle-markup svg {
+    width: 22px;
+    height: 22px;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.atrn-toggle-markup:hover svg {
+    color: #FF8C42;
+    transform: rotate(180deg);
+}
+
+/* ================== TRIP TOTAL BOX ================== */
+
+.atrn-trip-total-box {
+    margin-top: 20px;
+    background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.atrn-trip-total-box::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 140, 66, 0.08) 0%, transparent 70%);
+    animation: atrn-rotate 20s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes atrn-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.atrn-trip-total-box--roundtrip {
+    background: linear-gradient(135deg, #1a3a5c 0%, #004080 100%);
+}
+
+.atrn-trip-total-label {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+}
+
+.atrn-trip-total-label svg {
+    width: 13px;
+    height: 13px;
+    stroke: rgba(255, 255, 255, 0.7);
+}
+
+.atrn-trip-total-amount {
+    position: relative;
+    z-index: 1;
+    font-size: 26px;
+    font-weight: 900;
+    color: #ffffff;
+    font-family: 'Arial Black', 'Arial Bold', sans-serif;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.atrn-trip-total-breakdown {
+    position: relative;
+    z-index: 1;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    margin-top: 2px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* ================== RESPONSIVE ================== */
+
+@media (max-width: 640px) {
+    .atrn-pricing-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .atrn-trip-total-amount {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .atrn-trip-card {
+        padding: 18px 14px;
+    }
+
+    .atrn-trip-total-box {
+        padding: 14px 16px;
+    }
+}

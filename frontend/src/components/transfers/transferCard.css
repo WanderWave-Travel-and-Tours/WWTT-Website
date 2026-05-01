@@ -88,30 +88,6 @@
   min-height: 3.5em;
 }
 
-/* Pax badge + title inline layout */
-.transfer-title-with-badge {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: flex-start;
-  gap: 4px;
-  overflow: visible;
-}
-
-.transfer-pax-badge {
-  display: inline-flex;
-  align-items: flex-start;
-  flex-shrink: 0;
-  position: static;
-  margin-top: 0;
-}
-
-.transfer-pax-svg {
-  width: 68px;
-  height: 68px;
-  display: block;
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.22));
-}
-
 .transfer-title-text {
   font-size: inherit;
   font-weight: inherit;
@@ -120,7 +96,6 @@
   flex: 1 1 0;
   min-width: 0;
   word-break: break-word;
-  padding-top: 10px;
 }
 
 /* ── Meta row ── */
@@ -159,94 +134,53 @@
   text-overflow: ellipsis;
 }
 
-/* ── Supplier + pax row ── */
-.transfer-type-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.transfer-supplier-badge {
-  background: #FF8C00;
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 3px 10px;
-  border-radius: 20px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.transfer-minpax-text {
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* ── Inclusions ── */
-.transfer-inclusions-section {
-  margin-bottom: 20px;
-}
-
-.transfer-inclusions-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* ── Pricing Block (one-way / roundtrip rows) ── */
+.transfer-pricing-block {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: rgba(255, 140, 0, 0.06);
+  border: 1px solid rgba(255, 140, 0, 0.15);
+  border-radius: 10px;
 }
 
-.transfer-inclusion-item {
+.transfer-price-row {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.transfer-inclusion-icon {
-  color: #16a34a;
-  flex-shrink: 0;
-  margin-top: 2px;
-  width: 13px;
-  height: 13px;
-}
-
-.transfer-inclusion-text {
-  font-size: 0.82rem;
-  color: #475569;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.transfer-inclusions-more {
-  display: inline-block;
-  margin-top: 7px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #fff;
-  background: #FF8C00;
-  border-radius: 20px;
-  padding: 2px 9px;
-  letter-spacing: 0.3px;
-}
-
-/* ── Notes ── */
-.transfer-notes {
+.transfer-price-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.78rem;
+  font-weight: 700;
   color: #64748b;
-  font-style: italic;
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-  border-left: 2px solid #e2e8f0;
-  padding-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.transfer-price-row-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.transfer-price-row-value .transfer-currency {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.transfer-price-row-value .transfer-price-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FF8C00;
 }
 
 /* ── Footer ── */
@@ -347,7 +281,6 @@
   .transfer-card-body { padding: 16px; }
   .transfer-card-title { font-size: 1rem; min-height: auto; }
   .transfer-card-image { height: 160px; }
-  .transfer-pax-svg { width: 58px; height: 58px; }
   .transfer-card-footer { gap: 16px; }
   .transfer-price-info { width: 100%; }
   .transfer-book-button { width: 100%; padding: 12px 0; }

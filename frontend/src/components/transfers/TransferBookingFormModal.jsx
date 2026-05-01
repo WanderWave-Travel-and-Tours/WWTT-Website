@@ -105,8 +105,10 @@ const BookingCompletedModal = ({ isOpen, onClose, activityName }) => {
 // ── Main Component ────────────────────────────────────────────────────────────
 const TransferBookingFormModal = ({
   isOpen, onClose, transfer,
+  transferType = 'oneway',
   travelDate, setTravelDate,
-  pickupTime, setPickupTime,
+  arrivalTime, setArrivalTime,
+  departureTime, setDepartureTime,
   pickupLocation, setPickupLocation,
   dropoffLocation, setDropoffLocation,
   specialRequests, setSpecialRequests,
@@ -153,10 +155,14 @@ const TransferBookingFormModal = ({
         supplierName:    transfer.supplierName || '',
         destination:     transfer.destination  || '',
         pax:             transfer.pax          || '',
+        transferType,
         travelDate,
-        pickupTime,
+        // One-way: arrivalTime only. Roundtrip: both arrivalTime + departureTime
+        arrivalTime:     arrivalTime || '',
+        departureTime:   transferType === 'roundtrip' ? (departureTime || '') : '',
         pickupLocation,
-        dropoffLocation,
+        // One-way: no dropoff. Roundtrip: dropoffLocation included
+        dropoffLocation: transferType === 'roundtrip' ? dropoffLocation : '',
         specialRequests,
         fullName,
         email,
@@ -285,7 +291,7 @@ const TransferBookingFormModal = ({
                 onChange={(e) => setPhone(e.target.value)} />
             </div>
 
-            {/* Travel Date */}
+            {/* Travel Date + Time(s) */}
             <div className="bfm-form-row">
               <div className="bfm-form-group">
                 <label className="bfm-form-label">Travel Date *</label>
@@ -297,15 +303,29 @@ const TransferBookingFormModal = ({
                 />
               </div>
               <div className="bfm-form-group">
-                <label className="bfm-form-label">Pickup Time</label>
+                <label className="bfm-form-label">
+                  {transferType === 'roundtrip' ? 'Arrival Time *' : 'Pickup Time'}
+                </label>
                 <input type="time" className="bfm-form-input"
-                  value={pickupTime}
-                  onChange={(e) => setPickupTime(e.target.value)} />
+                  required={transferType === 'roundtrip'}
+                  value={arrivalTime}
+                  onChange={(e) => setArrivalTime(e.target.value)} />
               </div>
             </div>
 
-            {/* Pickup / Dropoff */}
-            <div className="bfm-form-row">
+            {/* Departure Time (roundtrip only) */}
+            {transferType === 'roundtrip' && (
+              <div className="bfm-form-group">
+                <label className="bfm-form-label">Departure Time *</label>
+                <input type="time" className="bfm-form-input"
+                  required
+                  value={departureTime}
+                  onChange={(e) => setDepartureTime(e.target.value)} />
+              </div>
+            )}
+
+            {/* Pickup Location (always shown) + Drop-off (roundtrip only) */}
+            <div className={transferType === 'roundtrip' ? 'bfm-form-row' : 'bfm-form-group'}>
               <div className="bfm-form-group">
                 <label className="bfm-form-label">Pickup Location *</label>
                 <input type="text" className="bfm-form-input" required
@@ -313,13 +333,15 @@ const TransferBookingFormModal = ({
                   value={pickupLocation}
                   onChange={(e) => setPickupLocation(e.target.value)} />
               </div>
-              <div className="bfm-form-group">
-                <label className="bfm-form-label">Drop-off Location *</label>
-                <input type="text" className="bfm-form-input" required
-                  placeholder="e.g. Hotel Name"
-                  value={dropoffLocation}
-                  onChange={(e) => setDropoffLocation(e.target.value)} />
-              </div>
+              {transferType === 'roundtrip' && (
+                <div className="bfm-form-group">
+                  <label className="bfm-form-label">Drop-off Location *</label>
+                  <input type="text" className="bfm-form-input" required
+                    placeholder="e.g. Hotel Name"
+                    value={dropoffLocation}
+                    onChange={(e) => setDropoffLocation(e.target.value)} />
+                </div>
+              )}
             </div>
 
             {/* Special Requests */}
