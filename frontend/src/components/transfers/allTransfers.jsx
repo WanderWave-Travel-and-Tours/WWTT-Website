@@ -35,10 +35,10 @@ function AllTransfers({
     setPriceError('');
   }, [transfers, searchQuery, priceRange, selectedDestinations]);
 
-  // Sort
+  // Sort — use oneWayPrice as the sort key
   const sortedTransfers = [...transfers].sort((a, b) => {
-    if (sortOrder === 'price-asc') return (a.sellingPrice || 0) - (b.sellingPrice || 0);
-    if (sortOrder === 'price-desc') return (b.sellingPrice || 0) - (a.sellingPrice || 0);
+    if (sortOrder === 'price-asc') return (a.oneWayPrice || 0) - (b.oneWayPrice || 0);
+    if (sortOrder === 'price-desc') return (b.oneWayPrice || 0) - (a.oneWayPrice || 0);
     return 0;
   });
 
@@ -231,7 +231,7 @@ function AllTransfers({
           </div>
         </aside>
 
-        {/* ── SORT BAR (no destination quick-filter buttons — those are too long) ── */}
+        {/* ── SORT BAR ── */}
         <div className="transfers-filter-bar-container">
           <div className="transfers-scope-filter-container">
             <button

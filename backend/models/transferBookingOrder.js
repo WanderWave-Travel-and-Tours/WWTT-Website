@@ -106,4 +106,5 @@ TransferBookingOrderSchema.index({ status: 1 });
 TransferBookingOrderSchema.index({ travelDate: 1 });
 TransferBookingOrderSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('TransferBookingOrder', TransferBookingOrderSchema);
+module.exports = mongoose.models.TransferBookingOrder
+  || mongoose.model('TransferBookingOrder', TransferBookingOrderSchema);

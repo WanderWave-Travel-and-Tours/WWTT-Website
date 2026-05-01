@@ -34,6 +34,9 @@ import EditTour from './components/viewtours/EditTour.jsx';
 import TourBookingDashboard from './components/tourbooking/tourBooking.jsx'; // ✅ Tour Booking Dashboard
 import TransferBookingDashboard from './components/transferbooking/TransferBooking.jsx'; // ✅ Transfer Booking Dashboard
 
+// ✅ NEW: Add Transfer
+import AddTransfer from './components/add-transfer/addtransfer.jsx';
+
 // Promos & Posters
 import AddPromo from './components/addpromo/addpromo.jsx';
 import ViewPromos from './components/viewpromos/viewpromos.jsx';
@@ -106,6 +109,7 @@ const VALID_PROTECTED_ROUTES = [
   '/view-packages',
   '/add-tour',
   '/view-tours',
+  '/add-transfer',    // ✅ NEW
   '/add-promo',
   '/view-promos',
   '/add-poster',
@@ -544,6 +548,9 @@ function App() {
           <Route path="/add-tour" element={<ProtectedRoute><AddTour /></ProtectedRoute>} />
           <Route path="/view-tours" element={<ProtectedRoute><ViewTours /></ProtectedRoute>} />
           <Route path="/edit-tour/:id" element={<ProtectedRoute><EditTour /></ProtectedRoute>} />
+
+          {/* ✅ NEW: Transfer */}
+          <Route path="/add-transfer" element={<ProtectedRoute><AddTransfer /></ProtectedRoute>} />
 
           {/* Promos & Posters */}
           <Route path="/add-promo" element={<ProtectedRoute><AddPromo /></ProtectedRoute>} />

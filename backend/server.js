@@ -153,7 +153,8 @@ const pageViewRoutes = require('./routes/pageViewRoute');
 const siteVisitRoutes = require('./routes/siteVisitRoute');
 const emailSyncRoute = require('./routes/Emailsyncroute');
 const destinationRoutes = require('./routes/destinationRoute');
-const transferBookingRoute = require('./routes/transferBookingRoute');
+const transferRoute             = require('./routes/transferBookingRoute');       // Transfer listings (vehicles/options)
+const transferBookingOrderRoute = require('./routes/transferBookingOrderRoute'); // Customer transfer bookings
 
 
 const uploadDir = path.join(__dirname, 'uploads');
@@ -321,8 +322,9 @@ app.use('/api/page-views', pageViewRoutes);
 app.use('/api/site-visits', siteVisitRoutes); 
 app.use('/api/packages', emailSyncRoute);
 app.use('/api/destinations', destinationRoutes);
-app.use('/api/transfer-bookings', transferBookingRoute);
-// ✅ Kept in same position — no conflicts found
+app.use('/api/transfers', transferRoute);                     // Transfer listings (CRUD: vehicles/options)
+app.use('/api/transfer-bookings', transferBookingOrderRoute); // Customer transfer bookings
+// ✅ Single mount — transferBookingRoute duplicate removed
 
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {

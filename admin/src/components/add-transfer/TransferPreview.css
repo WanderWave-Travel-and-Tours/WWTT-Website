@@ -1,0 +1,439 @@
+.atrn-preview {
+    background: linear-gradient(135deg, #001F3F 0%, #003d7a 100%);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.atrn-preview::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 140, 66, 0.08) 0%, transparent 70%);
+    animation: atrn-bg-rotate 25s linear infinite;
+}
+
+@keyframes atrn-bg-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.atrn-preview-label {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #FF8C42;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+}
+
+.atrn-preview-label::before {
+    content: '👁';
+    font-size: 16px;
+}
+
+/* ================== CARD ================== */
+
+.atrn-card {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.atrn-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* ================== IMAGE ================== */
+
+.atrn-card-image {
+    height: 180px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.atrn-card-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+    z-index: 1;
+}
+
+.atrn-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.atrn-card:hover .atrn-card-image img {
+    transform: scale(1.05);
+}
+
+.atrn-card-image span {
+    position: relative;
+    z-index: 2;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.atrn-card-image span::before {
+    content: '🚗';
+    font-size: 24px;
+}
+
+/* ================== CARD BODY ================== */
+
+.atrn-card-body {
+    padding: 24px;
+}
+
+/* ================== BADGES ================== */
+
+.atrn-card-badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.atrn-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #FF8C42;
+    background: linear-gradient(135deg, #fff4ec 0%, #ffe8d9 100%);
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid #ffd4b8;
+}
+
+.atrn-card-badge::before {
+    content: '✈';
+    font-size: 12px;
+}
+
+.atrn-card-badge--vehicle {
+    color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #93c5fd;
+}
+
+.atrn-card-badge--vehicle::before {
+    content: '🚘';
+}
+
+/* ================== TITLE ================== */
+
+.atrn-card-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 0.3px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+}
+
+.atrn-card-title--placeholder {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ================== PACKAGE DESTINATION ================== */
+
+.atrn-card-pkg-dest {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.atrn-card-pkg-dest svg {
+    width: 13px;
+    height: 13px;
+    color: #FF8C42;
+    flex-shrink: 0;
+}
+
+/* ================== DIVIDER ================== */
+
+.atrn-card-divider {
+    height: 2px;
+    background: linear-gradient(90deg, #e2e8f0 0%, transparent 100%);
+    margin: 16px 0;
+}
+
+/* ================== PRICING ================== */
+
+.atrn-card-pricing {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.atrn-card-pricing--empty {
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    align-items: center;
+}
+
+.atrn-card-pricing--empty span {
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.atrn-card-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    gap: 8px;
+}
+
+.atrn-card-price-row--roundtrip {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #93c5fd;
+}
+
+.atrn-card-price-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.atrn-card-price-type {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.atrn-card-price-breakdown {
+    font-size: 10px;
+    color: #94a3b8;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.atrn-card-price-amount {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    color: #FF8C42;
+    flex-shrink: 0;
+}
+
+.atrn-card-price-row--roundtrip .atrn-card-price-amount {
+    color: #2563eb;
+}
+
+/* ================== STATS ================== */
+
+.atrn-stats {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.atrn-stat {
+    flex: 1;
+    text-align: center;
+    padding: 16px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+
+.atrn-stat:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 140, 66, 0.5);
+    transform: translateY(-2px);
+}
+
+.atrn-stat strong {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    color: #FF8C42;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
+    min-height: 22px;
+    word-break: break-all;
+}
+
+.atrn-stat strong svg {
+    width: 18px;
+    height: 18px;
+    stroke: #FF8C42;
+}
+
+.atrn-stat span {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+/* ================== RESPONSIVE ================== */
+
+@media (max-width: 900px) {
+    .atrn-preview {
+        padding: 24px;
+    }
+
+    .atrn-card-image {
+        height: 160px;
+    }
+
+    .atrn-card-body {
+        padding: 22px;
+    }
+}
+
+@media (max-width: 768px) {
+    .atrn-preview {
+        padding: 22px;
+        margin-bottom: 16px;
+    }
+
+    .atrn-card-image {
+        height: 150px;
+    }
+
+    .atrn-card-body {
+        padding: 20px;
+    }
+
+    .atrn-stats {
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .atrn-stat {
+        padding: 14px 8px;
+    }
+
+    .atrn-stat strong {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 640px) {
+    .atrn-preview {
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .atrn-card-image {
+        height: 140px;
+    }
+
+    .atrn-card-body {
+        padding: 18px;
+    }
+
+    .atrn-stats {
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .atrn-stat {
+        padding: 12px 6px;
+        border-radius: 8px;
+    }
+
+    .atrn-stat strong {
+        font-size: 10px;
+    }
+
+    .atrn-stat span {
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .atrn-preview {
+        padding: 16px;
+    }
+
+    .atrn-card-image {
+        height: 130px;
+    }
+
+    .atrn-card-body {
+        padding: 16px;
+    }
+
+    .atrn-card-price-amount {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .atrn-preview {
+        padding: 14px;
+    }
+
+    .atrn-card-image {
+        height: 120px;
+    }
+
+    .atrn-card-body {
+        padding: 14px;
+    }
+}

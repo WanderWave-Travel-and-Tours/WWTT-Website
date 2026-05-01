@@ -1,18 +1,21 @@
+// src/components/Transfers/TransferBookingRightForm.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Ticket
+  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Ticket,
+  ArrowRight, ArrowLeftRight
 } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import axios from 'axios';
-import './TransferBookingRightForm.css'; // ✅ Reuse same brf- styles
+import './TransferBookingRightForm.css';
 
 const TransferBookingRightForm = ({
   transfer,
   currency = 'PHP',
   exchangeRate = 58,
   currentUser = null,
+  onPassengerCountChange,
 }) => {
   const navigate = useNavigate();
   const toast    = useToast();
@@ -24,11 +27,16 @@ const TransferBookingRightForm = ({
   const [selectedDate,   setSelectedDate]   = useState(null);
   const [currentMonth,   setCurrentMonth]   = useState(new Date());
 
+  // ── Transfer type selection (one-way / roundtrip) ─────────────────────────
+  const hasRoundtrip = (transfer.roundtripPrice || 0) > 0;
+  const [transferType, setTransferType] = useState('oneway'); // 'oneway' | 'roundtrip'
+
   // ── Passenger count ───────────────────────────────────────────────────────
   const [passengerCount, setPassengerCount] = useState(1);
 
-  // ── Transfer details (collected in booking form modal) ────────────────────
-  const [pickupTime,       setPickupTime]       = useState('');
+  // ── Booking form fields ───────────────────────────────────────────────────
+  const [arrivalTime,      setArrivalTime]      = useState('');
+  const [departureTime,    setDepartureTime]    = useState('');
   const [pickupLocation,   setPickupLocation]   = useState('');
   const [dropoffLocation,  setDropoffLocation]  = useState('');
   const [specialRequests,  setSpecialRequests]  = useState('');
@@ -49,26 +57,36 @@ const TransferBookingRightForm = ({
   const [promoWarning,     setPromoWarning]     = useState('');
   const [isCheckingPromo,  setIsCheckingPromo]  = useState(false);
 
+  // Notify parent of passenger count changes
+  useEffect(() => {
+    if (onPassengerCountChange) onPassengerCountChange(passengerCount);
+  }, [passengerCount]);
+
   // ── Currency helpers ──────────────────────────────────────────────────────
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
-  const convertPrice   = (phpPrice) => currency === 'PHP' ? phpPrice : (phpPrice / exchangeRate) * 1.30;
+  const convertPrice   = (phpPrice) => currency === 'PHP' ? (phpPrice || 0) : ((phpPrice || 0) / exchangeRate);
 
-  // ── Price calculations ────────────────────────────────────────────────────
-  const sellingPrice = transfer.sellingPrice || transfer.price || 0;
+  // ── Price from Transfer model — based on selected type ────────────────────
+  const oneWayPrice    = transfer.oneWayPrice    || 0;
+  const roundtripPrice = transfer.roundtripPrice || 0;
+
+  const basePrice = transferType === 'roundtrip' && roundtripPrice > 0
+    ? roundtripPrice
+    : oneWayPrice;
 
   const discountAmount = (() => {
     if (!appliedPromo) return 0;
     const val = appliedPromo.discountValue ?? 0;
     return appliedPromo.discountType === 'Percentage'
-      ? (sellingPrice * val / 100)
+      ? (basePrice * val / 100)
       : val;
   })();
 
-  const finalAmount    = Math.max(0, sellingPrice - discountAmount);
+  const finalAmount    = Math.max(0, basePrice - discountAmount);
   const partialAmount  = Math.round(finalAmount * 0.50);
   const hasValidTotal  = finalAmount > 0;
 
-  const convertedTotal    = convertPrice(sellingPrice);
+  const convertedTotal    = convertPrice(basePrice);
   const convertedDiscount = convertPrice(discountAmount);
   const convertedFinal    = convertPrice(finalAmount);
   const convertedPartial  = convertPrice(partialAmount);
@@ -219,23 +237,28 @@ const TransferBookingRightForm = ({
     try {
       const bookingData = {
         transferId:      transfer._id || transfer.id || null,
-        activityName:    transfer.activityName || transfer.name || transfer.title,
+        activityName:    transfer.title || '',
         bookingType:     'transfer',
-        supplierName:    transfer.supplierName || '',
-        destination:     transfer.destination  || '',
-        pax:             transfer.pax          || '',
+        destination:     transfer.packageDestination || '',
+        category:        transfer.category || '',
+        transferType,                               // 'oneway' | 'roundtrip'
         travelDate:      formatTravelDateStr(),
-        pickupTime:      pickupTime.trim(),
+        // One-way: arrivalTime only. Roundtrip: both arrivalTime + departureTime
+        arrivalTime:     arrivalTime.trim(),
+        departureTime:   transferType === 'roundtrip' ? departureTime.trim() : '',
         pickupLocation:  pickupLocation.trim(),
-        dropoffLocation: dropoffLocation.trim(),
+        // One-way: no dropoff. Roundtrip: dropoffLocation included
+        dropoffLocation: transferType === 'roundtrip' ? dropoffLocation.trim() : '',
         specialRequests: specialRequests.trim(),
         fullName:        fullName.trim(),
         email:           email.trim(),
         phone:           phone.trim(),
         message:         message.trim(),
         passengerCount,
-        sellingPrice,
-        totalAmount:          finalAmount,
+        oneWayPrice,
+        roundtripPrice,
+        sellingPrice:    basePrice,                 // price of selected type
+        totalAmount:     finalAmount,
         currency,
         paymentType,
         initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalAmount,
@@ -303,6 +326,65 @@ const TransferBookingRightForm = ({
         <p className="brf-subtitle">Select your travel date and passenger details</p>
         <br />
       </div>
+
+      {/* ── Transfer Type Selector (only if roundtrip price exists) ─────── */}
+      {hasRoundtrip && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1.2px', textTransform: 'uppercase', color: '#1e3a5f', marginBottom: '8px' }}>
+            🚗 Transfer Type
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setTransferType('oneway')}
+              style={{
+                padding: '14px 10px',
+                borderRadius: '12px',
+                border: `2px solid ${transferType === 'oneway' ? '#fc9c1b' : '#e2e8f0'}`,
+                background: transferType === 'oneway' ? '#fff7ed' : 'white',
+                cursor: 'pointer',
+                fontWeight: '700',
+                color: transferType === 'oneway' ? '#c2410c' : '#374151',
+                transition: 'all 0.2s',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <ArrowRight size={20} color={transferType === 'oneway' ? '#f97316' : '#94a3b8'} />
+              <span style={{ fontSize: '0.9rem' }}>One Way</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: '800', color: transferType === 'oneway' ? '#ea580c' : '#6b7280' }}>
+                {currencySymbol}{convertPrice(oneWayPrice).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTransferType('roundtrip')}
+              style={{
+                padding: '14px 10px',
+                borderRadius: '12px',
+                border: `2px solid ${transferType === 'roundtrip' ? '#fc9c1b' : '#e2e8f0'}`,
+                background: transferType === 'roundtrip' ? '#fff7ed' : 'white',
+                cursor: 'pointer',
+                fontWeight: '700',
+                color: transferType === 'roundtrip' ? '#c2410c' : '#374151',
+                transition: 'all 0.2s',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <ArrowLeftRight size={20} color={transferType === 'roundtrip' ? '#f97316' : '#94a3b8'} />
+              <span style={{ fontSize: '0.9rem' }}>Roundtrip</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: '800', color: transferType === 'roundtrip' ? '#ea580c' : '#6b7280' }}>
+                {currencySymbol}{convertPrice(roundtripPrice).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Calendar ─────────────────────────────────────────────────────── */}
       <div className="brf-calendar-wrapper">
@@ -428,7 +510,12 @@ const TransferBookingRightForm = ({
       {/* ── Price Summary + CTA ──────────────────────────────────────────── */}
       <div className="brf-booking-footer">
         <div className="brf-total-row">
-          <span className="brf-total-label">Transfer Price</span>
+          <span className="brf-total-label">
+            Transfer Price
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '6px', fontWeight: '500' }}>
+              ({transferType === 'roundtrip' ? 'Roundtrip' : 'One Way'})
+            </span>
+          </span>
           <span className="brf-total-amount" style={{ color: '#10b981' }}>
             {currencySymbol}{convertedTotal.toLocaleString(undefined, {
               minimumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -492,7 +579,7 @@ const TransferBookingRightForm = ({
             <div className="brf-modal-header">
               <h2 className="brf-modal-title">Complete Your Booking</h2>
               <p className="brf-modal-subtitle">
-                {transfer.activityName || transfer.name || transfer.title}
+                {transfer.title || 'Transfer'}
               </p>
               <div className="brf-modal-trip-summary">
                 <div className="brf-summary-item">
@@ -502,6 +589,12 @@ const TransferBookingRightForm = ({
                 <div className="brf-summary-item">
                   <span className="brf-summary-label">Passengers</span>
                   <span className="brf-summary-value">{passengerCount} pax</span>
+                </div>
+                <div className="brf-summary-item">
+                  <span className="brf-summary-label">Type</span>
+                  <span className="brf-summary-value">
+                    {transferType === 'roundtrip' ? '↔ Roundtrip' : '→ One Way'}
+                  </span>
                 </div>
                 <div className="brf-summary-item">
                   <span className="brf-summary-label">Total Amount</span>
@@ -551,14 +644,41 @@ const TransferBookingRightForm = ({
                       placeholder="+63 912 345 6789"
                     />
                   </div>
-                  <div className="brf-form-group">
-                    <label>Pickup Time</label>
-                    <input
-                      type="time"
-                      value={pickupTime}
-                      onChange={e => setPickupTime(e.target.value)}
-                    />
-                  </div>
+
+                  {/* ── Time fields: 1 for one-way, 2 for roundtrip ── */}
+                  {transferType === 'roundtrip' ? (
+                    <>
+                      <div className="brf-form-group">
+                        <label>Arrival Time <span className="brf-required-asterisk">*</span></label>
+                        <input
+                          type="time"
+                          value={arrivalTime}
+                          onChange={e => setArrivalTime(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="brf-form-group">
+                        <label>Departure Time <span className="brf-required-asterisk">*</span></label>
+                        <input
+                          type="time"
+                          value={departureTime}
+                          onChange={e => setDepartureTime(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="brf-form-group">
+                      <label>Pickup Time</label>
+                      <input
+                        type="time"
+                        value={arrivalTime}
+                        onChange={e => setArrivalTime(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  {/* ── Location fields: pickup only for one-way, both for roundtrip ── */}
                   <div className="brf-form-group brf-full-width">
                     <label>Pickup Location</label>
                     <input
@@ -568,15 +688,17 @@ const TransferBookingRightForm = ({
                       placeholder="Hotel name, address, or landmark"
                     />
                   </div>
-                  <div className="brf-form-group brf-full-width">
-                    <label>Drop-off Location</label>
-                    <input
-                      type="text"
-                      value={dropoffLocation}
-                      onChange={e => setDropoffLocation(e.target.value)}
-                      placeholder="Hotel name, address, or landmark"
-                    />
-                  </div>
+                  {transferType === 'roundtrip' && (
+                    <div className="brf-form-group brf-full-width">
+                      <label>Drop-off Location</label>
+                      <input
+                        type="text"
+                        value={dropoffLocation}
+                        onChange={e => setDropoffLocation(e.target.value)}
+                        placeholder="Hotel name, address, or landmark"
+                      />
+                    </div>
+                  )}
                   <div className="brf-form-group brf-full-width">
                     <label>Special Requests / Notes</label>
                     <textarea
