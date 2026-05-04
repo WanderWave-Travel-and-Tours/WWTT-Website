@@ -24,6 +24,7 @@ const AddTransfer = () => {
     const [title, setTitle] = useState("");
     const [category, setCategory] = useState("Local Transfer");
     const [packageDestination, setPackageDestination] = useState("");
+    const [pax, setPax] = useState("");
 
     // --- IMAGE STATE ---
     const [file, setFile] = useState(null);
@@ -240,6 +241,7 @@ const AddTransfer = () => {
             formData.append("title", title);
             formData.append("packageDestination", packageDestination);
             formData.append("category", category);
+            formData.append("pax", pax || "");
 
             // One Way
             formData.append("oneWaySupplierRate", oneWaySupplierRate || "");
@@ -271,6 +273,7 @@ const AddTransfer = () => {
                 setTitle("");
                 setPackageDestination("");
                 setCategory("Local Transfer");
+                setPax("");
                 setFile(null);
                 setPreviewUrl(null);
                 setOneWaySupplierRate("");
@@ -464,6 +467,8 @@ const AddTransfer = () => {
                                     setCategory={setCategory}
                                     packageDestination={packageDestination}
                                     setPackageDestination={setPackageDestination}
+                                    pax={pax}
+                                    setPax={setPax}
                                 />
 
                                 {/* Transfer Pricing */}
