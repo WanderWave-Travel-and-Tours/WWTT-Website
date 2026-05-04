@@ -333,10 +333,12 @@
   text-align: center;
   padding: 10px;
   border-radius: 8px;
+  border: none;
   font-family: Arial, sans-serif;
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
   transition: opacity 0.2s ease;
   box-sizing: border-box;
 }
@@ -380,4 +382,4 @@
 .bottom-section-bg .destination-card h4 {
   font-size: clamp(0.75rem, 1.8vw, 1rem);
   line-height: 1.25;
-} 
+}
