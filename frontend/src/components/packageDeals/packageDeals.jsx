@@ -13,6 +13,7 @@ import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
 import { Compass } from 'lucide-react';
+import ServiceCustomizationModal from './ServiceCustomizationModal';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -47,6 +48,7 @@ function PackageDealsContent() {
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
   const [showCreatePackageWidget, setShowCreatePackageWidget] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
 
   // NEW: Mobile two-tap expansion for the Create Package FAB (mirrors FeedbackWidget)
   const [isPackageExpanded, setIsPackageExpanded] = useState(false);
@@ -988,14 +990,16 @@ function PackageDealsContent() {
             <p className="create-package-popup-desc">
               Tell us your ideal destination, dates, and preferences — we'll craft a personalized package just for you!
             </p>
-            <a
-              href="https://wanderwavetravelandtours.com/contact"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
               className="create-package-popup-btn"
+              onClick={() => {
+                setShowCreatePackageWidget(false);
+                setIsPackageExpanded(false);
+                setShowServiceModal(true);
+              }}
             >
-              Get a Custom Quote
-            </a>
+              Create Booking
+            </button>
           </div>
         )}
         <button
@@ -1009,6 +1013,25 @@ function PackageDealsContent() {
           <span className="create-package-fab-label">Build a Trip</span>
         </button>
       </div>
+
+      {/* ============================================================
+          SERVICE CUSTOMIZATION MODAL
+          Opened from the "Create Booking" button inside the package widget popup
+      ============================================================ */}
+      <ServiceCustomizationModal
+        isOpen={showServiceModal}
+        onClose={() => setShowServiceModal(false)}
+        onConfirm={({ tours, transfers, transferTypes, detailsMap, total }) => {
+          setShowServiceModal(false);
+          if (tours.length + transfers.length > 0) {
+            toast.success(
+              `Booking created with ${tours.length + transfers.length} service(s) — ₱${total.toLocaleString()}`,
+              'Booking Confirmed',
+              3500
+            );
+          }
+        }}
+      />
 
       <FeedbackWidget triggerOpen={feedbackTrigger} />
 

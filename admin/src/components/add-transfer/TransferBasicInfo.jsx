@@ -1,6 +1,11 @@
 import React from 'react';
 import './TransferBasicInfo.css';
 
+// ✅ FIX: Use absolute URL in production (Render). In development,
+//         Vite's proxy handles relative paths fine, but on the
+//         deployed build there's no proxy — relative /api calls 404.
+const API_BASE = import.meta.env.VITE_API_URL || 'https://wanderwaveph.onrender.com';
+
 const TransferBasicInfo = ({
   title, setTitle,
   category, setCategory,
@@ -14,7 +19,8 @@ const TransferBasicInfo = ({
   const destRef = React.useRef(null);
 
   React.useEffect(() => {
-    fetch('/api/packages/all')
+    // ✅ FIX: Use API_BASE so it works on production (Render) not just localhost
+    fetch(`${API_BASE}/api/packages/all`)
       .then((r) => r.json())
       .then((data) => {
         if (data.status === 'ok') {
