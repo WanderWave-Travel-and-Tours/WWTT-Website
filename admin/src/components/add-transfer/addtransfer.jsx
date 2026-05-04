@@ -12,10 +12,12 @@ import TransferPreview from "./TransferPreview";
 import { useToast } from "../toast/ToastManager";
 import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
-// ✅ FIX: Use absolute URL in production (Render). In development,
-//         Vite's proxy handles relative paths fine, but on the
-//         deployed build there's no proxy — relative /api calls 404.
-const API_BASE = import.meta.env.VITE_API_URL || 'https://wanderwaveph.onrender.com';
+// ✅ FIX: Strip trailing slash so VITE_API_URL (which already includes /api)
+//         doesn't produce a double /api/api prefix when appending paths.
+//         e.g. VITE_API_URL = "https://wanderwaveph.onrender.com/api"
+//         → API_BASE = "https://wanderwaveph.onrender.com/api"
+//         → fetch(`${API_BASE}/transfers`) = ".../api/transfers"  ✅
+const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'https://wanderwaveph.onrender.com/api';
 
 const AddTransfer = () => {
     // --- SIDEBAR TOGGLE ---
@@ -260,8 +262,8 @@ const AddTransfer = () => {
             formData.append("roundtripMarkupType", roundtripMarkupType);
             formData.append("roundtripPrice", roundtripPrice || "");
 
-            // ✅ FIX: Use API_BASE so submit works on production (Render)
-            const res = await fetch(`${API_BASE}/api/transfers`, {
+            // ✅ FIX: API_BASE already includes /api — no need to repeat it
+            const res = await fetch(`${API_BASE}/transfers`, {
                 method: "POST",
                 body: formData,
             });
