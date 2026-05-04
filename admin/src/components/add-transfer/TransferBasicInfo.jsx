@@ -1,10 +1,7 @@
 import React from 'react';
 import './TransferBasicInfo.css';
 
-// ✅ FIX: Use absolute URL in production (Render). In development,
-//         Vite's proxy handles relative paths fine, but on the
-//         deployed build there's no proxy — relative /api calls 404.
-const API_BASE = import.meta.env.VITE_API_URL || 'https://wanderwaveph.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
 
 const TransferBasicInfo = ({
   title, setTitle,
@@ -12,27 +9,33 @@ const TransferBasicInfo = ({
   packageDestination, setPackageDestination,
   pax, setPax,
 }) => {
-  // ── Package destinations (fetched from /api/packages/all) ────────────────
   const [packageDestinations, setPackageDestinations] = React.useState([]);
   const [destSearch, setDestSearch] = React.useState(packageDestination || '');
   const [showDestDropdown, setShowDestDropdown] = React.useState(false);
   const destRef = React.useRef(null);
 
+  // ✅ FIX: Fetch from /destinations/all (Destination model, not packages)
+  //         API_BASE already includes /api, so no need to repeat it here.
+  //         Response shape: { status: 'ok', data: [{ name, country, ... }] }
+  //         Only active destinations (isArchive: 'No') are returned by this endpoint.
   React.useEffect(() => {
-    // ✅ FIX: Use API_BASE so it works on production (Render) not just localhost
-    fetch(`${API_BASE}/api/packages/all`)
-      .then((r) => r.json())
+    fetch(`${API_BASE}/destinations/all`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
-        if (data.status === 'ok') {
-          const unique = [...new Set(
-            data.data
-              .map((p) => p.destination?.trim())
-              .filter(Boolean)
-          )].sort();
-          setPackageDestinations(unique);
+        if (data?.status === 'ok' && Array.isArray(data?.data)) {
+          // Extract the `name` field from each Destination document
+          const names = data.data
+            .map((d) => d.name?.trim())
+            .filter(Boolean);
+          setPackageDestinations(names);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('❌ Failed to fetch destinations:', err.message);
+      });
   }, []);
 
   // Close dropdown when clicking outside
@@ -104,7 +107,7 @@ const TransferBasicInfo = ({
           />
         </div>
 
-        {/* PACKAGE DESTINATION — searchable dropdown from /api/packages/all */}
+        {/* PACKAGE DESTINATION — searchable dropdown from /api/destinations/all */}
         <div className="atrn-field atrn-field--full" ref={destRef} style={{ position: 'relative' }}>
           <label>Package Destination</label>
           <input
