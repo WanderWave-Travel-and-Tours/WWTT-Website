@@ -667,6 +667,136 @@ const generateVoucherData = async (booking) => {
     </div>
 </div>
 
+                        {/* ADD-ONS SECTION */}
+                        {(() => {
+                            const addOns = selectedBooking.rawData?.addOns;
+                            const hasTours     = Array.isArray(addOns?.tours)     && addOns.tours.length > 0;
+                            const hasTransfers = Array.isArray(addOns?.transfers) && addOns.transfers.length > 0;
+                            if (!hasTours && !hasTransfers) return null;
+                            const itemCount = (addOns.tours?.length || 0) + (addOns.transfers?.length || 0);
+
+                            return (
+                                <div className="cnm-card">
+                                    <div className="cnm-card-header">
+                                        <h3 className="cnm-card-title">Add-Ons</h3>
+                                        <span className="cnm-badge cnm-badge-amber">
+                                            {itemCount} item{itemCount !== 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+
+                                    {/* ── TOURS ── */}
+                                    {hasTours && (
+                                        <div className="cnm-addons-group">
+                                            <div className="cnm-addons-group-title">🗺️ Tours</div>
+                                            {addOns.tours.map((tour, i) => (
+                                                <div key={i} className="cnm-addon-item">
+                                                    <div className="cnm-addon-item-header">
+                                                        <div className="cnm-addon-item-icon tour">🗺️</div>
+                                                        <div className="cnm-addon-item-info">
+                                                            <span className="cnm-addon-item-name">{tour.title || 'Tour'}</span>
+                                                            <div className="cnm-addon-item-meta">
+                                                                {tour.destination && <span>📍 {tour.destination}</span>}
+                                                                {tour.duration    && <span>⏱ {tour.duration}</span>}
+                                                                {tour.category    && <span>🏷 {tour.category}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <div className="cnm-addon-item-price">
+                                                            <div className="cnm-addon-item-subtotal">
+                                                                ₱{(tour.subtotal || 0).toLocaleString()}
+                                                            </div>
+                                                            <div className="cnm-addon-item-per">
+                                                                ₱{(tour.price || 0).toLocaleString()} × {tour.paxCount || 1} pax
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* ── TRANSFERS ── */}
+                                    {hasTransfers && (
+                                        <div className="cnm-addons-group">
+                                            <div className="cnm-addons-group-title">🚐 Transfers</div>
+                                            {addOns.transfers.map((transfer, i) => (
+                                                <div key={i} className="cnm-addon-item">
+                                                    <div className="cnm-addon-item-header">
+                                                        <div className="cnm-addon-item-icon transfer">🚐</div>
+                                                        <div className="cnm-addon-item-info">
+                                                            <span className="cnm-addon-item-name">{transfer.title || 'Transfer'}</span>
+                                                            <div className="cnm-addon-item-meta">
+                                                                {transfer.category && <span>🏷 {transfer.category}</span>}
+                                                                <span className={`cnm-addon-type-badge ${transfer.transferType === 'roundtrip' ? 'roundtrip' : 'oneway'}`}>
+                                                                    {transfer.transferType === 'roundtrip' ? '🔄 Roundtrip' : '➡️ One Way'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="cnm-addon-item-price">
+                                                            <div className="cnm-addon-item-subtotal">
+                                                                ₱{(transfer.subtotal || transfer.selectedPrice || 0).toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Transfer scheduling details */}
+                                                    <div className="cnm-addon-transfer-details">
+                                                        {transfer.travelDate && (
+                                                            <div className="cnm-addon-detail-row">
+                                                                <span className="cnm-addon-detail-label">Travel Date</span>
+                                                                <span className="cnm-addon-detail-value">{formatDate(transfer.travelDate)}</span>
+                                                            </div>
+                                                        )}
+                                                        {transfer.transferType === 'roundtrip' && transfer.returnDate && (
+                                                            <div className="cnm-addon-detail-row">
+                                                                <span className="cnm-addon-detail-label">Return Date</span>
+                                                                <span className="cnm-addon-detail-value">{formatDate(transfer.returnDate)}</span>
+                                                            </div>
+                                                        )}
+                                                        {transfer.arrivalTime && (
+                                                            <div className="cnm-addon-detail-row">
+                                                                <span className="cnm-addon-detail-label">Arrival Time</span>
+                                                                <span className="cnm-addon-detail-value">{transfer.arrivalTime}</span>
+                                                            </div>
+                                                        )}
+                                                        {transfer.transferType === 'roundtrip' && transfer.departureTime && (
+                                                            <div className="cnm-addon-detail-row">
+                                                                <span className="cnm-addon-detail-label">Departure Time</span>
+                                                                <span className="cnm-addon-detail-value">{transfer.departureTime}</span>
+                                                            </div>
+                                                        )}
+                                                        {transfer.pickupLocation && (
+                                                            <div className="cnm-addon-detail-row">
+                                                                <span className="cnm-addon-detail-label">Pickup Location</span>
+                                                                <span className="cnm-addon-detail-value">{transfer.pickupLocation}</span>
+                                                            </div>
+                                                        )}
+                                                        {transfer.transferType === 'roundtrip' && transfer.dropoffLocation && (
+                                                            <div className="cnm-addon-detail-row">
+                                                                <span className="cnm-addon-detail-label">Dropoff Location</span>
+                                                                <span className="cnm-addon-detail-value">{transfer.dropoffLocation}</span>
+                                                            </div>
+                                                        )}
+                                                        {transfer.message && (
+                                                            <div className="cnm-addon-detail-row">
+                                                                <span className="cnm-addon-detail-label">Special Requests</span>
+                                                                <span className="cnm-addon-detail-value">{transfer.message}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Add-Ons Grand Total */}
+                                    <div className="cnm-addons-total">
+                                        <span>Add-Ons Total</span>
+                                        <strong>₱{(addOns.addOnsTotal || 0).toLocaleString()}</strong>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                         {/* SPECIAL REQUESTS */}
                         {selectedBooking.message && (
                             <div className="cnm-card">

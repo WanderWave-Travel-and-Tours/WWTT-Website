@@ -683,60 +683,8 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
       console.log('✅ Walk-in booking created (PENDING) → ID:', bookingId);
 
-      // === 1.5. CREATE TRANSFER BOOKING ORDERS FOR EACH SELECTED TRANSFER ===
-      if (selectedTransferAddOns.length > 0) {
-        const computedReturnDate = (() => {
-          const s = new Date(departureDate);
-          const days = getDurationDays(selectedPackage.duration);
-          s.setDate(s.getDate() + days - 1);
-          return s.toISOString().split('T')[0];
-        })();
-
-        for (const transfer of selectedTransferAddOns) {
-          const type    = transferTypes[transfer._id] || 'oneway';
-          const details = transferDetailsMap[transfer._id] || {};
-          const price   = type === 'roundtrip' ? (transfer.roundtripPrice || 0) : (transfer.oneWayPrice || 0);
-          const primaryPax = formData.passengers[0] || {};
-
-          try {
-            await fetch(`${API_BASE}/api/transfer-bookings`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                transferId:           transfer._id,
-                activityName:         transfer.title    || '',
-                bookingType:          'transfer',
-                destination:          selectedDestination,
-                category:             transfer.category || '',
-                transferType:         type,
-                travelDate:           departureDate,
-                returnDate:           type === 'roundtrip' ? computedReturnDate : '',
-                arrivalTime:          details.arrivalTime    || '',
-                departureTime:        type === 'roundtrip' ? (details.departureTime   || '') : '',
-                pickupLocation:       details.pickupLocation  || '',
-                dropoffLocation:      type === 'roundtrip' ? (details.dropoffLocation || '') : '',
-                message:              details.message          || '',
-                fullName:             `${primaryPax.firstName || ''} ${primaryPax.lastName || ''}`.trim(),
-                email:                primaryPax.email  || '',
-                phone:                primaryPax.phone  || '',
-                passengerCount:       paxCount,
-                oneWayPrice:          transfer.oneWayPrice    || 0,
-                roundtripPrice:       transfer.roundtripPrice || 0,
-                sellingPrice:         price,
-                totalAmount:          price,
-                paymentType:          formData.paymentType,
-                initialPaymentAmount: 0,
-                remainingBalance:     0,
-                pax:                  `${paxCount} pax`,
-              }),
-            });
-            console.log(`✅ Transfer booking order created: ${transfer.title} (${type})`);
-          } catch (tErr) {
-            console.error(`⚠️ Transfer booking error for ${transfer.title}:`, tErr);
-          }
-        }
-      }
-      // ──────────────────────────────────────────────────────────────────────
+      // Transfer and tour add-ons are already embedded in the booking document
+      // under addOns.transfers and addOns.tours — no separate records needed.
 
       // === 2. CREATE PAYMONGO CHECKOUT SESSION ===
       const amountToPay = formData.paymentType === 'full'

@@ -834,12 +834,7 @@ router.post('/', upload.any(), async (req, res) => {
         }
     }
 
-    console.log('📊 Creating booking with:');
-    console.log('  - Primary Contact:', primaryName, primaryEmail);
-    console.log('  - Passengers:', passengers.length);
-    console.log('  - Walk-in:', bookingData.isWalkin || false);
-    console.log('  - Promo:', bookingData.promoCode || 'None');
-    console.log('  - Total Amount:', bookingData.totalAmount);
+    // ── Add-on summary is logged after sanitizedAddOns is built below ──
 
     // ✅ SANITIZE CUSTOMIZED INCLUSIONS
     let sanitizedCustomizedInclusions = [];
@@ -873,6 +868,77 @@ router.post('/', upload.any(), async (req, res) => {
       
       console.log(`✅ Sanitized ${sanitizedCustomizedInclusions.length} customized inclusions`);
     }
+
+    // ── SANITIZE ADD-ONS (tours + transfers) ──────────────────────────────
+    let sanitizedAddOns = { tours: [], transfers: [], addOnsTotal: 0 };
+
+    if (bookingData.addOns && typeof bookingData.addOns === 'object') {
+      const raw = bookingData.addOns;
+
+      // Tours
+      if (Array.isArray(raw.tours)) {
+        sanitizedAddOns.tours = raw.tours.map(t => ({
+          tourId:      t.tourId      || null,
+          title:       t.title       || '',
+          destination: t.destination || '',
+          duration:    t.duration    || '',
+          category:    t.category    || '',
+          image:       t.image       || null,
+          price:       parseFloat(t.price)       || 0,
+          sellerPrice: parseFloat(t.sellerPrice) || 0,
+          paxCount:    parseInt(t.paxCount)      || 1,
+          subtotal:    parseFloat(t.subtotal)    || 0,
+        }));
+      }
+
+      // Transfers
+      if (Array.isArray(raw.transfers)) {
+        sanitizedAddOns.transfers = raw.transfers.map(t => ({
+          transferId:      t.transferId      || null,
+          title:           t.title           || '',
+          category:        t.category        || '',
+          imageUrl:        t.imageUrl        || null,
+          transferType:    ['oneway', 'roundtrip'].includes(t.transferType) ? t.transferType : 'oneway',
+          oneWayPrice:     parseFloat(t.oneWayPrice)    || 0,
+          roundtripPrice:  parseFloat(t.roundtripPrice) || 0,
+          selectedPrice:   parseFloat(t.selectedPrice)  || 0,
+          subtotal:        parseFloat(t.subtotal)        || 0,
+          // Pre-filled from booking context
+          travelDate:      t.travelDate      || '',
+          returnDate:      t.returnDate      || '',
+          destination:     t.destination     || '',
+          passengerCount:  parseInt(t.passengerCount) || 1,
+          fullName:        t.fullName        || '',
+          email:           t.email           || '',
+          // From Transfer Details Modal
+          arrivalTime:     t.arrivalTime     || '',
+          departureTime:   t.departureTime   || '',
+          pickupLocation:  t.pickupLocation  || '',
+          dropoffLocation: t.dropoffLocation || '',
+          message:         t.message         || '',
+        }));
+      }
+
+      sanitizedAddOns.addOnsTotal = parseFloat(raw.addOnsTotal) || 0;
+
+      console.log(
+        `✅ Sanitized add-ons — tours: ${sanitizedAddOns.tours.length}, ` +
+        `transfers: ${sanitizedAddOns.transfers.length}, ` +
+        `total: ₱${sanitizedAddOns.addOnsTotal.toLocaleString()}`
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ── Now safe to log the full booking summary ───────────────────────
+    console.log('📊 Creating booking with:');
+    console.log('  - Primary Contact:', primaryName, primaryEmail);
+    console.log('  - Passengers:', passengers.length);
+    console.log('  - Walk-in:', bookingData.isWalkin || false);
+    console.log('  - Promo:', bookingData.promoCode || 'None');
+    console.log('  - Total Amount:', bookingData.totalAmount);
+    console.log('  - Add-On Tours:', sanitizedAddOns.tours.length);
+    console.log('  - Add-On Transfers:', sanitizedAddOns.transfers.length);
+    console.log('  - Add-Ons Total: ₱', sanitizedAddOns.addOnsTotal);
 
     // ✅ ITINERARY + INCLUSIONS SNAPSHOT
     let bookingItinerary = [];
@@ -1011,7 +1077,10 @@ router.post('/', upload.any(), async (req, res) => {
       createdByType: bookingData.createdByType || (bookingData.isWalkin === true ? 'sales' : 'user'),
       createdByEmail: bookingData.createdByEmail || (bookingData.isWalkin === true
         ? 'houston@wanderwaveph.com'
-        : bookingData.email)
+        : bookingData.email),
+
+      // ── Add-Ons ────────────────────────────────────────────────────────
+      addOns: sanitizedAddOns,
     });
 
     console.log('💾 Saving booking to database...');
@@ -1037,7 +1106,10 @@ router.post('/', upload.any(), async (req, res) => {
                 totalAmount: bookingData.totalAmount,
                 passengers: passengers.length,
                 includesAirfare: bookingData.includesAirfare || false,
-                isWalkin: bookingData.isWalkin || false
+                isWalkin: bookingData.isWalkin || false,
+                addOnTours: sanitizedAddOns.tours.length,
+                addOnTransfers: sanitizedAddOns.transfers.length,
+                addOnsTotal: sanitizedAddOns.addOnsTotal,
             }
         });
         console.log('✅ Activity Log saved');
