@@ -155,7 +155,21 @@ const BookingTable = ({
                         <td>
                             <div className="package-name-cell">
                                 <div className="package-initials-badge">BK</div>
-                                {booking.packageName}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {booking.packageName}
+                                    {(() => {
+                                        const addOns = booking.rawData?.addOns;
+                                        const hasTours = Array.isArray(addOns?.tours) && addOns.tours.length > 0;
+                                        const hasTransfers = Array.isArray(addOns?.transfers) && addOns.transfers.length > 0;
+                                        if (!hasTours && !hasTransfers) return null;
+                                        const count = (addOns.tours?.length || 0) + (addOns.transfers?.length || 0);
+                                        return (
+                                            <span className="addon-tag">
+                                                ✦ {count} Add-On{count !== 1 ? 's' : ''}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
                             </div>
                         </td>
 

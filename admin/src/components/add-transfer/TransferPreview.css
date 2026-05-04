@@ -152,6 +152,17 @@
     content: '🚘';
 }
 
+.atrn-card-badge--pax {
+    color: #059669;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #6ee7b7;
+}
+
+.atrn-card-badge--pax::before {
+    content: '👥';
+    font-size: 12px;
+}
+
 /* ================== TITLE ================== */
 
 .atrn-card-title {
