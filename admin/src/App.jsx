@@ -441,9 +441,11 @@ const UnauthorizedAccess = () => {
 // PROTECTED ROUTE WITH TOKEN VERIFICATION
 // ✅ FIX: Only clear token on definitive auth errors (401/403).
 //         Network errors / timeouts / 5xx (e.g. Render cold start)
-//         should NOT wipe a valid token. The user will see the
-//         unauthorized screen temporarily, but their token is
-//         preserved so the next visit works once the server wakes up.
+//         should NOT wipe a valid token.
+// ✅ FIX 2: On network/timeout errors, stay in 'loading' state and
+//           RETRY after 5 seconds instead of immediately showing
+//           the unauthorized page. This handles Render cold starts
+//           gracefully without kicking out logged-in admins.
 // ============================================================
 const ProtectedRoute = ({ children }) => {
   const [authState, setAuthState] = useState('loading');
@@ -451,6 +453,7 @@ const ProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let retryTimeout = null;
 
     const verifyToken = async () => {
       const token = localStorage.getItem('adminToken');
@@ -464,8 +467,9 @@ const ProtectedRoute = ({ children }) => {
       try {
         const response = await axios.get('https://wanderwaveph.onrender.com/api/admin/verify', {
           headers: { 'Authorization': `Bearer ${token}` },
-          // ✅ FIX: Give Render's cold-start server 15s to wake up before timing out.
-          timeout: 15000,
+          // ✅ FIX: Increased to 30s to accommodate Render cold starts
+          //         (Render free tier can take 30-50s to wake up).
+          timeout: 30000,
         });
 
         if (response.data.status === 'ok') {
@@ -485,16 +489,21 @@ const ProtectedRoute = ({ children }) => {
         // 401 = token invalid or expired       → clear token, block access.
         // 403 = account inactive               → clear token, block access.
         // Network error / timeout / 500 / etc  → server issue, NOT auth failure.
-        //   Keep the token so the next refresh works once Render wakes up.
         if (status === 401 || status === 403) {
           console.error(`❌ Auth rejected (HTTP ${status}) - clearing token`);
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
+          if (isMounted) setAuthState('unauthenticated');
         } else {
-          console.warn(`⚠️ Verify failed (${error.message}) - token preserved (server may be waking up)`);
+          // ✅ FIX 2: Server is waking up (cold start) or network blip.
+          //           Stay on loading screen and retry after 5 seconds.
+          //           Do NOT show unauthorized — the token is still valid.
+          console.warn(`⚠️ Verify failed (${error.message}) - server may be waking up. Retrying in 5s...`);
+          if (isMounted) setAuthState('loading');
+          retryTimeout = setTimeout(() => {
+            if (isMounted) verifyToken();
+          }, 5000);
         }
-
-        if (isMounted) setAuthState('unauthenticated');
       }
     };
 
@@ -502,6 +511,7 @@ const ProtectedRoute = ({ children }) => {
 
     return () => {
       isMounted = false;
+      if (retryTimeout) clearTimeout(retryTimeout);
     };
   }, [location.pathname]);
 

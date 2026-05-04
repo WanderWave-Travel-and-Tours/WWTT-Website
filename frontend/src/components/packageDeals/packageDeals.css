@@ -93,7 +93,7 @@
 }
 
 .divider-label {
-  color: #fc9c1b !important;
+  color: #fbbf24 !important;
   margin-right: 10px !important;
 }
 
@@ -195,12 +195,15 @@
 
 /* ============================================================
    FLOATING "CREATE YOUR OWN PACKAGE" WIDGET
-   Positioned above FeedbackWidget (bottom-right corner)
+   Matches FeedbackWidget side-tab style exactly.
+   Sits just above the FeedbackWidget (bottom: 50px + ~44px + 12px gap = ~106px)
    ============================================================ */
+
+/* Wrapper: stacks popup card above the side-tab button */
 .create-package-fab-wrapper {
   position: fixed;
-  bottom: 160px; /* sits above the FeedbackWidget (~80px) + buffer */
-  right: 20px;
+  bottom: 106px; /* above FeedbackWidget tab */
+  right: 0;
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -208,40 +211,65 @@
   gap: 10px;
 }
 
-/* The main floating button */
+/* ── Side-tab button — identical shape/color to FeedbackWidget ── */
 .create-package-fab {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #fc9c1b, #e8870f);
-  color: #fff;
+  justify-content: center;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
   border: none;
-  border-radius: 50px;
-  padding: 10px 16px 10px 12px;
+  border-radius: 30px 0 0 30px;
+  padding: 10px 14px;
+  gap: 0;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(252, 156, 27, 0.45);
-  font-family: Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.3;
-  text-align: left;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  white-space: nowrap;
-}
-
-.create-package-fab:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 6px 24px rgba(252, 156, 27, 0.55);
-}
-
-.create-package-fab-icon {
-  font-size: 20px;
-  line-height: 1;
+  box-shadow: 4px 4px 15px rgba(251, 191, 36, 0.35);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  -webkit-tap-highlight-color: transparent;
   flex-shrink: 0;
 }
 
+/* Expand on hover (desktop) or .expanded class (mobile via JS) */
+.create-package-fab:hover,
+.create-package-fab.expanded {
+  padding-left: 18px;
+  padding-right: 20px;
+  box-shadow: 6px 6px 20px rgba(251, 191, 36, 0.5);
+  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+  transform: translateX(-4px);
+}
+
+.create-package-fab:active {
+  transform: translateX(0);
+}
+
+/* Icon wrapper */
+.create-package-fab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Label — hidden by default, reveals on hover/expanded (matches .trigger-text) */
 .create-package-fab-label {
-  display: inline-block;
+  max-width: 0;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0;
+}
+
+.create-package-fab:hover .create-package-fab-label,
+.create-package-fab.expanded .create-package-fab-label {
+  max-width: 160px;
+  opacity: 1;
+  margin-left: 10px;
 }
 
 /* Pop-up card that appears above the button */
@@ -252,6 +280,8 @@
   padding: 20px 18px 18px;
   width: 240px;
   position: relative;
+  /* Offset left so it doesn't clip at the screen edge */
+  margin-right: 10px;
   animation: cpFadeSlideIn 0.22s ease;
 }
 
@@ -298,7 +328,7 @@
 .create-package-popup-btn {
   display: block;
   width: 100%;
-  background: linear-gradient(135deg, #fc9c1b, #e8870f);
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
   color: #fff;
   text-align: center;
   padding: 10px;
@@ -313,15 +343,19 @@
 .create-package-popup-btn:hover { opacity: 0.88; }
 
 /* Mobile adjustments */
+@media (max-width: 640px) {
+  .create-package-fab-wrapper {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
 @media (max-width: 480px) {
   .create-package-fab-wrapper {
-    bottom: 140px;
-    right: 12px;
+    bottom: calc(90px + env(safe-area-inset-bottom));
   }
 
   .create-package-fab {
-    padding: 9px 13px 9px 10px;
-    font-size: 11px;
+    padding: 9px 12px;
   }
 
   .create-package-fab-icon {
@@ -330,6 +364,7 @@
 
   .create-package-popup {
     width: 210px;
+    margin-right: 8px;
   }
 }
 
@@ -345,4 +380,4 @@
 .bottom-section-bg .destination-card h4 {
   font-size: clamp(0.75rem, 1.8vw, 1rem);
   line-height: 1.25;
-}
+} 
