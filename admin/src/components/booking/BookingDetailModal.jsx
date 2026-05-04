@@ -971,7 +971,7 @@ const generateVoucherData = async (booking) => {
         </button>
     )}
 
-    {status === 'PENDING' && !selectedBooking.isWalkin && (
+    {status === 'PENDING' && (
         <>
             <button 
                 className="cnm-btn cnm-btn-success"

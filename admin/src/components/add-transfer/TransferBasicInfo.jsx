@@ -5,6 +5,7 @@ const TransferBasicInfo = ({
   title, setTitle,
   category, setCategory,
   packageDestination, setPackageDestination,
+  pax, setPax,
 }) => {
   // ── Package destinations (fetched from /api/packages/all) ────────────────
   const [packageDestinations, setPackageDestinations] = React.useState([]);
@@ -85,8 +86,20 @@ const TransferBasicInfo = ({
           </select>
         </div>
 
+        {/* PAX (Number of Passengers) */}
+        <div className="atrn-field">
+          <label>No. of Passengers (Pax)</label>
+          <input
+            type="number"
+            placeholder="e.g. 4"
+            min="1"
+            value={pax}
+            onChange={(e) => setPax(e.target.value)}
+          />
+        </div>
+
         {/* PACKAGE DESTINATION — searchable dropdown from /api/packages/all */}
-        <div className="atrn-field" ref={destRef} style={{ position: 'relative' }}>
+        <div className="atrn-field atrn-field--full" ref={destRef} style={{ position: 'relative' }}>
           <label>Package Destination</label>
           <input
             type="text"

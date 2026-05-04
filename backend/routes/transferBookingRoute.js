@@ -96,6 +96,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       title,
       packageDestination,
       category,
+      pax,
       // One Way
       oneWaySupplierRate,
       oneWayMarkupValue,
@@ -136,6 +137,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       title,
       packageDestination: packageDestination || null,
       category:    category    || 'Local Transfer',
+      pax:         pax !== undefined && pax !== '' ? parseInt(pax) : null,
       imageUrl,
       imagePublicId,
 
@@ -248,6 +250,11 @@ router.patch('/:id', upload.single('image'), async (req, res) => {
     numericFields.forEach((key) => {
       if (req.body[key] !== undefined) transfer[key] = parseFloat(req.body[key]) || 0;
     });
+
+    // Handle pax separately (nullable number)
+    if (req.body.pax !== undefined) {
+      transfer.pax = req.body.pax !== '' ? parseInt(req.body.pax) : null;
+    }
 
     // Replace image if a new one was uploaded
     if (req.file) {

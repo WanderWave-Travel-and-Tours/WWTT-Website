@@ -45,6 +45,7 @@ function PackageDealsContent() {
   const [currency, setCurrency] = useState('PHP');        
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
+  const [showCreatePackageWidget, setShowCreatePackageWidget] = useState(false);
 
 
 
@@ -933,6 +934,46 @@ function PackageDealsContent() {
       </section>
 
       <MascotGif onClick={openGHLChat} />
+
+      {/* ============================================================
+          FLOATING CREATE YOUR OWN PACKAGE WIDGET
+          Positioned above FeedbackWidget
+      ============================================================ */}
+      <div className="create-package-fab-wrapper">
+        {showCreatePackageWidget && (
+          <div className="create-package-popup">
+            <button
+              className="create-package-popup-close"
+              onClick={() => setShowCreatePackageWidget(false)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <div className="create-package-popup-icon">✈️</div>
+            <h4 className="create-package-popup-title">Build Your Dream Trip</h4>
+            <p className="create-package-popup-desc">
+              Tell us your ideal destination, dates, and preferences — we'll craft a personalized package just for you!
+            </p>
+            <a
+              href="https://wanderwavetravelandtours.com/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="create-package-popup-btn"
+            >
+              Get a Custom Quote
+            </a>
+          </div>
+        )}
+        <button
+          className="create-package-fab"
+          onClick={() => setShowCreatePackageWidget(prev => !prev)}
+          aria-label="Create Your Own Package"
+          title="Create Your Own Package"
+        >
+          <span className="create-package-fab-icon">🧳</span>
+          <span className="create-package-fab-label">Create Your<br />Own Package</span>
+        </button>
+      </div>
 
       <FeedbackWidget triggerOpen={feedbackTrigger} />
 

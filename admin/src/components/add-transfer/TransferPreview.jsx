@@ -18,6 +18,7 @@ const TransferPreview = ({
     title,
     category,
     packageDestination,
+    pax,
     oneWaySupplierRate,
     oneWayMarkupValue,
     oneWayMarkupType,
@@ -48,6 +49,8 @@ const TransferPreview = ({
         ? (roundtripSupplierNum * roundtripMarkupNum) / 100
         : roundtripMarkupNum;
 
+    const hasPax = !!pax && parseInt(pax) > 0;
+
     return (
         <div className="atrn-preview">
             <span className="atrn-preview-label">PREVIEW</span>
@@ -66,6 +69,11 @@ const TransferPreview = ({
                     {/* Category Badge */}
                     <div className="atrn-card-badges">
                         <span className="atrn-card-badge">{category || 'Local Transfer'}</span>
+                        {hasPax && (
+                            <span className="atrn-card-badge atrn-card-badge--pax">
+                                {pax} {parseInt(pax) === 1 ? 'Pax' : 'Pax'}
+                            </span>
+                        )}
                     </div>
 
                     {/* Transfer Title */}
@@ -136,9 +144,9 @@ const TransferPreview = ({
                 </div>
                 <div className="atrn-stat">
                     <strong>
-                        <IconTransfer />
+                        {hasPax ? `${pax}` : <IconTransfer />}
                     </strong>
-                    <span>Transfer</span>
+                    <span>{hasPax ? 'Pax' : 'Transfer'}</span>
                 </div>
                 <div className="atrn-stat">
                     <strong>

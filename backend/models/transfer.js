@@ -11,6 +11,7 @@ const TransferSchema = new mongoose.Schema(
     title:              { type: String, required: true, trim: true },
     packageDestination: { type: String, default: null, trim: true },
     category:           { type: String, default: 'Local Transfer', trim: true },
+    pax:                { type: Number, default: null },
 
     // ── Image ───────────────────────────────────────────────────────────────
     imageUrl:      { type: String, default: null },

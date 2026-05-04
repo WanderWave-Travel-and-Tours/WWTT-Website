@@ -59,14 +59,23 @@ const OrderSlipModal = ({ booking, onClose }) => {
     initialPaymentAmount = 0, remainingBalance = 0, balancePaidAmount = 0,
     passengers = [], status, createdAt, isWalkin,
     appointmentDate, appointmentTime, destination,
+    addOns = {},
+    initialPaymentPaid = false,
+    createdByType,
   } = raw;
 
   const bookingId   = booking.id || raw._id;
   const paymentDesc = getPaymentStatusDescription(raw);
+
+  // Fix: for full-payment bookings that haven't been confirmed yet (e.g. sales-created),
+  // show the full amount as balance due instead of treating it as settled.
+  const isActuallyPaid = status === 'confirmed' || status === 'fully_paid' || initialPaymentPaid === true;
   const computedBal = isWalkin ? 0
     : paymentType === 'partial'
       ? Math.max(0, totalAmount - initialPaymentAmount - balancePaidAmount)
-      : 0;
+      : isActuallyPaid
+        ? 0
+        : totalAmount;
 
   // Inclusions
   let inclusions = [];
@@ -402,6 +411,22 @@ const OrderSlipModal = ({ booking, onClose }) => {
                             <td style={{ textAlign: 'right', color: '#0369a1' }}>+{fmt(airfareTotal)}</td>
                           </tr>
                         )}
+                        {(() => {
+                          const addOnsTotal = addOns?.addOnsTotal || 0;
+                          const hasTours = Array.isArray(addOns?.tours) && addOns.tours.length > 0;
+                          const hasTransfers = Array.isArray(addOns?.transfers) && addOns.transfers.length > 0;
+                          if (addOnsTotal <= 0 && !hasTours && !hasTransfers) return null;
+                          const itemCount = (addOns?.tours?.length || 0) + (addOns?.transfers?.length || 0);
+                          return (
+                            <tr>
+                              <td>Add-Ons</td>
+                              <td style={{ color: '#64748b', fontSize: '12px' }}>
+                                {itemCount} item{itemCount !== 1 ? 's' : ''} (tours &amp; transfers)
+                              </td>
+                              <td style={{ textAlign: 'right', color: '#0369a1' }}>+{fmt(addOnsTotal)}</td>
+                            </tr>
+                          );
+                        })()}
                         {promoCode && discountAmount > 0 && (
                           <tr>
                             <td>Promo Discount</td>
@@ -609,6 +634,182 @@ const OrderSlipModal = ({ booking, onClose }) => {
               </div>
             </div>
             {/* END PAGE 2 */}
+
+            {/* ══════════════════════════════════════════════════
+                PAGE 3 — ADD-ONS (TOURS + TRANSFERS) — only if present
+            ══════════════════════════════════════════════════ */}
+            {(() => {
+              const hasTours     = Array.isArray(addOns?.tours)     && addOns.tours.length > 0;
+              const hasTransfers = Array.isArray(addOns?.transfers)  && addOns.transfers.length > 0;
+              if (!hasTours && !hasTransfers) return null;
+
+              return (
+                <div className="voucher-page" style={{ position: 'relative' }}>
+                  {showWatermark && (
+                    <div className={`os-watermark ${wcStatus === 'cancelled' ? 'os-watermark-cancelled' : ''}`}>
+                      {wcStatus === 'pending' ? 'PENDING' : 'CANCELLED'}
+                    </div>
+                  )}
+
+                  <div className="voucher-body-content">
+                    <div className="voucher-section">
+
+                      {/* Section heading */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                        <div style={{ height: '2px', flex: 1, background: '#e2e8f0' }} />
+                        <h3 style={{ color: '#1e3a8a', fontFamily: 'Brush Script MT, cursive', fontSize: '26px', margin: 0 }}>
+                          Add-Ons Details
+                        </h3>
+                        <div style={{ height: '2px', flex: 1, background: '#e2e8f0' }} />
+                      </div>
+
+                      {/* ── TOURS ── */}
+                      {hasTours && (
+                        <div className="voucher-box" style={{ marginBottom: '16px' }}>
+                          <h3 className="voucher-box-title">🗺️ TOURS ({addOns.tours.length})</h3>
+                          <div className="table-responsive">
+                            <table className="voucher-table">
+                              <thead>
+                                <tr>
+                                  <th>TOUR</th>
+                                  <th>DESTINATION</th>
+                                  <th>DURATION</th>
+                                  <th>CATEGORY</th>
+                                  <th>PAX</th>
+                                  <th style={{ textAlign: 'right' }}>SUBTOTAL</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {addOns.tours.map((tour, i) => (
+                                  <tr key={i} className={i % 2 === 1 ? 'os-pax-even' : ''}>
+                                    <td><strong>{tour.title || '—'}</strong></td>
+                                    <td>{tour.destination || '—'}</td>
+                                    <td>{tour.duration || '—'}</td>
+                                    <td>{tour.category || '—'}</td>
+                                    <td>{tour.paxCount || 1} pax</td>
+                                    <td style={{ textAlign: 'right', fontWeight: '700' }}>
+                                      {fmt(tour.subtotal || 0)}
+                                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '400' }}>
+                                        {fmt(tour.price || 0)} × {tour.paxCount || 1}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── TRANSFERS ── */}
+                      {hasTransfers && (
+                        <div className="voucher-box" style={{ marginBottom: '16px' }}>
+                          <h3 className="voucher-box-title">🚐 TRANSFERS ({addOns.transfers.length})</h3>
+                          <div className="table-responsive">
+                            <table className="voucher-table">
+                              <thead>
+                                <tr>
+                                  <th>TRANSFER</th>
+                                  <th>TYPE</th>
+                                  <th>TRAVEL DATE</th>
+                                  <th>PICKUP / DROPOFF</th>
+                                  <th>TIME</th>
+                                  <th style={{ textAlign: 'right' }}>AMOUNT</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {addOns.transfers.map((t, i) => (
+                                  <tr key={i} className={i % 2 === 1 ? 'os-pax-even' : ''}>
+                                    <td><strong>{t.title || '—'}</strong></td>
+                                    <td>
+                                      <span style={{
+                                        background: t.transferType === 'roundtrip' ? '#eff6ff' : '#f0fdf4',
+                                        color: t.transferType === 'roundtrip' ? '#1d4ed8' : '#15803d',
+                                        padding: '2px 8px', borderRadius: '12px',
+                                        fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap'
+                                      }}>
+                                        {t.transferType === 'roundtrip' ? '🔄 Roundtrip' : '➡️ One Way'}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      {t.travelDate ? fmtDate(t.travelDate) : '—'}
+                                      {t.transferType === 'roundtrip' && t.returnDate && (
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                          Return: {fmtDate(t.returnDate)}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td>
+                                      <div>{t.pickupLocation || '—'}</div>
+                                      {t.dropoffLocation && (
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                          ↓ {t.dropoffLocation}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td>
+                                      <div>{t.arrivalTime || '—'}</div>
+                                      {t.departureTime && (
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                          Dep: {t.departureTime}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: '700' }}>
+                                      {fmt(t.subtotal || t.selectedPrice || 0)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {addOns.transfers.some(t => t.message) && (
+                            <div style={{ padding: '10px 16px 4px', borderTop: '1px solid #e2e8f0' }}>
+                              <p style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Special Requests:</p>
+                              {addOns.transfers.filter(t => t.message).map((t, i) => (
+                                <div key={i} style={{ fontSize: '12px', color: '#475569', marginBottom: '4px' }}>
+                                  <strong>{t.title}:</strong> {t.message}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Add-Ons grand total */}
+                      <div style={{
+                        display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+                        gap: '20px', padding: '12px 16px',
+                        background: '#f8fafc', borderRadius: '8px',
+                        border: '1.5px solid #e2e8f0'
+                      }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Add-Ons Total</span>
+                        <span style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>
+                          {fmt(addOns.addOnsTotal || 0)}
+                        </span>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="voucher-page-footer">
+                    <div className="voucher-footer-bar">
+                      <div className="voucher-footer-contacts">
+                        <span><Phone size={14} /> +63 966 820 0292</span>
+                        <span><Mail size={14} /> info@wanderwavetravelandtours.com</span>
+                        <span><MapPin size={14} /> Nueva Ecija, Philippines</span>
+                      </div>
+                    </div>
+                    <div className="voucher-footer-bottom">
+                      <span>© 2026 Wanderwave Travel and Tours</span>
+                      <span className="voucher-page-number">Page 3</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            {/* END PAGE 3 */}
 
           </div>
         </div>
