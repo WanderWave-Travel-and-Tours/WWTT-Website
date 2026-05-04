@@ -3,8 +3,8 @@
 // Customer booking record for a transfer (one-way OR roundtrip).
 //
 // Key design rule to prevent frontend/backend mismatch:
-//   • One Way  → arrivalTime is required; departureTime & dropoffLocation are null
-//   • Roundtrip → arrivalTime + departureTime are required; dropoffLocation is required
+//   • One Way  → arrivalTime is required; departureTime, returnDate & dropoffLocation are null
+//   • Roundtrip → arrivalTime + departureTime + returnDate are required; dropoffLocation is required
 // ─────────────────────────────────────────────────────────────────────────────
 const mongoose = require('mongoose');
 
@@ -27,6 +27,9 @@ const TransferBookingOrderSchema = new mongoose.Schema(
 
     // ── Schedule ────────────────────────────────────────────────────────────
     travelDate:    { type: String, required: true },              // "YYYY-MM-DD"
+
+    // Roundtrip only — the date the customer returns
+    returnDate:    { type: String, default: '' },                 // "YYYY-MM-DD"
 
     // One Way  → arrivalTime filled, departureTime null
     // Roundtrip → both filled
@@ -81,8 +84,9 @@ const TransferBookingOrderSchema = new mongoose.Schema(
 // ── Validation: enforce field rules based on transferType ──────────────────
 TransferBookingOrderSchema.pre('save', function (next) {
   if (this.transferType === 'oneway') {
-    // Enforce: no departure time and no dropoff for one-way
+    // Enforce: no departure time, no return date, and no dropoff for one-way
     this.departureTime   = '';
+    this.returnDate      = '';
     this.dropoffLocation = '';
   }
 
@@ -93,6 +97,9 @@ TransferBookingOrderSchema.pre('save', function (next) {
     }
     if (!this.departureTime) {
       return next(new Error('departureTime is required for roundtrip bookings.'));
+    }
+    if (!this.returnDate) {
+      return next(new Error('returnDate is required for roundtrip bookings.'));
     }
   }
 

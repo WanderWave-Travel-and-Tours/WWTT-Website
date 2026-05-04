@@ -502,7 +502,177 @@ const BookingDetails = ({ booking, onUpdate }) => {
             {/* ── TOP ROW: Booking Info + Remaining Balance side by side ── */}
             <div className="bd-top-row">
 
-              {/* BOOKING INFORMATION */}
+              {/* BOOKING INFORMATION — non-transfer only | TRANSFER DETAILS — transfer only (same position) */}
+              {booking.bookingType === 'transfer' ? (
+                <div className="bd-card bd-info-premium-card">
+                    <div className="bd-info-premium-header">
+                        <div className="bd-info-premium-accent" />
+                        <div className="bd-info-premium-title-wrap">
+                            <h3 className="bd-info-premium-title">Transfer Details</h3>
+                        </div>
+                    </div>
+
+                    <div className="bd-info-rows">
+                        {booking.transferType && (
+                            <div className="bd-info-row">
+                                <div className="bd-info-row-icon bd-info-icon-pkg">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </div>
+                                <div className="bd-info-row-text">
+                                    <span className="bd-info-row-label">Transfer Type</span>
+                                    <span className="bd-info-row-value" style={{ textTransform: 'capitalize' }}>
+                                        {booking.transferType === 'oneway' ? 'One Way' : booking.transferType === 'roundtrip' ? 'Round Trip' : booking.transferType}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        {booking.travelDate && (
+                            <div className="bd-info-row">
+                                <div className="bd-info-row-icon bd-info-icon-date">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </div>
+                                <div className="bd-info-row-text">
+                                    <span className="bd-info-row-label">Travel Date</span>
+                                    <span className="bd-info-row-value">{formatDate(booking.travelDate)}</span>
+                                </div>
+                            </div>
+                        )}
+                        {booking.arrivalTime && (
+                            <div className="bd-info-row">
+                                <div className="bd-info-row-icon bd-info-icon-date">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                    </svg>
+                                </div>
+                                <div className="bd-info-row-text">
+                                    <span className="bd-info-row-label">Arrival Time</span>
+                                    <span className="bd-info-row-value">{booking.arrivalTime}</span>
+                                </div>
+                            </div>
+                        )}
+                        {booking.transferType === 'roundtrip' && booking.departureTime && (
+                            <div className="bd-info-row">
+                                <div className="bd-info-row-icon bd-info-icon-date">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 14"/>
+                                    </svg>
+                                </div>
+                                <div className="bd-info-row-text">
+                                    <span className="bd-info-row-label">Departure Time</span>
+                                    <span className="bd-info-row-value">{booking.departureTime}</span>
+                                </div>
+                            </div>
+                        )}
+                        {booking.pickupLocation && (
+                            <div className="bd-info-row">
+                                <div className="bd-info-row-icon bd-info-icon-dest">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                </div>
+                                <div className="bd-info-row-text">
+                                    <span className="bd-info-row-label">Pickup Location</span>
+                                    <span className="bd-info-row-value">{booking.pickupLocation}</span>
+                                </div>
+                            </div>
+                        )}
+                        {booking.transferType === 'roundtrip' && booking.dropoffLocation && (
+                            <div className="bd-info-row">
+                                <div className="bd-info-row-icon bd-info-icon-dest">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                </div>
+                                <div className="bd-info-row-text">
+                                    <span className="bd-info-row-label">Drop-off Location</span>
+                                    <span className="bd-info-row-value">{booking.dropoffLocation}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {(booking.fullName || booking.email || booking.phone || booking.message || booking.specialRequests) && (
+                        <div className="bd-info-rows" style={{ borderTop: '1px solid var(--bd-border, #e5e7eb)', marginTop: '0.5rem', paddingTop: '0.75rem' }}>
+                            {booking.fullName && (
+                                <div className="bd-info-row">
+                                    <div className="bd-info-row-icon bd-info-icon-pax">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                    </div>
+                                    <div className="bd-info-row-text">
+                                        <span className="bd-info-row-label">Full Name</span>
+                                        <span className="bd-info-row-value">{booking.fullName}</span>
+                                    </div>
+                                </div>
+                            )}
+                            {booking.email && (
+                                <div className="bd-info-row">
+                                    <div className="bd-info-row-icon bd-info-icon-pkg">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                                        </svg>
+                                    </div>
+                                    <div className="bd-info-row-text">
+                                        <span className="bd-info-row-label">Email</span>
+                                        <span className="bd-info-row-value">{booking.email}</span>
+                                    </div>
+                                </div>
+                            )}
+                            {booking.phone && (
+                                <div className="bd-info-row">
+                                    <div className="bd-info-row-icon bd-info-icon-pax">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.58 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l1.13-1.13a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                        </svg>
+                                    </div>
+                                    <div className="bd-info-row-text">
+                                        <span className="bd-info-row-label">Phone</span>
+                                        <span className="bd-info-row-value">{booking.phone}</span>
+                                    </div>
+                                </div>
+                            )}
+                            {booking.message && (
+                                <div className="bd-info-row">
+                                    <div className="bd-info-row-icon bd-info-icon-pkg">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div className="bd-info-row-text">
+                                        <span className="bd-info-row-label">Message</span>
+                                        <span className="bd-info-row-value">{booking.message}</span>
+                                    </div>
+                                </div>
+                            )}
+                            {booking.specialRequests && (
+                                <div className="bd-info-row">
+                                    <div className="bd-info-row-icon bd-info-icon-dest">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                        </svg>
+                                    </div>
+                                    <div className="bd-info-row-text">
+                                        <span className="bd-info-row-label">Special Requests</span>
+                                        <span className="bd-info-row-value">{booking.specialRequests}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="bd-info-footer">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        Booked on {formatDate(booking.createdAt)}
+                    </div>
+                </div>
+              ) : (
               <div className="bd-card bd-info-premium-card">
                 <div className="bd-info-premium-header">
                   <div className="bd-info-premium-accent" />
@@ -597,6 +767,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                   Booked on {formatDate(booking.createdAt)}
                 </div>
               </div>
+              )} {/* end transfer/booking info ternary */}
 
               {/* ── PAY REMAINING BALANCE — right column ── */}
               {_effectiveBalance > 0 &&

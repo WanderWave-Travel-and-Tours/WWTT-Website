@@ -14,8 +14,8 @@ const TransferBookingOrder = require('../models/transferBookingOrder');
 // Create a new customer transfer booking.
 //
 // One Way  → requires: arrivalTime, pickupLocation
-//            ignores (sets to ''): departureTime, dropoffLocation
-// Roundtrip → requires: arrivalTime, departureTime, pickupLocation, dropoffLocation
+//            ignores (sets to ''): departureTime, returnDate, dropoffLocation
+// Roundtrip → requires: arrivalTime, departureTime, returnDate, pickupLocation, dropoffLocation
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
@@ -27,6 +27,7 @@ router.post('/', async (req, res) => {
       category,
       transferType,     // 'oneway' | 'roundtrip'
       travelDate,
+      returnDate,       // only for roundtrip
       arrivalTime,
       departureTime,    // only for roundtrip
       pickupLocation,
@@ -62,6 +63,7 @@ router.post('/', async (req, res) => {
     if (type === 'roundtrip') {
       if (!arrivalTime)   return res.status(400).json({ success: false, message: 'arrivalTime is required for roundtrip bookings.' });
       if (!departureTime) return res.status(400).json({ success: false, message: 'departureTime is required for roundtrip bookings.' });
+      if (!returnDate)    return res.status(400).json({ success: false, message: 'returnDate is required for roundtrip bookings.' });
     }
 
     // ── Build document with clean field separation ───────────────────────────
@@ -73,6 +75,9 @@ router.post('/', async (req, res) => {
       category:        category    || '',
       transferType:    type,
       travelDate,
+
+      // Roundtrip: save returnDate. One-way: always empty.
+      returnDate:      type === 'roundtrip' ? (returnDate || '') : '',
 
       // One-way: arrivalTime only. Roundtrip: both.
       arrivalTime:     arrivalTime   || '',

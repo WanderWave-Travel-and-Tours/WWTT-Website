@@ -185,12 +185,22 @@ const TransferBookingFormModal = ({
   const [phone,    setPhone]    = useState('');
   const [message,  setMessage]  = useState('');
 
+  // ── Return Date (roundtrip only) ──────────────────────────────────────────
+  const [returnDate, setReturnDate] = useState('');
+
   // ── Lock body scroll while modal is open so the page never shifts under the overlay
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, []);
+
+  // Reset return date when transfer type changes away from roundtrip
+  useEffect(() => {
+    if (transferType !== 'roundtrip') {
+      setReturnDate('');
+    }
+  }, [transferType]);
 
   if (!isOpen) return null;
 
@@ -221,6 +231,8 @@ const TransferBookingFormModal = ({
         pax:             transfer.pax          || '',
         transferType,
         travelDate,
+        // ── Return Date (roundtrip only) ──────────────────────────────────
+        returnDate:      transferType === 'roundtrip' ? (returnDate || '') : '',
         arrivalTime:     arrivalTime || '',
         departureTime:   transferType === 'roundtrip' ? (departureTime || '') : '',
         pickupLocation,
@@ -310,7 +322,7 @@ const TransferBookingFormModal = ({
             <strong>{transfer.activity}</strong>.
           </span>
 
-          {/* Summary cards — Travel Date / Passengers / Type / Total Amount */}
+          {/* Summary cards — Travel Date / Return Date (roundtrip) / Passengers / Type / Total Amount */}
           <div className="tbfm-trip-summary">
             <div className="tbfm-summary-card">
               <span className="tbfm-summary-label">Travel Date</span>
@@ -320,6 +332,19 @@ const TransferBookingFormModal = ({
                   : '—'}
               </strong>
             </div>
+
+            {/* Return Date summary card — roundtrip only */}
+            {transferType === 'roundtrip' && (
+              <div className="tbfm-summary-card">
+                <span className="tbfm-summary-label">Return Date</span>
+                <strong className="tbfm-summary-value">
+                  {returnDate
+                    ? new Date(returnDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '—'}
+                </strong>
+              </div>
+            )}
+
             <div className="tbfm-summary-card">
               <span className="tbfm-summary-label">Passengers</span>
               <strong className="tbfm-summary-value">{passengerCount} pax</strong>
@@ -398,6 +423,20 @@ const TransferBookingFormModal = ({
                   placeholder="Select travel date"
                 />
               </div>
+
+              {/* Return Date — roundtrip only, full width */}
+              {transferType === 'roundtrip' && (
+                <div className="tbfm-form-group tbfm-full-width">
+                  <label className="tbfm-form-label">Return Date <span className="tbfm-required">*</span></label>
+                  <CustomDatePicker
+                    value={returnDate}
+                    onChange={setReturnDate}
+                    minDate={travelDate || undefined}
+                    required
+                    placeholder="Select return date"
+                  />
+                </div>
+              )}
 
               {/* Departure Time (roundtrip only) */}
               {transferType === 'roundtrip' && (
