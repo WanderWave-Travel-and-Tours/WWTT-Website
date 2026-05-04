@@ -568,6 +568,202 @@
 /* Legacy utility — kept for backward compat but no longer needed in footer */
 .cnm-btn-left { margin-right: auto; }
 
+/* ===== ADD-ONS SECTION ===== */
+.cnm-addons-group {
+  margin-bottom: 20px;
+}
+
+.cnm-addons-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.cnm-addons-group-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 0 10px 0;
+  border-bottom: 1.5px solid #f1f5f9;
+  margin-bottom: 12px;
+}
+
+.cnm-addon-item {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: #fafbfc;
+  transition: border-color 0.2s ease;
+}
+
+.cnm-addon-item:last-child {
+  margin-bottom: 0;
+}
+
+.cnm-addon-item:hover {
+  border-color: #cbd5e1;
+}
+
+.cnm-addon-item-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: white;
+}
+
+.cnm-addon-item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cnm-addon-item-icon.tour {
+  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+}
+
+.cnm-addon-item-icon.transfer {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+}
+
+.cnm-addon-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cnm-addon-item-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cnm-addon-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cnm-addon-item-meta span {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.cnm-addon-item-price {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.cnm-addon-item-subtotal {
+  font-size: 16px;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+.cnm-addon-item-per {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.cnm-addon-type-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.cnm-addon-type-badge.oneway {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cnm-addon-type-badge.roundtrip {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Transfer scheduling details grid */
+.cnm-addon-transfer-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1.5px solid #f1f5f9;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.cnm-addon-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+}
+
+.cnm-addon-detail-row:nth-child(even) {
+  border-right: none;
+}
+
+.cnm-addon-detail-row:last-child,
+.cnm-addon-detail-row:nth-last-child(2):nth-child(odd) {
+  border-bottom: none;
+}
+
+.cnm-addon-detail-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cnm-addon-detail-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* Add-Ons total row */
+.cnm-addons-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+  border: 1.5px solid #fbbf24;
+}
+
+.cnm-addons-total strong {
+  font-size: 16px;
+  color: #78350f;
+}
+
 /* ===== RESPONSIVE MEDIA QUERIES (COMPLETE OVERHAUL) ===== */
 
 /* Tablet and Small Laptops (max-width: 1024px) */
@@ -628,6 +824,12 @@
   .cnm-passenger-details-row { grid-template-columns: 1fr; }
   .cnm-passenger-header { gap: 10px; }
   .cnm-passenger-badges { gap: 4px; }
+
+  /* Add-ons: stack transfer details to single column */
+  .cnm-addon-transfer-details { grid-template-columns: 1fr; }
+  .cnm-addon-detail-row { border-right: none; }
+  .cnm-addon-item-header { flex-wrap: wrap; }
+  .cnm-addon-item-price { width: 100%; text-align: left; margin-top: 6px; }
 
   /* Header Simplification */
   .modal-header { padding: 16px; }

@@ -7,7 +7,6 @@ import './transferPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import MascotGif from '../MascotGif/MascotGif';
 import { usePageTracker } from '../../hooks/usePageTracker';
-import { useGHLTrigger } from '../../hooks/useGHLTrigger';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -60,34 +59,7 @@ function TransferPackagesContent() {
   // ── Page View Tracker ────────────────────────────────────────────
   usePageTracker({ page: 'transfers', path: '/transfers', label: 'Tourist Transfers Page' });
 
-  // ── GHL session guard — computed once per session mount ──────────
-  const [ghlEnabled] = useState(() => !sessionStorage.getItem('ww_exit_shown'));
-
-  // ── GHL Trigger — fires after 1 minute OR on exit intent ────────
-  useGHLTrigger({
-    enabled: ghlEnabled,
-    delayMinutes: 1,
-    triggerOnExit: true
-  });
-
-  // ── Stamp sessionStorage the moment the GHL form would appear ───
-  useEffect(() => {
-    if (!ghlEnabled) return;
-
-    const markShown = () => sessionStorage.setItem('ww_exit_shown', 'true');
-
-    const timer = setTimeout(markShown, 60 * 1000);
-
-    const handleExitIntent = (e) => {
-      if (e.clientY <= 0) markShown();
-    };
-    document.addEventListener('mouseleave', handleExitIntent);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mouseleave', handleExitIntent);
-    };
-  }, [ghlEnabled]);
+  
 
   // ============================================================
   // DERIVED FILTER OPTIONS — use packageDestination field

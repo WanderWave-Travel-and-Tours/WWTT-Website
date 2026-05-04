@@ -60,6 +60,57 @@ const customInclusionSchema = new mongoose.Schema({
   sellerRateId: { type: mongoose.Schema.Types.ObjectId, ref: 'SellerRate' }
 }, { _id: false });
 
+// ── Add-On: Tour ─────────────────────────────────────────────────────────────
+const addOnTourSchema = new mongoose.Schema({
+  tourId:      { type: mongoose.Schema.Types.ObjectId, ref: 'Tour', default: null },
+  title:       { type: String, default: '' },
+  destination: { type: String, default: '' },
+  duration:    { type: String, default: '' },
+  category:    { type: String, default: '' },
+  image:       { type: String, default: null },
+  price:       { type: Number, default: 0 },   // per-person rate
+  sellerPrice: { type: Number, default: 0 },
+  paxCount:    { type: Number, default: 1 },
+  subtotal:    { type: Number, default: 0 },   // price × paxCount
+}, { _id: false });
+
+// ── Add-On: Transfer ─────────────────────────────────────────────────────────
+const addOnTransferSchema = new mongoose.Schema({
+  transferId:      { type: mongoose.Schema.Types.ObjectId, ref: 'Transfer', default: null },
+  title:           { type: String, default: '' },
+  category:        { type: String, default: '' },
+  imageUrl:        { type: String, default: null },
+
+  // Pricing
+  transferType:    { type: String, enum: ['oneway', 'roundtrip'], default: 'oneway' },
+  oneWayPrice:     { type: Number, default: 0 },
+  roundtripPrice:  { type: Number, default: 0 },
+  selectedPrice:   { type: Number, default: 0 },   // price of chosen type
+  subtotal:        { type: Number, default: 0 },
+
+  // Pre-filled from booking context
+  travelDate:      { type: String, default: '' },  // YYYY-MM-DD
+  returnDate:      { type: String, default: '' },  // YYYY-MM-DD — roundtrip only
+  destination:     { type: String, default: '' },
+  passengerCount:  { type: Number, default: 1 },
+  fullName:        { type: String, default: '' },
+  email:           { type: String, default: '' },
+
+  // Collected from Transfer Details Modal
+  arrivalTime:     { type: String, default: '' },  // HH:MM
+  departureTime:   { type: String, default: '' },  // HH:MM — roundtrip only
+  pickupLocation:  { type: String, default: '' },
+  dropoffLocation: { type: String, default: '' },  // roundtrip only
+  message:         { type: String, default: '' },
+}, { _id: false });
+
+// ── Add-Ons wrapper ───────────────────────────────────────────────────────────
+const addOnsSchema = new mongoose.Schema({
+  tours:      { type: [addOnTourSchema],     default: [] },
+  transfers:  { type: [addOnTransferSchema], default: [] },
+  addOnsTotal:{ type: Number,                default: 0 },
+}, { _id: false });
+
 const bookingSchema = new mongoose.Schema({
   packageName: { type: String, required: true },
 
@@ -111,6 +162,9 @@ const bookingSchema = new mongoose.Schema({
     isInternational: Boolean
   },
   airfareTotal: { type: Number, default: 0 },
+
+  // ── Add-Ons (tours + transfers selected during booking Step 3) ────────────
+  addOns: { type: addOnsSchema, default: () => ({ tours: [], transfers: [], addOnsTotal: 0 }) },
 
   totalAmount: { type: Number, required: true },
 
