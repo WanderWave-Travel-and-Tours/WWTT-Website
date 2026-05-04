@@ -236,7 +236,7 @@ const TransferBookingDashboard = () => {
       'danger'
     );
 
-  const handleViewDetails = (booking) => { setSelected(booking); setShowModal(true); };
+  const handleViewDetails = (booking) => { setSelected(booking.rawData || booking); setShowModal(true); };
 
   const handleArchive = (booking) => {
     askConfirmation(

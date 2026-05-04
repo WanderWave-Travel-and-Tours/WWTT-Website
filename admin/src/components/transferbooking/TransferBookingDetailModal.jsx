@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   X, CheckCircle, AlertCircle, XCircle,
-  User, Mail, Calendar, Users, MapPin, Clock,
+  User, Mail, Calendar, MapPin, Clock,
   CreditCard, Wallet, Car, PhoneCall, Navigation,
   FileText, Check, Tag, Truck, ArrowLeftRight
 } from 'lucide-react';
@@ -128,12 +128,7 @@ const TransferBookingDetailModal = ({
               <InfoRow label="Email"       value={b.email}          icon={Mail}      />
               {/* model: phone */}
               <InfoRow label="Phone"       value={b.phone}          icon={PhoneCall} />
-              {/* model: passengerCount */}
-              <InfoRow label="Passengers"  value={b.passengerCount} icon={Users}     />
-              {/* model: pax */}
-              {b.pax && (
-                <InfoRow label="Pax"       value={b.pax}            icon={Users}     />
-              )}
+
             </div>
           </div>
 
