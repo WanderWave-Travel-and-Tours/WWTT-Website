@@ -12,6 +12,7 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import { Compass } from 'lucide-react';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -46,6 +47,9 @@ function PackageDealsContent() {
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
   const [showCreatePackageWidget, setShowCreatePackageWidget] = useState(false);
+
+  // NEW: Mobile two-tap expansion for the Create Package FAB (mirrors FeedbackWidget)
+  const [isPackageExpanded, setIsPackageExpanded] = useState(false);
 
 
 
@@ -205,6 +209,17 @@ function PackageDealsContent() {
       window.removeEventListener('favoriteRemoved', handleFavoriteRemoved);
     };
   }, []);
+
+  // Collapse the Package FAB text when user taps/clicks outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isPackageExpanded && !event.target.closest('.create-package-fab')) {
+        setIsPackageExpanded(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isPackageExpanded]);
 
   // ============================================================
   // HANDLE URL PARAMETERS AND CUSTOM EVENTS
@@ -852,6 +867,25 @@ function PackageDealsContent() {
     }
   };
 
+  // NEW: Two-step tap logic for mobile (mirrors FeedbackWidget.handleTriggerClick)
+  const handlePackageFabClick = (e) => {
+    e.stopPropagation(); // prevent the click-outside listener from firing immediately
+    const isMobile = window.innerWidth <= 640;
+    if (isMobile) {
+      if (!isPackageExpanded) {
+        // First tap: just expand to show label
+        setIsPackageExpanded(true);
+      } else {
+        // Second tap: toggle the popup
+        setIsPackageExpanded(false);
+        setShowCreatePackageWidget(prev => !prev);
+      }
+    } else {
+      // Desktop: toggle popup directly (hover handles label expansion)
+      setShowCreatePackageWidget(prev => !prev);
+    }
+  };
+
   // ============================================================
   // OPEN GHL CHAT WIDGET — triggered by mascot GIF click
   // window.openGHLChat is defined in index.html's inline script,
@@ -965,13 +999,14 @@ function PackageDealsContent() {
           </div>
         )}
         <button
-          className="create-package-fab"
-          onClick={() => setShowCreatePackageWidget(prev => !prev)}
+          className={`create-package-fab ${isPackageExpanded ? 'expanded' : ''}`}
+          onClick={handlePackageFabClick}
           aria-label="Create Your Own Package"
-          title="Create Your Own Package"
         >
-          <span className="create-package-fab-icon">🧳</span>
-          <span className="create-package-fab-label">Create Your<br />Own Package</span>
+          <span className="create-package-fab-icon">
+            <Compass size={21} strokeWidth={2} />
+          </span>
+          <span className="create-package-fab-label">Build a Trip</span>
         </button>
       </div>
 
