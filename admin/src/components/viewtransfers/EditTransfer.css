@@ -761,30 +761,3 @@
     height: 36px;
   }
 }
-
-/* ================================================================
-   EDIT TRANSFER ADDITIONS — append these rules to addtransfer.css
-   (No existing rules are changed or removed)
-   ================================================================ */
-
-/* ── Existing / New image badge shown above the preview buttons ── */
-.atrn-cover-existing-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    margin-bottom: 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #86efac;
-    letter-spacing: 0.2px;
-}
-
-.atrn-cover-existing-badge--new {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-color: #93c5fd;
-}
