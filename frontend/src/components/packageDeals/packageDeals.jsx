@@ -13,7 +13,7 @@ import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
 import { Compass } from 'lucide-react';
-import CustomizedBookingForm from '../customizedBooking/Customizedbookingform';
+import CustomizedBookingForm from '../customizedBooking/CustomizedBookingForm';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
