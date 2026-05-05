@@ -176,15 +176,15 @@ router.post('/', upload.single('image'), async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/transfers
-// List all active transfer listings
+// List all non-archived transfer listings
 // Query params: category, page, limit, all
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
     const { category, page = 1, limit = 50, all } = req.query;
 
-    const filter = {};
-    if (!all) filter.isActive = true; // by default only return active listings
+    const filter = { isArchive: 'No' }; // Only return non-archived listings
+    if (!all) filter.isActive = true;   // By default only return active listings
     if (category) filter.category = { $regex: category, $options: 'i' };
 
     const skip  = (parseInt(page) - 1) * parseInt(limit);
@@ -280,6 +280,31 @@ router.patch('/:id', upload.single('image'), async (req, res) => {
     return res.status(200).json({ success: true, message: 'Transfer updated.', data: transfer });
   } catch (err) {
     console.error('❌ Transfer update error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/transfers/archive/:id
+// Archive a transfer listing (soft delete — sets isArchive to 'Yes')
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/archive/:id', async (req, res) => {
+  try {
+    const transfer = await Transfer.findById(req.params.id);
+    if (!transfer) {
+      return res.status(404).json({ success: false, message: 'Transfer not found.' });
+    }
+
+    transfer.isArchive = 'Yes';
+    await transfer.save();
+
+    console.log(`🗂️ Transfer ${transfer._id} archived.`);
+    return res.status(200).json({
+      success: true,
+      message: 'Transfer archived successfully.',
+      data:    transfer,
+    });
+  } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
 });
