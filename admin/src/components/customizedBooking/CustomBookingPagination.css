@@ -1,0 +1,59 @@
+/* ========================================
+   CUSTOM BOOKING PAGINATION
+   ======================================== */
+
+.cbk-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 0 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cbk-pagination-info {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.cbk-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cbk-page-btn {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #334155;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.cbk-page-btn:hover:not(:disabled):not(.active) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.cbk-page-btn.active {
+  background: #059669;
+  color: white;
+  border-color: #059669;
+  font-weight: 800;
+}
+
+.cbk-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

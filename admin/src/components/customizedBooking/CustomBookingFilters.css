@@ -1,0 +1,159 @@
+/* ========================================
+   CUSTOM BOOKING FILTERS
+   ======================================== */
+
+.cbk-filter-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+}
+
+.cbk-filter-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Brand section */
+.cbk-filter-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-right: 20px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.cbk-filter-brand-icon { color: #059669; }
+
+.cbk-filter-brand-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #0f172a;
+}
+
+.cbk-filter-brand-label span { color: #059669; margin-left: 4px; }
+
+/* Controls */
+.cbk-filter-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cbk-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cbk-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cbk-filter-item label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Select */
+.cbk-select-wrap { position: relative; width: 170px; }
+
+.cbk-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 7px 28px 7px 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cbk-select:hover { background: #f1f5f9; border-color: #cbd5e1; }
+
+.cbk-select:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+}
+
+.cbk-select-icon {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* Search */
+.cbk-search-wrap {
+  position: relative;
+  min-width: 230px;
+}
+
+.cbk-search-input {
+  width: 100%;
+  height: 34px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #0f172a;
+  padding: 0 12px 0 34px;
+  transition: all 0.2s;
+}
+
+.cbk-search-input:focus {
+  outline: none;
+  background: white;
+  border-color: #059669;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+}
+
+.cbk-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .cbk-filter-inner { flex-direction: column; align-items: stretch; gap: 12px; }
+  .cbk-filter-brand { border-right: none; border-bottom: 1px solid #e2e8f0; padding-right: 0; padding-bottom: 10px; }
+  .cbk-filter-controls { flex-direction: column; align-items: stretch; gap: 10px; }
+  .cbk-filter-row { flex-direction: column; gap: 8px; }
+  .cbk-filter-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .cbk-select-wrap { width: 100%; }
+  .cbk-search-wrap { min-width: 100%; }
+}

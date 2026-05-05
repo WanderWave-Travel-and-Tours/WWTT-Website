@@ -40,7 +40,9 @@ const TransferBookingRightForm = ({
   const [transferType, setTransferType] = useState('oneway'); // 'oneway' | 'roundtrip'
 
   // ── Passenger count ───────────────────────────────────────────────────────
-  const [passengerCount, setPassengerCount] = useState(1);
+  // If transfer.pax is set, use it as fixed value; otherwise default to 1
+  const fixedPax = transfer.pax && transfer.pax > 0 ? transfer.pax : null;
+  const [passengerCount, setPassengerCount] = useState(fixedPax ?? 1);
 
   // ── Local travelDate (derived from calendar selection) ───────────────────
   const [travelDate, setTravelDate] = useState('');
@@ -296,23 +298,27 @@ const TransferBookingRightForm = ({
         <div className="brf-quantity-item">
           <div>
             <span className="brf-quantity-label">Passengers</span>
-            <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Number of passengers</div>
+            <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
+              {fixedPax ? `Fixed capacity: ${fixedPax} pax` : 'Number of passengers'}
+            </div>
           </div>
           <div className="brf-quantity-controls">
             <button
-              onClick={() => setPassengerCount(prev => Math.max(1, prev - 1))}
+              onClick={() => !fixedPax && setPassengerCount(prev => Math.max(1, prev - 1))}
               className="brf-quantity-btn"
               type="button"
-              disabled={passengerCount <= 1}
-              style={passengerCount <= 1 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+              disabled={!!fixedPax || passengerCount <= 1}
+              style={(fixedPax || passengerCount <= 1) ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
             >
               <Minus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
             </button>
             <span className="brf-quantity-value">{passengerCount}</span>
             <button
-              onClick={() => setPassengerCount(prev => Math.min(20, prev + 1))}
+              onClick={() => !fixedPax && setPassengerCount(prev => Math.min(20, prev + 1))}
               className="brf-quantity-btn"
               type="button"
+              disabled={!!fixedPax}
+              style={fixedPax ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
             >
               <Plus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
             </button>

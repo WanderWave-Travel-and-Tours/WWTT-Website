@@ -1,6 +1,6 @@
 // src/components/Transfers/transferCard.jsx
 import React, { useState } from 'react';
-import { MapPin, ChevronRight, Car, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { MapPin, ChevronRight, Car, ArrowRight, ArrowLeftRight, Users } from 'lucide-react';
 import './transferCard.css';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80';
@@ -16,8 +16,9 @@ const getCategoryStyle = (category = '') => {
 };
 
 // ── Price row (one-way / roundtrip) ──────────────────────────────────────────
-const PriceRow = ({ label, icon: Icon, price, currencySymbol, formatPrice }) => {
+const PriceRow = ({ label, icon: Icon, price, markup, currencySymbol, formatPrice }) => {
   if (!price || price === 0) return null;
+  const basePrice = markup ? price - markup : price;
   return (
     <div className="transfer-price-row">
       <span className="transfer-price-row-label">
@@ -25,8 +26,15 @@ const PriceRow = ({ label, icon: Icon, price, currencySymbol, formatPrice }) => 
         {label}
       </span>
       <span className="transfer-price-row-value">
-        <span className="transfer-currency">{currencySymbol}</span>
-        <span className="transfer-price-value">{formatPrice(price)}</span>
+        {markup > 0 && (
+          <span className="transfer-price-breakdown">
+            {currencySymbol}{formatPrice(basePrice)} + {currencySymbol}{formatPrice(markup)} markup
+          </span>
+        )}
+        <span className="transfer-price-total">
+          <span className="transfer-currency">{currencySymbol}</span>
+          <span className="transfer-price-value">{formatPrice(price)}</span>
+        </span>
       </span>
     </div>
   );
@@ -60,6 +68,13 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
   const startingPrice = convert(transfer.oneWayPrice);
   const roundtripConverted = convert(transfer.roundtripPrice);
 
+  // Markup values (if present on the transfer model)
+  const oneWayMarkup = convert(transfer.oneWayMarkup || 0);
+  const roundtripMarkup = convert(transfer.roundtripMarkup || 0);
+
+  // Pax / capacity
+  const paxCount = transfer.pax || transfer.maxPax || transfer.capacity || null;
+
   return (
     <div className="transfer-card">
       {/* ── Image ─────────────────────────────────────────────────────────── */}
@@ -71,7 +86,7 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
           onError={() => setImgError(true)}
         />
 
-        {/* ── Badges row: Category + Destination ── */}
+        {/* ── Top badges row: Category only ── */}
         <div className="transfer-badges-row">
           {/* Category badge */}
           <span
@@ -80,13 +95,6 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
           >
             <Car size={11} /> {categoryStyle.label}
           </span>
-
-          {/* Destination tag */}
-          {transfer.packageDestination && (
-            <span className="transfer-destination-badge">
-              <MapPin size={10} /> {transfer.packageDestination}
-            </span>
-          )}
         </div>
       </div>
 
@@ -98,6 +106,21 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
             <h3 className="transfer-card-title">
               <span className="transfer-title-text">{transfer.title}</span>
             </h3>
+
+            {/* Destination + Pax — side by side */}
+            <div className="transfer-meta-pills">
+              {transfer.packageDestination && (
+                <div className="transfer-destination-row">
+                  <MapPin size={13} className="transfer-destination-icon" />
+                  <span className="transfer-destination-text">{transfer.packageDestination}</span>
+                </div>
+              )}
+              {paxCount && (
+                <span className="transfer-pax-badge">
+                  <Users size={11} /> {paxCount} PAX
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Pricing rows */}
@@ -106,6 +129,7 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
               label="One Way"
               icon={ArrowRight}
               price={startingPrice}
+              markup={oneWayMarkup}
               currencySymbol={currencySymbol}
               formatPrice={formatPrice}
             />
@@ -114,6 +138,7 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
                 label="Roundtrip"
                 icon={ArrowLeftRight}
                 price={roundtripConverted}
+                markup={roundtripMarkup}
                 currencySymbol={currencySymbol}
                 formatPrice={formatPrice}
               />
