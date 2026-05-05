@@ -88,7 +88,7 @@ const ViewTransfers = () => {
         });
     };
 
-    // Fetch all transfers (active + inactive) using ?all=true
+    // Fetch all non-archived transfers using ?all=true
     useEffect(() => {
         const fetchTransfers = async () => {
             setLoading(true);
@@ -97,16 +97,19 @@ const ViewTransfers = () => {
                 const result = await response.json();
 
                 if (result.success) {
-                    const mapped = result.data.map(transfer => {
-                        const dateObj = transfer.createdAt ? new Date(transfer.createdAt) : null;
-                        return {
-                            ...transfer,
-                            displayDate: dateObj && !isNaN(dateObj)
-                                ? dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                                : 'N/A'
-                        };
-                    });
-                    setTransfers(mapped);
+                    // Only show non-archived transfers
+                    const activeTransfers = result.data
+                        .filter(transfer => transfer.isArchive !== 'Yes')
+                        .map(transfer => {
+                            const dateObj = transfer.createdAt ? new Date(transfer.createdAt) : null;
+                            return {
+                                ...transfer,
+                                displayDate: dateObj && !isNaN(dateObj)
+                                    ? dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                                    : 'N/A'
+                            };
+                        });
+                    setTransfers(activeTransfers);
                 } else {
                     toast.error("Failed to load transfers.");
                 }
@@ -119,36 +122,30 @@ const ViewTransfers = () => {
         fetchTransfers();
     }, [toast]);
 
-    // Toggle active status
-    const handleToggleActive = (id, currentIsActive) => {
-        const action = currentIsActive ? 'deactivate' : 'activate';
+    // Archive a transfer
+    const handleArchiveClick = (id) => {
         askConfirmation(
-            currentIsActive ? "Deactivate Transfer" : "Activate Transfer",
-            `Are you sure you want to ${action} this transfer?`,
-            () => performToggle(id),
-            currentIsActive ? "danger" : "primary"
+            "Archive Transfer",
+            "Are you sure you want to archive this transfer? It will be hidden from the listings.",
+            () => performArchive(id),
+            "danger"
         );
     };
 
-    const performToggle = async (id) => {
+    const performArchive = async (id) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/${id}/toggle`, {
+            const response = await fetch(`${API_BASE_URL}/archive/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' }
             });
             const data = await response.json();
 
             if (data.success) {
-                setTransfers(prev =>
-                    prev.map(t => t._id === id ? { ...t, isActive: data.isActive } : t)
-                );
-                // Also update selected transfer if modal is open
-                if (selectedTransfer && selectedTransfer._id === id) {
-                    setSelectedTransfer(prev => ({ ...prev, isActive: data.isActive }));
-                }
-                toast.success(data.message || "Transfer status updated.");
+                setTransfers(prev => prev.filter(t => t._id !== id));
+                toast.success("Transfer archived successfully.");
+                if (showDetailModal) setShowDetailModal(false);
             } else {
-                toast.error(data.message || "Failed to update status.");
+                toast.error(data.message || "Failed to archive transfer.");
             }
         } catch (err) {
             toast.error("Error connecting to server.");
@@ -171,8 +168,6 @@ const ViewTransfers = () => {
 
         const matchesCategory = filterCategory === 'ALL' || transfer.category === filterCategory;
 
-        // filterType is not applicable per-transfer since each transfer has both prices,
-        // but we use it to filter based on whether a price exists
         let matchesType = true;
         if (filterType === 'oneway') matchesType = transfer.oneWayPrice > 0;
         if (filterType === 'roundtrip') matchesType = transfer.roundtripPrice > 0;
@@ -180,7 +175,6 @@ const ViewTransfers = () => {
         return matchesSearch && matchesCategory && matchesType;
     });
 
-    const activeCount = transfers.filter(t => t.isActive).length;
     const currentTransfers = filteredTransfers.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
@@ -204,7 +198,7 @@ const ViewTransfers = () => {
                         <div className="vtx-header-content">
                             <h1 className="vtx-title">TRANSFER LISTINGS</h1>
                             <div className="vtx-subtitle">
-                                Managing {transfers.length} transfers • {activeCount} active • {filteredTransfers.length} filtered
+                                Managing {transfers.length} transfers • {filteredTransfers.length} filtered
                             </div>
                         </div>
                         <button className="vtx-btn-add" onClick={() => navigate('/add-transfer')}>
@@ -240,7 +234,7 @@ const ViewTransfers = () => {
                             <TransfersTable
                                 transfers={currentTransfers}
                                 onView={handleView}
-                                onToggleActive={handleToggleActive}
+                                onArchive={handleArchiveClick}
                             />
                             <TransferPagination
                                 totalItems={filteredTransfers.length}
@@ -258,7 +252,7 @@ const ViewTransfers = () => {
                 <TransferDetailModal
                     transfer={selectedTransfer}
                     close={() => setShowDetailModal(false)}
-                    onToggleActive={performToggle}
+                    onArchive={handleArchiveClick}
                     navigate={navigate}
                 />
             )}

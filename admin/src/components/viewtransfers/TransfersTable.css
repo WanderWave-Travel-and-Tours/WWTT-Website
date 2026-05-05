@@ -141,11 +141,8 @@
 .txt-view-btn { background: white; border: 1px solid #0f172a; color: #0f172a; }
 .txt-view-btn:hover { background: #0f172a; color: white; transform: translateY(-1px); }
 
-.txt-toggle-btn-active { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
-.txt-toggle-btn-active:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
-
-.txt-toggle-btn-inactive { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-.txt-toggle-btn-inactive:hover { background: #dcfce7; border-color: #86efac; color: #166534; transform: translateY(-1px); }
+.txt-archive-btn { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
+.txt-archive-btn:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
 
 .txt-empty-cell { text-align: center; padding: 60px; color: #64748b; font-size: 15px; }
 

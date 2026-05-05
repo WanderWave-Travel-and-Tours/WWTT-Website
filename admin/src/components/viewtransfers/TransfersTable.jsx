@@ -1,8 +1,8 @@
 import React from 'react';
-import { Eye, Tag, MapPin, Calendar, Car, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Eye, Tag, MapPin, Calendar, Trash2 } from 'lucide-react';
 import './TransfersTable.css';
 
-const TransfersTable = ({ transfers, onView, onToggleActive }) => {
+const TransfersTable = ({ transfers, onView, onArchive }) => {
     return (
         <div className="txt-table-wrapper">
             <div className="txt-table-container">
@@ -109,13 +109,11 @@ const TransfersTable = ({ transfers, onView, onToggleActive }) => {
                                             <span>View</span>
                                         </button>
                                         <button
-                                            className={`txt-action-btn ${transfer.isActive ? 'txt-toggle-btn-active' : 'txt-toggle-btn-inactive'}`}
-                                            onClick={() => onToggleActive(transfer._id, transfer.isActive)}
+                                            className="txt-action-btn txt-archive-btn"
+                                            onClick={() => onArchive(transfer._id)}
                                         >
-                                            {transfer.isActive
-                                                ? <><ToggleRight size={16} /><span>Deactivate</span></>
-                                                : <><ToggleLeft size={16} /><span>Activate</span></>
-                                            }
+                                            <Trash2 size={16} />
+                                            <span>Archive</span>
                                         </button>
                                     </div>
                                 </td>

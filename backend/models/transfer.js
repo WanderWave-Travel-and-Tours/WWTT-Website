@@ -31,6 +31,9 @@ const TransferSchema = new mongoose.Schema(
 
     // ── Visibility ──────────────────────────────────────────────────────────
     isActive: { type: Boolean, default: true },
+
+    // ── Archive ─────────────────────────────────────────────────────────────
+    isArchive: { type: String, enum: ['Yes', 'No'], default: 'No' },
   },
   {
     timestamps: true,
@@ -40,6 +43,7 @@ const TransferSchema = new mongoose.Schema(
 
 // ── Indexes ──────────────────────────────────────────────────────────────────
 TransferSchema.index({ isActive: 1 });
+TransferSchema.index({ isArchive: 1 });
 TransferSchema.index({ category: 1 });
 TransferSchema.index({ packageDestination: 1 });
 TransferSchema.index({ createdAt: -1 });
