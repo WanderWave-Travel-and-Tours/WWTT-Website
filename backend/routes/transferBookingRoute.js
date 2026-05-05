@@ -183,7 +183,8 @@ router.get('/', async (req, res) => {
   try {
     const { category, page = 1, limit = 50, all } = req.query;
 
-    const filter = { isArchive: 'No' }; // Only return non-archived listings
+    // Return non-archived listings — includes records with isArchive: 'No', null, or undefined (old data)
+    const filter = { isArchive: { $ne: 'Yes' } };
     if (!all) filter.isActive = true;   // By default only return active listings
     if (category) filter.category = { $regex: category, $options: 'i' };
 
