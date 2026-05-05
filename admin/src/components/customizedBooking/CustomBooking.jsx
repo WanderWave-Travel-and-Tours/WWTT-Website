@@ -1,0 +1,604 @@
+/**
+ * CustomBooking.jsx
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Drop-in replacement for booking.jsx.
+ * Same API endpoints, same logic — fresh design system (emerald + Outfit font).
+ *
+ * Usage in App.jsx (replace existing import):
+ *   import CustomBooking from './customizedBooking/CustomBooking';
+ *   <Route path="/booking" element={<ProtectedRoute><CustomBooking /></ProtectedRoute>} />
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  FileText, Wallet, CheckCircle, CreditCard,
+  Archive, ChevronLeft, ChevronRight,
+} from 'lucide-react';
+import './CustomBooking.css';
+
+// ── Service type → human-readable label map ──────────────────────────────────
+const SERVICE_LABELS = {
+  visa:             { title: 'VISA Processing',        subtitle: 'Manage all VISA booking requests' },
+  psa:              { title: 'PSA Serbilis',           subtitle: 'Manage all PSA document requests' },
+  cenomar:          { title: 'CENOMAR Request',        subtitle: 'Manage all CENOMAR requests' },
+  passport:         { title: 'Passport Appointment',   subtitle: 'Manage all passport appointment bookings' },
+  airlinebooking:   { title: 'Flight Bookings',        subtitle: 'Manage all airline booking requests' },
+  hotelbooking:     { title: 'Hotel Bookings',         subtitle: 'Manage all hotel booking requests' },
+  tourarrangements: { title: 'Tour Arrangements',      subtitle: 'Manage all tour arrangement bookings' },
+  ferrybooking:     { title: 'Ferry Bookings',         subtitle: 'Manage all ferry booking requests' },
+  marriagecert:     { title: 'Marriage Certificate',   subtitle: 'Manage all marriage certificate requests' },
+  travelinsurance:  { title: 'Travel Insurance',       subtitle: 'Manage all travel insurance requests' },
+  billspayment:     { title: 'Bills Payment',          subtitle: 'Manage all bills payment requests' },
+  transfers:        { title: 'Transfer Bookings',      subtitle: 'Manage all transfer booking requests' },
+};
+
+// Sub-components (new customized versions)
+import CustomBookingStats        from './CustomBookingStats';
+import CustomBookingFilters      from './CustomBookingFilters';
+import CustomBookingTable        from './CustomBookingTable';
+import CustomBookingDetailModal  from './CustomBookingDetailModal';
+import CustomBookingPagination   from './CustomBookingPagination';
+
+// ── Sidebar: reuse the project's existing sidebar ────────────────────────────
+// If your sidebar lives somewhere else, update this import path.
+import Sidebar from '../sidebar/sidebar';
+
+// ── Toast: reuse the project's existing toast system ─────────────────────────
+import { useToast } from '../toast/ToastManager';
+
+// ── Confirm Modal: reuse the project's confirmation modal ────────────────────
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
+
+// ── New Booking Modal: reuse if available ────────────────────────────────────
+import NewBookingModal from '../booking/NewBookingModal';
+
+// ─────────────────────────────────────────────────────────────────────────────
+const API = 'https://wanderwaveph.onrender.com';
+const ITEMS_PER_PAGE = 10;
+
+const CustomBooking = () => {
+  const toast = useToast();
+  const { serviceType } = useParams();
+
+  // ── Resolve page title from service type ───────────────────────────────────
+  const serviceInfo = SERVICE_LABELS[serviceType] || {
+    title: 'Booking Management',
+    subtitle: 'View and manage all active customer bookings',
+  };
+
+  // ── Sidebar state ──────────────────────────────────────────────────────────
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toggleSidebar = () => setIsSidebarCollapsed(p => !p);
+
+  // ── Data ───────────────────────────────────────────────────────────────────
+  const [bookings,         setBookings]         = useState([]);
+  const [filteredBookings, setFilteredBookings] = useState([]);
+  const [loading,          setLoading]          = useState(true);
+  const [actionLoading,    setActionLoading]    = useState(false);
+
+  // ── Filters ────────────────────────────────────────────────────────────────
+  const [searchTerm,      setSearchTerm]      = useState('');
+  const [filterStatus,    setFilterStatus]    = useState('ALL');
+  const [paymentFilter,   setPaymentFilter]   = useState('ALL');
+  const [typeFilter,      setTypeFilter]      = useState('ALL');
+  const [createdByFilter, setCreatedByFilter] = useState('ALL');
+
+  // ── Pagination ─────────────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ── Modals ─────────────────────────────────────────────────────────────────
+  const [showDetailModal,     setShowDetailModal]     = useState(false);
+  const [selectedBooking,     setSelectedBooking]     = useState(null);
+  const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+
+  // ── Bulk selection ─────────────────────────────────────────────────────────
+  const [selectedBookings, setSelectedBookings] = useState([]);
+
+  // ── Confirm dialog ─────────────────────────────────────────────────────────
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'primary',
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FETCH
+  // ═══════════════════════════════════════════════════════════════════════════
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      let res = await fetch(`${API}/api/bookings/active`);
+      if (!res.ok) res = await fetch(`${API}/api/bookings`);
+      if (!res.ok) throw new Error('Failed to fetch bookings');
+
+      const data = await res.json();
+      const arr  = data.bookings || data;
+      const count = data.count   || arr.length;
+
+      const formatted = arr
+        .filter(b => (b.isArchive || 'No') === 'No')
+        .map((b, i) => {
+          const isWalkin     = b.isWalkin || false;
+          const actualStatus = b.status   || 'pending';
+          return {
+            id:                  `BK${String(count - i).padStart(4, '0')}`,
+            mongoId:             b._id,
+            customerName:        b.fullName         || 'N/A',
+            email:               b.email            || 'N/A',
+            packageName:         b.packageName      || 'Unknown Package',
+            destination:         b.destination      || b.packageId?.destination || 'N/A',
+            travelDate:          b.startDate        || 'Not specified',
+            startDate:           b.startDate,
+            endDate:             b.endDate,
+            duration:            b.duration,
+            totalAmount:         b.totalAmount      || 0,
+            guests:              b.pax?.adult       || 1,
+            status:              actualStatus,
+            bookingDate:         new Date(b.createdAt).toLocaleDateString('en-CA'),
+            message:             b.message          || '',
+            referenceNumber:     b.referenceNumber  || 'N/A',
+            paymentLinkId:       b.paymentLinkId,
+            paymentType:         b.paymentType      || 'full',
+            initialPaymentAmount: b.initialPaymentAmount || 0,
+            remainingBalance:    isWalkin ? 0 : (b.remainingBalance || 0),
+            balancePaidAmount:   isWalkin ? b.totalAmount : (b.balancePaidAmount || 0),
+            balancePaidAt:       b.balancePaidAt,
+            isWalkin,
+            createdByType:       isWalkin ? 'sales' : (b.createdByType || 'user'),
+            passengers:          b.passengers || [],
+            rawData:             b,
+            isArchive:           b.isArchive || 'No',
+          };
+        });
+
+      setBookings(formatted);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      toast.error('Failed to load bookings. Check if the server is running.', 'Load Failed', 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchBookings(); }, []);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FILTERING
+  // ═══════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    let filtered = [...bookings];
+
+    if (filterStatus !== 'ALL') {
+      filtered = filtered.filter(b => b.status.toLowerCase() === filterStatus.toLowerCase());
+    }
+
+    if (paymentFilter === 'PENDING_BALANCE') {
+      filtered = filtered.filter(b =>
+        !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0 && b.balancePaidAmount === 0
+      );
+    } else if (paymentFilter === 'FULLY_PAID') {
+      filtered = filtered.filter(b => {
+        if (b.isWalkin) return true;
+        if (b.paymentType === 'full') return b.status === 'confirmed' || b.status === 'fully_paid';
+        return b.balancePaidAmount > 0 && (b.totalAmount - b.initialPaymentAmount - b.balancePaidAmount) <= 0;
+      });
+    } else if (paymentFilter === 'PARTIAL_ONLY') {
+      filtered = filtered.filter(b => !b.isWalkin && b.paymentType === 'partial');
+    }
+
+    if (typeFilter === 'ONLINE')  filtered = filtered.filter(b => !b.isWalkin);
+    if (typeFilter === 'WALK_IN') filtered = filtered.filter(b => b.isWalkin);
+
+    if (createdByFilter !== 'ALL') {
+      filtered = filtered.filter(b => b.createdByType === createdByFilter.toLowerCase());
+    }
+
+    if (searchTerm) {
+      const t = searchTerm.toLowerCase();
+      filtered = filtered.filter(b =>
+        b.customerName.toLowerCase().includes(t) ||
+        b.id.toLowerCase().includes(t) ||
+        b.packageName.toLowerCase().includes(t) ||
+        b.email.toLowerCase().includes(t) ||
+        b.referenceNumber.toLowerCase().includes(t)
+      );
+    }
+
+    setFilteredBookings(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, paymentFilter, typeFilter, createdByFilter, bookings]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONFIRM DIALOG HELPER
+  // ═══════════════════════════════════════════════════════════════════════════
+  const askConfirm = (title, message, onConfirm, type = 'primary') => {
+    setConfirmConfig({
+      isOpen: true, title, message, type,
+      onConfirm: async () => {
+        setConfirmConfig(p => ({ ...p, isOpen: false }));
+        await onConfirm();
+      },
+    });
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ACTIONS: CONFIRM
+  // ═══════════════════════════════════════════════════════════════════════════
+  const executeConfirm = async (booking) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API}/api/bookings/${booking.mongoId}/confirm`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Server error ${res.status}`);
+      }
+      await fetchBookings();
+      toast.success(`Booking ${booking.id} confirmed!`, 'Booking Confirmed', 4000);
+    } catch (err) {
+      toast.error(err.message || 'Failed to confirm booking.', 'Confirm Failed', 5000);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirm = (booking) => {
+    askConfirm(
+      'Confirm Booking',
+      `Confirm booking ${booking.id} for ${booking.customerName}?`,
+      () => executeConfirm(booking),
+      'primary'
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ACTIONS: CANCEL
+  // ═══════════════════════════════════════════════════════════════════════════
+  const executeCancel = async (booking) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API}/api/bookings/${booking.mongoId}/cancel`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to cancel booking');
+      }
+      await fetchBookings();
+      toast.success(`Booking ${booking.id} cancelled.`, 'Booking Cancelled', 4000);
+    } catch (err) {
+      toast.error(err.message || 'Failed to cancel booking.', 'Cancel Failed', 5000);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = (booking) => {
+    askConfirm(
+      'Cancel Booking',
+      `Cancel booking ${booking.id} for ${booking.customerName}? This cannot be undone.`,
+      () => executeCancel(booking),
+      'danger'
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ACTIONS: ARCHIVE / UNARCHIVE
+  // ═══════════════════════════════════════════════════════════════════════════
+  const executeArchive = async (booking, action) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API}/api/bookings/${booking.mongoId}/archive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to ${action} booking`);
+      }
+      await fetchBookings();
+      toast.success(`Booking ${booking.id} ${action}d.`, action === 'archive' ? 'Archived' : 'Restored', 4000);
+    } catch (err) {
+      toast.error(err.message || `Failed to ${action} booking.`, `${action} Failed`, 5000);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleArchive = (booking) => {
+    const archived = booking.isArchive === 'Yes';
+    const action   = archived ? 'unarchive' : 'archive';
+    askConfirm(
+      archived ? 'Unarchive Booking' : 'Archive Booking',
+      archived
+        ? `Unarchive booking ${booking.id}? It will reappear in the active list.`
+        : `Archive booking ${booking.id}? It will be hidden from the active list.`,
+      () => executeArchive(booking, action),
+      'primary'
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BULK ARCHIVE
+  // ═══════════════════════════════════════════════════════════════════════════
+  const handleBulkArchive = () => {
+    if (!selectedBookings.length) return;
+    const count = selectedBookings.length;
+    askConfirm(
+      'Archive Selected Bookings',
+      `Archive ${count} booking${count > 1 ? 's' : ''}? This cannot be undone.`,
+      async () => {
+        setActionLoading(true);
+        try {
+          await Promise.all(
+            selectedBookings.map(b =>
+              fetch(`${API}/api/bookings/${b.mongoId}/archive`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'archive' }),
+              }).then(async r => {
+                if (!r.ok) {
+                  const e = await r.json().catch(() => ({}));
+                  throw new Error(e.message || `Failed to archive ${b.id}`);
+                }
+              })
+            )
+          );
+          await fetchBookings();
+          setSelectedBookings([]);
+          toast.success(`${count} booking${count > 1 ? 's' : ''} archived.`, 'Bulk Archive Done', 4000);
+        } catch (err) {
+          toast.error(err.message || 'Failed to archive some bookings.', 'Bulk Archive Failed', 5000);
+          await fetchBookings();
+        } finally {
+          setActionLoading(false);
+        }
+      },
+      'danger'
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SELECTION
+  // ═══════════════════════════════════════════════════════════════════════════
+  const totalPages     = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
+  const currentBookings = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredBookings.slice(start, start + ITEMS_PER_PAGE);
+  }, [currentPage, filteredBookings]);
+
+  const toggleSelect = (booking) => {
+    setSelectedBookings(prev =>
+      prev.some(b => b.mongoId === booking.mongoId)
+        ? prev.filter(b => b.mongoId !== booking.mongoId)
+        : [...prev, booking]
+    );
+  };
+
+  const selectAll = () => {
+    setSelectedBookings(
+      selectedBookings.length === currentBookings.length ? [] : [...currentBookings]
+    );
+  };
+
+  const handleViewDetails = (booking) => {
+    setSelectedBooking(booking);
+    setShowDetailModal(true);
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const stats = useMemo(() => {
+    const confirmedRevenue = bookings
+      .filter(b => b.status === 'confirmed')
+      .reduce((sum, b) => sum + b.totalAmount, 0);
+
+    const pendingBalanceCount = bookings.filter(b =>
+      !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0 && b.balancePaidAmount === 0
+    ).length;
+
+    const totalPendingBalance = bookings
+      .filter(b => !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0)
+      .reduce((sum, b) => sum + b.remainingBalance, 0);
+
+    return [
+      {
+        label: 'Total Active Bookings',
+        value: bookings.length,
+        icon: <FileText size={22} />,
+        variant: 'total',
+      },
+      {
+        label: 'Pending Balance',
+        value: pendingBalanceCount,
+        icon: <Wallet size={22} />,
+        variant: 'pending',
+        subtext: `₱${totalPendingBalance.toLocaleString()} total`,
+      },
+      {
+        label: 'Confirmed',
+        value: bookings.filter(b => b.status === 'confirmed').length,
+        icon: <CheckCircle size={22} />,
+        variant: 'confirmed',
+      },
+      {
+        label: 'Revenue (Confirmed)',
+        value: `₱${confirmedRevenue.toLocaleString()}`,
+        icon: <CreditCard size={22} />,
+        variant: 'revenue',
+      },
+    ];
+  }, [bookings]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FILTER OPTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const statusOptions = useMemo(() => {
+    const opts = ['ALL'];
+    const unique = new Set(bookings.map(b => b.status));
+    ['pending', 'confirmed', 'cancelled'].forEach(s => unique.has(s) && opts.push(s));
+    return opts;
+  }, [bookings]);
+
+  const paymentOptions = [
+    { value: 'ALL',             label: 'All Payments' },
+    { value: 'PENDING_BALANCE', label: 'Pending Balance' },
+    { value: 'FULLY_PAID',      label: 'Fully Paid' },
+    { value: 'PARTIAL_ONLY',    label: 'Partial Payment' },
+  ];
+
+  const typeOptions = [
+    { value: 'ALL',     label: 'All' },
+    { value: 'ONLINE',  label: 'Online Payment' },
+    { value: 'WALK_IN', label: 'Walk-in / Counter' },
+  ];
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+  return (
+    <div className="cbk-page">
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+
+      <main className={`cbk-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+        <div className="cbk-container">
+
+          {/* ── Header ── */}
+          <div className="cbk-header">
+            <div className="cbk-title">
+              <h1>{serviceInfo.title}</h1>
+              <p>{serviceInfo.subtitle}</p>
+            </div>
+            <button className="cbk-btn-add" onClick={() => setShowNewBookingModal(true)}>
+              <span style={{ fontSize: 18 }}>+</span> NEW BOOKING
+            </button>
+          </div>
+
+          {/* ── Stats ── */}
+          <CustomBookingStats stats={stats} />
+
+          {/* ── Filters ── */}
+          <CustomBookingFilters
+            searchTerm={searchTerm}        setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}    setFilterStatus={setFilterStatus}
+            statusOptions={statusOptions}
+            paymentFilter={paymentFilter}  setPaymentFilter={setPaymentFilter}
+            paymentOptions={paymentOptions}
+            typeFilter={typeFilter}        setTypeFilter={setTypeFilter}
+            typeOptions={typeOptions}
+            createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
+          />
+
+          {/* ── Bulk Action Bar ── */}
+          {selectedBookings.length > 0 && (
+            <div className="cbk-bulk-bar">
+              <span>
+                {selectedBookings.length} booking{selectedBookings.length > 1 ? 's' : ''} selected
+              </span>
+              <button
+                className="cbk-bulk-archive-btn"
+                onClick={handleBulkArchive}
+                disabled={actionLoading}
+              >
+                <Archive size={15} /> Archive Selected
+              </button>
+              <button
+                className="cbk-bulk-clear-btn"
+                onClick={() => setSelectedBookings([])}
+                disabled={actionLoading}
+              >
+                Clear Selection
+              </button>
+            </div>
+          )}
+
+          {/* ── Table ── */}
+          <div className="cbk-table-container">
+            <table className="cbk-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 48, textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      style={{ accentColor: '#059669', cursor: 'pointer' }}
+                      checked={currentBookings.length > 0 && selectedBookings.length === currentBookings.length}
+                      onChange={selectAll}
+                    />
+                  </th>
+                  <th style={{ width: 48 }}>No.</th>
+                  <th>Booking ID</th>
+                  <th>Customer</th>
+                  <th>Package</th>
+                  <th>Travel Date</th>
+                  <th>Guests</th>
+                  <th>Amount</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                  <th>Created By</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <CustomBookingTable
+                loading={loading}
+                filteredBookingsCount={filteredBookings.length}
+                currentBookings={currentBookings}
+                handleViewDetails={handleViewDetails}
+                handleArchive={handleArchive}
+                actionLoading={actionLoading}
+                selectedBookings={selectedBookings}
+                onToggleSelect={toggleSelect}
+                onSelectAll={selectAll}
+                startIndex={startIndex}
+              />
+            </table>
+          </div>
+
+          {/* ── Pagination ── */}
+          {filteredBookings.length > 0 && totalPages > 1 && (
+            <CustomBookingPagination
+              totalItems={filteredBookings.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              currentPage={currentPage}
+              onPageChange={(p) => { if (p >= 1 && p <= totalPages) setCurrentPage(p); }}
+            />
+          )}
+
+        </div>
+      </main>
+
+      {/* ── Detail Modal ── */}
+      <CustomBookingDetailModal
+        showModal={showDetailModal}
+        selectedBooking={selectedBooking}
+        setShowModal={setShowDetailModal}
+        handleConfirm={handleConfirm}
+        handleCancel={handleCancel}
+        handleArchive={handleArchive}
+        actionLoading={actionLoading}
+      />
+
+      {/* ── Confirm Dialog ── */}
+      <CustomConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))}
+      />
+
+      {/* ── New Booking Modal ── */}
+      <NewBookingModal
+        isOpen={showNewBookingModal}
+        onClose={() => setShowNewBookingModal(false)}
+      />
+    </div>
+  );
+};
+
+export default CustomBooking;

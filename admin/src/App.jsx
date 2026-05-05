@@ -97,6 +97,9 @@ import Users from './components/users/users.jsx';
 import SellerRate from './components/SellerRate/SellerRate.jsx';
 import EditService from './components/viewservice/EditService.jsx';
 
+// ✅ Custom Booking (customizedBooking folder)
+import CustomBooking from './components/customizedBooking/CustomBooking.jsx';
+
 // ============================================================
 // LIST OF ALL VALID PROTECTED ROUTES
 // ============================================================
@@ -147,7 +150,8 @@ const VALID_PROTECTED_ROUTES = [
   '/services/travelinsurance',
   '/services/billspayment',
   '/seller-rate',
-  '/services/transfers'
+  '/services/transfers',
+  '/services/custombooking'
 ];
 
 // ============================================================
@@ -547,6 +551,7 @@ function App() {
           <Route path="/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
           <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
           <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
+          
           <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
           <Route path="/activity-logs" element={<ProtectedRoute><ActivityLogs /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -628,6 +633,9 @@ function App() {
           <Route path="/services/marriagecert" element={<ProtectedRoute><MarriageCertificate /></ProtectedRoute>} />
           <Route path="/services/travelinsurance" element={<ProtectedRoute><TravelInsurance /></ProtectedRoute>} />
           <Route path="/services/billspayment" element={<ProtectedRoute><BillsPayment /></ProtectedRoute>} />
+
+          {/* ✅ Custom Booking — single dynamic route handles all service types */}
+          <Route path="/services/custombooking/:serviceType" element={<ProtectedRoute><CustomBooking /></ProtectedRoute>} />
 
           <Route path="/seller-rate" element={<ProtectedRoute><SellerRate /></ProtectedRoute>} />
 

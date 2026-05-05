@@ -1,0 +1,94 @@
+/* ========================================
+   CUSTOM BOOKING STATS CARDS
+   ======================================== */
+
+.cbk-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.cbk-stat-card {
+  background: white;
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cbk-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent, #059669);
+}
+
+.cbk-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.cbk-stat-icon-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--icon-bg, #ecfdf5);
+  color: var(--accent, #059669);
+}
+
+.cbk-stat-content { flex: 1; min-width: 0; }
+
+.cbk-stat-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.5px;
+}
+
+.cbk-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.cbk-stat-sub {
+  display: block;
+  font-size: 11px;
+  color: #059669;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Color variants via CSS custom properties */
+.cbk-stat-card.total   { --accent: #059669; --icon-bg: #ecfdf5; }
+.cbk-stat-card.pending { --accent: #f59e0b; --icon-bg: #fffbeb; }
+.cbk-stat-card.confirmed { --accent: #3b82f6; --icon-bg: #eff6ff; }
+.cbk-stat-card.revenue { --accent: #8b5cf6; --icon-bg: #f5f3ff; }
+
+@media (max-width: 1024px) {
+  .cbk-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .cbk-stats-grid { grid-template-columns: 1fr; }
+  .cbk-stat-value { font-size: 22px; }
+}

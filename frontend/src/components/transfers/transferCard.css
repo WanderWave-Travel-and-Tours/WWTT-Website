@@ -1,12 +1,17 @@
 /* transferCard.css */
 
+/* ── Card shell ── */
 .transfer-card {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 14px;
+  border: 1px solid rgba(255, 140, 0, 0.12);
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-  transition: all 0.25s ease;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 0 0 0px rgba(255, 140, 0, 0);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.28s ease,
+              border-color 0.28s ease;
   position: relative;
   cursor: pointer;
   display: flex;
@@ -16,15 +21,17 @@
 }
 
 .transfer-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.13);
-  border-color: rgba(255, 140, 0, 0.25);
+  transform: translateY(-6px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.11),
+    0 0 0 2px rgba(255, 140, 0, 0.18);
+  border-color: rgba(255, 140, 0, 0.3);
 }
 
 /* ── Image ── */
 .transfer-card-image {
   width: 100%;
-  height: 180px;
+  height: 190px;
   position: relative;
   flex-shrink: 0;
   overflow: hidden;
@@ -34,20 +41,33 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
+  transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   display: block;
 }
 
 .transfer-card:hover .transfer-image-content {
-  transform: scale(1.06);
+  transform: scale(1.07);
 }
 
-/* ── Badges row (category + destination) ── */
+/* Gradient fade at the bottom of image into card body */
+.transfer-card-image::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.95));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Badges row (top of image) ── */
 .transfer-badges-row {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
+  top: 11px;
+  left: 11px;
+  right: 11px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -57,22 +77,45 @@
 
 /* ── Category badge ── */
 .transfer-category-badge {
-  padding: 4px 10px;
+  padding: 5px 11px;
   border-radius: 20px;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  letter-spacing: 0.5px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   background-color: #FF8C00;
   color: #fff;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex-shrink: 0;
+  backdrop-filter: blur(4px);
 }
 
-/* ── Destination tag ── */
+/* ── Pax badge — warm orange tint ── */
+.transfer-pax-badge {
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.25);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background-color: #fff3e0;
+  color: #c2410c;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 140, 0, 0.45);
+}
+
+.transfer-pax-badge svg {
+  color: #FF8C00;
+}
+
+/* ── Destination tag (backward compat) ── */
 .transfer-destination-badge {
   padding: 4px 10px;
   border-radius: 20px;
@@ -97,18 +140,23 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  gap: 10px;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
 }
 
 .transfer-card-header {
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .transfer-card-title {
   font-size: 1rem;
   font-weight: 800;
   color: #0f172a;
-  margin: 0 0 2px;
+  margin: 0;
   line-height: 1.35;
 }
 
@@ -123,22 +171,63 @@
   overflow: hidden;
 }
 
-/* ── Meta row (kept for backward compat, hidden by default) ── */
+/* ── Meta pills wrapper ── */
+.transfer-meta-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Destination pill ── */
+.transfer-destination-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(255,140,0,0.09), rgba(255,140,0,0.05));
+  border: 1px solid rgba(255, 140, 0, 0.28);
+  border-radius: 20px;
+  padding: 4px 10px 4px 7px;
+  width: fit-content;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.transfer-card:hover .transfer-destination-row {
+  background: linear-gradient(135deg, rgba(255,140,0,0.14), rgba(255,140,0,0.08));
+  border-color: rgba(255, 140, 0, 0.4);
+}
+
+.transfer-destination-icon {
+  color: #FF8C00;
+  flex-shrink: 0;
+}
+
+.transfer-destination-text {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #b45309;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+/* ── Meta row (backward compat) ── */
 .transfer-meta-row { display: none; }
 .transfer-meta-divider { display: none; }
 .transfer-detail-row { display: none; }
 .transfer-detail-icon { display: none; }
 .transfer-detail-text { display: none; }
 
-/* ── Pricing Block (one-way / roundtrip rows) ── */
+/* ── Pricing Block ── */
 .transfer-pricing-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  background: rgba(255, 140, 0, 0.05);
-  border: 1px solid rgba(255, 140, 0, 0.18);
-  border-radius: 9px;
+  gap: 7px;
+  padding: 11px 12px;
+  background: linear-gradient(135deg, rgba(255,247,237,0.9), rgba(255,237,213,0.5));
+  border: 1px solid rgba(255, 140, 0, 0.2);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 3px rgba(255, 140, 0, 0.07);
 }
 
 .transfer-price-row {
@@ -146,37 +235,74 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 10px;
-  border-radius: 7px;
+  padding: 7px 11px;
+  border-radius: 9px;
   background: #ffffff;
-  border: 1px solid rgba(255, 140, 0, 0.2);
-  box-shadow: 0 1px 4px rgba(255, 140, 0, 0.08);
+  border: 1px solid rgba(255, 140, 0, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.transfer-card:hover .transfer-price-row {
+  border-color: rgba(255, 140, 0, 0.28);
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
 }
 
 .transfer-price-row-label {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.7rem;
+  gap: 6px;
+  font-size: 0.68rem;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   white-space: nowrap;
 }
 
 .transfer-price-row-value {
   display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+/* ── Markup breakdown ── */
+.transfer-price-breakdown {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* ── Total price pill ── */
+.transfer-price-total {
+  display: inline-flex;
   align-items: baseline;
   gap: 1px;
   background: linear-gradient(135deg, #fff7ed, #ffedd5);
-  border-radius: 6px;
-  padding: 2px 8px;
-  border: 1px solid rgba(255, 140, 0, 0.25);
+  border-radius: 7px;
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 140, 0, 0.28);
 }
 
+.transfer-price-total .transfer-currency {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #c2410c;
+}
+
+.transfer-price-total .transfer-price-value {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #FF8C00;
+  line-height: 1.2;
+}
+
+/* ── Legacy price row value (non-breakdown) ── */
 .transfer-price-row-value .transfer-currency {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #c2410c;
 }
@@ -193,10 +319,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 11px 16px 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.055);
   margin-top: auto;
   gap: 10px;
+  background: linear-gradient(to bottom, #fafafa, #f8f8f8);
 }
 
 .transfer-price-info {
@@ -208,11 +335,11 @@
 }
 
 .transfer-price-label {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   color: #94a3b8;
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .transfer-price-amount {
@@ -222,13 +349,13 @@
 }
 
 .transfer-currency {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #334155;
+  color: #475569;
 }
 
 .transfer-price-value {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 900;
   color: #FF8C00;
   line-height: 1;
@@ -236,11 +363,11 @@
 
 /* ── Inquire Button ── */
 .transfer-book-button {
-  background: linear-gradient(135deg, #FF8C00, #f97316);
+  background: linear-gradient(135deg, #FF8C00 0%, #f97316 100%);
   color: #fff;
   border: none;
-  padding: 9px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -248,20 +375,24 @@
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 3px 10px rgba(255, 140, 0, 0.3);
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:
+    0 4px 12px rgba(255, 140, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   white-space: nowrap;
   letter-spacing: 0.2px;
 }
 
 .transfer-book-button:hover {
-  background: linear-gradient(135deg, #e07a00, #dc6f10);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(255, 140, 0, 0.4);
+  background: linear-gradient(135deg, #e07a00 0%, #ea6c0a 100%);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 8px 20px rgba(255, 140, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .transfer-book-button:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
   box-shadow: 0 2px 6px rgba(255, 140, 0, 0.25);
 }
 
@@ -269,21 +400,21 @@
 @media (max-width: 1024px) {
   .transfer-card-body { padding: 13px 15px 15px; }
   .transfer-card-title { font-size: 0.95rem; }
-  .transfer-price-value { font-size: 1.2rem; }
-  .transfer-card-image { height: 165px; }
+  .transfer-price-value { font-size: 1.25rem; }
+  .transfer-card-image { height: 175px; }
 }
 
 @media (max-width: 768px) {
   .transfer-card-body { padding: 12px 14px 14px; }
   .transfer-card-title { font-size: 0.92rem; }
-  .transfer-price-value { font-size: 1.15rem; }
-  .transfer-card-image { height: 155px; }
+  .transfer-price-value { font-size: 1.2rem; }
+  .transfer-card-image { height: 160px; }
 }
 
 @media (max-width: 480px) {
   .transfer-card-body { padding: 12px; }
   .transfer-card-title { font-size: 0.9rem; }
-  .transfer-card-image { height: 145px; }
+  .transfer-card-image { height: 148px; }
   .transfer-card-footer { flex-direction: row; gap: 8px; }
   .transfer-book-button { padding: 9px 14px; font-size: 0.8rem; }
 }
