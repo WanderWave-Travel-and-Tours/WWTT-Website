@@ -4,6 +4,7 @@ const axios = require('axios');
 const Booking = require('../models/booking');
 const TourBooking = require('../models/tourBooking'); // ✅ FIX: needed for tour payment webhook
 const TransferBooking = require('../models/transferBooking'); // ✅ needed for transfer payment webhook
+const CustomizedBooking = require('../models/Customizedbooking'); // ✅ needed for customized booking webhook
 const Inquiry = require('../models/inquiry');
 const paymentController = require('../controller/paymentController');
 
@@ -106,8 +107,8 @@ router.post('/webhook', async (req, res) => {
       // Priority 3: referenceNumber (last resort — madalas hindi ito ang MongoDB _id)
       let booking = null;
 
-      // ✅ FIX: Helper to search Booking, TourBooking, and TransferBooking collections
-      // Only populate 'packageId' for Booking and TourBooking — TransferBooking has no packageId field
+      // ✅ FIX: Helper to search Booking, TourBooking, TransferBooking, and CustomizedBooking collections
+      // Only populate 'packageId' for Booking and TourBooking — others have no packageId field
       const findBooking = async (findFn) => {
         const populatingFindFn = (Model, shouldPopulate = true) => {
           const query = findFn(Model);
@@ -120,6 +121,7 @@ router.post('/webhook', async (req, res) => {
         let result = await populatingFindFn(Booking, true);
         if (!result) result = await populatingFindFn(TourBooking, true);
         if (!result) result = await populatingFindFn(TransferBooking, false); // ✅ no packageId on TransferBooking
+        if (!result) result = await populatingFindFn(CustomizedBooking, false); // ✅ no packageId on CustomizedBooking
         return result;
       };
 
@@ -483,12 +485,13 @@ router.post('/confirm-by-booking/:bookingId', async (req, res) => {
     const { bookingId } = req.params;
     console.log('📋 Confirm-by-booking request for:', bookingId);
 
-    // 1. Find the booking — ✅ FIX: check Booking, TourBooking, and TransferBooking
+    // 1. Find the booking — ✅ FIX: check Booking, TourBooking, TransferBooking, and CustomizedBooking
     let booking = null;
     try {
       booking = await Booking.findById(bookingId);
       if (!booking) booking = await TourBooking.findById(bookingId);
       if (!booking) booking = await TransferBooking.findById(bookingId);
+      if (!booking) booking = await CustomizedBooking.findById(bookingId);
     } catch (idErr) {
       return res.status(400).json({ success: false, message: 'Invalid booking ID format' });
     }

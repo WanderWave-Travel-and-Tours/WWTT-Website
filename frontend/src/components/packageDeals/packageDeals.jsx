@@ -13,7 +13,7 @@ import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
 import { Compass } from 'lucide-react';
-import ServiceCustomizationModal from './ServiceCustomizationModal';
+import CustomizedBookingForm from '../customizedBooking/Customizedbookingform';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -48,7 +48,7 @@ function PackageDealsContent() {
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
   const [showCreatePackageWidget, setShowCreatePackageWidget] = useState(false);
-  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showCustomBookingForm, setShowCustomBookingForm] = useState(false);
 
   // NEW: Mobile two-tap expansion for the Create Package FAB (mirrors FeedbackWidget)
   const [isPackageExpanded, setIsPackageExpanded] = useState(false);
@@ -915,6 +915,7 @@ function PackageDealsContent() {
   else if (selectedFilter !== 'all') headerTitle = currentCategoryName;
 
   return (
+    <>
     <div className="package-deals-page">
 
       {/* ============================================================
@@ -995,7 +996,7 @@ function PackageDealsContent() {
               onClick={() => {
                 setShowCreatePackageWidget(false);
                 setIsPackageExpanded(false);
-                setShowServiceModal(true);
+                setShowCustomBookingForm(true);
               }}
             >
               Create Booking
@@ -1013,25 +1014,6 @@ function PackageDealsContent() {
           <span className="create-package-fab-label">Build a Trip</span>
         </button>
       </div>
-
-      {/* ============================================================
-          SERVICE CUSTOMIZATION MODAL
-          Opened from the "Create Booking" button inside the package widget popup
-      ============================================================ */}
-      <ServiceCustomizationModal
-        isOpen={showServiceModal}
-        onClose={() => setShowServiceModal(false)}
-        onConfirm={({ tours, transfers, transferTypes, detailsMap, total }) => {
-          setShowServiceModal(false);
-          if (tours.length + transfers.length > 0) {
-            toast.success(
-              `Booking created with ${tours.length + transfers.length} service(s) — ₱${total.toLocaleString()}`,
-              'Booking Confirmed',
-              3500
-            );
-          }
-        }}
-      />
 
       <FeedbackWidget triggerOpen={feedbackTrigger} />
 
@@ -1100,6 +1082,21 @@ function PackageDealsContent() {
         </div>
       </section>
     </div>
+
+      {/* ============================================================
+          CUSTOMIZED BOOKING FORM MODAL
+          Rendered OUTSIDE .package-deals-page so overflow-x:hidden
+          on the parent cannot trap the fixed overlay.
+      ============================================================ */}
+      <CustomizedBookingForm
+        isOpen={showCustomBookingForm}
+        onClose={() => setShowCustomBookingForm(false)}
+        onSuccess={() => {
+          setShowCustomBookingForm(false);
+          toast.success('Booking submitted successfully!', 'Booking Confirmed', 3500);
+        }}
+      />
+    </>
   );
 }
 

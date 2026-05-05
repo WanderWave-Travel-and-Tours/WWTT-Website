@@ -4,6 +4,7 @@ const Payment = require('../models/payment');
 const Booking = require('../models/booking');
 const TourBooking = require('../models/tourBooking'); // ✅ FIX: needed for tour payment lookup
 const TransferBooking = require('../models/transferBooking'); // ✅ needed for transfer payment lookup
+const CustomizedBooking = require('../models/Customizedbooking'); // ✅ needed for customized booking payment lookup
 const { createGHLInvoice } = require('../utils/ghlApiService'); // ✅ Import for GHL Invoice
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
@@ -149,7 +150,7 @@ const createBookingPaymentIntent = async (req, res) => {
     console.log('Payment Method:', method);
 
     console.log('Searching for booking in database...');
-    // ✅ FIX: Check Booking (packages), TourBooking, and TransferBooking collections
+    // ✅ FIX: Check Booking (packages), TourBooking, TransferBooking, and CustomizedBooking collections
     // ✅ populate('packageId') para makuha ang inclusions, destination, image, etc.
     let booking = await Booking.findById(bookingId).populate('packageId');
     if (!booking) {
@@ -161,7 +162,11 @@ const createBookingPaymentIntent = async (req, res) => {
       booking = await TransferBooking.findById(bookingId); // ✅ FIX: TransferBooking has no packageId field
     }
     if (!booking) {
-      console.error('Booking not found in database (checked both Booking and TourBooking)');
+      console.log('Not found in TransferBooking collection, trying CustomizedBooking...');
+      booking = await CustomizedBooking.findById(bookingId); // ✅ CustomizedBooking has no packageId field
+    }
+    if (!booking) {
+      console.error('Booking not found in database (checked Booking, TourBooking, TransferBooking, and CustomizedBooking)');
       return res.status(404).json({
         success: false,
         message: 'Booking not found',
@@ -217,8 +222,9 @@ const createBookingPaymentIntent = async (req, res) => {
               {
                 currency: 'PHP',
                 amount: amountInCentavos,
-                description: `${booking.packageName} - ${paymentDescription}`,
-                name: booking.packageName,
+                // ✅ CustomizedBooking uses 'destination' instead of 'packageName'
+                description: `${booking.packageName || booking.destination || 'Custom Trip'} - ${paymentDescription}`,
+                name: booking.packageName || booking.destination || 'Custom Trip',
                 quantity: 1
               }
             ],
@@ -226,6 +232,7 @@ const createBookingPaymentIntent = async (req, res) => {
             reference_number: bookingId,
             send_email_receipt: true,
             show_description: true,
+            // ✅ CustomizedBooking uses 'fullName' directly (same field name, safe)
             description: `${paymentDescription} for ${booking.fullName}`,
             // ✅ IMPORTANT: Use booking_id (with underscore) to match existing success page
             success_url: `${FRONTEND_URL}/payment-success?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
