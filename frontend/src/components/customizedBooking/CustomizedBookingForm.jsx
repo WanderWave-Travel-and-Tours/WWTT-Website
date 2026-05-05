@@ -17,7 +17,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, MapPin, User, Phone, Mail, Calendar, Users, ChevronRight, ChevronLeft,
          Car, Compass, Check, Clock, ArrowRight, FileText, CheckCircle, Plus, Trash2,
          CreditCard, Wallet } from 'lucide-react';
-import './CustomizedbookingForm.css';
+import './Customizedbookingform.css';
 import tourBg     from '../../../../backend/assets/tour.png';
 import transferBg from '../../../../backend/assets/transfer.png';
 
