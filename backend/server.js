@@ -155,6 +155,7 @@ const emailSyncRoute = require('./routes/Emailsyncroute');
 const destinationRoutes = require('./routes/destinationRoute');
 const transferRoute             = require('./routes/transferBookingRoute');       // Transfer listings (vehicles/options)
 const transferBookingOrderRoute = require('./routes/transferBookingOrderRoute'); // Customer transfer bookings
+const customizedBookingRoute    = require('./routes/Customizedbookingroute');    // ✅ ADDED: Customized booking wizard
 
 
 const uploadDir = path.join(__dirname, 'uploads');
@@ -324,6 +325,7 @@ app.use('/api/packages', emailSyncRoute);
 app.use('/api/destinations', destinationRoutes);
 app.use('/api/transfers', transferRoute);                     // Transfer listings (CRUD: vehicles/options)
 app.use('/api/transfer-bookings', transferBookingOrderRoute); // Customer transfer bookings
+app.use('/api/customized-bookings', customizedBookingRoute); // ✅ ADDED: Customized booking wizard
 // ✅ Single mount — transferBookingRoute duplicate removed
 
 
