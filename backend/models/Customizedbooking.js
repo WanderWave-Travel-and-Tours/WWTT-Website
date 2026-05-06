@@ -53,7 +53,8 @@ const BookedTransferSchema = new mongoose.Schema({
 // ── Main schema ───────────────────────────────────────────────────────────────
 const CustomizedBookingSchema = new mongoose.Schema(
   {
-    bookingType: { type: String, default: 'customized' },
+    bookingType:     { type: String, default: 'customized' },
+    createdByType:   { type: String, enum: ['customer', 'sales', 'admin'], default: 'customer' },
 
     // ── Step 1 – Basic Info ─────────────────────────────────────────────────
     destination: { type: String, required: true, trim: true },

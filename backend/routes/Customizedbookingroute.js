@@ -116,6 +116,7 @@ router.post('/', async (req, res) => {
 
       promoCode: body.promoCode || null,
       notes:     body.notes     || '',
+      createdByType: body.createdByType || 'customer',
     });
 
     await booking.save();
@@ -227,6 +228,25 @@ router.patch('/:id/archive', async (req, res) => {
     );
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
     return res.status(200).json({ success: true, message: 'Booking archived.', data: booking });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/customized-bookings/:id/unarchive
+// Restore a previously archived booking back to the active list.
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id/unarchive', async (req, res) => {
+  try {
+    const booking = await CustomizedBooking.findByIdAndUpdate(
+      req.params.id,
+      { isArchive: 'No' },
+      { new: true }
+    );
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
+    console.log(`✅ Customized booking ${booking._id} unarchived.`);
+    return res.status(200).json({ success: true, message: 'Booking unarchived.', data: booking });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

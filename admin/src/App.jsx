@@ -151,7 +151,8 @@ const VALID_PROTECTED_ROUTES = [
   '/services/billspayment',
   '/seller-rate',
   '/services/transfers',
-  '/services/custombooking'
+  '/services/custombooking',      // kept for backwards compat (redirects below)
+  '/services/custombooking/all'   // ✅ Fixed: default serviceType route
 ];
 
 // ============================================================
@@ -634,7 +635,8 @@ function App() {
           <Route path="/services/travelinsurance" element={<ProtectedRoute><TravelInsurance /></ProtectedRoute>} />
           <Route path="/services/billspayment" element={<ProtectedRoute><BillsPayment /></ProtectedRoute>} />
 
-          {/* ✅ Custom Booking — single dynamic route handles all service types */}
+          {/* ✅ Custom Booking — redirect bare path, then handle all service types */}
+          <Route path="/services/custombooking" element={<Navigate to="/services/custombooking/all" replace />} />
           <Route path="/services/custombooking/:serviceType" element={<ProtectedRoute><CustomBooking /></ProtectedRoute>} />
 
           <Route path="/seller-rate" element={<ProtectedRoute><SellerRate /></ProtectedRoute>} />
