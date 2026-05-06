@@ -72,6 +72,7 @@ const TransferBookingDashboard = () => {
   const [filterStatus,  setFilterStatus]  = useState('ALL');
   const [paymentFilter, setPaymentFilter] = useState('ALL');
   const [typeFilter,    setTypeFilter]    = useState('ALL');
+  const [createdByFilter, setCreatedByFilter] = useState('ALL');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -156,6 +157,17 @@ const TransferBookingDashboard = () => {
       list = list.filter(b => (b.transferType || '').toLowerCase().includes('hotel'));
     }
 
+    if (createdByFilter !== 'ALL') {
+      list = list.filter(b => {
+        const type = (b.rawData?.createdByType || '').toLowerCase();
+        if (createdByFilter === 'sales')  return type === 'sales';
+        if (createdByFilter === 'admin')  return type === 'admin';
+        if (createdByFilter === 'manual') return type === 'manual';
+        if (createdByFilter === 'user')   return type !== 'sales' && type !== 'admin' && type !== 'manual';
+        return true;
+      });
+    }
+
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       list = list.filter(b =>
@@ -169,7 +181,7 @@ const TransferBookingDashboard = () => {
     }
 
     return list;
-  }, [bookings, filterStatus, paymentFilter, typeFilter, searchTerm]);
+  }, [bookings, filterStatus, paymentFilter, typeFilter, createdByFilter, searchTerm]);
 
   useEffect(() => { setCurrentPage(1); }, [filteredBookings]);
 
@@ -338,6 +350,7 @@ const TransferBookingDashboard = () => {
             paymentOptions={paymentOptions}
             typeFilter={typeFilter}       setTypeFilter={setTypeFilter}
             typeOptions={typeOptions}
+            createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
           />
 
           {/* ── Table ────────────────────────────────────────────── */}
@@ -355,6 +368,7 @@ const TransferBookingDashboard = () => {
                   <th>Amount</th>
                   <th>Payment</th>
                   <th>Status</th>
+                  <th>Created By</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -362,13 +376,13 @@ const TransferBookingDashboard = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="12" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       Loading transfer bookings...
                     </td>
                   </tr>
                 ) : currentBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="12" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       No transfer bookings found
                     </td>
                   </tr>
@@ -470,6 +484,13 @@ const TransferBookingDashboard = () => {
                         <td>
                           <span className={`bkm-badge ${getStatusBadgeClass(booking.status)}`}>
                             {booking.status || 'pending'}
+                          </span>
+                        </td>
+
+                        {/* Created By */}
+                        <td>
+                          <span className={`trk-created-by-badge trk-created-by-${(booking.rawData?.createdByType || 'user').toLowerCase()}`}>
+                            {(booking.rawData?.createdByType || 'user').toUpperCase()}
                           </span>
                         </td>
 

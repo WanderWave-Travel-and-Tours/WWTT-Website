@@ -72,3 +72,14 @@
 .bkm-archive-btn:disabled {
   opacity: 0.5; cursor: not-allowed;
 }
+/* ── Created By badges ── */
+.tbk-created-by-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.tbk-created-by-user   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.tbk-created-by-sales  { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+.tbk-created-by-admin  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.tbk-created-by-manual { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
