@@ -64,7 +64,7 @@ const MENU_PATHS = {
         '/services/passport', '/services/airlinebooking', '/services/hotelbooking',
         '/services/tourarrangements', '/services/ferrybooking', '/services/marriagecert',
         '/services/travelinsurance', '/services/billspayment', '/services/transfers',
-        '/services/custombooking'  // ✅ NEW
+        '/services/custombooking/all'  // ✅ Fixed: matches the :serviceType route
     ]
 };
 
@@ -88,7 +88,11 @@ const MenuItem = ({ path, icon: Icon, label, isCollapsed, isActive, onClick }) =
 };
 
 const DropdownMenu = ({ title, icon: Icon, menuKey, childrenItems, isOpen, isCollapsed, toggleMenu, location, navigate }) => {
-  const isChildActive = childrenItems.some(item => item.path === location.pathname);
+  const isChildActive = childrenItems.some(item => 
+    item.path === location.pathname ||
+    // ✅ Fix: match /services/custombooking/:serviceType dynamically
+    (item.path.startsWith('/services/custombooking/') && location.pathname.startsWith('/services/custombooking/'))
+  );
 
   return (
     <li className="nav-item">
@@ -118,7 +122,12 @@ const DropdownMenu = ({ title, icon: Icon, menuKey, childrenItems, isOpen, isCol
                     e.stopPropagation(); 
                     navigate(item.path); 
                   }}
-                  className={`submenu-btn ${location.pathname === item.path ? 'active' : ''}`}
+                  className={`submenu-btn ${
+                    location.pathname === item.path ||
+                    // ✅ Fix: highlight Custom Booking for any /services/custombooking/:serviceType
+                    (item.path.startsWith('/services/custombooking/') && location.pathname.startsWith('/services/custombooking/'))
+                      ? 'active' : ''
+                  }`}
                 >
                   <item.icon size={16} className="sub-icon" />
                   <span className="sub-label">{item.name}</span>
@@ -403,8 +412,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Insurance', path: '/services/travelinsurance', icon: ShieldCheck },
                 { name: 'Bills', path: '/services/billspayment', icon: DollarSign },
                 { name: 'Transfers', path: '/services/transfers', icon: Car },
-                // ✅ NEW: Custom Booking entry
-                { name: 'Custom Booking', path: '/services/custombooking', icon: BookMarked },
+                // ✅ Fixed: must include :serviceType param — 'all' shows all bookings
+                { name: 'Custom Booking', path: '/services/custombooking/all', icon: BookMarked },
               ]}
             />
           </ul>

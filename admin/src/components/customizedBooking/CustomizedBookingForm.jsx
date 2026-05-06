@@ -460,6 +460,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       paymentType,
       initialPaymentAmount: amountToPay,
       remainingBalance: paymentType === 'partial' ? grandTotal - partialAmount : 0,
+      createdByType: 'sales',
     };
 
     try {

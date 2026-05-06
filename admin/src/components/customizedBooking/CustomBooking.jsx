@@ -2,7 +2,7 @@
  * CustomBooking.jsx
  * ─────────────────────────────────────────────────────────────────────────────
  * Drop-in replacement for booking.jsx.
- * Same API endpoints, same logic — fresh design system (emerald + Outfit font).
+ * Fetches from /api/customized-bookings (CustomizedBooking model).
  *
  * Usage in App.jsx (replace existing import):
  *   import CustomBooking from './customizedBooking/CustomBooking';
@@ -51,8 +51,8 @@ import { useToast } from '../toast/ToastManager';
 // ── Confirm Modal: reuse the project's confirmation modal ────────────────────
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
-// ── New Booking Modal: reuse if available ────────────────────────────────────
-import NewBookingModal from '../booking/NewBookingModal';
+// ── New Booking Form: lives in the same customizedBookingAdmin folder ─────────
+import CustomBookingForm from './CustomizedBookingForm';
 
 // ─────────────────────────────────────────────────────────────────────────────
 const API = 'https://wanderwaveph.onrender.com';
@@ -102,52 +102,69 @@ const CustomBooking = () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FETCH
+  // FETCH  ← now hits /api/customized-bookings
   // ═══════════════════════════════════════════════════════════════════════════
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      let res = await fetch(`${API}/api/bookings/active`);
-      if (!res.ok) res = await fetch(`${API}/api/bookings`);
-      if (!res.ok) throw new Error('Failed to fetch bookings');
+      const res = await fetch(`${API}/api/customized-bookings?limit=500`);
+      if (!res.ok) throw new Error('Failed to fetch customized bookings');
 
       const data = await res.json();
-      const arr  = data.bookings || data;
-      const count = data.count   || arr.length;
+      // Route returns: { success, total, page, pages, data: [...] }
+      const arr   = Array.isArray(data.data) ? data.data : [];
+      const count = data.total || arr.length;
 
       const formatted = arr
         .filter(b => (b.isArchive || 'No') === 'No')
         .map((b, i) => {
-          const isWalkin     = b.isWalkin || false;
-          const actualStatus = b.status   || 'pending';
+          const tours     = b.tours     || [];
+          const transfers = b.transfers || [];
+
+          // Compute balance paid: if remaining is 0 on a partial, the balance
+          // portion was paid. This keeps the existing payment badge logic working.
+          const balancePaidAmount =
+            b.paymentType === 'partial' && (b.remainingBalance || 0) <= 0
+              ? (b.totalAmount || 0) - (b.initialPaymentAmount || 0)
+              : 0;
+
           return {
-            id:                  `BK${String(count - i).padStart(4, '0')}`,
-            mongoId:             b._id,
-            customerName:        b.fullName         || 'N/A',
-            email:               b.email            || 'N/A',
-            packageName:         b.packageName      || 'Unknown Package',
-            destination:         b.destination      || b.packageId?.destination || 'N/A',
-            travelDate:          b.startDate        || 'Not specified',
-            startDate:           b.startDate,
-            endDate:             b.endDate,
-            duration:            b.duration,
-            totalAmount:         b.totalAmount      || 0,
-            guests:              b.pax?.adult       || 1,
-            status:              actualStatus,
-            bookingDate:         new Date(b.createdAt).toLocaleDateString('en-CA'),
-            message:             b.message          || '',
-            referenceNumber:     b.referenceNumber  || 'N/A',
-            paymentLinkId:       b.paymentLinkId,
-            paymentType:         b.paymentType      || 'full',
+            id:                   `CB${String(count - i).padStart(4, '0')}`,
+            mongoId:              b._id,
+            customerName:         b.fullName        || 'N/A',
+            email:                b.email           || 'N/A',
+            // CustomizedBooking has no packageName — use destination as the display label
+            packageName:          b.destination     || 'Customized Trip',
+            destination:          b.destination     || 'N/A',
+            travelDate:           b.travelDate      || 'Not specified',
+            returnDate:           b.returnDate      || '',
+            totalAmount:          b.totalAmount     || 0,
+            guests:               b.paxCount        || 1,
+            status:               b.status          || 'pending',
+            bookingDate:          new Date(b.createdAt).toLocaleDateString('en-CA'),
+            message:              b.message         || b.notes || '',
+            referenceNumber:      b.referenceNumber || 'N/A',
+            paymentLinkId:        null,
+            paymentType:          b.paymentType     || 'full',
             initialPaymentAmount: b.initialPaymentAmount || 0,
-            remainingBalance:    isWalkin ? 0 : (b.remainingBalance || 0),
-            balancePaidAmount:   isWalkin ? b.totalAmount : (b.balancePaidAmount || 0),
-            balancePaidAt:       b.balancePaidAt,
-            isWalkin,
-            createdByType:       isWalkin ? 'sales' : (b.createdByType || 'user'),
-            passengers:          b.passengers || [],
-            rawData:             b,
-            isArchive:           b.isArchive || 'No',
+            remainingBalance:     b.remainingBalance    || 0,
+            balancePaidAmount,
+            balancePaidAt:        null,
+            // Customized bookings are always created by a user (no walk-in)
+            isWalkin:             false,
+            createdByType:        'user',
+            passengers:           [],
+            // Wrap tours & transfers under rawData.addOns so the detail modal
+            // can render them with its existing addOns rendering logic
+            rawData: {
+              ...b,
+              addOns: {
+                tours,
+                transfers,
+                addOnsTotal: (b.toursTotal || 0) + (b.transfersTotal || 0),
+              },
+            },
+            isArchive: b.isArchive || 'No',
           };
         });
 
@@ -174,16 +191,15 @@ const CustomBooking = () => {
 
     if (paymentFilter === 'PENDING_BALANCE') {
       filtered = filtered.filter(b =>
-        !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0 && b.balancePaidAmount === 0
+        b.paymentType === 'partial' && b.remainingBalance > 0 && b.balancePaidAmount === 0
       );
     } else if (paymentFilter === 'FULLY_PAID') {
       filtered = filtered.filter(b => {
-        if (b.isWalkin) return true;
         if (b.paymentType === 'full') return b.status === 'confirmed' || b.status === 'fully_paid';
         return b.balancePaidAmount > 0 && (b.totalAmount - b.initialPaymentAmount - b.balancePaidAmount) <= 0;
       });
     } else if (paymentFilter === 'PARTIAL_ONLY') {
-      filtered = filtered.filter(b => !b.isWalkin && b.paymentType === 'partial');
+      filtered = filtered.filter(b => b.paymentType === 'partial');
     }
 
     if (typeFilter === 'ONLINE')  filtered = filtered.filter(b => !b.isWalkin);
@@ -222,13 +238,15 @@ const CustomBooking = () => {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ACTIONS: CONFIRM
+  // ACTIONS: CONFIRM  ← PATCH /api/customized-bookings/:id/status
   // ═══════════════════════════════════════════════════════════════════════════
   const executeConfirm = async (booking) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API}/api/bookings/${booking.mongoId}/confirm`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API}/api/customized-bookings/${booking.mongoId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -253,13 +271,15 @@ const CustomBooking = () => {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ACTIONS: CANCEL
+  // ACTIONS: CANCEL  ← PATCH /api/customized-bookings/:id/status
   // ═══════════════════════════════════════════════════════════════════════════
   const executeCancel = async (booking) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API}/api/bookings/${booking.mongoId}/cancel`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API}/api/customized-bookings/${booking.mongoId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -285,14 +305,19 @@ const CustomBooking = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ACTIONS: ARCHIVE / UNARCHIVE
+  // ← PATCH /api/customized-bookings/:id/archive
+  // ← PATCH /api/customized-bookings/:id/unarchive
   // ═══════════════════════════════════════════════════════════════════════════
   const executeArchive = async (booking, action) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API}/api/bookings/${booking.mongoId}/archive`, {
-        method: 'POST',
+      const endpoint = action === 'unarchive'
+        ? `${API}/api/customized-bookings/${booking.mongoId}/unarchive`
+        : `${API}/api/customized-bookings/${booking.mongoId}/archive`;
+
+      const res = await fetch(endpoint, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -321,7 +346,7 @@ const CustomBooking = () => {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // BULK ARCHIVE
+  // BULK ARCHIVE  ← PATCH /api/customized-bookings/:id/archive
   // ═══════════════════════════════════════════════════════════════════════════
   const handleBulkArchive = () => {
     if (!selectedBookings.length) return;
@@ -334,10 +359,9 @@ const CustomBooking = () => {
         try {
           await Promise.all(
             selectedBookings.map(b =>
-              fetch(`${API}/api/bookings/${b.mongoId}/archive`, {
-                method: 'POST',
+              fetch(`${API}/api/customized-bookings/${b.mongoId}/archive`, {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'archive' }),
               }).then(async r => {
                 if (!r.ok) {
                   const e = await r.json().catch(() => ({}));
@@ -396,12 +420,13 @@ const CustomBooking = () => {
       .filter(b => b.status === 'confirmed')
       .reduce((sum, b) => sum + b.totalAmount, 0);
 
+    // For customized bookings: partial + remainingBalance > 0 = pending balance
     const pendingBalanceCount = bookings.filter(b =>
-      !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0 && b.balancePaidAmount === 0
+      b.paymentType === 'partial' && b.remainingBalance > 0 && b.balancePaidAmount === 0
     ).length;
 
     const totalPendingBalance = bookings
-      .filter(b => !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0)
+      .filter(b => b.paymentType === 'partial' && b.remainingBalance > 0)
       .reduce((sum, b) => sum + b.remainingBalance, 0);
 
     return [
@@ -592,10 +617,14 @@ const CustomBooking = () => {
         onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))}
       />
 
-      {/* ── New Booking Modal ── */}
-      <NewBookingModal
+      {/* ── New Booking Form (CustomBookingForm — same folder: customizedBookingAdmin) ── */}
+      <CustomBookingForm
         isOpen={showNewBookingModal}
         onClose={() => setShowNewBookingModal(false)}
+        onSuccess={() => {
+          setShowNewBookingModal(false);
+          fetchBookings();
+        }}
       />
     </div>
   );
