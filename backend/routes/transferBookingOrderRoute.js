@@ -49,6 +49,7 @@ router.post('/', async (req, res) => {
       promoCode,
       supplierName,
       pax,
+      createdByType,    // 'sales' | 'customer'
     } = req.body;
 
     // ── Basic validation ────────────────────────────────────────────────────
@@ -107,11 +108,14 @@ router.post('/', async (req, res) => {
       promoCode:    promoCode    || null,
       supplierName: supplierName || '',
       pax:          pax          || '',
+
+      // 'sales' if from admin modal, 'customer' if from public booking page
+      createdByType: createdByType === 'sales' ? 'sales' : 'customer',
     });
 
     await booking.save();
 
-    console.log(`✅ Transfer booking created: ${booking._id} | ${type} | ${activityName}`);
+    console.log(`✅ Transfer booking created: ${booking._id} | ${type} | ${activityName} | by: ${booking.createdByType}`);
 
     return res.status(201).json({
       success:   true,
@@ -137,12 +141,13 @@ router.post('/', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    const { email, status, transferType, page = 1, limit = 50 } = req.query;
+    const { email, status, transferType, createdByType, page = 1, limit = 50 } = req.query;
 
     const filter = {};
-    if (email)        filter.email        = { $regex: email, $options: 'i' };
-    if (status)       filter.status       = status;
-    if (transferType) filter.transferType = transferType;
+    if (email)         filter.email         = { $regex: email, $options: 'i' };
+    if (status)        filter.status        = status;
+    if (transferType)  filter.transferType  = transferType;
+    if (createdByType) filter.createdByType = createdByType;
 
     const skip  = (parseInt(page) - 1) * parseInt(limit);
     const total = await TransferBookingOrder.countDocuments(filter);

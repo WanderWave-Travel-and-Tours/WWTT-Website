@@ -516,9 +516,10 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         )}
                     </div>
 
-                    {/* ── Contact & Trip Info ── */}
+                    {/* ── Contact & Trip Info — 2-column grid ── */}
                     <div className="bd-customized-section-label">Trip &amp; Contact Info</div>
                     <div className="bd-info-rows">
+                        {/* Destination */}
                         {booking.destination && (
                             <div className="bd-info-row">
                                 <div className="bd-info-row-icon bd-info-icon-dest">
@@ -532,6 +533,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 </div>
                             </div>
                         )}
+                        {/* Full Name */}
                         {booking.fullName && (
                             <div className="bd-info-row">
                                 <div className="bd-info-row-icon bd-info-icon-pax">
@@ -545,6 +547,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 </div>
                             </div>
                         )}
+                        {/* Email */}
                         {booking.email && (
                             <div className="bd-info-row">
                                 <div className="bd-info-row-icon bd-info-icon-pkg">
@@ -554,10 +557,11 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 </div>
                                 <div className="bd-info-row-text">
                                     <span className="bd-info-row-label">Email</span>
-                                    <span className="bd-info-row-value">{booking.email}</span>
+                                    <span className="bd-info-row-value" style={{ fontSize: '0.82rem', wordBreak: 'break-all' }}>{booking.email}</span>
                                 </div>
                             </div>
                         )}
+                        {/* Phone */}
                         {booking.phone && (
                             <div className="bd-info-row">
                                 <div className="bd-info-row-icon bd-info-icon-pax">
@@ -571,7 +575,8 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 </div>
                             </div>
                         )}
-                        {(booking.travelDate || booking.returnDate) && (
+                        {/* Travel Date */}
+                        {booking.travelDate && (
                             <div className="bd-info-row">
                                 <div className="bd-info-row-icon bd-info-icon-date">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -579,14 +584,24 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                     </svg>
                                 </div>
                                 <div className="bd-info-row-text">
-                                    <span className="bd-info-row-label">Travel Dates</span>
-                                    <span className="bd-info-row-value">
-                                        {formatDate(booking.travelDate)}
-                                        {booking.returnDate ? ` – ${formatDate(booking.returnDate)}` : ''}
-                                    </span>
+                                    <span className="bd-info-row-label">Travel Date</span>
+                                    <span className="bd-info-row-value">{formatDate(booking.travelDate)}</span>
                                 </div>
                             </div>
                         )}
+                        {/* Return Date */}
+                        <div className="bd-info-row">
+                            <div className="bd-info-row-icon bd-info-icon-date">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                                </svg>
+                            </div>
+                            <div className="bd-info-row-text">
+                                <span className="bd-info-row-label">Return Date</span>
+                                <span className="bd-info-row-value">{booking.returnDate ? formatDate(booking.returnDate) : '—'}</span>
+                            </div>
+                        </div>
+                        {/* Passengers */}
                         {booking.paxCount > 0 && (
                             <div className="bd-info-row">
                                 <div className="bd-info-row-icon bd-info-icon-pax">
@@ -600,20 +615,61 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 </div>
                             </div>
                         )}
-                        {booking.message && (
+                        {/* Currency */}
+                        <div className="bd-info-row">
+                            <div className="bd-info-row-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
+                            </div>
+                            <div className="bd-info-row-text">
+                                <span className="bd-info-row-label">Currency</span>
+                                <span className="bd-info-row-value">{booking.currency || 'PHP'}</span>
+                            </div>
+                        </div>
+                        {/* Booked On */}
+                        <div className="bd-info-row">
+                            <div className="bd-info-row-icon" style={{ background: '#fdf4ff', color: '#9333ea' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                            </div>
+                            <div className="bd-info-row-text">
+                                <span className="bd-info-row-label">Booked On</span>
+                                <span className="bd-info-row-value">{formatDate(booking.bookingDate || booking.createdAt)}</span>
+                            </div>
+                        </div>
+                        {/* Promo Code — only shown if present */}
+                        {booking.promoCode && (
                             <div className="bd-info-row">
-                                <div className="bd-info-row-icon bd-info-icon-pkg">
+                                <div className="bd-info-row-icon" style={{ background: '#fefce8', color: '#ca8a04' }}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
                                     </svg>
                                 </div>
                                 <div className="bd-info-row-text">
-                                    <span className="bd-info-row-label">Message</span>
-                                    <span className="bd-info-row-value">{booking.message}</span>
+                                    <span className="bd-info-row-label">Promo Code</span>
+                                    <span className="bd-info-row-value" style={{ color: '#7c3aed', fontWeight: 800 }}>{booking.promoCode}</span>
                                 </div>
                             </div>
                         )}
                     </div>
+
+                    {/* ── Message / Special Request ── */}
+                    {booking.message && (
+                        <div style={{ padding: '0 0 4px' }}>
+                            <div className="bd-customized-section-label" style={{ marginTop: 0 }}>Special Request / Message</div>
+                            <div className="bd-customized-message-box">{booking.message}</div>
+                        </div>
+                    )}
+
+                    {/* ── Internal Notes ── */}
+                    {booking.notes && (
+                        <div style={{ padding: '0 0 4px' }}>
+                            <div className="bd-customized-section-label" style={{ marginTop: 0 }}>Internal Notes</div>
+                            <div className="bd-customized-message-box" style={{ background: '#fefce8', borderColor: '#fde68a', color: '#713f12' }}>{booking.notes}</div>
+                        </div>
+                    )}
 
                     {/* ── Tours ── */}
                     {booking.tours && booking.tours.length > 0 && (

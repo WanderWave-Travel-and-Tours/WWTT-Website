@@ -9,6 +9,7 @@ import BookingStats from '../booking/BookingStats';
 import BookingFilters from '../booking/BookingFilters';
 import PaginationControls from '../booking/PaginationControls';
 import TransferBookingDetailModal from './TransferBookingDetailModal';
+import NewTransferBookingModal from './NewTransferBookingModal';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
@@ -64,6 +65,7 @@ const TransferBookingDashboard = () => {
   const [actionLoading,  setActionLoading] = useState(false);
   const [showModal,      setShowModal]     = useState(false);
   const [selected,       setSelected]      = useState(null);
+  const [showNewBooking, setShowNewBooking] = useState(false);
 
   // Filters
   const [searchTerm,    setSearchTerm]    = useState('');
@@ -316,6 +318,12 @@ const TransferBookingDashboard = () => {
               <h1>Transfer Booking Management</h1>
               <p>View and manage all vehicle transfer bookings</p>
             </div>
+            <button
+              className="bkm-btn-add"
+              onClick={() => setShowNewBooking(true)}
+            >
+              <Car size={16} /> + New Booking
+            </button>
           </div>
 
           {/* ── Stats ────────────────────────────────────────────── */}
@@ -507,6 +515,12 @@ const TransferBookingDashboard = () => {
 
         </div>
       </main>
+
+      {/* ── New Transfer Booking Modal ───────────────────────── */}
+      <NewTransferBookingModal
+        isOpen={showNewBooking}
+        onClose={() => setShowNewBooking(false)}
+      />
 
       {/* ── Detail Modal ─────────────────────────────────────────── */}
       <TransferBookingDetailModal

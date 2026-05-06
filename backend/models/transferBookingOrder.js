@@ -74,6 +74,15 @@ const TransferBookingOrderSchema = new mongoose.Schema(
     promoCode:      { type: String, default: null },
     supplierName:   { type: String, default: '' },
     pax:            { type: String, default: '' },
+
+    // ── Source tracking ─────────────────────────────────────────────────────
+    // 'sales'   → created by a sales agent via the admin modal
+    // 'customer' → created by the customer directly from the public booking page
+    createdByType: {
+      type:    String,
+      enum:    ['sales', 'customer'],
+      default: 'customer',
+    },
   },
   {
     timestamps:  true,
@@ -112,6 +121,7 @@ TransferBookingOrderSchema.index({ email: 1 });
 TransferBookingOrderSchema.index({ status: 1 });
 TransferBookingOrderSchema.index({ travelDate: 1 });
 TransferBookingOrderSchema.index({ createdAt: -1 });
+TransferBookingOrderSchema.index({ createdByType: 1 });
 
 // Delete cached model to ensure updated schema is always used
 delete mongoose.connection.models['TransferBookingOrder'];

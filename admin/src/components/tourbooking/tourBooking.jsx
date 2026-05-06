@@ -9,6 +9,7 @@ import BookingStats from '../booking/BookingStats';
 import BookingFilters from '../booking/BookingFilters';
 import PaginationControls from '../booking/PaginationControls';
 import TourBookingDetailModal from './TourBookingDetailModal';
+import NewTourBookingModal from './NewTourBookingModal';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
@@ -78,6 +79,8 @@ const TourBookingDashboard = () => {
   const itemsPerPage = 10;
 
   // Confirm modal
+  const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'primary'
   });
@@ -312,6 +315,12 @@ const TourBookingDashboard = () => {
               <h1>Tour Booking Management</h1>
               <p>View and manage all tour package bookings</p>
             </div>
+            <button
+              className="bkm-btn-add"
+              onClick={() => setShowNewBookingModal(true)}
+            >
+              + New Booking
+            </button>
           </div>
 
           {/* ── Stats ────────────────────────────────────────────── */}
@@ -509,6 +518,12 @@ const TourBookingDashboard = () => {
 
         </div>
       </main>
+
+      {/* ── New Tour Booking Modal ───────────────────────────── */}
+      <NewTourBookingModal
+        isOpen={showNewBookingModal}
+        onClose={() => setShowNewBookingModal(false)}
+      />
 
       {/* ── Detail Modal ─────────────────────────────────────────── */}
       <TourBookingDetailModal

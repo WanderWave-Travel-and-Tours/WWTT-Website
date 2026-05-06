@@ -1861,34 +1861,68 @@
   width: 100%;
 }
 
-/* Override the 2-col grid — customized info rows go single column */
+/* 2-column grid for customized booking trip & contact info */
 .bd-customized-card .bd-info-rows {
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
-/* Remove border-bottom from last row (was designed for 2-col, now 1-col) */
-.bd-customized-card .bd-info-row:nth-last-child(-n+2) {
-  border-bottom: 1px dashed #f1f5f9;
-}
-
-.bd-customized-card .bd-info-row:last-child {
-  border-bottom: none;
-}
-
-/* Remove right border since there's only 1 column */
-.bd-customized-card .bd-info-row:nth-child(2n) {
+/* Restore standard 2-col border rules */
+.bd-customized-card .bd-info-row {
   border-right: 1px dashed #f1f5f9;
 }
 
-.bd-customized-card .bd-info-row {
+.bd-customized-card .bd-info-row:nth-child(2n) {
   border-right: none;
 }
 
-/* First section label has no top border */
+.bd-customized-card .bd-info-row:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+/* Message / Notes box below the grid */
+.bd-customized-message-box {
+  margin: 0 20px 14px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
+/* Collapse customized info grid to 1-col on small screens */
+@media (max-width: 640px) {
+  .bd-customized-card .bd-info-rows {
+    grid-template-columns: 1fr;
+  }
+
+  .bd-customized-card .bd-info-row,
+  .bd-customized-card .bd-info-row:nth-child(2n) {
+    border-right: none;
+  }
+
+  .bd-customized-card .bd-info-row:nth-last-child(-n+2) {
+    border-bottom: 1px dashed #f1f5f9;
+  }
+
+  .bd-customized-card .bd-info-row:last-child {
+    border-bottom: none;
+  }
+
+  .bd-customized-message-box {
+    margin: 0 0 12px;
+  }
+}
+
+/* First section label (Trip & Contact Info) has no top border, but all labels keep padding */
 .bd-customized-section-label:first-of-type,
 .bd-customized-card .bd-info-rows + .bd-customized-section-label {
   border-top: none;
-  margin-top: 0;
+  margin-top: 4px;
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .bd-customized-accent {
@@ -1920,55 +1954,90 @@
 .bd-customized-section-label {
   display: flex;
   align-items: center;
-  font-size: 0.72rem;
-  font-weight: 900;
+  gap: 7px;
+  font-size: 0.7rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
   color: #94a3b8;
-  padding: 14px 0 8px;
-  border-top: 1.5px solid #f1f5f9;
-  margin-top: 6px;
+  padding: 16px 20px 10px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 8px;
 }
 
 /* ── Service cards list ── */
 .bd-customized-services-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 4px;
+  padding: 0 20px;
 }
 
+/* ── Base service card ── */
 .bd-customized-service-item {
   display: flex;
-  gap: 12px;
-  padding: 12px;
+  flex-direction: row;
+  align-items: stretch;
   border-radius: 12px;
   border: 1.5px solid #e2e8f0;
-  background: #f8fafc;
-  transition: box-shadow 0.2s ease;
+  background: #ffffff;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.18s ease;
+  position: relative;
 }
 
 .bd-customized-service-item:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
 }
 
+/* ── Tour card ── warm amber tint */
 .bd-customized-tour-item {
-  border-color: #fed7aa;
-  background: linear-gradient(135deg, #fff7ed 0%, #f8fafc 100%);
+  border-color: #f6c784;
+  background: linear-gradient(to right, #fffbf5 0%, #ffffff 120px);
 }
 
+/* ── Transfer card ── cool teal tint */
 .bd-customized-transfer-item {
-  border-color: #bbf7d0;
-  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+  border-color: #6ee7b7;
+  background: linear-gradient(to right, #f4fdf9 0%, #ffffff 120px);
+}
+
+/* ── Square image wrapper — forces strict 88×88 square ── */
+.bd-customized-service-img-wrap {
+  width: 88px;
+  min-width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  align-self: center;
+  margin: 10px 0 10px 10px;
+  border-radius: 8px;
 }
 
 .bd-customized-service-img {
-  width: 64px;
-  height: 64px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  display: block;
   border-radius: 8px;
+}
+
+/* Fallback if no wrapper — keep backward compat */
+.bd-customized-service-item > .bd-customized-service-img {
+  width: 88px;
+  min-width: 88px;
+  height: 88px;
+  min-height: 88px;
+  max-height: 88px;
+  object-fit: cover;
+  display: block;
   flex-shrink: 0;
-  border: 1.5px solid rgba(0,0,0,0.06);
+  align-self: center;
+  margin: 10px 0 10px 10px;
+  border-radius: 8px;
 }
 
 .bd-customized-service-body {
@@ -1976,87 +2045,129 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  padding: 13px 14px 13px 12px;
 }
 
 .bd-customized-service-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
 
 .bd-customized-service-name {
-  font-size: 0.88rem;
+  font-size: 0.91rem;
   font-weight: 800;
-  color: #1e293b;
-  line-height: 1.3;
+  color: #0f172a;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
 }
 
+/* ── Price badge ── */
 .bd-customized-service-price {
   font-size: 0.88rem;
   font-weight: 900;
-  color: #7e22ce;
   white-space: nowrap;
   flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: -0.3px;
 }
 
+.bd-customized-tour-item .bd-customized-service-price {
+  color: #c2410c;
+  background: #fff3e0;
+  border: 1.5px solid #fcd8a0;
+}
+
+.bd-customized-transfer-item .bd-customized-service-price {
+  color: #6b21a8;
+  background: #f5f0ff;
+  border: 1.5px solid #ddd6fe;
+}
+
+/* ── Meta chips row ── */
 .bd-customized-service-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
+  align-items: center;
 }
 
 .bd-customized-meta-chip {
   display: inline-flex;
   align-items: center;
-  font-size: 0.7rem;
-  font-weight: 700;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
   color: #475569;
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  padding: 3px 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 3px 8px 3px 7px;
   border-radius: 20px;
   white-space: nowrap;
 }
 
+/* First chip is the "type" chip — color-coded */
+.bd-customized-tour-item .bd-customized-meta-chip:first-child {
+  background: #fff3e0;
+  border-color: #fcd8a0;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.bd-customized-transfer-item .bd-customized-meta-chip:first-child {
+  background: #f0fdf4;
+  border-color: #a7f3d0;
+  color: #065f46;
+  font-weight: 700;
+}
+
+/* ── Note / message text below chips ── */
 .bd-customized-service-note {
-  font-size: 0.78rem;
-  color: #64748b;
+  font-size: 0.75rem;
+  color: #94a3b8;
   font-style: italic;
   margin: 0;
-  padding-top: 2px;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 /* ── Pricing Summary ── */
 .bd-customized-pricing {
-  margin-top: 14px;
-  border-top: 2px solid #f1f5f9;
-  padding-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  margin: 20px 20px 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid #e8edf3;
+  background: #f8fafc;
 }
 
 .bd-customized-pricing-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.83rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: #64748b;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.bd-customized-pricing-row:last-child {
+  border-bottom: none;
 }
 
 .bd-customized-pricing-total {
-  font-size: 0.95rem;
+  font-size: 0.97rem;
   font-weight: 900;
   color: #0f172a;
-  border-top: 1.5px dashed #e2e8f0;
-  margin-top: 4px;
-  padding-top: 8px;
+  background: #ffffff;
+  border-top: 2px solid #e8edf3 !important;
+  padding: 13px 16px !important;
 }
 
 .bd-customized-pricing-total span:last-child {
   color: #7e22ce;
+  font-size: 1.08rem;
+  letter-spacing: -0.5px;
 }
