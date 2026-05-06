@@ -495,3 +495,9 @@
     border-color: #86efac;
     color: #15803d;
 }
+
+.ud-customized-booking-tag {
+    background: linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%);
+    border-color: #d8b4fe;
+    color: #7e22ce;
+}

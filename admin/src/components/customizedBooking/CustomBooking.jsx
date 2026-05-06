@@ -150,9 +150,9 @@ const CustomBooking = () => {
             remainingBalance:     b.remainingBalance    || 0,
             balancePaidAmount,
             balancePaidAt:        null,
-            // Customized bookings are always created by a user (no walk-in)
-            isWalkin:             false,
-            createdByType:        'user',
+            // Map DB createdByType: 'customer' → 'user' for display consistency
+            isWalkin:             b.createdByType === 'sales' ? true : false,
+            createdByType:        b.createdByType === 'sales' ? 'sales' : 'user',
             passengers:           [],
             // Wrap tours & transfers under rawData.addOns so the detail modal
             // can render them with its existing addOns rendering logic

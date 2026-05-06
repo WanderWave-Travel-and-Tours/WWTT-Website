@@ -88,7 +88,7 @@
 /* ── TOP ROW: Booking Info + Balance side by side ── */
 .bd-top-row {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 20px;
   margin-bottom: 20px;
   max-width: 1200px;
@@ -102,11 +102,12 @@
   min-width: 0;
 }
 
-/* Balance card — fixed sidebar width */
+/* Balance card — fixed sidebar width, always sticks to top */
 .bd-top-row .bd-balance-card {
   flex: 0 0 320px;
   width: 320px;
   max-width: 320px;
+  align-self: flex-start;
   /* override bottom margin from standalone usage */
   margin: 0;
 }
@@ -1851,4 +1852,211 @@
 
 .bd-balance-deadline-note--expired svg {
   color: #ef4444;
+}
+/* ─────────────────────────────────────────────────────────────
+   CUSTOMIZED BOOKING CARD
+───────────────────────────────────────────────────────────── */
+
+.bd-customized-card {
+  width: 100%;
+}
+
+/* Override the 2-col grid — customized info rows go single column */
+.bd-customized-card .bd-info-rows {
+  grid-template-columns: 1fr;
+}
+
+/* Remove border-bottom from last row (was designed for 2-col, now 1-col) */
+.bd-customized-card .bd-info-row:nth-last-child(-n+2) {
+  border-bottom: 1px dashed #f1f5f9;
+}
+
+.bd-customized-card .bd-info-row:last-child {
+  border-bottom: none;
+}
+
+/* Remove right border since there's only 1 column */
+.bd-customized-card .bd-info-row:nth-child(2n) {
+  border-right: 1px dashed #f1f5f9;
+}
+
+.bd-customized-card .bd-info-row {
+  border-right: none;
+}
+
+/* First section label has no top border */
+.bd-customized-section-label:first-of-type,
+.bd-customized-card .bd-info-rows + .bd-customized-section-label {
+  border-top: none;
+  margin-top: 0;
+}
+
+.bd-customized-accent {
+  background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%) !important;
+}
+
+.bd-customized-ref-badge {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+  color: #7e22ce;
+  border: 1.5px solid #d8b4fe;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bd-info-premium-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Section label inside card */
+.bd-customized-section-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  padding: 14px 0 8px;
+  border-top: 1.5px solid #f1f5f9;
+  margin-top: 6px;
+}
+
+/* ── Service cards list ── */
+.bd-customized-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.bd-customized-service-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  transition: box-shadow 0.2s ease;
+}
+
+.bd-customized-service-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.bd-customized-tour-item {
+  border-color: #fed7aa;
+  background: linear-gradient(135deg, #fff7ed 0%, #f8fafc 100%);
+}
+
+.bd-customized-transfer-item {
+  border-color: #bbf7d0;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+}
+
+.bd-customized-service-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(0,0,0,0.06);
+}
+
+.bd-customized-service-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bd-customized-service-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.bd-customized-service-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.bd-customized-service-price {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #7e22ce;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bd-customized-service-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bd-customized-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #475569;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.bd-customized-service-note {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+  padding-top: 2px;
+  line-height: 1.4;
+}
+
+/* ── Pricing Summary ── */
+.bd-customized-pricing {
+  margin-top: 14px;
+  border-top: 2px solid #f1f5f9;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bd-customized-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.bd-customized-pricing-total {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+  border-top: 1.5px dashed #e2e8f0;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.bd-customized-pricing-total span:last-child {
+  color: #7e22ce;
 }
