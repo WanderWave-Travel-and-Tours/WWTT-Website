@@ -38,6 +38,10 @@ const TourBookingSchema = new mongoose.Schema({
   isManual:        { type: Boolean, default: false },
   bookingSource:   { type: String, enum: ['online', 'walkin', 'manual'], default: 'online' },
 
+  // ── Created By (sales, user, admin, etc.) ─────────────────────────
+  createdByType:   { type: String, enum: ['user', 'sales', 'admin', 'manual'], default: 'user' },
+  createdByEmail:  { type: String, default: null },
+
   // ── Dates & Duration ──────────────────────────────────────────────
   startDate:       { type: String },
   endDate:         { type: String },
@@ -139,5 +143,6 @@ TourBookingSchema.index({ tourId: 1, status: 1 });
 TourBookingSchema.index({ email: 1 });
 TourBookingSchema.index({ createdAt: -1 });
 TourBookingSchema.index({ checkoutSessionId: 1 }); // ✅ FIX: needed for webhook lookup
+TourBookingSchema.index({ createdByType: 1 });     // ✅ for filtering sales bookings
 
 module.exports = mongoose.model('TourBooking', TourBookingSchema);

@@ -1,0 +1,997 @@
+/* =====================================================
+   ORDER SLIP MODAL — OrderSlipModal.css
+   Dark-themed overlay, clean white receipt body,
+   full @media print support.
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ── OVERLAY ─────────────────────────────────────── */
+.os-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 30, 0.75);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 24px 16px 48px;
+  animation: osFadeIn 0.2s ease;
+}
+
+@keyframes osFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── WRAPPER ─────────────────────────────────────── */
+.os-wrapper {
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: osSlideUp 0.28s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+@keyframes osSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── SCREEN-ONLY TOOLBAR ─────────────────────────── */
+.os-toolbar {
+  background: #0f172a;
+  border-radius: 14px 14px 0 0;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.os-toolbar-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.os-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.os-btn-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.os-btn-print:hover { background: #d97706; transform: translateY(-1px); }
+
+.os-btn-close {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.os-btn-close:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+/* ── THE PRINTABLE SLIP ──────────────────────────── */
+.os-slip {
+  background: #ffffff;
+  border-radius: 0 0 14px 14px;
+  padding: 40px 44px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  color: #1e293b;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── SLIP HEADER ─────────────────────────────────── */
+.os-slip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.os-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.os-brand-logo {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 900;
+  color: #f59e0b;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+.os-brand-name {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.os-brand-tagline {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 2px 0 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.os-slip-meta {
+  text-align: right;
+}
+
+.os-slip-doc-type {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.os-meta-table {
+  border-collapse: collapse;
+  margin-left: auto;
+}
+
+.os-meta-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 12px 2px 0;
+  white-space: nowrap;
+}
+
+.os-meta-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: right;
+  padding: 2px 0;
+}
+
+.os-mono {
+  font-family: 'Courier New', 'Courier', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── DIVIDER ─────────────────────────────────────── */
+.os-divider {
+  height: 2px;
+  background: linear-gradient(to right, #0f172a, #334155, #e2e8f0);
+  border-radius: 2px;
+  margin-bottom: 20px;
+}
+
+/* ── STATUS BANNER ───────────────────────────────── */
+.os-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.os-status-text {
+  flex: 1;
+}
+
+.os-status-type {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+  margin-left: auto;
+  background: rgba(0,0,0,0.06);
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── TWO-COLUMN INFO ─────────────────────────────── */
+.os-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.os-info-block {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.os-block-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin: 0 0 8px;
+}
+
+.os-block-primary {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 3px;
+}
+
+.os-block-secondary {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 3px;
+  word-break: break-all;
+}
+
+.os-block-note {
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 6px 0 0;
+  border-left: 2px solid #e2e8f0;
+  padding-left: 8px;
+}
+
+.os-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 600;
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.os-info-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.os-duration-pill {
+  display: inline-block;
+  background: #1e293b;
+  color: #f59e0b;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.os-walkin-badge {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.os-section-gap { height: 20px; }
+
+/* ── SECTIONS ────────────────────────────────────── */
+.os-section {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin-bottom: 14px;
+}
+
+.os-section-flight {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-color: #bae6fd;
+}
+
+.os-section-finance {
+  background: #fafbfc;
+}
+
+.os-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+.os-custom-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
+
+.os-intl-badge {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
+
+.os-pax-count {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  margin-left: 4px;
+}
+
+/* ── PACKAGE NAME ────────────────────────────────── */
+.os-package-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 12px;
+}
+
+.os-hotel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.os-hotel-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.os-hotel-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* ── INCLUSIONS ──────────────────────────────────── */
+.os-inclusions-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 10px;
+}
+
+.os-inclusions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+
+.os-inclusion-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #334155;
+  font-weight: 600;
+  padding: 5px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.os-inclusion-item:last-child { border-bottom: none; }
+
+.os-inclusion-added {
+  color: #0f172a;
+}
+
+.os-inclusion-check {
+  color: #16a34a;
+  font-size: 13px;
+  flex-shrink: 0;
+  font-weight: 800;
+}
+
+.os-inclusion-name { flex: 1; }
+
+.os-inclusion-price {
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.os-inclusion-tag {
+  font-size: 9px;
+  background: #fef3c7;
+  color: #b45309;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ── FLIGHT DETAILS ──────────────────────────────── */
+.os-flight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.os-flight-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.os-flight-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.os-flight-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.os-flight-price {
+  color: #0369a1;
+}
+
+/* ── PASSENGER TABLE ─────────────────────────────── */
+.os-pax-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.os-pax-table th {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.os-pax-table td {
+  padding: 9px 10px;
+  color: #334155;
+  font-weight: 600;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.os-pax-even { background: #fafbfc; }
+
+.os-pax-num {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 700;
+  text-align: center;
+  width: 30px;
+}
+
+.os-pax-name {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.os-pax-contact {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* ── FINANCE TABLE ───────────────────────────────── */
+.os-finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+}
+
+.os-finance-table td {
+  padding: 9px 4px;
+  vertical-align: middle;
+}
+
+.os-ft-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  width: 28%;
+}
+
+.os-ft-desc {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  width: auto;
+}
+
+.os-ft-amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: right;
+  white-space: nowrap;
+  width: 22%;
+}
+
+.os-ft-addon td { background: #f8fafc; border-radius: 6px; }
+.os-ft-addon .os-ft-amount { color: #0f172a; }
+
+.os-ft-discount .os-ft-neg { color: #dc2626; }
+
+.os-ft-divider-row td { padding: 4px 0; }
+.os-ft-divider {
+  height: 1.5px;
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+.os-ft-divider-dashed {
+  background: repeating-linear-gradient(
+    to right,
+    #e2e8f0 0, #e2e8f0 6px, transparent 6px, transparent 12px
+  );
+  height: 1.5px;
+}
+
+.os-ft-total td {
+  border-top: 2px solid #0f172a !important;
+  border-bottom: 2px solid #0f172a !important;
+  padding: 12px 4px;
+}
+
+.os-ft-total .os-ft-label {
+  font-size: 13px;
+  color: #0f172a;
+  letter-spacing: 0.8px;
+}
+
+.os-ft-total-amount {
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f172a;
+  text-align: right;
+  white-space: nowrap;
+  letter-spacing: -0.5px;
+}
+
+.os-ft-paid .os-ft-pos { color: #15803d; }
+
+/* ── BALANCE HIGHLIGHT BOX ───────────────────────── */
+.os-balance-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #fff7ed, #fef3c7);
+  border: 2px solid #fcd34d;
+  border-radius: 10px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+}
+
+.os-balance-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #92400e;
+}
+
+.os-balance-left svg { flex-shrink: 0; }
+
+.os-balance-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 3px;
+}
+
+.os-balance-note {
+  font-size: 12px;
+  color: #b45309;
+  margin: 0;
+  font-weight: 600;
+}
+
+.os-balance-amount {
+  font-size: 26px;
+  font-weight: 900;
+  color: #92400e;
+  letter-spacing: -0.5px;
+}
+
+/* ── SETTLED BOX ─────────────────────────────────── */
+.os-settled-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+/* ── SLIP FOOTER ─────────────────────────────────── */
+.os-slip-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1.5px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.os-footer-brand {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 3px;
+}
+
+.os-footer-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  font-weight: 500;
+}
+
+.os-footer-right {
+  text-align: right;
+}
+
+.os-footer-ref {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 3px;
+}
+
+.os-footer-status {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ── WATERMARK ───────────────────────────────────── */
+.os-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 80px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.04;
+  white-space: nowrap;
+  color: #0f172a;
+}
+
+.os-watermark-cancelled {
+  opacity: 0.06;
+  color: #dc2626;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media (max-width: 640px) {
+  .os-slip { padding: 24px 20px; }
+  .os-slip-header { flex-direction: column; gap: 16px; }
+  .os-slip-meta { text-align: left; }
+  .os-meta-table { margin-left: 0; }
+  .os-info-grid { grid-template-columns: 1fr; }
+  .os-inclusions-grid { grid-template-columns: 1fr; }
+  .os-flight-grid { grid-template-columns: repeat(2, 1fr); }
+  .os-balance-box { flex-direction: column; align-items: flex-start; }
+  .os-ft-label { width: 35%; font-size: 11px; }
+  .os-pax-table th:nth-child(5),
+  .os-pax-table td:nth-child(5),
+  .os-pax-table th:nth-child(6),
+  .os-pax-table td:nth-child(6) { display: none; }
+  .os-toolbar { border-radius: 0; }
+  .os-slip { border-radius: 0; }
+}
+
+/* ══════════════════════════════════════════════════
+   PRINT STYLES
+   Key fixes:
+   1. @page { margin: 0 } removes browser URL / timestamp / page-number headers
+   2. We add our own padding inside .os-slip instead
+   3. No position:fixed — let the slip flow naturally so it never overflows
+   4. Compact font/spacing so everything fits on one A4 page
+   ══════════════════════════════════════════════════ */
+
+/* ① Kill browser print chrome (URL bar, date, "Page 1 of N") */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  /* ② Hide every UI element except the slip itself */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body > * { display: none !important; }
+
+  /* The overlay must be visible but transparent */
+  .os-overlay {
+    display: block !important;
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .os-wrapper {
+    display: block !important;
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+
+  /* ③ Toolbar: gone */
+  .no-print,
+  .os-toolbar { display: none !important; }
+
+  /* ④ The slip: natural flow, compact padding, no rounded corners */
+  .os-slip {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    padding: 20px 28px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  /* ⑤ Tighter spacing everywhere */
+  .os-slip-header        { margin-bottom: 12px !important; }
+  .os-divider            { margin-bottom: 10px !important; }
+  .os-status-banner      { margin-bottom: 10px !important; padding: 7px 12px !important; font-size: 11px !important; }
+  .os-info-grid          { gap: 10px !important; margin-bottom: 0 !important; }
+  .os-info-block         { padding: 10px 12px !important; }
+  .os-block-primary      { font-size: 13px !important; }
+  .os-block-secondary    { font-size: 11px !important; }
+  .os-section-gap        { height: 10px !important; }
+  .os-section            { padding: 12px 14px !important; margin-bottom: 8px !important; }
+  .os-section-header     { margin-bottom: 8px !important; font-size: 10px !important; }
+  .os-package-name       { font-size: 13px !important; margin-bottom: 6px !important; }
+  .os-hotel-row          { padding: 6px 10px !important; margin-bottom: 6px !important; font-size: 11px !important; }
+  .os-inclusions-title   { margin-bottom: 6px !important; }
+  .os-inclusion-item     { font-size: 11px !important; padding: 3px 0 !important; }
+  .os-brand-name         { font-size: 16px !important; }
+  .os-brand-logo         { width: 40px !important; height: 40px !important; font-size: 17px !important; }
+  .os-slip-doc-type      { font-size: 10px !important; margin-bottom: 5px !important; }
+  .os-meta-label         { font-size: 10px !important; padding-right: 10px !important; }
+  .os-meta-value         { font-size: 11px !important; }
+
+  /* ⑥ Passenger table: compact */
+  .os-pax-table th { font-size: 9px !important; padding: 4px 8px !important; }
+  .os-pax-table td { font-size: 11px !important; padding: 6px 8px !important; }
+  .os-pax-table th, .os-pax-table td { display: table-cell !important; }
+
+  /* ⑦ Finance table: compact */
+  .os-finance-table td   { padding: 6px 4px !important; }
+  .os-ft-label           { font-size: 10px !important; }
+  .os-ft-desc            { font-size: 10px !important; }
+  .os-ft-amount          { font-size: 11px !important; }
+  .os-ft-total .os-ft-label    { font-size: 11px !important; }
+  .os-ft-total-amount    { font-size: 16px !important; }
+
+  /* ⑧ Balance box: compact */
+  .os-balance-box        { padding: 10px 14px !important; margin-bottom: 6px !important; }
+  .os-balance-amount     { font-size: 18px !important; }
+  .os-balance-label      { font-size: 10px !important; }
+  .os-balance-note       { font-size: 10px !important; }
+
+  /* ⑨ Settled box */
+  .os-settled-box        { padding: 8px 12px !important; font-size: 11px !important; margin-bottom: 6px !important; }
+
+  /* ⑩ Footer */
+  .os-slip-footer        { margin-top: 14px !important; padding-top: 10px !important; }
+  .os-footer-brand       { font-size: 11px !important; }
+  .os-footer-sub         { font-size: 10px !important; }
+  .os-footer-ref         { font-size: 10px !important; }
+  .os-footer-status      { font-size: 10px !important; }
+
+  /* ⑪ Force all background colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ⑫ Avoid page breaks inside blocks */
+  .os-section,
+  .os-info-grid,
+  .os-pax-table,
+  .os-finance-table,
+  .os-balance-box,
+  .os-settled-box,
+  .os-slip-footer { page-break-inside: avoid; }
+
+  /* ⑬ Watermark: print-visible */
+  .os-watermark          { font-size: 60px !important; opacity: 0.05 !important; }
+  .os-watermark-cancelled { opacity: 0.07 !important; }
+}/* =====================================================
+   ORDER SLIP — OrderSlipModal.css
+   Only contains overrides that are specific to the
+   Order Slip. All base styling (modal, pages, tables,
+   footer, action bar, buttons) comes from
+   VoucherPreviewModal.css which is imported first.
+   ===================================================== */
+
+/* ── COVER IMAGE FIX ─────────────────────────────── */
+.voucher-header-compact {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.voucher-header-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.voucher-header-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.25));
+  pointer-events: none;
+}
+
+/* ── WATERMARK (pending / cancelled overlay) ─────── */
+.os-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 90px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 10px;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.045;
+  white-space: nowrap;
+  color: #0f172a;
+  z-index: 10;
+}
+
+.os-watermark-cancelled {
+  color: #dc2626;
+  opacity: 0.06;
+}
+
+/* ── Print: ensure @page removes browser chrome ──── */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .os-watermark {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    opacity: 0.05 !important;
+  }
+  .os-watermark-cancelled { opacity: 0.07 !important; }
+}

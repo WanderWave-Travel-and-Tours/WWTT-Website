@@ -73,6 +73,7 @@ const TourBookingDashboard = () => {
   const [filterStatus,  setFilterStatus] = useState('ALL');
   const [paymentFilter, setPaymentFilter]= useState('ALL');
   const [typeFilter,    setTypeFilter]   = useState('ALL');
+  const [createdByFilter, setCreatedByFilter] = useState('ALL');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -162,6 +163,19 @@ const TourBookingDashboard = () => {
       list = list.filter(b => b.rawData?.includesAirfare);
     }
 
+    if (createdByFilter !== 'ALL') {
+      list = list.filter(b => {
+        const type   = (b.rawData?.createdByType  || '').toLowerCase();
+        const source = (b.rawData?.bookingSource  || '').toLowerCase();
+        if (createdByFilter === 'sales')  return type === 'sales';
+        if (createdByFilter === 'user')   return type === 'user' || source === 'online';
+        if (createdByFilter === 'admin')  return type === 'admin';
+        if (createdByFilter === 'walkin') return source === 'walkin';
+        if (createdByFilter === 'manual') return type === 'manual' || source === 'manual';
+        return true;
+      });
+    }
+
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       list = list.filter(b =>
@@ -173,7 +187,7 @@ const TourBookingDashboard = () => {
     }
 
     return list;
-  }, [bookings, filterStatus, paymentFilter, typeFilter, searchTerm]);
+  }, [bookings, filterStatus, paymentFilter, typeFilter, createdByFilter, searchTerm]);
 
   useEffect(() => { setCurrentPage(1); }, [filteredBookings]);
 
@@ -296,6 +310,15 @@ const TourBookingDashboard = () => {
     { value: 'WITH_AIRFARE', label: 'With Airfare'  },
   ];
 
+  const createdByOptions = [
+    { value: 'ALL',    label: 'All Sources' },
+    { value: 'sales',  label: 'Sales'       },
+    { value: 'user',   label: 'User'        },
+    { value: 'admin',  label: 'Admin'       },
+    { value: 'walkin', label: 'Walk-in'     },
+    { value: 'manual', label: 'Manual'      },
+  ];
+
   // ── Pagination ─────────────────────────────────────────────────────────────
   const totalPages      = Math.ceil(filteredBookings.length / itemsPerPage);
   const startIndex      = (currentPage - 1) * itemsPerPage;
@@ -328,13 +351,14 @@ const TourBookingDashboard = () => {
 
           {/* ── Filters ──────────────────────────────────────────── */}
           <BookingFilters
-            searchTerm={searchTerm}       setSearchTerm={setSearchTerm}
-            filterStatus={filterStatus}   setFilterStatus={setFilterStatus}
+            searchTerm={searchTerm}         setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}     setFilterStatus={setFilterStatus}
             statusOptions={statusOptions}
-            paymentFilter={paymentFilter} setPaymentFilter={setPaymentFilter}
+            paymentFilter={paymentFilter}   setPaymentFilter={setPaymentFilter}
             paymentOptions={paymentOptions}
-            typeFilter={typeFilter}       setTypeFilter={setTypeFilter}
+            typeFilter={typeFilter}         setTypeFilter={setTypeFilter}
             typeOptions={typeOptions}
+            createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
           />
 
           {/* ── Table ────────────────────────────────────────────── */}
@@ -351,6 +375,7 @@ const TourBookingDashboard = () => {
                   <th>Amount</th>
                   <th>Payment</th>
                   <th>Status</th>
+                  <th>Created By</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -358,13 +383,13 @@ const TourBookingDashboard = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       Loading tour bookings...
                     </td>
                   </tr>
                 ) : currentBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       No tour bookings found
                     </td>
                   </tr>
@@ -473,6 +498,13 @@ const TourBookingDashboard = () => {
                         <td>
                           <span className={`bkm-badge ${getStatusBadgeClass(booking.status)}`}>
                             {booking.status || 'pending'}
+                          </span>
+                        </td>
+
+                        {/* Created By */}
+                        <td>
+                          <span className={`tbk-created-by-badge tbk-created-by-${(raw.createdByType || 'user').toLowerCase()}`}>
+                            {(raw.createdByType || 'user').toUpperCase()}
                           </span>
                         </td>
 
