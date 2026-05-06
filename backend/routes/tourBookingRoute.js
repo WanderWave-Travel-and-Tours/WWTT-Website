@@ -113,6 +113,8 @@ router.post('/', upload.any(), async (req, res) => {
       priceType:       data.priceType          || 'discounted',
       isCustomized:    data.isCustomized       || false,
       customizedInclusions: data.customizedInclusions || [],
+      createdByType:   data.createdByType      || 'user',
+      createdByEmail:  data.createdByEmail     || null,
       status: 'pending',
     });
 
