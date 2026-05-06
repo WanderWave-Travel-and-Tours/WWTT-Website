@@ -13,7 +13,7 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
     
     // --- STATE FOR FILTERING & UI ---
     const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL', 'SERVICES', 'BOOKINGS'
-    const [bookingSubFilter, setBookingSubFilter] = useState('ALL'); // 'ALL', 'PACKAGE', 'TOUR', 'TRANSFER'
+    const [bookingSubFilter, setBookingSubFilter] = useState('ALL'); // 'ALL', 'PACKAGE', 'TOUR', 'TRANSFER', 'CUSTOMIZED'
     const [searchQuery, setSearchQuery] = useState('');
     
     // Manage collapsible sections (Attention & Process Open by default, History Closed)
@@ -59,9 +59,10 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
             if (activeFilter === 'BOOKINGS') {
                 typeMatch = isBooking;
                 // Sub-filter when BOOKINGS is active
-                if (bookingSubFilter === 'PACKAGE') typeMatch = inq.bookingType === 'package';
-                if (bookingSubFilter === 'TOUR')    typeMatch = inq.bookingType === 'tour';
-                if (bookingSubFilter === 'TRANSFER') typeMatch = inq.bookingType === 'transfer';
+                if (bookingSubFilter === 'PACKAGE')    typeMatch = inq.bookingType === 'package';
+                if (bookingSubFilter === 'TOUR')       typeMatch = inq.bookingType === 'tour';
+                if (bookingSubFilter === 'TRANSFER')   typeMatch = inq.bookingType === 'transfer';
+                if (bookingSubFilter === 'CUSTOMIZED') typeMatch = inq.bookingType === 'customized';
             }
             if (activeFilter === 'SERVICES') typeMatch = !isBooking;
 
@@ -135,9 +136,10 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
     );
 
     const getBookingTag = (inquiry) => {
-        if (inquiry.bookingType === 'tour') return 'tour';
-        if (inquiry.bookingType === 'package') return 'package';
-        if (inquiry.bookingType === 'transfer') return 'transfer';
+        if (inquiry.bookingType === 'tour')        return 'tour';
+        if (inquiry.bookingType === 'package')     return 'package';
+        if (inquiry.bookingType === 'transfer')    return 'transfer';
+        if (inquiry.bookingType === 'customized')  return 'customized';
         return null;
     };
 
@@ -190,6 +192,17 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                                 <circle cx="18.5" cy="18.5" r="2.5"></circle>
                             </svg>
                             Transfer
+                        </span>
+                    )}
+                    {/* ── NEW: Customized Booking Tag ── */}
+                    {bookingTag === 'customized' && (
+                        <span className="ud-booking-tag ud-customized-booking-tag">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                <path d="M4.93 4.93a10 10 0 0 0 0 14.14"></path>
+                            </svg>
+                            Customized
                         </span>
                     )}
                 </div>
@@ -263,6 +276,11 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                             className={`ud-subfilter-btn ${bookingSubFilter === 'TRANSFER' ? 'active' : ''}`}
                             onClick={() => setBookingSubFilter('TRANSFER')}
                         >Transfer</button>
+                        {/* ── NEW: Customized sub-filter button ── */}
+                        <button
+                            className={`ud-subfilter-btn ${bookingSubFilter === 'CUSTOMIZED' ? 'active' : ''}`}
+                            onClick={() => setBookingSubFilter('CUSTOMIZED')}
+                        >Custom</button>
                     </div>
                 )}
             </div>

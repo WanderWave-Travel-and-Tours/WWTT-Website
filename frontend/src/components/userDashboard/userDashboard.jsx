@@ -102,9 +102,17 @@ const UserDashboardInner = ({ user, onLogout }) => {
             // Small delay before next request
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            // ── NEW: Fetch transfer bookings ──────────────────────────────
+            // ── Fetch transfer bookings ──────────────────────────────
             const transferBookingsData = await fetch(
                 `https://wanderwaveph.onrender.com/api/transfer-bookings?email=${user.email}`
+            ).then(res => res.json());
+
+            // Small delay before next request
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // ── NEW: Fetch customized bookings ───────────────────────
+            const customizedBookingsData = await fetch(
+                `https://wanderwaveph.onrender.com/api/customized-bookings?email=${user.email}`
             ).then(res => res.json());
 
             let combinedData = [];
@@ -139,7 +147,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 combinedData = [...combinedData, ...formattedTourBookings];
             }
 
-            // ── NEW: Format & merge transfer bookings ─────────────────────
+            // ── Format & merge transfer bookings ─────────────────────
             if (transferBookingsData.success) {
                 const formattedTransferBookings = transferBookingsData.data.map(booking => ({
                     ...booking,
@@ -151,6 +159,21 @@ const UserDashboardInner = ({ user, onLogout }) => {
                     message: booking.message || `Transfer Booking for ${booking.activityName}`
                 }));
                 combinedData = [...combinedData, ...formattedTransferBookings];
+            }
+
+            // ── NEW: Format & merge customized bookings ───────────────
+            if (customizedBookingsData.success) {
+                const formattedCustomizedBookings = customizedBookingsData.data.map(booking => ({
+                    ...booking,
+                    // serviceName shown in the sidebar card — use destination as the label
+                    serviceName: booking.destination || 'Customized Booking',
+                    inquiryType: 'BOOKING',
+                    bookingType: 'customized',
+                    status: booking.status ? booking.status.toUpperCase() : 'PENDING',
+                    estimatedPrice: booking.totalAmount,
+                    message: booking.message || `Customized Booking for ${booking.destination}`,
+                }));
+                combinedData = [...combinedData, ...formattedCustomizedBookings];
             }
 
             combinedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

@@ -19,6 +19,7 @@ import { X, MapPin, User, Phone, Mail, Calendar, Users, ChevronRight, ChevronLef
          Car, Compass, Check, Clock, ArrowRight, FileText, CheckCircle, Plus, Trash2,
          CreditCard, Wallet } from 'lucide-react';
 import './Customizedbookingform.css';
+import './PaymentOption.css';
 import tourBg     from '../../../../backend/assets/tour.png';
 import transferBg from '../../../../backend/assets/transfer.png';
 
@@ -460,7 +461,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       paymentType,
       initialPaymentAmount: amountToPay,
       remainingBalance: paymentType === 'partial' ? grandTotal - partialAmount : 0,
-      createdByType: 'sales',
     };
 
     try {

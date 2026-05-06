@@ -1,0 +1,249 @@
+/* ===================================
+   PAYMENT OPTIONS SECTION
+   =================================== */
+
+.bfm-payment-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+}
+
+.bfm-payment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: #1f2937;
+}
+
+.bfm-payment-header svg {
+  color: #fc9c1b;
+}
+
+.bfm-payment-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.bfm-payment-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .bfm-payment-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Payment Card */
+.bfm-payment-card {
+  background: white;
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.bfm-payment-card:hover {
+  border-color: #fc9c1b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.15);
+}
+
+.bfm-payment-card.active {
+  border-color: #fc9c1b;
+  background: linear-gradient(135deg, #fff9f0 0%, #ffffff 100%);
+  box-shadow: 0 4px 16px rgba(252, 156, 27, 0.2);
+}
+
+.bfm-payment-card-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bfm-payment-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+.bfm-payment-card.active .bfm-payment-radio {
+  border-color: #fc9c1b;
+}
+
+.bfm-radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.bfm-radio-dot.active {
+  background: #fc9c1b;
+}
+
+.bfm-payment-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.bfm-payment-card-title svg {
+  color: #fc9c1b;
+}
+
+.bfm-payment-card-title > span:first-of-type {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.bfm-recommended-badge {
+  background: #10b981;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.bfm-flexible-badge {
+  background: #3b82f6;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.bfm-payment-card-body {
+  padding-left: 32px;
+}
+
+.bfm-payment-amount {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fc9c1b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.bfm-payment-percentage {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.bfm-payment-description {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.bfm-payment-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+}
+
+.bfm-payment-benefits li {
+  font-size: 0.85rem;
+  color: #374151;
+  padding: 4px 0;
+  font-weight: 500;
+}
+
+.bfm-payment-breakdown {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.bfm-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+
+.bfm-breakdown-row span {
+  color: #6b7280;
+}
+
+.bfm-breakdown-row strong {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+/* Payment Summary */
+.bfm-payment-summary {
+  background: white;
+  border: 2px solid #fc9c1b;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.bfm-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 1rem;
+}
+
+.bfm-summary-row span {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.bfm-amount-highlight {
+  color: #fc9c1b;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.bfm-summary-row.bfm-remaining {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 0.9rem;
+}
+
+.bfm-summary-row.bfm-remaining span:last-child {
+  color: #374151;
+  font-weight: 700;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .bfm-payment-amount {
+    font-size: 1.5rem;
+  }
+  
+  .bfm-amount-highlight {
+    font-size: 1.1rem;
+  }
+}
