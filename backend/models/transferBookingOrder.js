@@ -75,6 +75,10 @@ const TransferBookingOrderSchema = new mongoose.Schema(
     supplierName:   { type: String, default: '' },
     pax:            { type: String, default: '' },
 
+    // ── Archive ─────────────────────────────────────────────────────────────
+    // 'Yes' → booking is archived and hidden from the main dashboard
+    isArchive: { type: String, enum: ['Yes', 'No'], default: 'No' },
+
     // ── Source tracking ─────────────────────────────────────────────────────
     // 'sales'   → created by a sales agent via the admin modal
     // 'customer' → created by the customer directly from the public booking page
@@ -122,6 +126,7 @@ TransferBookingOrderSchema.index({ status: 1 });
 TransferBookingOrderSchema.index({ travelDate: 1 });
 TransferBookingOrderSchema.index({ createdAt: -1 });
 TransferBookingOrderSchema.index({ createdByType: 1 });
+TransferBookingOrderSchema.index({ isArchive: 1 });
 
 // Delete cached model to ensure updated schema is always used
 delete mongoose.connection.models['TransferBookingOrder'];

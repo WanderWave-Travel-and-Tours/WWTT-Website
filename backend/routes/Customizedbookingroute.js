@@ -175,6 +175,27 @@ router.get('/', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/customized-bookings/archived
+// ✅ NEW: List all archived customized bookings (isArchive === 'Yes').
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/archived', async (req, res) => {
+  try {
+    const data = await CustomizedBooking.find({ isArchive: 'Yes' })
+      .sort({ updatedAt: -1 })
+      .select('-__v');
+
+    return res.status(200).json({
+      success: true,
+      total: data.length,
+      data,
+    });
+  } catch (err) {
+    console.error('❌ Fetch archived customized bookings error:', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/customized-bookings/:id
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
