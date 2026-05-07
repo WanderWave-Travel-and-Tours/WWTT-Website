@@ -188,6 +188,30 @@ const TransferBookingFormModal = ({
   // ── Return Date (roundtrip only) ──────────────────────────────────────────
   const [returnDate, setReturnDate] = useState('');
 
+  // ── Night Surcharge Warning Modal ─────────────────────────────────────────
+  // 'arrival' | 'departure' | null — which time field triggered the warning
+  const [nightSurchargeField,   setNightSurchargeField]   = useState(null);
+  const [nightSurchargePending, setNightSurchargePending] = useState('');
+  const NIGHT_SURCHARGE = 500;
+
+  // Returns true if time string (HH:MM) falls between 12:00 AM and 5:00 AM (exclusive)
+  const isNightTime = (time) => {
+    if (!time) return false;
+    const [h] = time.split(':').map(Number);
+    return h >= 0 && h < 5; // 00:00 – 04:59
+  };
+
+  // Night surcharge applies per field: ₱500 each
+  // One-way: only arrivalTime checked → max ₱500
+  // Roundtrip: both arrivalTime and departureTime checked → max ₱1,000 if both are night
+  const nightSurchargeCount =
+    (isNightTime(arrivalTime) ? 1 : 0) +
+    (transferType === 'roundtrip' && isNightTime(departureTime) ? 1 : 0);
+  const hasNightSurcharge      = nightSurchargeCount > 0;
+  const effectiveTotalAmount   = totalAmount + nightSurchargeCount * NIGHT_SURCHARGE;
+  const effectivePartialAmount = Math.ceil(effectiveTotalAmount / 2);
+  const effectiveAmountToPay   = paymentType === 'full' ? effectiveTotalAmount : effectivePartialAmount;
+
   // ── Lock body scroll while modal is open so the page never shifts under the overlay
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -209,7 +233,7 @@ const TransferBookingFormModal = ({
     maximumFractionDigits: currency === 'USD' ? 2 : 0,
   });
 
-  const amountToPay = paymentType === 'full' ? totalAmount : partialAmount;
+  const amountToPay = effectiveAmountToPay;
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -244,11 +268,11 @@ const TransferBookingFormModal = ({
         message,
         passengerCount,
         sellingPrice:    transfer.sellingPrice || 0,
-        totalAmount,
+        totalAmount:     effectiveTotalAmount,
         currency,
         paymentType,
         initialPaymentAmount: amountToPay,
-        remainingBalance: paymentType === 'full' ? 0 : totalAmount - partialAmount,
+        remainingBalance: paymentType === 'full' ? 0 : effectiveTotalAmount - effectivePartialAmount,
       };
 
       toast.info('Connecting to server, please wait...');
@@ -299,6 +323,42 @@ const TransferBookingFormModal = ({
   };
 
   const handleCloseBookingCompleted = () => { setShowBookingCompletedModal(false); onClose(); };
+
+  // ── Night Surcharge handlers ───────────────────────────────────────────────
+  const handleArrivalTimeChange = (e) => {
+    const val = e.target.value;
+    if (isNightTime(val)) {
+      setNightSurchargePending(val);
+      setNightSurchargeField('arrival');
+    } else {
+      setArrivalTime(val);
+    }
+  };
+
+  const handleDepartureTimeChange = (e) => {
+    const val = e.target.value;
+    if (isNightTime(val)) {
+      setNightSurchargePending(val);
+      setNightSurchargeField('departure');
+    } else {
+      setDepartureTime(val);
+    }
+  };
+
+  const handleNightSurchargeConfirm = () => {
+    if (nightSurchargeField === 'arrival')   setArrivalTime(nightSurchargePending);
+    if (nightSurchargeField === 'departure') setDepartureTime(nightSurchargePending);
+    setNightSurchargeField(null);
+    setNightSurchargePending('');
+  };
+
+  const handleNightSurchargeClose = () => {
+    // Clear the field value — user did not accept
+    if (nightSurchargeField === 'arrival')   setArrivalTime('');
+    if (nightSurchargeField === 'departure') setDepartureTime('');
+    setNightSurchargeField(null);
+    setNightSurchargePending('');
+  };
 
   return (
     <div className="tbfm-overlay" ref={overlayRef}>
@@ -358,7 +418,7 @@ const TransferBookingFormModal = ({
             <div className="tbfm-summary-card">
               <span className="tbfm-summary-label">Total Amount</span>
               <strong className="tbfm-summary-value tbfm-price">
-                {currencySymbol}{formatCurrency(totalAmount)}
+                {currencySymbol}{formatCurrency(effectiveTotalAmount)}
               </strong>
             </div>
           </div>
@@ -410,7 +470,7 @@ const TransferBookingFormModal = ({
                 <input type="time" className="tbfm-form-input"
                   required={transferType === 'roundtrip'}
                   value={arrivalTime}
-                  onChange={(e) => setArrivalTime(e.target.value)} />
+                  onChange={handleArrivalTimeChange} />
               </div>
 
               {/* Travel Date — full width */}
@@ -445,7 +505,7 @@ const TransferBookingFormModal = ({
                   <input type="time" className="tbfm-form-input"
                     required
                     value={departureTime}
-                    onChange={(e) => setDepartureTime(e.target.value)} />
+                    onChange={handleDepartureTimeChange} />
                 </div>
               )}
 
@@ -495,7 +555,7 @@ const TransferBookingFormModal = ({
                 </div>
                 <div className="tbfm-payment-card-body">
                   <div className="tbfm-payment-amount">
-                    {currencySymbol}{formatCurrency(totalAmount)}
+                    {currencySymbol}{formatCurrency(effectiveTotalAmount)}
                   </div>
                   <p className="tbfm-payment-description">
                     Complete payment now and secure your booking
@@ -525,7 +585,7 @@ const TransferBookingFormModal = ({
                 </div>
                 <div className="tbfm-payment-card-body">
                   <div className="tbfm-payment-amount">
-                    {currencySymbol}{formatCurrency(partialAmount)}
+                    {currencySymbol}{formatCurrency(effectivePartialAmount)}
                     <span className="tbfm-payment-percentage">50% Down Payment</span>
                   </div>
                   <p className="tbfm-payment-description">
@@ -534,11 +594,11 @@ const TransferBookingFormModal = ({
                   <div className="tbfm-payment-breakdown">
                     <div className="tbfm-breakdown-row">
                       <span>Now (50%):</span>
-                      <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
+                      <strong>{currencySymbol}{formatCurrency(effectivePartialAmount)}</strong>
                     </div>
                     <div className="tbfm-breakdown-row">
                       <span>Later (50%):</span>
-                      <strong>{currencySymbol}{formatCurrency(totalAmount - partialAmount)}</strong>
+                      <strong>{currencySymbol}{formatCurrency(effectiveTotalAmount - effectivePartialAmount)}</strong>
                     </div>
                   </div>
                 </div>
@@ -556,7 +616,17 @@ const TransferBookingFormModal = ({
               {paymentType === 'partial' && (
                 <div className="tbfm-summary-row tbfm-remaining">
                   <span>Remaining balance:</span>
-                  <span>{currencySymbol}{formatCurrency(totalAmount - partialAmount)}</span>
+                  <span>{currencySymbol}{formatCurrency(effectiveTotalAmount - effectivePartialAmount)}</span>
+                </div>
+              )}
+              {hasNightSurcharge && (
+                <div className="tbfm-night-surcharge-notice">
+                  <span className="tbfm-night-surcharge-icon">🌙</span>
+                  <span>
+                    Night schedule surcharge of{' '}
+                    <strong>{currencySymbol}{(nightSurchargeCount * NIGHT_SURCHARGE).toLocaleString()}</strong> applied
+                    {nightSurchargeCount > 1 ? ` (${nightSurchargeCount}x ₱500 — both times are 12AM–5AM)` : ' (12AM–5AM)'}
+                  </span>
                 </div>
               )}
             </div>
@@ -576,6 +646,36 @@ const TransferBookingFormModal = ({
 
         </form>
       </div>
+
+      {/* ── Night Surcharge Warning Modal ── */}
+      {nightSurchargeField && (
+        <div className="tbfm-night-modal-overlay">
+          <div className="tbfm-night-modal-card">
+            <div className="tbfm-night-modal-icon">🌙</div>
+            <h3 className="tbfm-night-modal-title">Night Schedule Surcharge</h3>
+            <p className="tbfm-night-modal-body">
+              Schedules between <strong>12:00 AM and 5:00 AM</strong> include an additional night fee of{' '}
+              <strong className="tbfm-night-modal-amount">₱500</strong> to cover overnight driver allowances and logistics.
+            </p>
+            <div className="tbfm-night-modal-actions">
+              <button
+                type="button"
+                className="tbfm-night-btn tbfm-night-btn-close"
+                onClick={handleNightSurchargeClose}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="tbfm-night-btn tbfm-night-btn-confirm"
+                onClick={handleNightSurchargeConfirm}
+              >
+                Continue (+₱500)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CustomConfirmModal
         isOpen={showConfirmModal}

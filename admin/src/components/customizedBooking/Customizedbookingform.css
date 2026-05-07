@@ -1861,7 +1861,7 @@
   padding: 0;
 }
 
-.cbf-dp-cell:hover:not(.cbf-dp-past):not(.cbf-dp-selected) {
+.cbf-dp-cell:hover:not(.cbf-dp-past):not(.cbf-dp-selected):not(.cbf-dp-disabled-date) {
   background: #fff7ed;
   color: #f97316;
 }
@@ -1876,6 +1876,16 @@
   pointer-events: none;
 }
 
+/* Date already assigned to another tour — 1 tour per day rule */
+.cbf-dp-disabled-date {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  pointer-events: none;
+  text-decoration: line-through;
+  background: #fef2f2;
+  border-radius: 6px;
+}
+
 .cbf-dp-today {
   color: #fc9c1b;
   font-weight: 800;
@@ -1885,4 +1895,146 @@
   background: #fc9c1b !important;
   color: white !important;
   box-shadow: 0 2px 6px rgba(252,156,27,0.35);
+}
+/* ============================================
+   EARLY HOURS SURCHARGE MODAL
+   ============================================ */
+
+.cbf-early-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  padding: 20px;
+  animation: cbfFadeIn 0.18s ease-out;
+}
+
+.cbf-early-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px 28px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.45);
+  animation: cbfSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+  position: relative;
+}
+
+.cbf-early-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1e3a5f, #fc9c1b);
+  border-radius: 20px 20px 0 0;
+}
+
+.cbf-early-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  display: block;
+  animation: cbfPulse 2s ease-in-out infinite;
+}
+
+@keyframes cbfPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.08); }
+}
+
+.cbf-early-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0 0 10px;
+}
+
+.cbf-early-desc {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+
+.cbf-early-fee-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 50px;
+  margin-bottom: 14px;
+  letter-spacing: 0.3px;
+}
+
+.cbf-early-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 22px;
+}
+
+.cbf-early-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.cbf-early-close-btn {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.cbf-early-close-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.cbf-early-confirm-btn {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #fc9c1b, #f97316);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 12px rgba(249,115,22,0.3);
+}
+
+.cbf-early-confirm-btn:hover {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(249,115,22,0.4);
+}
+
+/* Surcharge line in step 4 grand total box */
+.cbf-early-surcharge-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #f97316;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #fed7aa;
+}
+
+.cbf-early-surcharge-amount {
+  font-weight: 700;
 }

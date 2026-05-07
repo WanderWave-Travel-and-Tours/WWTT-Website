@@ -5,7 +5,10 @@
 // Step 1 → Basic Info (destination, contact details, travel dates, pax)
 // Step 2 → Select Services (tours and/or transfers filtered by destination)
 //           - Asks if they want to also add the other service type
-// Step 3 → Service Details (transfer scheduling details per selected transfer)
+//           - Multiple tours can now be selected
+// Step 3 → Service Details
+//           - Phase A: scheduled date per selected tour (new)
+//           - Phase B: transfer scheduling details per selected transfer
 // Step 4 → Summary → submit
 //
 // Props:
@@ -48,6 +51,17 @@ const getTransferPrice = (transfer, paxCount, type) => {
   }
   return type === 'roundtrip' ? (transfer.roundtripPrice || 0) : (transfer.oneWayPrice || 0);
 };
+
+// ── Night-hour surcharge helper ───────────────────────────────────────────────
+// Returns true if timeStr (HH:MM) falls between 12:00 AM (00:00) and 5:00 AM (05:00) inclusive.
+const isNightHour = (timeStr) => {
+  if (!timeStr) return false;
+  const [h, m] = timeStr.split(':').map(Number);
+  const totalMin = h * 60 + (m || 0);
+  return totalMin <= 300; // 0:00–5:00 AM → 0–300 minutes
+};
+
+const NIGHT_SURCHARGE_AMOUNT = 500;
 
 // ─────────────────────────────────────────────────────────────────────────────
 const STEPS = [
@@ -102,6 +116,20 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   // ── Payment ────────────────────────────────────────────────────────────────
   const [paymentType, setPaymentType] = useState('full'); // 'full' | 'partial'
 
+  // ── Night charge confirmation modal ───────────────────────────────────────
+  // null | { field: 'arrivalTime' | 'departureTime', pendingValue: string }
+  const [nightChargeModal, setNightChargeModal] = useState(null);
+
+  // ── Step 3 – Tour Scheduled Dates (NEW) ───────────────────────────────────
+  // { [tourId]: 'YYYY-MM-DD' } — one scheduled date per selected tour
+  const [tourDates,       setTourDates]       = useState({});
+  // Index into selectedTours of which tour we're currently collecting a date for
+  const [tourDateIdx,     setTourDateIdx]     = useState(0);
+  // The date picker value for the current tour in step 3
+  const [currentTourDate, setCurrentTourDate] = useState('');
+  // Which phase of step 3 we're in: 'tours' (collect dates) | 'transfers' (collect details)
+  const [step3Phase,      setStep3Phase]      = useState('tours');
+
   // ── Step 3 – Transfer Details ──────────────────────────────────────────────
   // Index into selectedTransfers of which one we're currently filling
   const [detailsIdx, setDetailsIdx] = useState(0);
@@ -121,9 +149,11 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       setShowDestDropdown(false);
       setFirstChoice(null); setSecondPhase(false); setAddSecond(null);
       setSelectedTours([]); setSelectedTransfers([]); setTransferTypes({});
+      setTourDates({}); setTourDateIdx(0); setCurrentTourDate(''); setStep3Phase('tours');
       setDetailsIdx(0); setDetailsMap({}); setDetailForm({ arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
       setSubmitError('');
       setPaymentType('full');
+      setNightChargeModal(null);
       lastFetchedPax.current  = null;
       lastFetchedDest.current = null;
     }
@@ -231,7 +261,14 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
       // Drop selected tours that no longer belong to the new destination
       const filteredTourIds = new Set(filteredTours.map(t => t._id));
-      setSelectedTours(prev => prev.filter(t => filteredTourIds.has(t._id)));
+      setSelectedTours(prev => {
+        const stillValid = prev.filter(t => filteredTourIds.has(t._id));
+        const removedIds = prev.filter(t => !filteredTourIds.has(t._id)).map(t => t._id);
+        if (removedIds.length > 0) {
+          setTourDates(ptd => { const n = {...ptd}; removedIds.forEach(id => delete n[id]); return n; });
+        }
+        return stillValid;
+      });
 
       // Drop selected transfers that no longer fit destination OR pax
       const filteredTransferIds = new Set(filteredTransfers.map(t => t._id));
@@ -260,7 +297,17 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
     const type  = transferTypes[t._id] || 'oneway';
     return s + (type === 'roundtrip' ? (t.roundtripPrice||0) : (t.oneWayPrice||0));
   }, 0);
-  const grandTotal = toursTotal + transfersTotal;
+
+  // Night surcharge: ₱500 per time field (arrivalTime / departureTime) that falls within 12AM–5AM
+  const nightSurcharge = Object.entries(detailsMap).reduce((total, [transferId, details]) => {
+    let charge = 0;
+    if (isNightHour(details.arrivalTime)) charge += NIGHT_SURCHARGE_AMOUNT;
+    const type = transferTypes[transferId] || 'oneway';
+    if (type === 'roundtrip' && isNightHour(details.departureTime)) charge += NIGHT_SURCHARGE_AMOUNT;
+    return total + charge;
+  }, 0);
+
+  const grandTotal = toursTotal + transfersTotal + nightSurcharge;
   const partialAmount = Math.ceil(grandTotal * 0.5);
 
   // Second service type (the one NOT chosen first)
@@ -299,46 +346,127 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       if (!validateInfo()) return;
       setStep(2);
     } else if (step === 2) {
-      // If no transfers selected, skip step 3
-      if (selectedTransfers.length === 0) {
-        setStep(4);
+      // Always go to step 3 — for tour dates and/or transfer details
+      if (selectedTours.length > 0) {
+        setStep3Phase('tours');
+        setTourDateIdx(0);
+        setCurrentTourDate(tourDates[selectedTours[0]._id] || '');
       } else {
+        setStep3Phase('transfers');
         setDetailsIdx(0);
         const first = selectedTransfers[0];
         setDetailForm(detailsMap[first._id] || { arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
-        setStep(3);
       }
+      setStep(3);
     } else if (step === 3) {
-      // Save current detail form
-      saveCurrentDetail();
-      if (detailsIdx < selectedTransfers.length - 1) {
-        const next = selectedTransfers[detailsIdx + 1];
-        setDetailsIdx(detailsIdx + 1);
-        setDetailForm(detailsMap[next._id] || { arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
+      if (step3Phase === 'tours') {
+        // Save current tour's date
+        const currentTour = selectedTours[tourDateIdx];
+        if (currentTour) {
+          setTourDates(prev => ({ ...prev, [currentTour._id]: currentTourDate }));
+        }
+        if (tourDateIdx < selectedTours.length - 1) {
+          // Move to next tour
+          const nextTour = selectedTours[tourDateIdx + 1];
+          setTourDateIdx(tourDateIdx + 1);
+          setCurrentTourDate(tourDates[nextTour._id] || '');
+        } else if (selectedTransfers.length > 0) {
+          // Done with tours — move to transfer details phase
+          setStep3Phase('transfers');
+          setDetailsIdx(0);
+          const first = selectedTransfers[0];
+          setDetailForm(detailsMap[first._id] || { arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
+        } else {
+          // No transfers — go straight to summary
+          setStep(4);
+        }
       } else {
-        setStep(4);
+        // transfers phase (existing logic)
+        saveCurrentDetail();
+        if (detailsIdx < selectedTransfers.length - 1) {
+          const next = selectedTransfers[detailsIdx + 1];
+          setDetailsIdx(detailsIdx + 1);
+          setDetailForm(detailsMap[next._id] || { arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
+        } else {
+          setStep(4);
+        }
       }
     }
   };
 
+  // Helper: restore step 2 to show the correct list when navigating back into it
+  const returnToStep2 = () => {
+    // Always land back on the first-choice list (Phase B) so the user
+    // can see and modify their selections without losing them.
+    setSecondPhase(false);
+    setAddSecond(null);
+    setStep(2);
+  };
+
   const goBack = () => {
-    if (step === 2) { setStep(1); }
-    else if (step === 3) {
-      if (detailsIdx > 0) {
-        saveCurrentDetail();
-        const prev = selectedTransfers[detailsIdx - 1];
-        setDetailsIdx(detailsIdx - 1);
-        setDetailForm(detailsMap[prev._id] || { arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
+    if (step === 2) {
+      // Navigate backwards through step 2's internal phases before exiting to step 1
+      if (firstChoice && secondPhase && addSecond === true) {
+        // Phase D (second list) → Phase C (yes/no question)
+        setAddSecond(null);
+      } else if (firstChoice && secondPhase) {
+        // Phase C or "addSecond=false" state → Phase B (first list)
+        setSecondPhase(false);
+        setAddSecond(null);
+      } else if (firstChoice) {
+        // Phase B (first list) → Phase A (service type picker)
+        setFirstChoice(null);
       } else {
-        setStep(2);
+        // Phase A → Step 1
+        setStep(1);
+      }
+    }
+    else if (step === 3) {
+      if (step3Phase === 'tours') {
+        if (tourDateIdx > 0) {
+          // Save current tour date before going back
+          const currentTour = selectedTours[tourDateIdx];
+          if (currentTour) setTourDates(prev => ({ ...prev, [currentTour._id]: currentTourDate }));
+          const prevTour = selectedTours[tourDateIdx - 1];
+          setTourDateIdx(tourDateIdx - 1);
+          setCurrentTourDate(tourDates[prevTour._id] || '');
+        } else {
+          returnToStep2();
+        }
+      } else {
+        // transfers phase
+        if (detailsIdx > 0) {
+          saveCurrentDetail();
+          const prev = selectedTransfers[detailsIdx - 1];
+          setDetailsIdx(detailsIdx - 1);
+          setDetailForm(detailsMap[prev._id] || { arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
+        } else if (selectedTours.length > 0) {
+          // Go back to last tour date
+          saveCurrentDetail();
+          setStep3Phase('tours');
+          const lastTour = selectedTours[selectedTours.length - 1];
+          setTourDateIdx(selectedTours.length - 1);
+          setCurrentTourDate(tourDates[lastTour._id] || '');
+        } else {
+          returnToStep2();
+        }
       }
     }
     else if (step === 4) {
-      setStep(selectedTransfers.length > 0 ? 3 : 2);
       if (selectedTransfers.length > 0) {
+        setStep(3);
+        setStep3Phase('transfers');
         const last = selectedTransfers[selectedTransfers.length - 1];
         setDetailsIdx(selectedTransfers.length - 1);
         setDetailForm(detailsMap[last._id] || { arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
+      } else if (selectedTours.length > 0) {
+        setStep(3);
+        setStep3Phase('tours');
+        const lastTour = selectedTours[selectedTours.length - 1];
+        setTourDateIdx(selectedTours.length - 1);
+        setCurrentTourDate(tourDates[lastTour._id] || '');
+      } else {
+        returnToStep2();
       }
     }
   };
@@ -353,17 +481,22 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   // ─────────────────────────────────────────────────────────────────────────
   // Service toggles
   // ─────────────────────────────────────────────────────────────────────────
-  // Only 1 tour allowed — clicking the selected tour deselects it;
-  // clicking a different tour replaces the current selection.
+  // Multiple tours allowed — clicking a selected tour deselects it;
+  // clicking an unselected tour adds it to the selection.
   const toggleTour = (tour) => {
     const isCurrentlySelected = selectedTours.some(t => t._id === tour._id);
-    const next = isCurrentlySelected ? [] : [tour];
-    setSelectedTours(next);
-    // Reset to Phase A if all selections are now cleared so user can start fresh
-    if (next.length === 0 && selectedTransfers.length === 0) {
-      setFirstChoice(null);
-      setSecondPhase(false);
-      setAddSecond(null);
+    if (isCurrentlySelected) {
+      const remaining = selectedTours.filter(t => t._id !== tour._id);
+      setSelectedTours(remaining);
+      setTourDates(prev => { const n = {...prev}; delete n[tour._id]; return n; });
+      // Reset to Phase A if all selections are now cleared so user can start fresh
+      if (remaining.length === 0 && selectedTransfers.length === 0) {
+        setFirstChoice(null);
+        setSecondPhase(false);
+        setAddSecond(null);
+      }
+    } else {
+      setSelectedTours(prev => [...prev, tour]);
     }
   };
 
@@ -393,7 +526,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Step 3 detail validation
+  // Step 3 validation
   // ─────────────────────────────────────────────────────────────────────────
   const currentTransfer  = selectedTransfers[detailsIdx];
   const isRoundtrip      = currentTransfer && transferTypes[currentTransfer._id] === 'roundtrip';
@@ -401,6 +534,23 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
     detailForm.arrivalTime &&
     detailForm.pickupLocation &&
     (!isRoundtrip || (detailForm.departureTime && detailForm.dropoffLocation));
+
+  const tourDateValid = !!currentTourDate;
+
+  // Next button label for step 3
+  const step3NextLabel = () => {
+    if (step3Phase === 'tours') {
+      if (tourDateIdx < selectedTours.length - 1)
+        return `Next Tour (${tourDateIdx + 2}/${selectedTours.length})`;
+      if (selectedTransfers.length > 0)
+        return 'Next: Transfer Details';
+      return 'Review Summary';
+    } else {
+      if (detailsIdx < selectedTransfers.length - 1)
+        return `Next Transfer (${detailsIdx + 2}/${selectedTransfers.length})`;
+      return 'Review Summary';
+    }
+  };
 
   // ─────────────────────────────────────────────────────────────────────────
   // Submit
@@ -436,16 +586,17 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
     });
 
     const tourSnapshots = selectedTours.map(t => ({
-      tourId:      t._id,
-      title:       t.title || t.name,
-      destination: t.destination || '',
-      duration:    t.duration    || '',
-      category:    t.category    || '',
-      imageUrl:    t.imageUrl    || t.image || null,
-      price:       t.price       || 0,
-      sellerPrice: t.sellerPrice || 0,
-      paxCount:    info.paxCount,
-      subtotal:    (t.price||0) * info.paxCount,
+      tourId:        t._id,
+      title:         t.title || t.name,
+      destination:   t.destination || '',
+      duration:      t.duration    || '',
+      category:      t.category    || '',
+      imageUrl:      t.imageUrl    || t.image || null,
+      price:         t.price       || 0,
+      sellerPrice:   t.sellerPrice || 0,
+      paxCount:      info.paxCount,
+      subtotal:      (t.price||0) * info.paxCount,
+      scheduledDate: tourDates[t._id] || '',   // ← per-tour scheduled date
     }));
 
     const amountToPay = paymentType === 'partial' ? partialAmount : grandTotal;
@@ -456,7 +607,8 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       transfers:    transferSnapshots,
       toursTotal,
       transfersTotal,
-      totalAmount:  grandTotal,
+      totalAmount:  grandTotal,   // already includes nightSurcharge
+      nightSurcharge,
       paymentType,
       initialPaymentAmount: amountToPay,
       remainingBalance: paymentType === 'partial' ? grandTotal - partialAmount : 0,
@@ -516,6 +668,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
   return (
+    <>
     <div className="cbf-overlay" onClick={e => { if (e.target === e.currentTarget) onClose?.(); }}>
       <div className="cbf-modal">
 
@@ -808,7 +961,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                       </div>
                       <p className="cbf-section-desc">
                         You've selected {firstChoice === 'tour'
-                          ? `1 tour`
+                          ? `${selectedTours.length} tour(s)`
                           : `${selectedTransfers.length} transfer(s)`}.
                         Want to also add {secondType === 'tour' ? 'a tour' : 'transfers'}?
                       </p>
@@ -880,7 +1033,10 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                       )}
                       <div className="cbf-sr-info">
                         <span className="cbf-sr-name">🏔️ {t.title||t.name}</span>
-                        <span className="cbf-sr-sub">× {pax || info.paxCount} pax · ₱{Number(t.price||0).toLocaleString()} each</span>
+                        <span className="cbf-sr-sub">
+                          × {pax || info.paxCount} pax · ₱{Number(t.price||0).toLocaleString()} each
+                          {tourDates[t._id] ? ` · 📅 ${fmtDate(tourDates[t._id])}` : ''}
+                        </span>
                       </div>
                       <span className="cbf-sr-price">₱{fmt((t.price||0)*(pax||parseInt(info.paxCount)||1))}</span>
                       <button
@@ -949,9 +1105,118 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
           )}
 
           {/* ════════════════════════════════════════════════════════════════
-              STEP 3 — TRANSFER DETAILS
+              STEP 3 — PHASE A: TOUR SCHEDULED DATES (NEW)
+              Collect a scheduled date for each selected tour.
               ════════════════════════════════════════════════════════════════ */}
-          {step === 3 && currentTransfer && (
+          {step === 3 && step3Phase === 'tours' && selectedTours[tourDateIdx] && (() => {
+            const currentTour = selectedTours[tourDateIdx];
+            return (
+              <div className="cbf-section">
+                <div className="cbf-section-title">
+                  <Calendar size={16}/> Tour Schedule
+                  {selectedTours.length > 1 && (
+                    <span className="cbf-step-sub">
+                      Tour {tourDateIdx + 1} of {selectedTours.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Tour card */}
+                <div className="cbf-transfer-card">
+                  {(currentTour.imageUrl || currentTour.image) && (
+                    <img
+                      src={currentTour.imageUrl || currentTour.image}
+                      alt={currentTour.title || currentTour.name}
+                      className="cbf-tc-img"
+                    />
+                  )}
+                  <div className="cbf-tc-body">
+                    <div className="cbf-tc-title">{currentTour.title || currentTour.name}</div>
+                    <div className="cbf-tc-meta">
+                      {currentTour.category && (
+                        <span className="cbf-tc-tag">{currentTour.category}</span>
+                      )}
+                      {currentTour.duration && (
+                        <span className="cbf-tc-tag">⏱ {currentTour.duration}</span>
+                      )}
+                      {currentTour.destination && (
+                        <span className="cbf-tc-tag">📍 {currentTour.destination}</span>
+                      )}
+                    </div>
+                    <div className="cbf-tc-price">
+                      ₱{fmt((currentTour.price || 0) * (parseInt(info.paxCount) || 1))} total
+                      <span style={{ fontSize: '11px', fontWeight: 400, marginLeft: '6px', opacity: 0.7 }}>
+                        (₱{fmt(currentTour.price || 0)} × {info.paxCount} pax)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Booking context */}
+                <div className="cbf-prefill-box">
+                  <div className="cbf-prefill-label">📋 Booking Context</div>
+                  <div className="cbf-prefill-grid">
+                    {info.travelDate && (
+                      <div className="cbf-prefill-item">
+                        <span className="cbf-pl">Trip Start</span>
+                        <span className="cbf-pv">{fmtDate(info.travelDate)}</span>
+                      </div>
+                    )}
+                    {info.returnDate && (
+                      <div className="cbf-prefill-item">
+                        <span className="cbf-pl">Trip End</span>
+                        <span className="cbf-pv">{fmtDate(info.returnDate)}</span>
+                      </div>
+                    )}
+                    <div className="cbf-prefill-item">
+                      <span className="cbf-pl">Destination</span>
+                      <span className="cbf-pv">{info.destination}</span>
+                    </div>
+                    <div className="cbf-prefill-item">
+                      <span className="cbf-pl">Passengers</span>
+                      <span className="cbf-pv">{info.paxCount} pax</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scheduled date picker */}
+                <div className="cbf-form-grid">
+                  <div className="cbf-field cbf-full">
+                    <label>
+                      Scheduled Tour Date <span className="cbf-req">*</span>
+                      <span className="cbf-field-hint"> When would you like to take this tour?</span>
+                    </label>
+                    <DatePicker
+                      value={currentTourDate}
+                      minDate={info.travelDate || new Date().toISOString().split('T')[0]}
+                      maxDate={info.returnDate || info.travelDate || undefined}
+                      disabledDates={Object.entries(tourDates)
+                        .filter(([id, d]) => d && id !== selectedTours[tourDateIdx]?._id)
+                        .map(([, d]) => d)}
+                      onChange={val => setCurrentTourDate(val)}
+                      hasError={false}
+                      placeholder="Select tour date"
+                    />
+                    {!currentTourDate && (
+                      <span className="cbf-field-hint" style={{ color: '#f97316', marginTop: '4px', display: 'block' }}>
+                        Please select a date for this tour to continue.
+                      </span>
+                    )}
+                    {info.travelDate && (
+                      <span className="cbf-field-hint" style={{ marginTop: '4px', display: 'block', opacity: 0.7 }}>
+                        Only dates within your trip ({fmtDate(info.travelDate)}{info.returnDate ? ` – ${fmtDate(info.returnDate)}` : ''}) are available. Each tour must be on a different day.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ════════════════════════════════════════════════════════════════
+              STEP 3 — PHASE B: TRANSFER DETAILS (existing)
+              ════════════════════════════════════════════════════════════════ */}
+          {step === 3 && step3Phase === 'transfers' && currentTransfer && (
             <div className="cbf-section">
               <div className="cbf-section-title">
                 <Car size={16}/> Transfer Details
@@ -1023,7 +1288,14 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   <div className="cbf-input-wrap">
                     <Clock size={14} className="cbf-input-icon"/>
                     <input type="time" value={detailForm.arrivalTime}
-                      onChange={e => setDetailForm(p => ({...p, arrivalTime: e.target.value}))}/>
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val && isNightHour(val)) {
+                          setNightChargeModal({ field: 'arrivalTime', pendingValue: val });
+                        } else {
+                          setDetailForm(p => ({...p, arrivalTime: val}));
+                        }
+                      }}/>
                   </div>
                 </div>
 
@@ -1035,7 +1307,14 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     <div className="cbf-input-wrap">
                       <Clock size={14} className="cbf-input-icon"/>
                       <input type="time" value={detailForm.departureTime}
-                        onChange={e => setDetailForm(p => ({...p, departureTime: e.target.value}))}/>
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val && isNightHour(val)) {
+                            setNightChargeModal({ field: 'departureTime', pendingValue: val });
+                          } else {
+                            setDetailForm(p => ({...p, departureTime: val}));
+                          }
+                        }}/>
                     </div>
                   </div>
                 )}
@@ -1182,6 +1461,9 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                           {t.destination && <span className="cbf-ssr-badge location">📍 {t.destination}</span>}
                           {t.duration    && <span className="cbf-ssr-badge duration">⏱ {t.duration}</span>}
                           {t.category    && <span className="cbf-ssr-badge category">{t.category}</span>}
+                          {tourDates[t._id] && (
+                            <span className="cbf-ssr-badge duration">📅 {fmtDate(tourDates[t._id])}</span>
+                          )}
                         </div>
                         <div className="cbf-ssr-pax-line">
                           <span className="cbf-ssr-unit">₱{fmt(t.price)} × {info.paxCount} pax</span>
@@ -1275,6 +1557,12 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   <div className="cbf-subtotal-row">
                     <span>Transfers subtotal</span><strong>₱{fmt(transfersTotal)}</strong>
                   </div>
+                  {nightSurcharge > 0 && (
+                    <div className="cbf-subtotal-row cbf-night-surcharge-row">
+                      <span>🌙 Late Night Surcharge</span>
+                      <strong>+₱{fmt(nightSurcharge)}</strong>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1414,14 +1702,15 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                 (step === 2 && firstChoice && !secondPhase && selectedTours.length === 0 && selectedTransfers.length === 0) ||
                 (step === 2 && firstChoice && secondPhase && addSecond === null && !(selectedTours.length > 0 && selectedTransfers.length > 0)) ||
                 (step === 2 && firstChoice && secondPhase && addSecond === false && selectedTours.length === 0 && selectedTransfers.length === 0) ||
-                (step === 3 && !detailValid) ||
+                (step === 3 && step3Phase === 'tours' && !tourDateValid) ||
+                (step === 3 && step3Phase === 'transfers' && !detailValid) ||
                 loading
               }
             >
-              {step === 3 && detailsIdx < selectedTransfers.length - 1
-                ? `Next Transfer (${detailsIdx + 2}/${selectedTransfers.length})`
-                : step === 3 ? 'Review Summary'
-                : step === 2 && firstChoice && secondPhase && (addSecond === false || (selectedTours.length > 0 && selectedTransfers.length > 0)) ? 'Review Summary'
+              {step === 3
+                ? step3NextLabel()
+                : step === 2 && firstChoice && secondPhase && (addSecond === false || (selectedTours.length > 0 && selectedTransfers.length > 0))
+                ? 'Review Summary'
                 : 'Continue'}
               <ChevronRight size={16}/>
             </button>
@@ -1443,11 +1732,56 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
       </div>
     </div>
+
+    {/* ── Night Charge Warning Modal ──────────────────────────────────── */}
+    {nightChargeModal && ReactDOM.createPortal(
+      <div className="cbf-night-modal-backdrop">
+        <div className="cbf-night-modal">
+          <div className="cbf-nm-moon">🌙</div>
+          <h3 className="cbf-nm-title">Late Night Schedule</h3>
+          <p className="cbf-nm-desc">
+            Schedules between <strong>12:00 AM – 5:00 AM</strong> include an additional
+            late-night surcharge of <strong>₱500.00</strong> per time slot.
+          </p>
+          <p className="cbf-nm-sub">
+            Do you want to continue with this schedule?
+          </p>
+          <div className="cbf-nm-actions">
+            <button
+              type="button"
+              className="cbf-nm-close-btn"
+              onClick={() => {
+                // Clear the field value and dismiss
+                setDetailForm(p => ({...p, [nightChargeModal.field]: ''}));
+                setNightChargeModal(null);
+              }}
+            >
+              ✕ Close
+            </button>
+            <button
+              type="button"
+              className="cbf-nm-confirm-btn"
+              onClick={() => {
+                // Accept the value and dismiss
+                setDetailForm(p => ({...p, [nightChargeModal.field]: nightChargeModal.pendingValue}));
+                setNightChargeModal(null);
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
+  </>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-component: Tour List
+// Multiple tours can be selected — clicking a selected tour deselects it;
+// clicking an unselected tour adds it to the selection.
 // ─────────────────────────────────────────────────────────────────────────────
 function TourList({ tours, selected, onToggle, paxCount }) {
   if (tours.length === 0) {
@@ -1456,16 +1790,15 @@ function TourList({ tours, selected, onToggle, paxCount }) {
   return (
     <>
       <p className="cbf-section-desc" style={{ marginBottom: '12px' }}>
-        🏔️ <strong>Select 1 tour</strong> for your trip. Clicking another tour will replace your current selection.
+        🏔️ <strong>Select one or more tours</strong> for your trip. You will be asked to set a scheduled date for each tour in the next step.
       </p>
       <div className="cbf-service-list">
         {tours.map(tour => {
           const isSelected = selected.some(t => t._id === tour._id);
-          const isDisabled = selected.length > 0 && !isSelected; // another tour is selected
           return (
             <div
               key={tour._id}
-              className={`cbf-service-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'cbf-tour-dimmed' : ''}`}
+              className={`cbf-service-item ${isSelected ? 'selected' : ''}`}
               onClick={() => onToggle(tour)}
             >
               {(tour.imageUrl || tour.image) && (
@@ -1587,23 +1920,24 @@ function TransferList({ transfers, selected, transferTypes, onToggle, onTypeChan
     </>
   );
 }
-// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─────────────────────────────────────────────────────────────────────────────
 // Sub-component: Custom Date Picker
 // Renders a calendar popup with past-date blocking.
 // Props:
-//   value      \u2013 "YYYY-MM-DD" string or ""
-//   minDate    \u2013 "YYYY-MM-DD" earliest selectable date (defaults to today)
-//   onChange   \u2013 (val: string) => void
-//   hasError   \u2013 boolean  (optional)
-//   placeholder\u2013 string   (optional)
-// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+//   value      – "YYYY-MM-DD" string or ""
+//   minDate    – "YYYY-MM-DD" earliest selectable date (defaults to today)
+//   onChange   – (val: string) => void
+//   hasError   – boolean  (optional)
+//   placeholder– string   (optional)
+// ─────────────────────────────────────────────────────────────────────────────
 const MONTH_NAMES = ['January','February','March','April','May','June',
                      'July','August','September','October','November','December'];
 const DAY_LABELS  = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
-function DatePicker({ value, minDate, onChange, hasError = false, placeholder = 'Select date' }) {
+function DatePicker({ value, minDate, maxDate, onChange, hasError = false, placeholder = 'Select date', disabledDates = [] }) {
   const today        = new Date().toISOString().split('T')[0];
   const effectiveMin = minDate || today;
+  const effectiveMax = maxDate || null;
 
   const toDate       = (s) => s ? new Date(s + 'T00:00:00') : null;
   const selectedDate = toDate(value);
@@ -1663,7 +1997,13 @@ function DatePicker({ value, minDate, onChange, hasError = false, placeholder = 
     return `${view.year}-${mm}-${dd}`;
   };
 
-  const isPast     = (d) => cellDate(d) < effectiveMin;
+  const isPast     = (d) => {
+    const cd = cellDate(d);
+    if (cd < effectiveMin) return true;
+    if (effectiveMax && cd > effectiveMax) return true;
+    if (disabledDates.includes(cd)) return true;
+    return false;
+  };
   const isSelected = (d) => cellDate(d) === value;
   const isToday    = (d) => cellDate(d) === today;
 

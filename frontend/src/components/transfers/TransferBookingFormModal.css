@@ -688,8 +688,116 @@
 }
 
 /* ============================================
-   TABLET (641px – 1024px)
+   NIGHT SURCHARGE WARNING MODAL
    ============================================ */
+
+.tbfm-night-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001;
+  padding: 20px;
+  animation: tbfmFadeIn 0.18s ease-out;
+}
+
+.tbfm-night-modal-card {
+  background: white;
+  border-radius: 16px;
+  max-width: 380px;
+  width: 100%;
+  padding: 28px 24px 24px 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  animation: tbfmSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tbfm-night-modal-icon {
+  font-size: 2.8rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.tbfm-night-modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  margin: 0 0 10px 0;
+}
+
+.tbfm-night-modal-body {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.tbfm-night-modal-amount {
+  color: #ea580c;
+  font-size: 1rem;
+}
+
+.tbfm-night-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.tbfm-night-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.tbfm-night-btn-close {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.tbfm-night-btn-close:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.tbfm-night-btn-confirm {
+  background: linear-gradient(135deg, #fc9c1b 0%, #f97316 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+}
+
+.tbfm-night-btn-confirm:hover {
+  background: linear-gradient(135deg, #f08c10 0%, #e8650a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(252, 156, 27, 0.4);
+}
+
+/* ── Night surcharge applied notice inside payment summary ── */
+.tbfm-night-surcharge-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #fff7ed;
+  border: 1px dashed #fb923c;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #92400e;
+}
+
+.tbfm-night-surcharge-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .tbfm-overlay {
