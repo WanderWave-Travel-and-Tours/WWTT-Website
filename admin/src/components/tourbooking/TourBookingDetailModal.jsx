@@ -514,8 +514,8 @@ const TourBookingDetailModal = ({
               Order Slip
             </button>
 
-            {/* View Voucher — confirmed only */}
-            {status === 'CONFIRMED' && (
+            {/* ✅ View Voucher — confirmed & completed */}
+            {(status === 'CONFIRMED' || status === 'COMPLETED') && (
               <button
                 className="cnm-btn cnm-btn-voucher cnm-btn-left"
                 onClick={generateVoucherData}
@@ -555,7 +555,7 @@ const TourBookingDetailModal = ({
         </div>
       </div>
 
-      {/* Voucher Preview Modal */}
+      {/* ✅ Voucher Preview Modal */}
       {showVoucherPreview && voucherData && (
         <VoucherPreviewModal
           voucherData={voucherData}
@@ -564,7 +564,7 @@ const TourBookingDetailModal = ({
         />
       )}
 
-      {/* ✅ TOUR ORDER SLIP MODAL */}
+      {/* ✅ Tour Order Slip Modal */}
       {showOrderSlip && (
         <TourOrderSlipModal
           booking={selectedBooking}

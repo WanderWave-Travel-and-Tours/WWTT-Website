@@ -8,6 +8,8 @@ import {
   ArrowRight, Clock, Navigation, Repeat,
 } from 'lucide-react';
 import './CustomBookingDetailModal.css';
+import CustomizedBookingOrderSlipModal from './CustomizedBookingOrderSlipModal';
+import CustomizedBookingVoucherModal   from './CustomizedBookingVoucherModal';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmt = (dateString) => {
@@ -46,6 +48,8 @@ const CustomBookingDetailModal = ({
 }) => {
   const [submittedDocs, setSubmittedDocs]   = useState([]);
   const [isLoadingDocs, setIsLoadingDocs]   = useState(false);
+  const [showOrderSlip, setShowOrderSlip]   = useState(false);
+  const [showVoucher,   setShowVoucher]     = useState(false);
 
   useEffect(() => {
     if (!showModal || !selectedBooking?.mongoId) { setSubmittedDocs([]); return; }
@@ -564,6 +568,22 @@ const CustomBookingDetailModal = ({
                 : <><Archive size={14} /> Archive</>}
             </button>
 
+            {/* Order Slip & Voucher buttons — always available */}
+            <button
+              className="cbk-modal-btn cbk-modal-btn-neutral"
+              onClick={() => setShowOrderSlip(true)}
+              style={{ background: '#0f172a', color: 'white' }}
+            >
+              <FileText size={14} /> Order Slip
+            </button>
+            <button
+              className="cbk-modal-btn cbk-modal-btn-neutral"
+              onClick={() => setShowVoucher(true)}
+              style={{ background: '#1e3a8a', color: 'white' }}
+            >
+              <FileText size={14} /> Voucher
+            </button>
+
             {status === 'PENDING' && (
               <>
                 <button
@@ -596,6 +616,22 @@ const CustomBookingDetailModal = ({
 
         </div>
       </div>
+
+      {/* ── Order Slip Modal ── */}
+      {showOrderSlip && (
+        <CustomizedBookingOrderSlipModal
+          booking={selectedBooking}
+          onClose={() => setShowOrderSlip(false)}
+        />
+      )}
+
+      {/* ── Voucher Modal ── */}
+      {showVoucher && (
+        <CustomizedBookingVoucherModal
+          booking={selectedBooking}
+          onClose={() => setShowVoucher(false)}
+        />
+      )}
     </>
   );
 };

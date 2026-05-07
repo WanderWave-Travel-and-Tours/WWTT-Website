@@ -111,6 +111,9 @@ router.post('/', async (req, res) => {
 
       // 'sales' if from admin modal, 'customer' if from public booking page
       createdByType: createdByType === 'sales' ? 'sales' : 'customer',
+
+      // New bookings are never archived by default
+      isArchive: 'No',
     });
 
     await booking.save();
@@ -184,6 +187,37 @@ router.get('/:id', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/transfer-bookings/:id
+// General field update — used by the archive restore to set isArchive: 'No'.
+// Also supports updating status and paymentStatus in one call if needed.
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id', async (req, res) => {
+  try {
+    const { isArchive, status, paymentStatus } = req.body;
+
+    const booking = await TransferBookingOrder.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
+
+    if (isArchive !== undefined) {
+      if (!['Yes', 'No'].includes(isArchive)) {
+        return res.status(400).json({ success: false, message: 'isArchive must be "Yes" or "No".' });
+      }
+      booking.isArchive = isArchive;
+    }
+    if (status)        booking.status        = status;
+    if (paymentStatus) booking.paymentStatus = paymentStatus;
+
+    await booking.save();
+
+    console.log(`✅ Transfer booking ${booking._id} updated — isArchive: ${booking.isArchive}, status: ${booking.status}`);
+    return res.status(200).json({ success: true, message: 'Transfer booking updated.', data: booking });
+  } catch (err) {
+    console.error('❌ PATCH transfer booking error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/transfer-bookings/:id/status
 // Update booking status (confirm, cancel, etc.)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -200,6 +234,31 @@ router.patch('/:id/status', async (req, res) => {
     console.log(`✅ Transfer booking ${booking._id} status → ${booking.status}`);
     return res.status(200).json({ success: true, message: 'Booking status updated.', data: booking });
   } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUT /api/transfer-bookings/archive/:id
+// Archive a transfer booking — sets isArchive to 'Yes' so it is hidden
+// from the main dashboard (frontend filters out isArchive === 'Yes').
+// ─────────────────────────────────────────────────────────────────────────────
+router.put('/archive/:id', async (req, res) => {
+  try {
+    const booking = await TransferBookingOrder.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
+
+    booking.isArchive = 'Yes';
+    await booking.save();
+
+    console.log(`📦 Transfer booking ${booking._id} archived.`);
+    return res.status(200).json({
+      success: true,
+      message: 'Transfer booking archived successfully.',
+      data:    booking,
+    });
+  } catch (err) {
+    console.error('❌ Archive transfer booking error:', err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });

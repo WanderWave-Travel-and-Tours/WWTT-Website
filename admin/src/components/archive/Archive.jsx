@@ -27,6 +27,9 @@ import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageServi
 import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
 import { fetchArchivedHotels, restoreHotel } from './archiveFunctions/hotelService';
 import { fetchArchivedTourBookings, restoreTourBooking } from './archiveFunctions/tourBookingService';
+import { fetchArchivedTransferBookings, restoreTransferBooking } from './archiveFunctions/transferBookingService';
+// ✅ NEW: Customized Booking archive service
+import { fetchArchivedCustomizedBookings, restoreCustomizedBooking } from './archiveFunctions/customizedBookingService';
 
 // --- Custom Confirmation Modal ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -98,7 +101,9 @@ const SERVICE_SUBTYPES_LIST = [
     'Passport Appt', 
     'Airline Booking', 
     'Hotel Booking',
-    'Tour Booking',           // ← Added
+    'Tour Booking',
+    'Transfer Booking',
+    'Customized Booking',   // ✅ NEW
     'Tour Arrangements',
     'Ferry Booking',
     'Marriage Cert',
@@ -206,12 +211,15 @@ const ArchiveComponent = () => {
         fetchArchivedUsers(),
         fetchArchivedHotels(),
         fetchArchivedTourBookings(),
+        fetchArchivedTransferBookings(),
+        fetchArchivedCustomizedBookings(), // ✅ NEW
       ]);
       
       console.log('📊 All fetch results:', results);
       
       results.forEach((result, index) => {
-        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'TourBookings'];
+        // ✅ Updated names array to include CustomizedBookings at index 13
+        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'TourBookings', 'TransferBookings', 'CustomizedBookings'];
         if (result.status === 'fulfilled') {
           console.log(`✅ ${names[index]}: ${result.value.length} items`);
           if (names[index] === 'Packages' && result.value.length > 0) {
@@ -261,6 +269,9 @@ const ArchiveComponent = () => {
         }
         if (item.discountValue || displayType === 'Promo') displayType = 'Promo';
         if (item.referenceNumber && !item.inquiryType && !item.packageName) displayType = 'Booking';
+
+        // ✅ Preserve Customized Booking type — must come AFTER the Booking catch-all above
+        if (item.type === 'Customized Booking') displayType = 'Customized Booking';
 
         if (item.inquiryType) {
            switch(item.inquiryType) {
@@ -391,6 +402,10 @@ const ArchiveComponent = () => {
         restored = await restoreImage(id);
       } else if (item.type === 'Hotel') {
         restored = await restoreHotel(id);
+      } else if (item.type === 'Transfer Booking') {
+        restored = await restoreTransferBooking(id);
+      } else if (item.type === 'Customized Booking') {   // ✅ NEW
+        restored = await restoreCustomizedBooking(id);
       } else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(id);
       }
@@ -454,6 +469,8 @@ const ArchiveComponent = () => {
               else if (item.type === 'Blog') restored = await restoreBlog(id);
               else if (item.type === 'Image Gallery') restored = await restoreImage(id);
               else if (item.type === 'Hotel') restored = await restoreHotel(id);
+              else if (item.type === 'Transfer Booking') restored = await restoreTransferBooking(id);
+              else if (item.type === 'Customized Booking') restored = await restoreCustomizedBooking(id); // ✅ NEW
               else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
               
               if (restored) successCount++;
