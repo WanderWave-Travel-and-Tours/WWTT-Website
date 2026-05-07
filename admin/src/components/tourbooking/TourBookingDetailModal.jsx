@@ -514,17 +514,15 @@ const TourBookingDetailModal = ({
               Order Slip
             </button>
 
-            {/* ✅ View Voucher — confirmed & completed */}
-            {(status === 'CONFIRMED' || status === 'COMPLETED') && (
-              <button
-                className="cnm-btn cnm-btn-voucher cnm-btn-left"
-                onClick={generateVoucherData}
-                disabled={isGeneratingVoucher}
-              >
-                <FileText size={16} />
-                {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
-              </button>
-            )}
+            {/* ✅ View Voucher — visible for all statuses */}
+            <button
+              className="cnm-btn cnm-btn-voucher cnm-btn-left"
+              onClick={generateVoucherData}
+              disabled={isGeneratingVoucher}
+            >
+              <FileText size={16} />
+              {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
+            </button>
 
             {/* Cancel — pending or confirmed */}
             {(status === 'PENDING' || status === 'CONFIRMED') && (

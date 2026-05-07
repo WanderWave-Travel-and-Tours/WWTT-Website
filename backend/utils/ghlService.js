@@ -378,9 +378,128 @@ const sendDestinationToGHL = async (destination) => {
     return result;
 };
 
+// ============================================================
+// ✅ NEW: Send Transfer Booking data to GHL
+//
+// Fires every time a TransferBookingOrder is created (both customer
+// and sales/admin bookings). Sends the complete booking payload to
+// the dedicated transfer booking webhook.
+//
+// Webhook URL: https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176
+// ============================================================
+const GHL_TRANSFER_BOOKING_WEBHOOK_URL =
+  process.env.GHL_TRANSFER_BOOKING_WEBHOOK_URL ||
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176';
+
+const sendTransferBookingToGHL = async (booking) => {
+  const fullName   = booking.fullName || '';
+  const firstName  = fullName.split(' ')[0] || '';
+  const lastName   = fullName.split(' ').slice(1).join(' ') || '';
+
+  const data = {
+    // ── Meta ──────────────────────────────────────────────────
+    type:      'TRANSFER_BOOKING',
+    event:     'transfer_booking_created',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    // ── Booking identity ──────────────────────────────────────
+    bookingId:       booking._id ? booking._id.toString() : '',
+    booking_id:      booking._id ? booking._id.toString() : '',
+    bookingType:     booking.bookingType     || 'transfer',
+    createdByType:   booking.createdByType   || 'customer',
+    status:          booking.status          || 'pending',
+    paymentStatus:   booking.paymentStatus   || 'pending',
+    isArchive:       booking.isArchive       || 'No',
+
+    // ── Transfer listing ──────────────────────────────────────
+    transferId:      booking.transferId ? booking.transferId.toString() : '',
+    activityName:    booking.activityName    || '',
+    destination:     booking.destination     || '',
+    category:        booking.category        || '',
+    supplierName:    booking.supplierName    || '',
+
+    // ── Trip type ─────────────────────────────────────────────
+    transferType:    booking.transferType    || 'oneway',
+
+    // ── Schedule ─────────────────────────────────────────────
+    travelDate:      booking.travelDate      || '',
+    travel_date:     booking.travelDate      || '',
+    returnDate:      booking.returnDate      || '',
+    return_date:     booking.returnDate      || '',
+    arrivalTime:     booking.arrivalTime     || '',
+    arrival_time:    booking.arrivalTime     || '',
+    departureTime:   booking.departureTime   || '',
+    departure_time:  booking.departureTime   || '',
+
+    // ── Locations ─────────────────────────────────────────────
+    pickupLocation:  booking.pickupLocation  || '',
+    pickup_location: booking.pickupLocation  || '',
+    dropoffLocation: booking.dropoffLocation || '',
+    dropoff_location:booking.dropoffLocation || '',
+
+    // ── Contact details ───────────────────────────────────────
+    fullName,
+    name:            fullName,
+    first_name:      firstName,
+    last_name:       lastName,
+    email:           booking.email           || '',
+    phone:           booking.phone           || '',
+    message:         booking.message         || '',
+    specialRequests: booking.specialRequests || '',
+    special_requests:booking.specialRequests || '',
+
+    // ── Passengers & Pricing ──────────────────────────────────
+    passengerCount:  booking.passengerCount  || 1,
+    passenger_count: booking.passengerCount  || 1,
+    pax:             booking.pax             || String(booking.passengerCount || 1),
+    oneWayPrice:     booking.oneWayPrice     || 0,
+    one_way_price:   booking.oneWayPrice     || 0,
+    roundtripPrice:  booking.roundtripPrice  || 0,
+    roundtrip_price: booking.roundtripPrice  || 0,
+    sellingPrice:    booking.sellingPrice    || 0,
+    selling_price:   booking.sellingPrice    || 0,
+    totalAmount:     booking.totalAmount     || 0,
+    total_amount:    booking.totalAmount     || 0,
+    totalAmountFormatted: `₱${(booking.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    // ── Payment ───────────────────────────────────────────────
+    currency:              booking.currency              || 'PHP',
+    paymentType:           booking.paymentType           || 'full',
+    payment_type:          booking.paymentType           || 'full',
+    initialPaymentAmount:  booking.initialPaymentAmount  || 0,
+    initial_payment_amount:booking.initialPaymentAmount  || 0,
+    remainingBalance:      booking.remainingBalance      || 0,
+    remaining_balance:     booking.remainingBalance      || 0,
+
+    // ── Promo ─────────────────────────────────────────────────
+    promoCode:       booking.promoCode       || '',
+    promo_code:      booking.promoCode       || '',
+
+    // ── Booking date ──────────────────────────────────────────
+    bookingDate:     new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date:    new Date().toISOString(),
+  };
+
+  console.log('📤 Sending TRANSFER_BOOKING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_TRANSFER_BOOKING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('❌ Failed to send transfer booking to GHL:', result.error);
+  } else {
+    console.log(`✅ Transfer booking "${booking._id}" synced to GHL successfully.`);
+  }
+
+  return result;
+};
+
 module.exports = {
   sendNewUserToGHL,
   sendInquiryToGHL,
   sendBookingConfirmationToGHL,
-  sendDestinationToGHL, // ✅ New export
+  sendDestinationToGHL,
+  sendTransferBookingToGHL, // ✅ New export
 };

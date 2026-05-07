@@ -20,6 +20,18 @@ const isLateNightTime = (timeStr) => {
 
 const LATE_NIGHT_SURCHARGE = 500;
 
+// ── Travel Date Restriction Helper ──────────────────────────────────────────
+// Returns true if the given date string (YYYY-MM-DD) is today or tomorrow
+const isTodayOrTomorrow = (dateStr) => {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const selected = new Date(dateStr + 'T00:00:00');
+  return selected.getTime() === today.getTime() || selected.getTime() === tomorrow.getTime();
+};
+
 const NewTransferBookingModal = ({ isOpen, onClose }) => {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
@@ -58,6 +70,17 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
 
   // ── Payment ─────────────────────────────────────────────────────────────
   const [paymentType, setPaymentType] = useState('full');
+
+  // ── Partial Payment Restriction ─────────────────────────────────────────
+  // Partial payment is not allowed when travel date is today or tomorrow
+  const isPartialPaymentRestricted = isTodayOrTomorrow(travelDate);
+
+  // Auto-reset to full payment if travel date becomes today/tomorrow
+  useEffect(() => {
+    if (isPartialPaymentRestricted && paymentType === 'partial') {
+      setPaymentType('full');
+    }
+  }, [isPartialPaymentRestricted]);
 
   // ── Late Night Surcharge Modal ───────────────────────────────────────────
   // 'arrival' | 'departure' | null
@@ -1131,6 +1154,7 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Partial Payment */}
+                    {!isPartialPaymentRestricted && (
                     <div
                       className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
                       onClick={() => setPaymentType('partial')}
@@ -1165,9 +1189,22 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                         )}
                       </div>
                     </div>
+                    )}
                   </div>
 
-                  {/* Summary */}
+                  {/* Partial payment restriction notice */}
+                  {isPartialPaymentRestricted && (
+                    <div style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10,
+                      background: '#fefce8', border: '1.5px solid #fde68a',
+                      borderRadius: 12, padding: '12px 16px', marginTop: 12,
+                    }}>
+                      <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+                      <div style={{ fontSize: '0.85rem', color: '#92400e', lineHeight: 1.5 }}>
+                        <strong>Partial payment is not available</strong> for bookings with a travel date of <strong>today or tomorrow</strong>. Full payment is required.
+                      </div>
+                    </div>
+                  )}
                   <div className="bfm-payment-summary">
                     <div className="bfm-summary-row">
                       <span>Base Transfer Price</span>

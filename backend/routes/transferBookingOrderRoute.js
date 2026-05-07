@@ -8,6 +8,7 @@
 const express              = require('express');
 const router               = express.Router();
 const TransferBookingOrder = require('../models/transferBookingOrder');
+const { sendTransferBookingToGHL } = require('../services/ghlService');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/transfer-bookings
@@ -119,6 +120,11 @@ router.post('/', async (req, res) => {
     await booking.save();
 
     console.log(`✅ Transfer booking created: ${booking._id} | ${type} | ${activityName} | by: ${booking.createdByType}`);
+
+    // ── Fire GHL webhook (non-blocking — booking is already saved) ──────────
+    sendTransferBookingToGHL(booking).catch((err) =>
+      console.error('⚠️ GHL transfer booking webhook failed (non-fatal):', err.message)
+    );
 
     return res.status(201).json({
       success:   true,

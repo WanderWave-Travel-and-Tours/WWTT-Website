@@ -149,24 +149,31 @@
 /* ============================================
    PAGE STRUCTURE
    ============================================ */
+/* 1. PALITAN ANG .voucher-page */
 .voucher-page {
     background: white;
     width: 210mm;
-    height: 297mm;
+    min-height: 297mm; /* Minimum height para sa A4, pero pwedeng humaba */
+    height: auto !important; /* Pinapayagan ang paghaba */
     margin-bottom: 40px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     position: relative; 
-    overflow: hidden;
+    display: flex;
+    flex-direction: column; /* Ginagawang column para sa footer positioning */
+    overflow: visible !important; /* TANGGALIN ang overflow: hidden */
     page-break-after: always;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
 }
-
+tr, .voucher-section, .voucher-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
 .voucher-body-content {
     width: 100%;
-    flex: 1;
-    padding-bottom: 20px; 
+    flex: 1; /* Ito ang magtutulak sa footer pababa */
+    padding: 30px 45px;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ============================================
@@ -481,10 +488,10 @@
 
 /* ============================================
    FOOTER
-   ============================================ */
+/* Make sure footer always sticks to bottom */
 .voucher-page-footer {
     width: 100%;
-    margin-top: auto; 
+    margin-top: auto;            /* Critical fix */
     background: #1e3a8a;
     position: relative;
 }
@@ -662,7 +669,8 @@
         box-shadow: none;
         margin: 0;
         width: 210mm !important;
-        height: 297mm !important; 
+        height: auto !important; /* PALITAN ITO: Dati itong 297mm !important */
+        min-height: 100vh !important; /* Sineseguro na laging nasa baba ang footer */
         page-break-after: always;
         border: none;
         print-color-adjust: exact;

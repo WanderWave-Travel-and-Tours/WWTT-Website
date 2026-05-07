@@ -226,6 +226,28 @@ const TransferBookingFormModal = ({
     }
   }, [transferType]);
 
+  // ── Partial payment restriction: hide if travel date is today or tomorrow ──
+  const isPartialPaymentRestricted = (() => {
+    if (!travelDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const travel = new Date(travelDate + 'T00:00:00');
+    travel.setHours(0, 0, 0, 0);
+    return (
+      travel.getTime() === today.getTime() ||
+      travel.getTime() === tomorrow.getTime()
+    );
+  })();
+
+  // Auto-switch to full payment when partial is no longer available
+  useEffect(() => {
+    if (isPartialPaymentRestricted && paymentType === 'partial') {
+      setPaymentType('full');
+    }
+  }, [isPartialPaymentRestricted, paymentType]);
+
   if (!isOpen) return null;
 
   const formatCurrency = (amount) => amount.toLocaleString(undefined, {
@@ -244,7 +266,7 @@ const TransferBookingFormModal = ({
     setShowConfirmModal(false);
     setLocalLoading(true);
     try {
-      const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+      const RENDER_BASE = 'http://localhost:5000';
 
       const bookingData = {
         bookingType:     'transfer',
@@ -537,7 +559,7 @@ const TransferBookingFormModal = ({
             </div>
             <div className="tbfm-section-divider" />
 
-            <div className="tbfm-payment-options">
+            <div className="tbfm-payment-options" style={isPartialPaymentRestricted ? { gridTemplateColumns: '1fr' } : {}}>
               {/* Full Payment */}
               <div
                 className={`tbfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
@@ -568,42 +590,55 @@ const TransferBookingFormModal = ({
                 </div>
               </div>
 
-              {/* Partial Payment */}
-              <div
-                className={`tbfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
-                onClick={() => setPaymentType('partial')}
-              >
-                <div className="tbfm-payment-card-header">
-                  <div className="tbfm-payment-radio">
-                    <div className={`tbfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
-                  </div>
-                  <div className="tbfm-payment-card-title">
-                    <Wallet size={15} className="tbfm-card-icon" />
-                    <span>Partial Payment</span>
-                    <span className="tbfm-badge tbfm-badge-flexible">Flexible</span>
-                  </div>
-                </div>
-                <div className="tbfm-payment-card-body">
-                  <div className="tbfm-payment-amount">
-                    {currencySymbol}{formatCurrency(effectivePartialAmount)}
-                    <span className="tbfm-payment-percentage">50% Down Payment</span>
-                  </div>
-                  <p className="tbfm-payment-description">
-                    Pay 50% now, remaining balance before your transfer.
-                  </p>
-                  <div className="tbfm-payment-breakdown">
-                    <div className="tbfm-breakdown-row">
-                      <span>Now (50%):</span>
-                      <strong>{currencySymbol}{formatCurrency(effectivePartialAmount)}</strong>
+              {/* Partial Payment — hidden when travel date is today or tomorrow */}
+              {!isPartialPaymentRestricted && (
+                <div
+                  className={`tbfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
+                  onClick={() => setPaymentType('partial')}
+                >
+                  <div className="tbfm-payment-card-header">
+                    <div className="tbfm-payment-radio">
+                      <div className={`tbfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
                     </div>
-                    <div className="tbfm-breakdown-row">
-                      <span>Later (50%):</span>
-                      <strong>{currencySymbol}{formatCurrency(effectiveTotalAmount - effectivePartialAmount)}</strong>
+                    <div className="tbfm-payment-card-title">
+                      <Wallet size={15} className="tbfm-card-icon" />
+                      <span>Partial Payment</span>
+                      <span className="tbfm-badge tbfm-badge-flexible">Flexible</span>
                     </div>
                   </div>
+                  <div className="tbfm-payment-card-body">
+                    <div className="tbfm-payment-amount">
+                      {currencySymbol}{formatCurrency(effectivePartialAmount)}
+                      <span className="tbfm-payment-percentage">50% Down Payment</span>
+                    </div>
+                    <p className="tbfm-payment-description">
+                      Pay 50% now, remaining balance before your transfer.
+                    </p>
+                    <div className="tbfm-payment-breakdown">
+                      <div className="tbfm-breakdown-row">
+                        <span>Now (50%):</span>
+                        <strong>{currencySymbol}{formatCurrency(effectivePartialAmount)}</strong>
+                      </div>
+                      <div className="tbfm-breakdown-row">
+                        <span>Later (50%):</span>
+                        <strong>{currencySymbol}{formatCurrency(effectiveTotalAmount - effectivePartialAmount)}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
+
+            {/* Notice when partial payment is restricted */}
+            {isPartialPaymentRestricted && (
+              <div className="tbfm-partial-restricted-notice">
+                <span className="tbfm-partial-restricted-icon">ℹ️</span>
+                <span>
+                  Partial payment is not available for bookings with a travel date of <strong>today or tomorrow</strong>.
+                  Full payment is required.
+                </span>
+              </div>
+            )}
 
             {/* Payment Summary */}
             <div className="tbfm-payment-summary">

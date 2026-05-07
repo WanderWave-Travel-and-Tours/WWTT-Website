@@ -117,6 +117,18 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
     return s.toISOString().split('T')[0];
   };
 
+  // ── Check if departure date is today or tomorrow ──────────────────────────
+  const isDateTodayOrTomorrow = () => {
+    if (!departureDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const selected = new Date(departureDate);
+    selected.setHours(0, 0, 0, 0);
+    return selected.getTime() === today.getTime() || selected.getTime() === tomorrow.getTime();
+  };
+
   const tourPrice = selectedTour?.price || 0;
   const packageTotal = tourPrice * paxCount;
   const initialPaymentAmount = paymentType === 'partial' ? Math.round(packageTotal / 2) : packageTotal;
@@ -465,7 +477,19 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                           type="date"
                           className="ntbm-input"
                           value={departureDate}
-                          onChange={e => setDepartureDate(e.target.value)}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setDepartureDate(val);
+                            // Auto-reset to full payment if today or tomorrow
+                            if (val) {
+                              const today = new Date(); today.setHours(0,0,0,0);
+                              const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+                              const sel = new Date(val); sel.setHours(0,0,0,0);
+                              if (sel.getTime() === today.getTime() || sel.getTime() === tomorrow.getTime()) {
+                                setPaymentType('full');
+                              }
+                            }
+                          }}
                           min={new Date().toISOString().split('T')[0]}
                         />
                       </div>
@@ -540,6 +564,7 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                       </div>
 
                       {/* Partial Payment Card */}
+                      {!isDateTodayOrTomorrow() && (
                       <div
                         className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
                         onClick={() => setPaymentType('partial')}
@@ -583,9 +608,28 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                           )}
                         </div>
                       </div>
+                      )} {/* end !isDateTodayOrTomorrow */}
                     </div>
 
-                    {/* Payment Summary */}
+                    {/* Notice: partial payment not available for today/tomorrow */}
+                    {isDateTodayOrTomorrow() && (
+                      <div style={{
+                        marginTop: '10px',
+                        padding: '10px 14px',
+                        background: '#fefce8',
+                        border: '1.5px solid #fcd34d',
+                        borderRadius: '10px',
+                        fontSize: '0.85rem',
+                        color: '#92400e',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        ⚠️ Partial payment is not available for bookings departing today or tomorrow. Full payment is required.
+                      </div>
+                    )}
+
                     <div className="bfm-payment-summary">
                       <div className="bfm-summary-row">
                         <span>Tour Price (×{paxCount} pax)</span>

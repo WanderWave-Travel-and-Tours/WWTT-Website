@@ -201,6 +201,22 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     }
   }, [pkg._id, pkg.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Auto-reset paymentType to 'full' when today/tomorrow is selected ────
+  useEffect(() => {
+    if (!selectedDate) return;
+    const travelDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      selectedDate
+    );
+    travelDate.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    if (travelDate <= tomorrow && paymentType === 'partial') {
+      setPaymentType('full');
+    }
+  }, [selectedDate, currentMonth]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Funnel pax ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (onPaxChange) onPaxChange(isSoloPkg ? 1 : quantities.adult);

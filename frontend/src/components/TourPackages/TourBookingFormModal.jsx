@@ -299,6 +299,24 @@ const TourBookingFormModal = ({
   const partialPercentage = selectedFlight ? 85 : 50;
   const partialPercentageText = selectedFlight ? '85%' : '50%';
 
+  // ── Hide partial payment for today/tomorrow travel dates ─────────────────
+  const isPartialPaymentAllowed = (() => {
+    if (!selectedDate || !currentMonth) return true;
+    const travelDate = new Date(
+      currentMonth.getFullYear
+        ? currentMonth.getFullYear()
+        : new Date(currentMonth).getFullYear(),
+      currentMonth.getFullYear
+        ? currentMonth.getMonth()
+        : new Date(currentMonth).getMonth(),
+      typeof selectedDate === 'number' ? selectedDate : new Date(selectedDate).getDate()
+    );
+    travelDate.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    return travelDate > tomorrow;
+  })();
+
   // ============================================
   // HANDLE FORM SUBMISSION WITH CONFIRMATION
   // ============================================
@@ -884,6 +902,7 @@ const TourBookingFormModal = ({
                     </div>
                   </div>
 
+                  {isPartialPaymentAllowed && (
                   <div
                     className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
                     onClick={() => setPaymentType('partial')}
@@ -918,16 +937,17 @@ const TourBookingFormModal = ({
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
 
                 <div className="bfm-payment-summary">
                   <div className="bfm-summary-row">
                     <span>Amount to pay now:</span>
                     <strong className="bfm-amount-highlight">
-                      {currencySymbol}{formatCurrency(paymentType === 'full' ? finalAmount : partialAmount)}
+                      {currencySymbol}{formatCurrency(!isPartialPaymentAllowed && paymentType === 'partial' ? finalAmount : paymentType === 'full' ? finalAmount : partialAmount)}
                     </strong>
                   </div>
-                  {paymentType === 'partial' && (
+                  {paymentType === 'partial' && isPartialPaymentAllowed && (
                     <div className="bfm-summary-row bfm-remaining">
                       <span>Remaining balance:</span>
                       <span>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</span>

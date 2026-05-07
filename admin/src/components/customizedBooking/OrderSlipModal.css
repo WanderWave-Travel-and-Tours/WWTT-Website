@@ -995,3 +995,15 @@
   }
   .os-watermark-cancelled { opacity: 0.07 !important; }
 }
+
+/* Extra safety for long content */
+.voucher-page {
+    break-inside: avoid;
+}
+
+.voucher-section, 
+.os-section,
+.voucher-box {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
