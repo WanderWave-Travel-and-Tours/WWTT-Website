@@ -8,7 +8,7 @@
 const express              = require('express');
 const router               = express.Router();
 const TransferBookingOrder = require('../models/transferBookingOrder');
-const { sendTransferBookingToGHL } = require('../services/ghlService');
+const { sendTransferBookingToGHL } = require('../utils/ghlService');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/transfer-bookings
