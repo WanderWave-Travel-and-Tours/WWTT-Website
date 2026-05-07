@@ -116,6 +116,14 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   // ── Payment ────────────────────────────────────────────────────────────────
   const [paymentType, setPaymentType] = useState('full'); // 'full' | 'partial'
 
+  // Reset to full payment if travel date is today or tomorrow and partial was selected
+  useEffect(() => {
+    if (!isPartialPaymentAllowed && paymentType === 'partial') {
+      setPaymentType('full');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [info.travelDate]);
+
   // ── Night charge confirmation modal ───────────────────────────────────────
   // null | { field: 'arrivalTime' | 'departureTime', pendingValue: string }
   const [nightChargeModal, setNightChargeModal] = useState(null);
@@ -309,6 +317,17 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
   const grandTotal = toursTotal + transfersTotal + nightSurcharge;
   const partialAmount = Math.ceil(grandTotal * 0.5);
+
+  // Partial payment is NOT allowed if travel date is today or tomorrow
+  const isPartialPaymentAllowed = (() => {
+    if (!info.travelDate) return true;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const travel = new Date(info.travelDate + 'T00:00:00');
+    return travel > tomorrow;
+  })();
 
   // Second service type (the one NOT chosen first)
   const secondType = firstChoice === 'tour' ? 'transfer' : 'tour';
@@ -1608,42 +1627,51 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     </div>
                   </div>
 
-                  {/* Partial Payment */}
-                  <div
-                    className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
-                    onClick={() => setPaymentType('partial')}
-                  >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <Wallet size={16} />
-                        <span>Partial Payment</span>
-                        <span className="bfm-flexible-badge">Flexible</span>
-                      </div>
-                    </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">
-                        ₱{fmt(partialAmount)}
-                        <span className="bfm-payment-percentage">50% Down Payment</span>
-                      </div>
-                      <div className="bfm-payment-description">
-                        Pay 50% now, remaining balance before departure
-                      </div>
-                      <div className="bfm-payment-breakdown">
-                        <div className="bfm-breakdown-row">
-                          <span>Now (50%):</span>
-                          <strong>₱{fmt(partialAmount)}</strong>
+                  {/* Partial Payment — hidden if travel date is today or tomorrow */}
+                  {isPartialPaymentAllowed && (
+                    <div
+                      className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
+                      onClick={() => setPaymentType('partial')}
+                    >
+                      <div className="bfm-payment-card-header">
+                        <div className="bfm-payment-radio">
+                          <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
                         </div>
-                        <div className="bfm-breakdown-row">
-                          <span>Later (50%):</span>
-                          <strong>₱{fmt(grandTotal - partialAmount)}</strong>
+                        <div className="bfm-payment-card-title">
+                          <Wallet size={16} />
+                          <span>Partial Payment</span>
+                          <span className="bfm-flexible-badge">Flexible</span>
                         </div>
                       </div>
+                      <div className="bfm-payment-card-body">
+                        <div className="bfm-payment-amount">
+                          ₱{fmt(partialAmount)}
+                          <span className="bfm-payment-percentage">50% Down Payment</span>
+                        </div>
+                        <div className="bfm-payment-description">
+                          Pay 50% now, remaining balance before departure
+                        </div>
+                        <div className="bfm-payment-breakdown">
+                          <div className="bfm-breakdown-row">
+                            <span>Now (50%):</span>
+                            <strong>₱{fmt(partialAmount)}</strong>
+                          </div>
+                          <div className="bfm-breakdown-row">
+                            <span>Later (50%):</span>
+                            <strong>₱{fmt(grandTotal - partialAmount)}</strong>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
+
+                {/* Notice when partial payment is unavailable */}
+                {!isPartialPaymentAllowed && (
+                  <div className="bfm-partial-unavailable-notice">
+                    ⚠️ Partial payment is not available for bookings with a travel date of today or tomorrow. Full payment is required.
+                  </div>
+                )}
 
                 {/* Payment Summary */}
                 <div className="bfm-payment-summary">

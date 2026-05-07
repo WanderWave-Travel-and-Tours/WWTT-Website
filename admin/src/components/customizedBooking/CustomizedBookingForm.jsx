@@ -112,6 +112,20 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   // ── Payment ────────────────────────────────────────────────────────────────
   const [paymentType, setPaymentType] = useState('full'); // 'full' | 'partial'
 
+  // Reset to full payment if travel date becomes today or tomorrow
+  useEffect(() => {
+    if (paymentType === 'partial') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const travel = info.travelDate ? new Date(info.travelDate + 'T00:00:00') : null;
+      if (travel && travel <= tomorrow) {
+        setPaymentType('full');
+      }
+    }
+  }, [info.travelDate, paymentType]);
+
   // ── Step 3 – Transfer Details ──────────────────────────────────────────────
   // Index into selectedTransfers of which one we're currently filling
   const [detailsIdx, setDetailsIdx] = useState(0);
@@ -306,6 +320,17 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
   const grandTotal = toursTotal + transfersTotal + earlyHoursFee;
   const partialAmount = Math.ceil(grandTotal * 0.5);
+
+  // ── Partial payment restriction: hide if travel date is today or tomorrow ──
+  const isPartialPaymentAllowed = (() => {
+    if (!info.travelDate) return true;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const travel = new Date(info.travelDate + 'T00:00:00');
+    return travel > tomorrow; // only allowed if travel date is after tomorrow
+  })();
 
   // Second service type (the one NOT chosen first)
   const secondType = firstChoice === 'tour' ? 'transfer' : 'tour';
@@ -1534,6 +1559,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   </div>
 
                   {/* Partial Payment */}
+                  {isPartialPaymentAllowed && (
                   <div
                     className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
                     onClick={() => setPaymentType('partial')}
@@ -1568,6 +1594,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
 
                 {/* Payment Summary */}

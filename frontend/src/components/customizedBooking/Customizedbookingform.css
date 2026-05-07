@@ -2002,3 +2002,14 @@
 .cbf-night-surcharge-row strong {
   color: #c2410c;
 }
+/* Partial payment unavailable notice */
+.bfm-partial-unavailable-notice {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #c2410c;
+  font-size: 13px;
+  line-height: 1.5;
+}
