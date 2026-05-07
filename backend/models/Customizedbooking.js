@@ -13,16 +13,17 @@ const mongoose = require('mongoose');
 
 // ── Tour service snapshot ─────────────────────────────────────────────────────
 const BookedTourSchema = new mongoose.Schema({
-  tourId:      { type: mongoose.Schema.Types.ObjectId, ref: 'Tour', default: null },
-  title:       { type: String, required: true },
-  destination: { type: String, default: '' },
-  duration:    { type: String, default: '' },
-  category:    { type: String, default: '' },
-  imageUrl:    { type: String, default: null },
-  price:       { type: Number, default: 0 },   // per-person selling price
-  sellerPrice: { type: Number, default: 0 },
-  paxCount:    { type: Number, default: 1 },
-  subtotal:    { type: Number, default: 0 },   // price × paxCount
+  tourId:        { type: mongoose.Schema.Types.ObjectId, ref: 'Tour', default: null },
+  title:         { type: String, required: true },
+  destination:   { type: String, default: '' },
+  duration:      { type: String, default: '' },
+  category:      { type: String, default: '' },
+  imageUrl:      { type: String, default: null },
+  price:         { type: Number, default: 0 },   // per-person selling price
+  sellerPrice:   { type: Number, default: 0 },
+  paxCount:      { type: Number, default: 1 },
+  subtotal:      { type: Number, default: 0 },   // price × paxCount
+  scheduledDate: { type: String, default: '' },  // YYYY-MM-DD — customer-chosen tour date
 }, { _id: false });
 
 // ── Transfer service snapshot ─────────────────────────────────────────────────

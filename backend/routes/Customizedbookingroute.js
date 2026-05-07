@@ -24,16 +24,17 @@ function buildServices(body) {
   const transfers = Array.isArray(body.transfers) ? body.transfers : [];
 
   const builtTours = tours.map(t => ({
-    tourId:      t.tourId      || null,
-    title:       t.title       || '',
-    destination: t.destination || '',
-    duration:    t.duration    || '',
-    category:    t.category    || '',
-    imageUrl:    t.imageUrl    || null,
-    price:       parseNum(t.price),
-    sellerPrice: parseNum(t.sellerPrice),
-    paxCount:    parseInt(t.paxCount) || 1,
-    subtotal:    parseNum(t.subtotal),
+    tourId:        t.tourId        || null,
+    title:         t.title         || '',
+    destination:   t.destination   || '',
+    duration:      t.duration      || '',
+    category:      t.category      || '',
+    imageUrl:      t.imageUrl      || null,
+    price:         parseNum(t.price),
+    sellerPrice:   parseNum(t.sellerPrice),
+    paxCount:      parseInt(t.paxCount) || 1,
+    subtotal:      parseNum(t.subtotal),
+    scheduledDate: t.scheduledDate || '',
   }));
 
   const builtTransfers = transfers.map(tr => ({

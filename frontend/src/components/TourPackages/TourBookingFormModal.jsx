@@ -278,6 +278,21 @@ const TourBookingFormModal = ({
     }
   };
 
+  const handleNameChange = (passengerIndex, field, value) => {
+    // Allow only letters, spaces, hyphens, and apostrophes (no numbers or signs)
+    const filtered = value.replace(/[^a-zA-ZÀ-ÖØ-öø-ÿ\s'\-]/g, '');
+    handlePassengerChange(passengerIndex, field, filtered);
+  };
+
+  const handlePhoneChange = (passengerIndex, value) => {
+    // Allow only digits, no letters, signs, or negatives
+    const filtered = value.replace(/[^0-9]/g, '');
+    // Enforce max 20 digits
+    if (filtered.length <= 20) {
+      handlePassengerChange(passengerIndex, 'phone', filtered);
+    }
+  };
+
   const isLastPassenger = passengerStep === totalPassengers;
   const finalAmount = selectedFlight ? totalAmount : finalPackageTotal;
 
@@ -634,8 +649,10 @@ const TourBookingFormModal = ({
                   required
                   type="text"
                   value={currentPassenger.firstName}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'firstName', e.target.value)}
+                  onChange={(e) => handleNameChange(passengerStep - 1, 'firstName', e.target.value)}
                   placeholder="Juan"
+                  pattern="[a-zA-ZÀ-ÖØ-öø-ÿ\s'\-]+"
+                  title="First name should only contain letters"
                 />
               </div>
 
@@ -645,8 +662,10 @@ const TourBookingFormModal = ({
                   required
                   type="text"
                   value={currentPassenger.lastName}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'lastName', e.target.value)}
+                  onChange={(e) => handleNameChange(passengerStep - 1, 'lastName', e.target.value)}
                   placeholder="Dela Cruz"
+                  pattern="[a-zA-ZÀ-ÖØ-öø-ÿ\s'\-]+"
+                  title="Last name should only contain letters"
                 />
               </div>
 
@@ -667,8 +686,12 @@ const TourBookingFormModal = ({
                   required
                   type="tel"
                   value={currentPassenger.phone}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'phone', e.target.value)}
+                  onChange={(e) => handlePhoneChange(passengerStep - 1, e.target.value)}
                   placeholder="0917 123 4567"
+                  pattern="[0-9]{8,20}"
+                  minLength={8}
+                  maxLength={20}
+                  title="Phone number must be 8–20 digits, numbers only"
                 />
               </div>
 
