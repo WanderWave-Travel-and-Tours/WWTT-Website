@@ -44,6 +44,7 @@ function TransferBooking({
               onGoBack={onGoBack}
               passengerCount={passengerCount}
               transferType={transferType}
+              onTransferTypeChange={setTransferType}
             />
           </div>
 
@@ -54,6 +55,8 @@ function TransferBooking({
               exchangeRate={exchangeRate}
               onPassengerCountChange={setPassengerCount}
               currentUser={currentUser}
+              transferType={transferType}
+              onTransferTypeChange={setTransferType}
               // ── lifted modal props ──
               onOpenModal={(modalProps) => {
                 setTransferType(modalProps.transferType);

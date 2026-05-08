@@ -18,6 +18,9 @@ const TransferBookingRightForm = ({
   onPassengerCountChange,
   // ── lifted modal opener from TransferBooking.jsx ──
   onOpenModal,
+  // ── shared transferType state from parent (synced with left column) ──
+  transferType: transferTypeProp,
+  onTransferTypeChange,
   // ── lifted form field state from TransferBooking.jsx ──
   arrivalTime,      setArrivalTime,
   departureTime,    setDepartureTime,
@@ -35,9 +38,16 @@ const TransferBookingRightForm = ({
   const [selectedDate,  setSelectedDate]  = useState(null);
   const [currentMonth,  setCurrentMonth]  = useState(new Date());
 
-  // ── Transfer type selection (one-way / roundtrip) ─────────────────────────
+  // ── Transfer type — use prop if provided (synced with left column),
+  //    otherwise fall back to local state ─────────────────────────────────
   const hasRoundtrip = (transfer.roundtripPrice || 0) > 0;
-  const [transferType, setTransferType] = useState('oneway'); // 'oneway' | 'roundtrip'
+  const [internalTransferType, setInternalTransferType] = useState('oneway');
+  const isControlled  = transferTypeProp !== undefined;
+  const transferType  = isControlled ? transferTypeProp : internalTransferType;
+  const setTransferType = (val) => {
+    if (!isControlled) setInternalTransferType(val);
+    if (onTransferTypeChange) onTransferTypeChange(val);
+  };
 
   // ── Passenger count ───────────────────────────────────────────────────────
   // If transfer.pax is set, use it as fixed value; otherwise default to 1
@@ -326,64 +336,7 @@ const TransferBookingRightForm = ({
         </div>
       </div>
 
-      {/* ── Transfer Type Selector (only if roundtrip price exists) ─────── */}
-      {hasRoundtrip && (
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1.2px', textTransform: 'uppercase', color: '#1e3a5f', marginBottom: '8px' }}>
-            🚗 Transfer Type
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={() => setTransferType('oneway')}
-              style={{
-                padding: '14px 10px',
-                borderRadius: '12px',
-                border: `2px solid ${transferType === 'oneway' ? '#fc9c1b' : '#e2e8f0'}`,
-                background: transferType === 'oneway' ? '#fff7ed' : 'white',
-                cursor: 'pointer',
-                fontWeight: '700',
-                color: transferType === 'oneway' ? '#c2410c' : '#374151',
-                transition: 'all 0.2s',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <ArrowRight size={20} color={transferType === 'oneway' ? '#f97316' : '#94a3b8'} />
-              <span style={{ fontSize: '0.9rem' }}>One Way</span>
-              <span style={{ fontSize: '0.85rem', fontWeight: '800', color: transferType === 'oneway' ? '#ea580c' : '#6b7280' }}>
-                {currencySymbol}{convertPrice(oneWayPrice).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTransferType('roundtrip')}
-              style={{
-                padding: '14px 10px',
-                borderRadius: '12px',
-                border: `2px solid ${transferType === 'roundtrip' ? '#fc9c1b' : '#e2e8f0'}`,
-                background: transferType === 'roundtrip' ? '#fff7ed' : 'white',
-                cursor: 'pointer',
-                fontWeight: '700',
-                color: transferType === 'roundtrip' ? '#c2410c' : '#374151',
-                transition: 'all 0.2s',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <ArrowLeftRight size={20} color={transferType === 'roundtrip' ? '#f97316' : '#94a3b8'} />
-              <span style={{ fontSize: '0.9rem' }}>Roundtrip</span>
-              <span style={{ fontSize: '0.85rem', fontWeight: '800', color: transferType === 'roundtrip' ? '#ea580c' : '#6b7280' }}>
-                {currencySymbol}{convertPrice(roundtripPrice).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
+     
 
       {/* ── Promo Code ───────────────────────────────────────────────────── */}
       <div className="brf-promo-section">
