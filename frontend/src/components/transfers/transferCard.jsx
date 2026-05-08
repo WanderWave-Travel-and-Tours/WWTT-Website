@@ -1,6 +1,6 @@
 // src/components/Transfers/transferCard.jsx
 import React, { useState } from 'react';
-import { MapPin, ChevronRight, Car, ArrowRight, ArrowLeftRight, Users } from 'lucide-react';
+import { MapPin, ChevronRight, Car, ArrowRight, ArrowLeftRight, Users, Heart } from 'lucide-react';
 import './transferCard.css';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80';
@@ -41,7 +41,16 @@ const PriceRow = ({ label, icon: Icon, price, markup, currencySymbol, formatPric
 };
 
 // ── Main TransferCard Component ───────────────────────────────────────────────
-function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58 }) {
+function TransferCard({
+  transfer,
+  onInquire,
+  currency = 'PHP',
+  exchangeRate = 58,
+  // ── Wishlist props ──────────────────────────────────────────────────────
+  currentUser,
+  isFavorited = false,
+  onFavoriteToggle,
+}) {
   const [imgError, setImgError] = useState(false);
 
   if (!transfer) return null;
@@ -75,6 +84,14 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
   // Pax / capacity
   const paxCount = transfer.pax || transfer.maxPax || transfer.capacity || null;
 
+  // ── Favorite button handler ──────────────────────────────────────────────
+  const handleFavoriteClick = (e) => {
+    e.stopPropagation();
+    if (onFavoriteToggle) {
+      onFavoriteToggle(transfer);
+    }
+  };
+
   return (
     <div className="transfer-card">
       {/* ── Image ─────────────────────────────────────────────────────────── */}
@@ -96,6 +113,21 @@ function TransferCard({ transfer, onInquire, currency = 'PHP', exchangeRate = 58
             <Car size={11} /> {categoryStyle.label}
           </span>
         </div>
+
+        {/* ── Favorite / Wishlist Button ── */}
+        <button
+          className={`transfer-favorite-button ${isFavorited ? 'active' : ''}`}
+          onClick={handleFavoriteClick}
+          title={isFavorited ? 'Remove from wishlist' : 'Save to wishlist'}
+          aria-label={isFavorited ? 'Remove from wishlist' : 'Save to wishlist'}
+        >
+          <Heart
+            size={20}
+            strokeWidth={2}
+            fill={isFavorited ? '#e91e63' : 'none'}
+            color={isFavorited ? '#e91e63' : '#64748b'}
+          />
+        </button>
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}

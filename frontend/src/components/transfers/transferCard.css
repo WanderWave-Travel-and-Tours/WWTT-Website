@@ -134,6 +134,46 @@
   flex-shrink: 0;
 }
 
+/* ── Favorite / Wishlist Button ── */
+.transfer-favorite-button {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  color: #64748b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.transfer-favorite-button:hover {
+  transform: scale(1.15);
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(233, 30, 99, 0.25);
+  border-color: #fce4ec;
+}
+
+.transfer-favorite-button.active {
+  background: #fff;
+  border-color: #fce4ec;
+  box-shadow: 0 4px 14px rgba(233, 30, 99, 0.2);
+}
+
+.transfer-favorite-button:active {
+  transform: scale(0.92);
+}
+
 /* ── Card Body ── */
 .transfer-card-body {
   padding: 14px 16px 16px;
