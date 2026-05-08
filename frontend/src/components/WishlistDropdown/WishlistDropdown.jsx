@@ -17,53 +17,33 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [removingId, setRemovingId] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     const fetchWishlistItems = async () => {
       if (!isOpen || !currentUser) return;
 
+      setActiveFilter('all');
       setLoading(true);
       try {
         const userId = currentUser._id;
         console.log('📥 Fetching wishlist items for dropdown...');
 
+        // cache: 'no-store' prevents 304 stale responses
         const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites/${userId}`, {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch wishlist');
-        }
+        if (!response.ok) throw new Error('Failed to fetch wishlist');
 
         const result = await response.json();
         console.log('✅ Wishlist items:', result);
 
         if (result.status === 'ok' && result.data) {
-          const itemsWithDetails = await Promise.all(
-            result.data.map(async (item) => {
-              try {
-                const pkgResponse = await fetch(`https://wanderwaveph.onrender.com/api/packages/${item.promo_id}`);
-                if (pkgResponse.ok) {
-                  const pkgResult = await pkgResponse.json();
-                  if (pkgResult.status === 'ok') {
-                    return {
-                      ...item,
-                      packageDetails: pkgResult.data
-                    };
-                  }
-                }
-                return item;
-              } catch (err) {
-                console.error('Error fetching package details:', err);
-                return item;
-              }
-            })
-          );
-          
-          setWishlistItems(itemsWithDetails);
+          // Server now returns packageDetails + itemType directly — no extra fetching needed
+          setWishlistItems(result.data);
         }
       } catch (err) {
         console.error('❌ Error fetching wishlist:', err);
@@ -92,11 +72,10 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
   }, [isOpen, onClose]);
 
   // ============================================================
-  // ⭐ UPDATED: REMOVE WITH PROPER EVENTS
+  // REMOVE WITH PROPER EVENTS
   // ============================================================
   const handleRemoveItem = async (packageId, packageName, packageLocation, e) => {
     e.stopPropagation();
-    
     setRemovingId(packageId);
 
     try {
@@ -105,9 +84,7 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
 
       const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           promo_id: packageId,
           user_id: userId,
@@ -116,31 +93,20 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to remove from wishlist');
-      }
+      if (!response.ok) throw new Error('Failed to remove from wishlist');
 
       const result = await response.json();
       console.log('✅ Remove success:', result);
 
-      // ⭐ Update local state immediately
       setWishlistItems(prev => prev.filter(item => item.promo_id !== packageId));
-      
-      // ⭐ Dispatch multiple events for different listeners
+
       console.log('📢 Dispatching wishlist update events...');
-      
-      // Event 1: Update navbar count
       window.dispatchEvent(new Event('wishlistUpdated'));
-      
-      // Event 2: Update AllPackages favorites list with package ID
-      window.dispatchEvent(new CustomEvent('favoriteRemoved', { 
-        detail: { packageId } 
+      window.dispatchEvent(new CustomEvent('favoriteRemoved', {
+        detail: { packageId }
       }));
-      
-      // Notify parent component
-      if (onWishlistUpdate) {
-        onWishlistUpdate();
-      }
+
+      if (onWishlistUpdate) onWishlistUpdate();
 
     } catch (err) {
       console.error('❌ Error removing from wishlist:', err);
@@ -149,49 +115,76 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
     }
   };
 
+  // ============================================================
+  // VIEW PACKAGE / TOUR / TRANSFER
+  // ============================================================
   const handleViewPackage = (item) => {
-    if (!item.packageDetails) return;
-    
-    const packageCode = item.packageDetails.package_code || item.promo_id;
     onClose();
 
-    // ✅ Pass full packageDetails (already fetched from /api/packages/:id inside this
-    // component) as state so the booking page renders immediately without needing
-    // a second fetch. The UI fix was in BookingLeftColumn.css (overflow: visible),
-    // not in removing state.
-    navigate(`/packages/${packageCode}`, {
-      state: {
-        packageData: {
-          _id: item.promo_id,
-          id: item.promo_id,
-          title: item.package_title,
-          name: item.package_title,
-          destination: item.package_location,
-          location: item.package_location,
-          ...item.packageDetails
+    if (item.itemType === 'tour') {
+      sessionStorage.setItem('pendingTourBookingId', item.promo_id);
+      navigate('/tours');
+      return;
+    }
+
+    if (item.itemType === 'transfer') {
+      navigate('/transfers');
+      return;
+    }
+
+    if (item.packageDetails) {
+      const packageCode = item.packageDetails.package_code || item.promo_id;
+      navigate(`/packages/${packageCode}`, {
+        state: {
+          packageData: {
+            _id: item.promo_id,
+            id: item.promo_id,
+            title: item.package_title,
+            name: item.package_title,
+            destination: item.package_location,
+            location: item.package_location,
+            ...item.packageDetails
+          }
         }
-      }
-    });
+      });
+      return;
+    }
+
+    navigate('/packages');
   };
 
   // ============================================================
-  // ⭐ UPDATED: VIEW ALL FAVORITES WITH PROPER NAVIGATION
+  // VIEW ALL FAVORITES
   // ============================================================
   const handleViewAll = () => {
     console.log('🎯 Navigating to Favorites view...');
     onClose();
-    
-    // Navigate to packages with favorites parameter
     navigate('/packages?filter=favorites');
-    
-    // Dispatch event to trigger favorites view
     setTimeout(() => {
-      console.log('📢 Dispatching showFavorites event...');
       window.dispatchEvent(new CustomEvent('showFavorites'));
     }, 100);
   };
 
   if (!isOpen) return null;
+
+  // ── Filter counts ────────────────────────────────────────────────────────
+  const counts = {
+    all:      wishlistItems.length,
+    package:  wishlistItems.filter(i => i.itemType === 'package').length,
+    tour:     wishlistItems.filter(i => i.itemType === 'tour').length,
+    transfer: wishlistItems.filter(i => i.itemType === 'transfer').length,
+  };
+
+  const filteredItems = activeFilter === 'all'
+    ? wishlistItems
+    : wishlistItems.filter(i => i.itemType === activeFilter);
+
+  const FILTER_TABS = [
+    { key: 'all',      label: 'All' },
+    { key: 'package',  label: 'Packages' },
+    { key: 'tour',     label: 'Tours' },
+    { key: 'transfer', label: 'Transfers' },
+  ];
 
   return (
     <>
@@ -208,6 +201,24 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
             <X size={20} />
           </button>
         </div>
+
+        {/* ── Filter Tabs ── */}
+        {!loading && wishlistItems.length > 0 && (
+          <div className="wishlist-filter-tabs">
+            {FILTER_TABS.map(tab => (
+              counts[tab.key] > 0 || tab.key === 'all' ? (
+                <button
+                  key={tab.key}
+                  className={`wishlist-filter-tab ${activeFilter === tab.key ? 'active' : ''} ${counts[tab.key] === 0 ? 'empty' : ''}`}
+                  onClick={() => setActiveFilter(tab.key)}
+                >
+                  {tab.label}
+                  <span className="wishlist-tab-count">{counts[tab.key]}</span>
+                </button>
+              ) : null
+            ))}
+          </div>
+        )}
 
         <div className="wishlist-dropdown-body">
           {loading ? (
@@ -229,25 +240,37 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
             </div>
           ) : (
             <div className="wishlist-items-list">
-              {wishlistItems.map((item) => (
-                <div 
-                  key={item.promo_id} 
+              {filteredItems.length === 0 ? (
+                <div className="wishlist-filter-empty">
+                  <Heart size={36} strokeWidth={1.5} color="#cbd5e1" />
+                  <p>No {activeFilter}s in your wishlist yet.</p>
+                </div>
+              ) : (
+                filteredItems.map((item) => (
+                <div
+                  key={item.promo_id}
                   className={`wishlist-item ${removingId === item.promo_id ? 'removing' : ''}`}
                   onClick={() => handleViewPackage(item)}
                 >
                   <div className="wishlist-item-image">
-                    <img 
-                      src={item.packageDetails?.image ? getImageUrl(item.packageDetails.image) : 'https://via.placeholder.com/150x100?text=No+Image'} 
+                    <img
+                      src={
+                        item.packageDetails?.imageUrl
+                          ? item.packageDetails.imageUrl
+                          : item.packageDetails?.image
+                          ? getImageUrl(item.packageDetails.image)
+                          : 'https://via.placeholder.com/150x100?text=No+Image'
+                      }
                       alt={item.package_title}
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/150x100?text=Image+Not+Available';
                       }}
                     />
                   </div>
-                  
+
                   <div className="wishlist-item-content">
                     <h4 className="wishlist-item-title">{item.package_title}</h4>
-                    
+
                     <div className="wishlist-item-details">
                       <div className="wishlist-item-detail">
                         <MapPin size={14} />
@@ -261,15 +284,17 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
                       )}
                     </div>
 
-                    {item.packageDetails?.price && (
+                    {(item.packageDetails?.price || item.packageDetails?.oneWayPrice) && (
                       <div className="wishlist-item-price">
                         <span className="price-label">From</span>
-                        <span className="price-value">₱{item.packageDetails.price.toLocaleString()}</span>
+                        <span className="price-value">
+                          ₱{(item.packageDetails.price || item.packageDetails.oneWayPrice).toLocaleString()}
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  <button 
+                  <button
                     className="wishlist-item-remove"
                     onClick={(e) => handleRemoveItem(item.promo_id, item.package_title, item.package_location, e)}
                     disabled={removingId === item.promo_id}
@@ -282,7 +307,8 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
                     )}
                   </button>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           )}
         </div>

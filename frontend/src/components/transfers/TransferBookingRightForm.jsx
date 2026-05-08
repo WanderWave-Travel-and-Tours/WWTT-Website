@@ -44,13 +44,6 @@ const TransferBookingRightForm = ({
   const fixedPax = transfer.pax && transfer.pax > 0 ? transfer.pax : null;
   const [passengerCount, setPassengerCount] = useState(fixedPax ?? 1);
 
-  // ── Age-based passenger breakdown ─────────────────────────────────────────
-  // infantCount  : 0–2 years old → FREE
-  // kidCount     : 3–4 years old → 50% discount
-  // adultCount   : 5+ years old  → full price (derived: passengerCount - infants - kids)
-  const [infantCount, setInfantCount] = useState(0);
-  const [kidCount,    setKidCount]    = useState(0);
-
   // ── Local travelDate (derived from calendar selection) ───────────────────
   const [travelDate, setTravelDate] = useState('');
 
@@ -86,19 +79,11 @@ const TransferBookingRightForm = ({
       : val;
   })();
 
-  // ── Age-based pricing ────────────────────────────────────────────────────
-  // infants (0–2): FREE
-  // kids    (3–4): 50% of basePrice
-  // adults  (5+) : full basePrice
-  const adultCount     = Math.max(0, passengerCount - infantCount - kidCount);
-  const agePricedTotal = (adultCount * basePrice) + (kidCount * basePrice * 0.5) + (infantCount * 0);
-  const agePricedAfterPromo = Math.max(0, agePricedTotal - discountAmount);
-
-  const finalAmount   = agePricedAfterPromo;
+  const finalAmount   = Math.max(0, basePrice - discountAmount);
   const partialAmount = Math.round(finalAmount * 0.50);
-  const hasValidTotal = finalAmount > 0 || infantCount === passengerCount; // allow all-infant bookings
+  const hasValidTotal = finalAmount > 0;
 
-  const convertedTotal    = convertPrice(agePricedTotal);
+  const convertedTotal    = convertPrice(basePrice);
   const convertedDiscount = convertPrice(discountAmount);
   const convertedFinal    = convertPrice(finalAmount);
 
@@ -251,9 +236,6 @@ const TransferBookingRightForm = ({
         paymentType:     paymentType     ?? 'full',
         totalAmount:     convertedFinal,
         partialAmount:   convertedFinal * 0.5,
-        infantCount,
-        kidCount,
-        adultCount,
       });
     }
   };
@@ -313,29 +295,16 @@ const TransferBookingRightForm = ({
 
       {/* ── Passenger Count ──────────────────────────────────────────────── */}
       <div className="brf-quantity-section">
-
-        {/* Total Passengers */}
         <div className="brf-quantity-item">
           <div>
             <span className="brf-quantity-label">Passengers</span>
             <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
-              {fixedPax ? `Fixed capacity: ${fixedPax} pax` : 'Total number of passengers'}
+              {fixedPax ? `Fixed capacity: ${fixedPax} pax` : 'Number of passengers'}
             </div>
           </div>
           <div className="brf-quantity-controls">
             <button
-              onClick={() => {
-                if (!fixedPax) {
-                  const next = Math.max(1, passengerCount - 1);
-                  setPassengerCount(next);
-                  // clamp infants + kids so they never exceed new total
-                  if (infantCount + kidCount > next) {
-                    const excess = infantCount + kidCount - next;
-                    if (kidCount >= excess) setKidCount(kidCount - excess);
-                    else { setKidCount(0); setInfantCount(Math.max(0, infantCount - (excess - kidCount))); }
-                  }
-                }
-              }}
+              onClick={() => !fixedPax && setPassengerCount(prev => Math.max(1, prev - 1))}
               className="brf-quantity-btn"
               type="button"
               disabled={!!fixedPax || passengerCount <= 1}
@@ -355,88 +324,6 @@ const TransferBookingRightForm = ({
             </button>
           </div>
         </div>
-
-        {/* Age breakdown — only shown when total > 0 */}
-        {passengerCount > 0 && (
-          <div style={{ marginTop: '12px', padding: '12px 14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase', color: '#1e3a5f', marginBottom: '10px' }}>
-              Age Breakdown
-            </div>
-
-            {/* Infants 0–2 — FREE */}
-            <div className="brf-quantity-item" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
-              <div>
-                <span className="brf-quantity-label" style={{ fontSize: '0.9rem' }}>Infants <span style={{ fontWeight: '500', color: '#6b7280', fontSize: '0.78rem' }}>(0–2 yrs)</span></span>
-                <div style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: '600', marginTop: '2px' }}>FREE 🎉</div>
-              </div>
-              <div className="brf-quantity-controls">
-                <button
-                  onClick={() => setInfantCount(prev => Math.max(0, prev - 1))}
-                  className="brf-quantity-btn"
-                  type="button"
-                  disabled={infantCount <= 0}
-                  style={infantCount <= 0 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-                >
-                  <Minus size={16} color="#000000" strokeWidth={3} />
-                </button>
-                <span className="brf-quantity-value" style={{ minWidth: '24px', textAlign: 'center' }}>{infantCount}</span>
-                <button
-                  onClick={() => {
-                    if (infantCount + kidCount < passengerCount) setInfantCount(prev => prev + 1);
-                  }}
-                  className="brf-quantity-btn"
-                  type="button"
-                  disabled={infantCount + kidCount >= passengerCount}
-                  style={infantCount + kidCount >= passengerCount ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-                >
-                  <Plus size={16} color="#000000" strokeWidth={3} />
-                </button>
-              </div>
-            </div>
-
-            {/* Kids 3–4 — 50% discount */}
-            <div className="brf-quantity-item" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
-              <div>
-                <span className="brf-quantity-label" style={{ fontSize: '0.9rem' }}>Kids <span style={{ fontWeight: '500', color: '#6b7280', fontSize: '0.78rem' }}>(3–4 yrs)</span></span>
-                <div style={{ fontSize: '0.78rem', color: '#d97706', fontWeight: '600', marginTop: '2px' }}>50% Discount</div>
-              </div>
-              <div className="brf-quantity-controls">
-                <button
-                  onClick={() => setKidCount(prev => Math.max(0, prev - 1))}
-                  className="brf-quantity-btn"
-                  type="button"
-                  disabled={kidCount <= 0}
-                  style={kidCount <= 0 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-                >
-                  <Minus size={16} color="#000000" strokeWidth={3} />
-                </button>
-                <span className="brf-quantity-value" style={{ minWidth: '24px', textAlign: 'center' }}>{kidCount}</span>
-                <button
-                  onClick={() => {
-                    if (infantCount + kidCount < passengerCount) setKidCount(prev => prev + 1);
-                  }}
-                  className="brf-quantity-btn"
-                  type="button"
-                  disabled={infantCount + kidCount >= passengerCount}
-                  style={infantCount + kidCount >= passengerCount ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-                >
-                  <Plus size={16} color="#000000" strokeWidth={3} />
-                </button>
-              </div>
-            </div>
-
-            {/* Adults — derived, display only */}
-            <div className="brf-quantity-item" style={{ paddingTop: '8px', paddingBottom: '4px' }}>
-              <div>
-                <span className="brf-quantity-label" style={{ fontSize: '0.9rem' }}>Adults <span style={{ fontWeight: '500', color: '#6b7280', fontSize: '0.78rem' }}>(5+ yrs)</span></span>
-                <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '2px' }}>Full price</div>
-              </div>
-              <div className="brf-quantity-controls">
-                <span className="brf-quantity-value" style={{ minWidth: '24px', textAlign: 'center' }}>{adultCount}</span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Transfer Type Selector (only if roundtrip price exists) ─────── */}
@@ -562,30 +449,6 @@ const TransferBookingRightForm = ({
             })}
           </span>
         </div>
-
-        {/* Age-based discount breakdown */}
-        {(infantCount > 0 || kidCount > 0) && (
-          <div style={{ marginBottom: '8px', padding: '10px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '0.82rem', color: '#166534' }}>
-            {adultCount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span>{adultCount}x Adult</span>
-                <span>{currencySymbol}{convertPrice(adultCount * basePrice).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}</span>
-              </div>
-            )}
-            {kidCount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: '#92400e' }}>
-                <span>{kidCount}x Kid (50% off)</span>
-                <span>{currencySymbol}{convertPrice(kidCount * basePrice * 0.5).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}</span>
-              </div>
-            )}
-            {infantCount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
-                <span>{infantCount}x Infant (FREE)</span>
-                <span>₱0</span>
-              </div>
-            )}
-          </div>
-        )}
 
         {appliedPromo && (
           <div className="brf-total-row" style={{ color: '#10b981', fontSize: '0.9rem' }}>

@@ -11,7 +11,7 @@ import { usePageTracker } from '../../hooks/usePageTracker';
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
 // ============================================================
-function TransferPackagesContent() {
+function TransferPackagesContent({ currentUser: currentUserProp }) {
   const toast = useToast();
   const navigate = useNavigate();
   const transfersRef = useRef(null);
@@ -28,6 +28,63 @@ function TransferPackagesContent() {
 
   // ── Currently selected transfer for the booking view ────────────────────
   const [selectedTransfer, setSelectedTransfer] = useState(null);
+
+  // ── Wishlist / Favorites state ───────────────────────────────────────────
+  const [userFavorites, setUserFavorites] = useState([]);
+
+  // ============================================================
+  // READ currentUser FROM localStorage (same pattern as packageDeals.jsx)
+  // Falls back to the passed prop if localStorage is empty.
+  // ============================================================
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(currentUserProp || null);
+
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const userJSON = localStorage.getItem('wanderwave_user');
+      const isUserLoggedIn = !!userJSON;
+
+      console.log('👤 [Transfers] Checking login status:', isUserLoggedIn ? 'LOGGED IN' : 'NOT LOGGED IN');
+
+      if (userJSON) {
+        try {
+          const user = JSON.parse(userJSON);
+          console.log('✅ [Transfers] User data:', { id: user._id, name: user.fullName, email: user.email });
+          setCurrentUser(user);
+          setIsLoggedIn(true);
+        } catch (err) {
+          console.error('❌ [Transfers] Error parsing user data:', err);
+          localStorage.removeItem('wanderwave_user');
+          setCurrentUser(null);
+          setIsLoggedIn(false);
+        }
+      } else {
+        // No localStorage entry — use the prop if provided, otherwise null
+        if (currentUserProp) {
+          setCurrentUser(currentUserProp);
+          setIsLoggedIn(true);
+        } else {
+          console.log('❌ [Transfers] No user data in localStorage');
+          setCurrentUser(null);
+          setIsLoggedIn(false);
+        }
+      }
+    };
+
+    checkLoginStatus();
+
+    // Keep in sync if user logs in/out in another tab
+    const handleStorageChange = () => {
+      console.log('📦 [Transfers] Storage changed — rechecking login status');
+      checkLoginStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [currentUserProp]);
 
   // ============================================================
   // FETCH TRANSFERS FROM /api/transfers
@@ -56,10 +113,141 @@ function TransferPackagesContent() {
     fetchTransfers();
   }, []);
 
+  // ============================================================
+  // FETCH FAVORITES FOR CURRENT USER
+  // ============================================================
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!isLoggedIn || !currentUser) {
+        setUserFavorites([]);
+        return;
+      }
+
+      try {
+        const userId = currentUser._id;
+        console.log('📥 Fetching transfer favorites for user:', userId);
+
+        const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites/${userId}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch favorites');
+
+        const result = await response.json();
+        if (result.status === 'ok' && result.data) {
+          const favoriteIds = result.data.map(fav => fav.promo_id);
+          console.log('❤️ Transfer favorite IDs:', favoriteIds);
+          setUserFavorites(favoriteIds);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching transfer favorites:', err);
+      }
+    };
+
+    fetchFavorites();
+  }, [isLoggedIn, currentUser]);
+
+  // ── Listen for wishlist changes (e.g. removed from WishlistDropdown) ────
+  useEffect(() => {
+    const handleFavoriteRemoved = (e) => {
+      const { packageId } = e.detail || {};
+      if (packageId) {
+        setUserFavorites(prev => prev.filter(id => id !== packageId));
+      }
+    };
+
+    const handleWishlistUpdated = () => {
+      if (!currentUser) return;
+      // Re-fetch to stay in sync
+      fetch(`https://wanderwaveph.onrender.com/api/favorites/${currentUser._id}`, {
+        cache: 'no-store',
+      })
+        .then(r => r.json())
+        .then(result => {
+          if (result.status === 'ok' && result.data) {
+            setUserFavorites(result.data.map(fav => fav.promo_id));
+          }
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener('favoriteRemoved', handleFavoriteRemoved);
+    window.addEventListener('wishlistUpdated', handleWishlistUpdated);
+
+    return () => {
+      window.removeEventListener('favoriteRemoved', handleFavoriteRemoved);
+      window.removeEventListener('wishlistUpdated', handleWishlistUpdated);
+    };
+  }, [currentUser]);
+
   // ── Page View Tracker ────────────────────────────────────────────
   usePageTracker({ page: 'transfers', path: '/transfers', label: 'Tourist Transfers Page' });
 
-  
+  // ============================================================
+  // TOGGLE FAVORITE FOR A TRANSFER
+  // ============================================================
+  const handleFavoriteToggle = async (transfer) => {
+    if (!isLoggedIn || !currentUser) {
+      toast.warning('Please log in to save transfers to your wishlist.', 'Login Required', 3000);
+      return;
+    }
+
+    const transferId = transfer._id;
+    const isCurrentlyFavorite = userFavorites.includes(transferId);
+
+    // Optimistic update
+    const previousState = [...userFavorites];
+    if (isCurrentlyFavorite) {
+      setUserFavorites(prev => prev.filter(id => id !== transferId));
+    } else {
+      setUserFavorites(prev => [...prev, transferId]);
+    }
+
+    try {
+      const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          promo_id: transferId,
+          user_id: currentUser._id,
+          package_title: transfer.title,
+          package_location: transfer.packageDestination,
+          itemType: 'transfer',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update wishlist');
+
+      const result = await response.json();
+      console.log('✅ Wishlist toggle result:', result);
+
+      // Sync with server response if available
+      if (result.data && result.data.favorites) {
+        setUserFavorites(result.data.favorites);
+      }
+
+      const message = isCurrentlyFavorite
+        ? 'Transfer removed from wishlist'
+        : 'Transfer added to wishlist! ❤️';
+      toast.success(message, '', 2500);
+
+      // Dispatch events so navbar wishlist count updates
+      window.dispatchEvent(new Event('wishlistUpdated'));
+
+      if (isCurrentlyFavorite) {
+        window.dispatchEvent(new CustomEvent('favoriteRemoved', {
+          detail: { packageId: transferId }
+        }));
+      }
+    } catch (err) {
+      console.error('❌ Error toggling transfer favorite:', err);
+      // Revert optimistic update on error
+      setUserFavorites(previousState);
+      toast.error('Failed to update wishlist. Please try again.', 'Error', 3000);
+    }
+  };
 
   // ============================================================
   // DERIVED FILTER OPTIONS — use packageDestination field
@@ -130,7 +318,7 @@ function TransferPackagesContent() {
         onGoBack={handleGoBack}
         currency={currency}
         exchangeRate={exchangeRate}
-        currentUser={null}
+        currentUser={currentUser}
       />
     );
   }
@@ -167,6 +355,9 @@ function TransferPackagesContent() {
               exchangeRate={exchangeRate}
               setCurrency={setCurrency}
               onInquire={handleInquire}
+              currentUser={currentUser}
+              userFavorites={userFavorites}
+              onFavoriteToggle={handleFavoriteToggle}
             />
           )}
         </div>
@@ -223,10 +414,10 @@ function TransferPackagesContent() {
 // ============================================================
 // OUTER WRAPPER — provides Toast context
 // ============================================================
-function TransferPackages() {
+function TransferPackages({ currentUser }) {
   return (
     <ToastProvider>
-      <TransferPackagesContent />
+      <TransferPackagesContent currentUser={currentUser} />
     </ToastProvider>
   );
 }

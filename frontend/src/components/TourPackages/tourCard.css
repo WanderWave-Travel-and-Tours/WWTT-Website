@@ -337,41 +337,42 @@
   transform: translateY(0);
 }
 
-/* ── Wishlist / Heart Button ── */
+/* ── Wishlist / Heart Button — matches packageCard .favorite-button exactly ── */
 .tour-wishlist-btn {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 4;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: none;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 0;
 }
 
 .tour-wishlist-btn:hover {
-  background: rgba(0, 0, 0, 0.65);
-  transform: scale(1.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: scale(1.1);
+  background: #fff;
+  color: #e91e63;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .tour-wishlist-btn.favorited {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.35);
+  color: #e91e63;
+  background: #fff;
+  border-color: #fff;
 }
 
 .tour-wishlist-btn.favorited:hover {
-  background: #fff;
-  transform: scale(1.12);
+  transform: scale(1.1);
 }
 
 .tour-wishlist-btn:disabled {
@@ -385,15 +386,15 @@
   display: block;
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #fff;
+  border: 2px solid rgba(100, 116, 139, 0.3);
+  border-top-color: #64748b;
   border-radius: 50%;
   animation: tourWishlistSpin 0.75s linear infinite;
 }
 
 .tour-wishlist-btn.favorited .tour-wishlist-spinner {
-  border-color: rgba(239, 68, 68, 0.25);
-  border-top-color: #ef4444;
+  border-color: rgba(233, 30, 99, 0.25);
+  border-top-color: #e91e63;
 }
 
 @keyframes tourWishlistSpin {
@@ -425,5 +426,5 @@
   .tour-card-footer { gap: 16px; }
   .tour-price-info { width: 100%; }
   .tour-book-button { width: 100%; padding: 12px 0; }
-  .tour-wishlist-btn { width: 32px; height: 32px; }
+  .tour-wishlist-btn { width: 38px; height: 38px; }
 }

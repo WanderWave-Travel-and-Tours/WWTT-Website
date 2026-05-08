@@ -11,11 +11,24 @@ const FavoritesSchema = new Schema({
         required: true
     },
 
-    // promo_id: Reference sa 'Promo' collection
+    // promo_id: Reference sa 'Tour' collection (ginamit para sa tours)
+    // NOTE: Pinalitan ang ref mula 'Promo' → 'Tour' para ma-save ang Tour IDs
     promo_id: {
         type: Schema.Types.ObjectId,
-        ref: 'Promo', // Dapat i-match ang model name na 'Promo' mula sa promo.js
+        ref: 'Tour', // ✅ FIX: dapat 'Tour' hindi 'Promo' para gumana ang tour favorites
         required: true
+    },
+
+    // ✅ FIX: Dinagdag ang package_title at package_location na fields
+    // Ipinapadala ito ng favoritesController.js at tourCard.jsx pero wala dito dati
+    package_title: {
+        type: String,
+        default: null
+    },
+
+    package_location: {
+        type: String,
+        default: null
     },
 
     // timestamp: Para malaman kung kailan ito na-save. Gagamitin natin ang built-in 'timestamps'

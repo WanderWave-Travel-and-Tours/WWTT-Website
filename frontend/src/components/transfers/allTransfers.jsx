@@ -22,6 +22,10 @@ function AllTransfers({
   exchangeRate,
   setCurrency,
   onInquire,
+  // ── Wishlist props ────────────────────────────────────────
+  currentUser,
+  userFavorites,
+  onFavoriteToggle,
 }) {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -272,6 +276,9 @@ function AllTransfers({
                   onInquire={onInquire}
                   currency={currency}
                   exchangeRate={exchangeRate}
+                  currentUser={currentUser}
+                  isFavorited={userFavorites?.includes(transfer._id)}
+                  onFavoriteToggle={onFavoriteToggle}
                 />
               ))
             ) : (
