@@ -11,7 +11,7 @@ import MascotGif from '../MascotGif/MascotGif';
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
 // ============================================================
-function TourPackagesContent() {
+function TourPackagesContent({ currentUser: propCurrentUser = null }) {
   const toast = useToast();
   const navigate = useNavigate();
   const toursRef = useRef(null);
@@ -31,24 +31,67 @@ function TourPackagesContent() {
   const [currency, setCurrency] = useState('PHP');
   const exchangeRate = 58;
 
+  // ============================================================
+  // READ CURRENT USER FROM PROP OR LOCALSTORAGE
+  // Prop takes priority. If not passed (e.g. route doesn't forward
+  // it), we scan common localStorage keys so the wishlist heart
+  // button always knows who is logged in.
+  // ============================================================
+  const [currentUser, setCurrentUser] = useState(propCurrentUser);
+
+  useEffect(() => {
+    // Prop already has a valid user — use it directly.
+    if (propCurrentUser?._id) {
+      setCurrentUser(propCurrentUser);
+      return;
+    }
+
+    // Scan every key the app might use to persist auth state.
+    const keysToTry = [
+      'user',
+      'loggedInUser',
+      'userData',
+      'currentUser',
+      'authUser',
+      'wanderwave_user',
+    ];
+
+    for (const key of keysToTry) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        // A real user object must have at least _id or id
+        if (parsed && (parsed._id || parsed.id)) {
+          // Normalise: make sure _id is always present
+          if (!parsed._id && parsed.id) parsed._id = parsed.id;
+          setCurrentUser(parsed);
+          return;
+        }
+      } catch (_) {
+        // Skip corrupted/non-JSON entries
+      }
+    }
+  }, [propCurrentUser]);
 
   // ================================================
-// RESTORE SPECIFIC TOUR AFTER FLIGHT SEARCH
-// ================================================
-useEffect(() => {
-  const pendingTourId = sessionStorage.getItem('pendingTourBookingId');
-  if (!pendingTourId || tours.length === 0) return;
+  // RESTORE SPECIFIC TOUR AFTER FLIGHT SEARCH
+  // ================================================
+  useEffect(() => {
+    const pendingTourId = sessionStorage.getItem('pendingTourBookingId');
+    if (!pendingTourId || tours.length === 0) return;
 
-  const matchingTour = tours.find(t => 
-    String(t._id || t.id) === String(pendingTourId)
-  );
+    const matchingTour = tours.find(t =>
+      String(t._id || t.id) === String(pendingTourId)
+    );
 
-  if (matchingTour) {
-    setSelectedTour(matchingTour);
-    sessionStorage.removeItem('pendingTourBookingId'); // clear na
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}, [tours]); // important: kapag may data na ang tours
+    if (matchingTour) {
+      setSelectedTour(matchingTour);
+      sessionStorage.removeItem('pendingTourBookingId'); // clear na
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [tours]); // important: kapag may data na ang tours
+
   // ============================================================
   // FETCH TOURS
   // ============================================================
@@ -163,7 +206,7 @@ useEffect(() => {
         onGoBack={handleGoBack}
         currency={currency}
         exchangeRate={exchangeRate}
-        currentUser={null}
+        currentUser={currentUser}
       />
     );
   }
@@ -205,6 +248,7 @@ useEffect(() => {
               exchangeRate={exchangeRate}
               setCurrency={setCurrency}
               onBookNow={handleBookNow}
+              currentUser={currentUser}
             />
           )}
         </div>
@@ -261,10 +305,10 @@ useEffect(() => {
 // ============================================================
 // OUTER WRAPPER — provides Toast context
 // ============================================================
-function TourPackages() {
+function TourPackages({ currentUser = null }) {
   return (
     <ToastProvider>
-      <TourPackagesContent />
+      <TourPackagesContent currentUser={currentUser} />
     </ToastProvider>
   );
 }

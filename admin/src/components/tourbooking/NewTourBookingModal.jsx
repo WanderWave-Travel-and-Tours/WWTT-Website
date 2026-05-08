@@ -22,19 +22,22 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
   const [destDropdownOpen, setDestDropdownOpen] = useState(false);
   const destRef = useRef(null);
 
-  // Trip config
-  const [paxCount, setPaxCount] = useState(1);
+  // Trip config — separate pax type counters
+  const [adultCount,  setAdultCount]  = useState(1);
+  const [childCount,  setChildCount]  = useState(0);
+  const [infantCount, setInfantCount] = useState(0);
   const [departureDate, setDepartureDate] = useState('');
 
   // Payment
   const [paymentType, setPaymentType] = useState('full');
 
-  // Passengers
+  // Passengers — forms for adults + children only (infants have no form)
   const [passengers, setPassengers] = useState([
     {
       firstName: '', lastName: '', email: '', phone: '',
       dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
-      age: '', gender: '', address: '', nationality: 'Filipino'
+      age: '', gender: '', address: '', nationality: 'Filipino',
+      passengerType: 'adult'
     }
   ]);
 
@@ -85,21 +88,35 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
     setSelectedTour(null);
   }, [selectedDestination, allTours]);
 
-  // ── Mirror pax ↔ passengers ───────────────────────────────────────────────
+  // ── Sync passenger forms when adult/child counts change ──────────────────
   useEffect(() => {
-    if (paxCount < 1) return;
+    const totalWithForms = adultCount + childCount;
+    if (totalWithForms < 1) return;
     setPassengers(prev => {
       let arr = [...prev];
-      const blank = () => ({
+      const blankAdult = () => ({
         firstName: '', lastName: '', email: '', phone: '',
         dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
-        age: '', gender: '', address: '', nationality: 'Filipino'
+        age: '', gender: '', address: '', nationality: 'Filipino',
+        passengerType: 'adult'
       });
-      while (arr.length < paxCount) arr.push(blank());
-      if (arr.length > paxCount) arr = arr.slice(0, paxCount);
+      const blankChild = () => ({
+        firstName: '', lastName: '', email: '', phone: '',
+        dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
+        age: '', gender: '', address: '', nationality: 'Filipino',
+        passengerType: 'child'
+      });
+
+      // Build expected array: adultCount adults then childCount children
+      while (arr.length < adultCount) arr.push(blankAdult());
+      if (arr.length > adultCount + childCount) arr = arr.slice(0, adultCount + childCount);
+      while (arr.length < adultCount + childCount) arr.push(blankChild());
+
+      // Stamp types correctly
+      arr = arr.map((p, i) => ({ ...p, passengerType: i < adultCount ? 'adult' : 'child' }));
       return arr;
     });
-  }, [paxCount]);
+  }, [adultCount, childCount]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const getDurationDays = (str) => {
@@ -129,8 +146,17 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
     return selected.getTime() === today.getTime() || selected.getTime() === tomorrow.getTime();
   };
 
-  const tourPrice = selectedTour?.price || 0;
-  const packageTotal = tourPrice * paxCount;
+  // ── Pricing ───────────────────────────────────────────────────────────────
+  // Adult (5+ yrs)   → full price
+  // Child (3–4 yrs)  → 50% discount
+  // Infant (<2 yrs)  → FREE
+  const tourPrice     = selectedTour?.price || 0;
+  const adultTotal    = tourPrice * adultCount;
+  const childTotal    = Math.round(tourPrice * 0.5) * childCount;
+  const infantTotal   = 0; // always free
+  const packageTotal  = adultTotal + childTotal + infantTotal;
+  const totalPaxCount = adultCount + childCount + infantCount;
+
   const initialPaymentAmount = paymentType === 'partial' ? Math.round(packageTotal / 2) : packageTotal;
   const payableAmount = paymentType === 'partial' ? initialPaymentAmount : packageTotal;
 
@@ -168,6 +194,7 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
     if (!selectedDestination) { toast.error('Please select a destination'); return false; }
     if (!selectedTour)        { toast.error('Please select a tour package'); return false; }
     if (!departureDate)       { toast.error('Please pick a departure date'); return false; }
+    if (totalPaxCount < 1)    { toast.error('Please add at least 1 passenger'); return false; }
     for (let i = 0; i < passengers.length; i++) {
       const p = passengers[i];
       if (!p.firstName || !p.lastName) { toast.error(`Passenger ${i+1}: First & Last name required`); return false; }
@@ -185,7 +212,7 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
       toast.error('Missing tour or departure date');
       return;
     }
-    if (packageTotal <= 0) {
+    if (packageTotal <= 0 && infantCount === 0) {
       toast.error('Invalid tour price. Please check the selected tour.');
       return;
     }
@@ -195,13 +222,45 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
       const primaryPax = passengers[0] || {};
       const endDate = computeEndDate();
 
+      // Build full passenger array including infants (no form — placeholder entry)
+      const allPassengers = [
+        ...passengers.map((p, idx) => ({
+          passengerNumber: idx + 1,
+          firstName:       p.firstName,
+          lastName:        p.lastName,
+          email:           p.email && p.email.trim() !== '' ? p.email.trim() : null,
+          phone:           p.phone,
+          dateOfBirth:     p.dateOfBirth,
+          age:             parseInt(p.age) || 0,
+          gender:          p.gender || '',
+          address:         p.address || '',
+          nationality:     p.nationality || 'Filipino',
+          passengerType:   p.passengerType,
+          passengerPrice:  p.passengerType === 'child' ? Math.round(tourPrice * 0.5) : tourPrice,
+        })),
+        ...Array.from({ length: infantCount }, (_, idx) => ({
+          passengerNumber: passengers.length + idx + 1,
+          firstName:       '',
+          lastName:        '',
+          email:           null,
+          phone:           '',
+          dateOfBirth:     '',
+          age:             0,
+          gender:          '',
+          address:         '',
+          nationality:     'Filipino',
+          passengerType:   'infant',
+          passengerPrice:  0,
+        })),
+      ];
+
       const bookingData = {
         tourId:            selectedTour._id,
         packageName:       selectedTour.title || selectedTour.name || '',
         startDate:         departureDate,
         endDate:           endDate,
         duration:          selectedTour.duration || '',
-        pax:               { adult: paxCount, children: 0, infants: 0 },
+        pax:               { adult: adultCount, children: childCount, infants: infantCount },
         fullName:          `${primaryPax.firstName || ''} ${primaryPax.lastName || ''}`.trim(),
         email:             primaryPax.email && primaryPax.email.trim() !== '' ? primaryPax.email.trim() : 'noemail@wanderwaveph.com',
         message:           '',
@@ -219,18 +278,7 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
         createdByType:     'sales',
         createdByEmail:    'houston@wanderwaveph.com',
         bookingSource:     'walkin',
-        passengers: passengers.map((p, idx) => ({
-          passengerNumber: idx + 1,
-          firstName:       p.firstName,
-          lastName:        p.lastName,
-          email:           p.email && p.email.trim() !== '' ? p.email.trim() : null,
-          phone:           p.phone,
-          dateOfBirth:     p.dateOfBirth,
-          age:             parseInt(p.age) || 0,
-          gender:          p.gender || '',
-          address:         p.address || '',
-          nationality:     p.nationality || 'Filipino',
-        })),
+        passengers:        allPassengers,
       };
 
       const formPayload = new FormData();
@@ -288,12 +336,15 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
     setSelectedDestination('');
     setSelectedTour(null);
     setDepartureDate('');
-    setPaxCount(1);
+    setAdultCount(1);
+    setChildCount(0);
+    setInfantCount(0);
     setPaymentType('full');
     setPassengers([{
       firstName: '', lastName: '', email: '', phone: '',
       dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
-      age: '', gender: '', address: '', nationality: 'Filipino'
+      age: '', gender: '', address: '', nationality: 'Filipino',
+      passengerType: 'adult'
     }]);
     onClose();
   };
@@ -302,6 +353,41 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
 
   const filteredDests = destinations.filter(d =>
     d.toLowerCase().includes(selectedDestination.toLowerCase())
+  );
+
+  // ── Pax counter row component (reusable inline) ───────────────────────────
+  const PaxCounter = ({ label, sublabel, badge, badgeColor, count, onDec, onInc, disableDec }) => (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '14px 16px',
+      background: '#fff',
+      border: '1.5px solid #e2e8f0',
+      borderRadius: '12px',
+      marginBottom: '10px',
+    }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.97rem', color: '#0f172a' }}>
+          {label}
+          {badge && (
+            <span style={{
+              fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+              background: badgeColor === 'green' ? '#dcfce7' : badgeColor === 'blue' ? '#eff6ff' : '#fef3c7',
+              color: badgeColor === 'green' ? '#166534' : badgeColor === 'blue' ? '#1d4ed8' : '#92400e',
+              border: `1px solid ${badgeColor === 'green' ? '#bbf7d0' : badgeColor === 'blue' ? '#bfdbfe' : '#fde68a'}`,
+              textTransform: 'uppercase', letterSpacing: '0.3px'
+            }}>
+              {badge}
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>{sublabel}</div>
+      </div>
+      <div className="ntbm-pax-row">
+        <button className="ntbm-pax-btn" onClick={onDec} disabled={disableDec}>−</button>
+        <span className="ntbm-pax-count" style={{ fontSize: '1.2rem', minWidth: '40px' }}>{count}</span>
+        <button className="ntbm-pax-btn" onClick={onInc}>+</button>
+      </div>
+    </div>
   );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -441,58 +527,80 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                 )}
               </div>
 
-              {/* ── SECTION: Trip Configuration ── */}
+              {/* ── SECTION: Number of Passengers ── */}
               {selectedTour && (
                 <>
                   <div className="ntbm-section-label">
-                    <Users size={15} /> Trip Configuration
+                    <Users size={15} /> Number of Passengers
                   </div>
                   <div className="ntbm-card" style={{ marginBottom: '20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
 
-                      {/* Pax */}
-                      <div>
-                        <label className="ntbm-field-label">Number of Pax</label>
-                        <div className="ntbm-pax-row">
-                          <button
-                            className="ntbm-pax-btn"
-                            onClick={() => { if (paxCount > 1) setPaxCount(p => p - 1); }}
-                            disabled={paxCount <= 1}
-                          >−</button>
-                          <span className="ntbm-pax-count">{paxCount}</span>
-                          <button
-                            className="ntbm-pax-btn"
-                            onClick={() => setPaxCount(p => p + 1)}
-                          >+</button>
-                        </div>
-                        <div style={{ marginTop: '8px', fontSize: '0.82rem', color: '#94a3b8' }}>
-                          Total: ₱{packageTotal.toLocaleString()}
-                        </div>
+                    <PaxCounter
+                      label="Adult"
+                      sublabel={`5+ years old • Full price — ₱${tourPrice.toLocaleString()}/pax`}
+                      badge="Solo / Group"
+                      badgeColor="amber"
+                      count={adultCount}
+                      onDec={() => { if (adultCount > 1) setAdultCount(c => c - 1); }}
+                      onInc={() => setAdultCount(c => c + 1)}
+                      disableDec={adultCount <= 1}
+                    />
+                    <PaxCounter
+                      label="Child"
+                      sublabel={`3–4 years old • 50% off — ₱${Math.round(tourPrice * 0.5).toLocaleString()}/pax`}
+                      badge="50% off"
+                      badgeColor="blue"
+                      count={childCount}
+                      onDec={() => { if (childCount > 0) setChildCount(c => c - 1); }}
+                      onInc={() => setChildCount(c => c + 1)}
+                      disableDec={childCount <= 0}
+                    />
+                    <PaxCounter
+                      label="Infant"
+                      sublabel="Below 2 years old • No seat required"
+                      badge="FREE"
+                      badgeColor="green"
+                      count={infantCount}
+                      onDec={() => { if (infantCount > 0) setInfantCount(c => c - 1); }}
+                      onInc={() => setInfantCount(c => c + 1)}
+                      disableDec={infantCount <= 0}
+                    />
+
+                    {/* Total pax summary chip */}
+                    {totalPaxCount > 0 && (
+                      <div style={{ marginTop: '4px', padding: '10px 14px', background: '#fff7ed', border: '1.5px solid #fcd34d', borderRadius: '10px', fontSize: '0.88rem', color: '#92400e', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>
+                          Total: {totalPaxCount} pax
+                          ({adultCount} adult{adultCount !== 1 ? 's' : ''}
+                          {childCount > 0 ? `, ${childCount} child${childCount !== 1 ? 'ren' : ''}` : ''}
+                          {infantCount > 0 ? `, ${infantCount} infant${infantCount !== 1 ? 's' : ''}` : ''})
+                        </span>
+                        <span>₱{packageTotal.toLocaleString()}</span>
                       </div>
+                    )}
 
-                      {/* Departure Date */}
-                      <div>
-                        <label className="ntbm-field-label">Departure Date <span style={{ color: '#ef4444' }}>*</span></label>
-                        <input
-                          type="date"
-                          className="ntbm-input"
-                          value={departureDate}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setDepartureDate(val);
-                            // Auto-reset to full payment if today or tomorrow
-                            if (val) {
-                              const today = new Date(); today.setHours(0,0,0,0);
-                              const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-                              const sel = new Date(val); sel.setHours(0,0,0,0);
-                              if (sel.getTime() === today.getTime() || sel.getTime() === tomorrow.getTime()) {
-                                setPaymentType('full');
-                              }
+                    {/* Departure Date */}
+                    <div style={{ marginTop: '16px' }}>
+                      <label className="ntbm-field-label">Departure Date <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input
+                        type="date"
+                        className="ntbm-input"
+                        value={departureDate}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDepartureDate(val);
+                          // Auto-reset to full payment if today or tomorrow
+                          if (val) {
+                            const today = new Date(); today.setHours(0,0,0,0);
+                            const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+                            const sel = new Date(val); sel.setHours(0,0,0,0);
+                            if (sel.getTime() === today.getTime() || sel.getTime() === tomorrow.getTime()) {
+                              setPaymentType('full');
                             }
-                          }}
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                      </div>
+                          }
+                        }}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
                     </div>
 
                     {/* Date preview */}
@@ -520,7 +628,7 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                     )}
                   </div>
 
-                  {/* ── SECTION: Payment Option (PaymentOption.css design) ── */}
+                  {/* ── SECTION: Payment Option ── */}
                   <div className="ntbm-section-label">
                     <CreditCard size={15} /> Payment Option
                   </div>
@@ -631,10 +739,24 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                     )}
 
                     <div className="bfm-payment-summary">
-                      <div className="bfm-summary-row">
-                        <span>Tour Price (×{paxCount} pax)</span>
-                        <span style={{ color: '#374151', fontWeight: 700 }}>₱{packageTotal.toLocaleString()}</span>
-                      </div>
+                      {adultCount > 0 && (
+                        <div className="bfm-summary-row">
+                          <span>Adult ×{adultCount} (₱{tourPrice.toLocaleString()}/pax)</span>
+                          <span style={{ color: '#374151', fontWeight: 700 }}>₱{adultTotal.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {childCount > 0 && (
+                        <div className="bfm-summary-row">
+                          <span>Child ×{childCount} (₱{Math.round(tourPrice * 0.5).toLocaleString()}/pax · 50% off)</span>
+                          <span style={{ color: '#374151', fontWeight: 700 }}>₱{childTotal.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {infantCount > 0 && (
+                        <div className="bfm-summary-row">
+                          <span>Infant ×{infantCount} (FREE)</span>
+                          <span style={{ color: '#16a34a', fontWeight: 700 }}>₱0</span>
+                        </div>
+                      )}
                       <div className="bfm-summary-row">
                         <span>{paymentType === 'partial' ? 'Initial Payment Due Now' : 'Total Amount Due'}</span>
                         <span className="bfm-amount-highlight">₱{payableAmount.toLocaleString()}</span>
@@ -648,112 +770,116 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                     </div>
                   </div>
 
-                  {/* ── SECTION: Passengers ── */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '20px' }}>
-                    <div className="ntbm-section-label" style={{ margin: 0 }}>
-                      <Users size={15} /> Passengers
-                    </div>
-                    <button
-                      className="ntbm-btn-add-passenger"
-                      onClick={() => setPaxCount(p => p + 1)}
-                    >
-                      + Add Passenger
-                    </button>
-                  </div>
-
-                  {passengers.map((p, i) => (
-                    <div key={i} className="ntbm-passenger-card">
-                      <div className="ntbm-passenger-heading">
-                        <div className="ntbm-passenger-num">{i + 1}</div>
-                        <span className="ntbm-passenger-label">Passenger {i + 1}</span>
-                        {passengers.length > 1 && (
-                          <button
-                            className="ntbm-remove-pax-btn"
-                            onClick={() => { if (paxCount > 1) setPaxCount(p => p - 1); }}
-                          >
-                            ✕ Remove
-                          </button>
-                        )}
+                  {/* ── SECTION: Passenger Details (Adults + Children only) ── */}
+                  {passengers.length > 0 && (
+                    <>
+                      <div className="ntbm-section-label" style={{ marginTop: '20px' }}>
+                        <Users size={15} /> Passenger Details
                       </div>
 
-                      {/* First + Last Name */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                        <div className="ntbm-pfield">
-                          <label>First Name <span style={{ color: '#ef4444' }}>*</span></label>
-                          <input className="ntbm-input" value={p.firstName} onChange={e => updatePassenger(i, 'firstName', e.target.value)} placeholder="Juan" />
+                      {/* Infant notice */}
+                      {infantCount > 0 && (
+                        <div style={{ marginBottom: '12px', padding: '10px 14px', background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '10px', fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>
+                          🎁 {infantCount} infant{infantCount > 1 ? 's' : ''} will travel FREE — no form required for infants.
                         </div>
-                        <div className="ntbm-pfield">
-                          <label>Last Name <span style={{ color: '#ef4444' }}>*</span></label>
-                          <input className="ntbm-input" value={p.lastName} onChange={e => updatePassenger(i, 'lastName', e.target.value)} placeholder="Dela Cruz" />
-                        </div>
-                      </div>
+                      )}
 
-                      {/* Email + Phone */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                        <div className="ntbm-pfield">
-                          <label>Email <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem' }}>(optional)</span></label>
-                          <input className="ntbm-input" value={p.email} onChange={e => updatePassenger(i, 'email', e.target.value)} placeholder="juan@email.com" />
-                        </div>
-                        <div className="ntbm-pfield">
-                          <label>Phone <span style={{ color: '#ef4444' }}>*</span></label>
-                          <input className="ntbm-input" value={p.phone} onChange={e => updatePassenger(i, 'phone', e.target.value)} placeholder="09171234567" />
-                        </div>
-                      </div>
+                      {passengers.map((p, i) => (
+                        <div key={i} className="ntbm-passenger-card">
+                          <div className="ntbm-passenger-heading">
+                            <div className="ntbm-passenger-num">{i + 1}</div>
+                            <span className="ntbm-passenger-label">
+                              {p.passengerType === 'child'
+                                ? `Child ${i - adultCount + 1}`
+                                : `Adult ${i + 1}`}
+                              {p.passengerType === 'child' && (
+                                <span style={{ marginLeft: 8, fontSize: '0.72rem', fontWeight: 700, background: '#eff6ff', color: '#1d4ed8', borderRadius: 20, padding: '2px 9px', border: '1px solid #bfdbfe', verticalAlign: 'middle' }}>
+                                  🏷️ 50% OFF
+                                </span>
+                              )}
+                            </span>
+                          </div>
 
-                      {/* Date of Birth */}
-                      <div style={{ marginTop: '12px' }}>
-                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#64748b', marginBottom: '6px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                          Date of Birth <span style={{ color: '#ef4444' }}>*</span>
-                        </label>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <select className="ntbm-dob-select" value={p.dobDay} onChange={e => handleDobPartChange(i, 'dobDay', e.target.value)} style={{ width: '72px' }}>
-                            <option value="">DD</option>
-                            {Array.from({ length: 31 }, (_, n) => n + 1).map(d => (
-                              <option key={d} value={d}>{String(d).padStart(2, '0')}</option>
-                            ))}
-                          </select>
-                          <select className="ntbm-dob-select" value={p.dobMonth} onChange={e => handleDobPartChange(i, 'dobMonth', e.target.value)} style={{ width: '92px' }}>
-                            <option value="">Month</option>
-                            {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, idx) => (
-                              <option key={idx + 1} value={idx + 1}>{m}</option>
-                            ))}
-                          </select>
-                          <select className="ntbm-dob-select" value={p.dobYear} onChange={e => handleDobPartChange(i, 'dobYear', e.target.value)} style={{ width: '82px' }}>
-                            <option value="">Year</option>
-                            {Array.from({ length: new Date().getFullYear() - 1939 }, (_, n) => new Date().getFullYear() - n).map(y => (
-                              <option key={y} value={y}>{y}</option>
-                            ))}
-                          </select>
-                          <div className={`ntbm-age-badge${p.age ? '' : ' empty'}`}>
-                            {p.age ? <>{p.age}<span style={{ fontSize: '0.73rem', opacity: 0.85, marginLeft: 2 }}>yrs</span></> : '—'}
+                          {/* First + Last Name */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div className="ntbm-pfield">
+                              <label>First Name <span style={{ color: '#ef4444' }}>*</span></label>
+                              <input className="ntbm-input" value={p.firstName} onChange={e => updatePassenger(i, 'firstName', e.target.value)} placeholder="Juan" />
+                            </div>
+                            <div className="ntbm-pfield">
+                              <label>Last Name <span style={{ color: '#ef4444' }}>*</span></label>
+                              <input className="ntbm-input" value={p.lastName} onChange={e => updatePassenger(i, 'lastName', e.target.value)} placeholder="Dela Cruz" />
+                            </div>
+                          </div>
+
+                          {/* Email + Phone */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                            <div className="ntbm-pfield">
+                              <label>Email <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem' }}>(optional)</span></label>
+                              <input className="ntbm-input" value={p.email} onChange={e => updatePassenger(i, 'email', e.target.value)} placeholder="juan@email.com" />
+                            </div>
+                            <div className="ntbm-pfield">
+                              <label>Phone <span style={{ color: '#ef4444' }}>*</span></label>
+                              <input className="ntbm-input" value={p.phone} onChange={e => updatePassenger(i, 'phone', e.target.value)} placeholder="09171234567" />
+                            </div>
+                          </div>
+
+                          {/* Date of Birth */}
+                          <div style={{ marginTop: '12px' }}>
+                            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#64748b', marginBottom: '6px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                              Date of Birth <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <select className="ntbm-dob-select" value={p.dobDay} onChange={e => handleDobPartChange(i, 'dobDay', e.target.value)} style={{ width: '72px' }}>
+                                <option value="">DD</option>
+                                {Array.from({ length: 31 }, (_, n) => n + 1).map(d => (
+                                  <option key={d} value={d}>{String(d).padStart(2, '0')}</option>
+                                ))}
+                              </select>
+                              <select className="ntbm-dob-select" value={p.dobMonth} onChange={e => handleDobPartChange(i, 'dobMonth', e.target.value)} style={{ width: '92px' }}>
+                                <option value="">Month</option>
+                                {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, idx) => (
+                                  <option key={idx + 1} value={idx + 1}>{m}</option>
+                                ))}
+                              </select>
+                              <select className="ntbm-dob-select" value={p.dobYear} onChange={e => handleDobPartChange(i, 'dobYear', e.target.value)} style={{ width: '82px' }}>
+                                <option value="">Year</option>
+                                {Array.from({ length: new Date().getFullYear() - 1939 }, (_, n) => new Date().getFullYear() - n).map(y => (
+                                  <option key={y} value={y}>{y}</option>
+                                ))}
+                              </select>
+                              <div className={`ntbm-age-badge${p.age ? '' : ' empty'}`}>
+                                {p.age ? <>{p.age}<span style={{ fontSize: '0.73rem', opacity: 0.85, marginLeft: 2 }}>yrs</span></> : '—'}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Gender + Nationality */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                            <div className="ntbm-pfield">
+                              <label>Gender <span style={{ color: '#ef4444' }}>*</span></label>
+                              <select className="ntbm-input" value={p.gender} onChange={e => updatePassenger(i, 'gender', e.target.value)}>
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                              </select>
+                            </div>
+                            <div className="ntbm-pfield">
+                              <label>Nationality <span style={{ color: '#ef4444' }}>*</span></label>
+                              <input className="ntbm-input" value={p.nationality} onChange={e => updatePassenger(i, 'nationality', e.target.value)} placeholder="Filipino" />
+                            </div>
+                          </div>
+
+                          {/* Address */}
+                          <div className="ntbm-pfield" style={{ marginTop: '12px' }}>
+                            <label>Complete Address <span style={{ color: '#ef4444' }}>*</span></label>
+                            <input className="ntbm-input" value={p.address} onChange={e => updatePassenger(i, 'address', e.target.value)} placeholder="123 Main St, Quezon City" />
                           </div>
                         </div>
-                      </div>
-
-                      {/* Gender + Nationality */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                        <div className="ntbm-pfield">
-                          <label>Gender <span style={{ color: '#ef4444' }}>*</span></label>
-                          <select className="ntbm-input" value={p.gender} onChange={e => updatePassenger(i, 'gender', e.target.value)}>
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                          </select>
-                        </div>
-                        <div className="ntbm-pfield">
-                          <label>Nationality <span style={{ color: '#ef4444' }}>*</span></label>
-                          <input className="ntbm-input" value={p.nationality} onChange={e => updatePassenger(i, 'nationality', e.target.value)} placeholder="Filipino" />
-                        </div>
-                      </div>
-
-                      {/* Address */}
-                      <div className="ntbm-pfield" style={{ marginTop: '12px' }}>
-                        <label>Complete Address <span style={{ color: '#ef4444' }}>*</span></label>
-                        <input className="ntbm-input" value={p.address} onChange={e => updatePassenger(i, 'address', e.target.value)} placeholder="123 Main St, Quezon City" />
-                      </div>
-                    </div>
-                  ))}
+                      ))}
+                    </>
+                  )}
                 </>
               )}
             </>
@@ -819,22 +945,38 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                 </div>
                 <div className="ntbm-preview-row">
                   <span>Number of Pax</span>
-                  <strong>{paxCount}</strong>
+                  <strong>
+                    {totalPaxCount} total
+                    ({adultCount} adult{adultCount !== 1 ? 's' : ''}
+                    {childCount > 0 ? `, ${childCount} child${childCount !== 1 ? 'ren' : ''}` : ''}
+                    {infantCount > 0 ? `, ${infantCount} infant${infantCount !== 1 ? 's' : ''}` : ''})
+                  </strong>
                 </div>
               </div>
 
               {/* Passengers */}
               <div className="ntbm-preview-section">
                 <div className="ntbm-preview-section-title">
-                  <Users size={16} /> Passengers ({passengers.length})
+                  <Users size={16} /> Passengers ({totalPaxCount})
                 </div>
                 {passengers.map((p, i) => (
                   <div key={i} className="ntbm-preview-passenger">
-                    <strong>Passenger {i + 1}:</strong> {p.firstName} {p.lastName}
+                    <strong>{p.passengerType === 'child' ? 'Child' : 'Adult'} {i + 1}:</strong> {p.firstName} {p.lastName}
                     {p.phone && <span style={{ marginLeft: 12, color: '#64748b' }}>• {p.phone}</span>}
                     {p.age && <span style={{ marginLeft: 12, color: '#94a3b8', fontSize: '0.85rem' }}>• {p.age} yrs</span>}
+                    {p.passengerType === 'child' && (
+                      <span style={{ marginLeft: 10, fontSize: '0.78rem', fontWeight: 700, background: '#eff6ff', color: '#1d4ed8', borderRadius: 20, padding: '1px 8px', border: '1px solid #bfdbfe' }}>
+                        🏷️ 50% OFF
+                      </span>
+                    )}
                   </div>
                 ))}
+                {infantCount > 0 && (
+                  <div className="ntbm-preview-passenger" style={{ background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+                    <strong style={{ color: '#166534' }}>🎁 {infantCount} Infant{infantCount > 1 ? 's' : ''} — FREE</strong>
+                    <span style={{ marginLeft: 12, color: '#94a3b8', fontSize: '0.85rem' }}>• Below 2 years old</span>
+                  </div>
+                )}
               </div>
 
               {/* Payment Summary */}
@@ -843,13 +985,27 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
                   <CreditCard size={16} /> Payment Summary
                 </div>
                 <div className="ntbm-preview-row">
-                  <span>Tour Price per Pax</span>
-                  <span>₱{tourPrice.toLocaleString()}</span>
+                  <span>Tour Price (base)</span>
+                  <span>₱{tourPrice.toLocaleString()} / pax</span>
                 </div>
-                <div className="ntbm-preview-row">
-                  <span>Total ({paxCount} pax)</span>
-                  <span>₱{packageTotal.toLocaleString()}</span>
-                </div>
+                {adultCount > 0 && (
+                  <div className="ntbm-preview-row">
+                    <span>Adult ×{adultCount}</span>
+                    <span>₱{adultTotal.toLocaleString()}</span>
+                  </div>
+                )}
+                {childCount > 0 && (
+                  <div className="ntbm-preview-row" style={{ color: '#1d4ed8' }}>
+                    <span>Child ×{childCount} (50% off)</span>
+                    <span>₱{childTotal.toLocaleString()}</span>
+                  </div>
+                )}
+                {infantCount > 0 && (
+                  <div className="ntbm-preview-row" style={{ color: '#166534' }}>
+                    <span>Infant ×{infantCount} (FREE)</span>
+                    <span>₱0</span>
+                  </div>
+                )}
                 <div className="ntbm-preview-row">
                   <span>Payment Type</span>
                   <span style={{ textTransform: 'capitalize' }}>

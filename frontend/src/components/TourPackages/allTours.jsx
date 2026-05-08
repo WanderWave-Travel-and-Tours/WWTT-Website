@@ -27,6 +27,7 @@ function AllTours({
   exchangeRate,
   setCurrency,
   onBookNow,
+  currentUser,
 }) {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -310,6 +311,7 @@ function AllTours({
                   onBookNow={onBookNow}
                   currency={currency}
                   exchangeRate={exchangeRate}
+                  currentUser={currentUser}
                 />
               ))
             ) : (

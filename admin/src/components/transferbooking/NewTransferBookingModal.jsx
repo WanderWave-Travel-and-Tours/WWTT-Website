@@ -20,6 +20,20 @@ const isLateNightTime = (timeStr) => {
 
 const LATE_NIGHT_SURCHARGE = 500;
 
+// ── Passenger Age Category Helper ───────────────────────────────────────────
+// Returns 'infant'  → below 2 years old (0 or 1)  → FREE (100% discount)
+//         'child'   → 3 to 4 years old             → 50% discount
+//         'adult'   → all others (2, 5+, no DOB)   → full price
+const getPassengerAgeCategory = (age) => {
+  // Empty string or undefined → no DOB entered → treat as adult
+  if (age === '' || age === undefined || age === null) return 'adult';
+  const a = parseInt(age, 10);
+  if (isNaN(a)) return 'adult';
+  if (a === 0 || a === 1) return 'infant';   // below 2 years old → FREE
+  if (a === 3 || a === 4) return 'child';    // 3 to 4 years old  → 50% OFF
+  return 'adult';
+};
+
 // ── Travel Date Restriction Helper ──────────────────────────────────────────
 // Returns true if the given date string (YYYY-MM-DD) is today or tomorrow
 const isTodayOrTomorrow = (dateStr) => {
@@ -157,21 +171,25 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
     }
   }, [destination, paxCount, allTransfers]);
 
-  // ── Sync passengers array with paxCount ─────────────────────────────────
+  // ── Sync passengers array with selectedTransfer capacity (pax) ──────────
+  // Forms shown = selectedTransfer.pax (transfer capacity)
+  // paxCount stepper = how many are actually travelling (for pricing/filtering)
+  // Passenger 1 = required, rest = optional
   useEffect(() => {
+    const formCount = selectedTransfer ? (parseInt(selectedTransfer.pax) || 1) : 1;
     setPassengers(prev => {
-      if (prev.length === paxCount) return prev;
-      if (prev.length < paxCount) {
-        const extras = Array.from({ length: paxCount - prev.length }, () => ({
+      if (prev.length === formCount) return prev;
+      if (prev.length < formCount) {
+        const extras = Array.from({ length: formCount - prev.length }, () => ({
           firstName: '', lastName: '', email: '', phone: '',
           dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
           age: '', gender: '', address: '', nationality: 'Filipino'
         }));
         return [...prev, ...extras];
       }
-      return prev.slice(0, paxCount);
+      return prev.slice(0, formCount);
     });
-  }, [paxCount]);
+  }, [selectedTransfer]);
 
   // ── Late Night Surcharge calculation ─────────────────────────────────────
   // Count how many selected times fall within 12AM-5AM
@@ -183,7 +201,43 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
   const sellingPrice = selectedTransfer
     ? (tripType === 'roundtrip' ? (selectedTransfer.roundtripPrice || 0) : (selectedTransfer.oneWayPrice || 0))
     : 0;
-  const totalAmount = sellingPrice + totalSurcharge;
+
+  // ── Per-passenger discount breakdown ────────────────────────────────────
+  // Formula:
+  //   perPax = sellingPrice / paxCount  (always divided by the pax stepper count)
+  //   Filled passengers → apply infant/child discount rules
+  //   Unfilled slots (paxCount - passengers.length) → treated as adult, full perPax price
+  //   totalAmount = sum of all slots + surcharge
+  const perPax = paxCount > 0 ? sellingPrice / paxCount : 0;
+
+  const passengerDiscountBreakdown = Array.from({ length: paxCount }, (_, i) => {
+    const p        = passengers[i]; // may be undefined if slot is unfilled
+    const category = p ? getPassengerAgeCategory(p.age) : 'adult';
+    let   amount   = perPax;
+    let   discount = 0;
+    if (category === 'infant') {
+      amount   = 0;
+      discount = perPax;
+    } else if (category === 'child') {
+      amount   = Math.round(perPax * 0.5);
+      discount = perPax - amount;
+    }
+    return {
+      index:     i,
+      firstName: p ? p.firstName : '',
+      lastName:  p ? p.lastName  : '',
+      age:       p ? p.age       : '',
+      category,
+      perPax:    Math.round(perPax),
+      amount:    Math.round(amount),
+      discount:  Math.round(discount),
+      filled:    !!p,
+    };
+  });
+
+  const basePaxTotal        = passengerDiscountBreakdown.reduce((sum, pd) => sum + pd.amount,   0);
+  const totalDiscountAmount = passengerDiscountBreakdown.reduce((sum, pd) => sum + pd.discount, 0);
+  const totalAmount         = basePaxTotal + totalSurcharge;
   const initialPaymentAmount = paymentType === 'partial' ? Math.round(totalAmount / 2) : totalAmount;
   const remainingBalance = paymentType === 'partial' ? totalAmount - initialPaymentAmount : 0;
 
@@ -207,7 +261,8 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
           let age = today.getFullYear() - birthDate.getFullYear();
           const md = today.getMonth() - birthDate.getMonth();
           if (md < 0 || (md === 0 && today.getDate() < birthDate.getDate())) age--;
-          return { ...updated, dateOfBirth: iso, age: age > 0 ? age.toString() : '' };
+          // FIX: store age >= 0 as string so infants (age 0 or 1) are not lost as ''
+          return { ...updated, dateOfBirth: iso, age: age >= 0 ? age.toString() : '' };
         }
       }
       return { ...updated, dateOfBirth: '' };
@@ -306,9 +361,14 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
         email:                primaryPax.email,
         phone:                primaryPax.phone,
         message:              '',
-        specialRequests:      totalSurcharge > 0
-          ? `Late night surcharge applied: ₱${totalSurcharge.toLocaleString()} (${[arrivalSurcharge > 0 ? 'arrival' : '', departureSurcharge > 0 ? 'departure' : ''].filter(Boolean).join(' + ')} late night schedule)`
-          : '',
+        specialRequests:      [
+          totalSurcharge > 0
+            ? `Late night surcharge applied: ₱${totalSurcharge.toLocaleString()} (${[arrivalSurcharge > 0 ? 'arrival' : '', departureSurcharge > 0 ? 'departure' : ''].filter(Boolean).join(' + ')} late night schedule)`
+            : '',
+          totalDiscountAmount > 0
+            ? `Passenger discounts applied: ${passengerDiscountBreakdown.filter(pd => pd.category !== 'adult').map(pd => `Pax ${pd.index + 1} (${pd.firstName || 'unnamed'}) – ${pd.category === 'infant' ? 'FREE (infant)' : '50% OFF (child 3-4 yrs)'}`).join(', ')}. Total discount: ₱${totalDiscountAmount.toLocaleString()}`
+            : '',
+        ].filter(Boolean).join(' | '),
         passengerCount:       paxCount,
         oneWayPrice:          selectedTransfer.oneWayPrice || 0,
         roundtripPrice:       selectedTransfer.roundtripPrice || 0,
@@ -640,14 +700,25 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
 
             {/* Passengers */}
             <div className="nbm-preview-section">
-              <div className="nbm-preview-section-title"><Users size={18} /> Passengers ({passengers.length})</div>
-              {passengers.map((p, i) => (
-                <div key={i} className="nbm-preview-passenger">
-                  <strong>Passenger {i + 1}:</strong> {p.firstName} {p.lastName}
-                  {p.phone && <span style={{ marginLeft: 12, color: '#64748b' }}>• {p.phone}</span>}
-                  {p.gender && <span style={{ marginLeft: 12, color: '#94a3b8', fontSize: '0.88rem' }}>• {p.gender}</span>}
-                </div>
-              ))}
+              <div className="nbm-preview-section-title"><Users size={18} /> Passengers ({passengers.filter(p => p.firstName.trim() || p.lastName.trim()).length} filled · {paxCount} travelling)</div>
+              {passengers.map((p, i) => {
+                const isFilled = p.firstName.trim() || p.lastName.trim();
+                if (!isFilled && i > 0) return null; // skip empty optional slots in preview
+                return (
+                  <div key={i} className="nbm-preview-passenger">
+                    <strong>Passenger {i + 1}:</strong>{' '}
+                    {isFilled ? `${p.firstName} ${p.lastName}` : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Not filled</span>}
+                    {p.phone && <span style={{ marginLeft: 12, color: '#64748b' }}>• {p.phone}</span>}
+                    {p.gender && <span style={{ marginLeft: 12, color: '#94a3b8', fontSize: '0.88rem' }}>• {p.gender}</span>}
+                    {getPassengerAgeCategory(p.age) === 'infant' && (
+                      <span style={{ marginLeft: 10, background: '#dcfce7', color: '#15803d', fontWeight: 700, fontSize: '0.72rem', padding: '2px 7px', borderRadius: 5, border: '1px solid #86efac' }}>🎁 FREE</span>
+                    )}
+                    {getPassengerAgeCategory(p.age) === 'child' && (
+                      <span style={{ marginLeft: 10, background: '#fef9c3', color: '#854d0e', fontWeight: 700, fontSize: '0.72rem', padding: '2px 7px', borderRadius: 5, border: '1px solid #fde68a' }}>🏷 50% OFF</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Payment Summary */}
@@ -657,6 +728,24 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                 <span>Transfer Price ({tripType === 'roundtrip' ? 'Roundtrip' : 'One Way'})</span>
                 <span>₱{sellingPrice.toLocaleString()}</span>
               </div>
+              {passengerDiscountBreakdown.filter(pd => pd.category === 'infant').map(pd => (
+                <div key={pd.index} className="nbm-preview-row">
+                  <span>🎁 Infant FREE (Pax {pd.index + 1}{pd.firstName ? ` – ${pd.firstName}` : ''})</span>
+                  <span style={{ color: '#15803d', fontWeight: 700 }}>−₱{pd.discount.toLocaleString()}</span>
+                </div>
+              ))}
+              {passengerDiscountBreakdown.filter(pd => pd.category === 'child').map(pd => (
+                <div key={pd.index} className="nbm-preview-row">
+                  <span>🏷 Child 50% OFF (Pax {pd.index + 1}{pd.firstName ? ` – ${pd.firstName}` : ''})</span>
+                  <span style={{ color: '#d97706', fontWeight: 700 }}>−₱{pd.discount.toLocaleString()}</span>
+                </div>
+              ))}
+              {totalDiscountAmount > 0 && (
+                <div className="nbm-preview-row">
+                  <span>Subtotal after discounts</span>
+                  <span>₱{basePaxTotal.toLocaleString()}</span>
+                </div>
+              )}
               {arrivalSurcharge > 0 && (
                 <div className="nbm-preview-row">
                   <span>🌙 Late Night Surcharge (Arrival)</span>
@@ -1003,7 +1092,7 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <div>
                       <h3 className="nbm-step-title" style={{ marginBottom: 4 }}>Passenger Details</h3>
-                      <p className="nbm-step-subtitle" style={{ margin: 0 }}>Fill in info for all {paxCount} passenger{paxCount > 1 ? 's' : ''}.</p>
+                      <p className="nbm-step-subtitle" style={{ margin: 0 }}>Passenger 1 is required. The rest are optional — fill in as needed.</p>
                     </div>
                   </div>
 
@@ -1011,7 +1100,14 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                     <div key={i} className="nbm-passenger-card">
                       <div className="nbm-passenger-heading">
                         <div className="nbm-passenger-num">{i + 1}</div>
-                        <div className="nbm-passenger-label">Passenger {i + 1}{i === 0 ? ' (Primary Contact)' : ''}</div>
+                        <div className="nbm-passenger-label">
+                          Passenger {i + 1}{i === 0 ? ' (Primary Contact)' : ''}
+                          {i > 0 && (
+                            <span style={{ marginLeft: 8, fontSize: '0.72rem', fontWeight: 600, color: '#94a3b8', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 5, padding: '2px 7px' }}>
+                              Optional
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Row 1: First + Last Name */}
@@ -1038,9 +1134,36 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                         </div>
                       </div>
 
-                      {/* Row 3: DOB */}
-                      <div className="nbm-pfield" style={{ marginTop: 12 }}>
-                        <label>Date of Birth</label>
+                      {/* Row 3: Age (direct) + DOB */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, marginTop: 12, alignItems: 'start' }}>
+                        {/* Direct age input — drives discount logic immediately */}
+                        <div className="nbm-pfield">
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            Age
+                            {getPassengerAgeCategory(p.age) === 'infant' && (
+                              <span style={{ background: '#dcfce7', color: '#15803d', fontWeight: 800, fontSize: '0.68rem', padding: '1px 6px', borderRadius: 5, border: '1.5px solid #86efac' }}>🎁 FREE</span>
+                            )}
+                            {getPassengerAgeCategory(p.age) === 'child' && (
+                              <span style={{ background: '#fef9c3', color: '#854d0e', fontWeight: 800, fontSize: '0.68rem', padding: '1px 6px', borderRadius: 5, border: '1.5px solid #fde68a' }}>🏷 50% OFF</span>
+                            )}
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="120"
+                            value={p.age}
+                            onChange={e => updatePassenger(i, 'age', e.target.value)}
+                            placeholder="e.g. 0"
+                            style={{
+                              ...(getPassengerAgeCategory(p.age) === 'infant' ? { borderColor: '#86efac', background: '#f0fdf4' } : {}),
+                              ...(getPassengerAgeCategory(p.age) === 'child'  ? { borderColor: '#fde68a', background: '#fefce8' } : {}),
+                            }}
+                          />
+                        </div>
+
+                        {/* DOB — auto-fills age when complete */}
+                        <div className="nbm-pfield">
+                        <label>Date of Birth <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 400 }}>(auto-fills age)</span></label>
                         <div className="nbm-dob-row">
                           <select className="nbm-dob-select dob-day" value={p.dobDay} onChange={e => handleDobPartChange(i, 'dobDay', e.target.value)} style={{ width: '72px' }}>
                             <option value="">DD</option>
@@ -1060,11 +1183,9 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                               <option key={y} value={y}>{y}</option>
                             ))}
                           </select>
-                          <div className={`nbm-age-badge${p.age ? '' : ' nbm-age-badge-empty'}`} style={{ minWidth: '68px', textAlign: 'center' }}>
-                            {p.age ? <>{p.age} <span style={{ fontSize: '0.73rem', opacity: 0.85 }}>yrs</span></> : '—'}
-                          </div>
                         </div>
-                      </div>
+                        </div>
+                        </div>
 
                       {/* Row 4: Gender + Nationality */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
@@ -1110,6 +1231,7 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                         <div style={{ fontSize: '0.78rem', color: '#92400e' }}>
                           {tripType === 'roundtrip' ? '↔ Roundtrip' : '→ One Way'} · {paxCount} pax · {travelDate}
                           {totalSurcharge > 0 && <span style={{ marginLeft: 6, color: '#dc2626', fontWeight: 700 }}>· 🌙 +₱{totalSurcharge.toLocaleString()} surcharge</span>}
+                          {totalDiscountAmount > 0 && <span style={{ marginLeft: 6, color: '#15803d', fontWeight: 700 }}>· 🎁 −₱{totalDiscountAmount.toLocaleString()} discounts</span>}
                         </div>
                       </div>
                     </div>
@@ -1210,6 +1332,26 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
                       <span>Base Transfer Price</span>
                       <span>₱{sellingPrice.toLocaleString()}</span>
                     </div>
+                    {totalDiscountAmount > 0 && (
+                      <>
+                        {passengerDiscountBreakdown.filter(pd => pd.category === 'infant').map(pd => (
+                          <div key={pd.index} className="bfm-summary-row">
+                            <span>🎁 Infant (Pax {pd.index + 1}{pd.firstName ? ` – ${pd.firstName}` : ''}) FREE</span>
+                            <span style={{ color: '#15803d', fontWeight: 700 }}>−₱{pd.discount.toLocaleString()}</span>
+                          </div>
+                        ))}
+                        {passengerDiscountBreakdown.filter(pd => pd.category === 'child').map(pd => (
+                          <div key={pd.index} className="bfm-summary-row">
+                            <span>🏷 Child 50% OFF (Pax {pd.index + 1}{pd.firstName ? ` – ${pd.firstName}` : ''})</span>
+                            <span style={{ color: '#d97706', fontWeight: 700 }}>−₱{pd.discount.toLocaleString()}</span>
+                          </div>
+                        ))}
+                        <div className="bfm-summary-row">
+                          <span>Subtotal after discounts</span>
+                          <span>₱{basePaxTotal.toLocaleString()}</span>
+                        </div>
+                      </>
+                    )}
                     {arrivalSurcharge > 0 && (
                       <div className="bfm-summary-row">
                         <span>🌙 Late Night Surcharge (Arrival)</span>

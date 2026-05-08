@@ -48,7 +48,7 @@ const TourBookingRightForm = ({
     ? Math.max(funnelPax, isMinTwoPkg ? 2 : isSoloPkg ? 1 : 1)
     : Math.max(defaultPax, isMinTwoPkg ? 2 : 1);
 
-  const [quantities,            setQuantities]           = useState({ adult: startingAdultPax });
+  const [quantities,            setQuantities]           = useState({ adult: startingAdultPax, infant: 0, child: 0 });
   const [selectedDate,          setSelectedDate]         = useState(null);
   const [currentMonth,          setCurrentMonth]         = useState(new Date());
   const [showModal,             setShowModal]            = useState(false);
@@ -63,6 +63,7 @@ const TourBookingRightForm = ({
   const [promoWarning,          setPromoWarning]         = useState('');
   const [isCheckingPromo,       setIsCheckingPromo]      = useState(false);
   const [paymentType,           setPaymentType]          = useState('full');
+  const [showMinorFields,       setShowMinorFields]      = useState(false);
   const [hasOTCAccess,          setHasOTCAccess]         = useState(false);
   const [checkingOTCAccess,     setCheckingOTCAccess]    = useState(true);
 const [selectedRoomType,      setSelectedRoomType]     = useState(null);
@@ -70,8 +71,8 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
   const [loadingHotelData,      setLoadingHotelData]     = useState(false);
   const durationDays   = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1);
-  const totalPassengers = quantities.adult || 1;
-  const basePax         = totalPassengers;
+  const totalPassengers = (quantities.adult || 1) + (quantities.infant || 0) + (quantities.child || 0);
+  const basePax         = quantities.adult || 1; // only adults for pricing base (children/infants handled separately)
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice   = (phpPrice) => currency === 'PHP' ? phpPrice : (phpPrice / exchangeRate) * 1.30;
@@ -110,7 +111,11 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     const savedState = BookingStateManager.getBookingState(code);
     if (savedState?.formData) {
       if (savedState.formData.selectedDate) setSelectedDate(savedState.formData.selectedDate);
-      if (savedState.formData.quantities) setQuantities(savedState.formData.quantities);
+      if (savedState.formData.quantities) {
+        const restoredQ = { adult: savedState.formData.quantities.adult || 1, infant: savedState.formData.quantities.infant || 0, child: savedState.formData.quantities.child || 0 };
+        setQuantities(restoredQ);
+        if (restoredQ.child > 0 || restoredQ.infant > 0) setShowMinorFields(true);
+      }
       if (savedState.formData.currentMonth) setCurrentMonth(new Date(savedState.formData.currentMonth));
       if (savedState.formData.selectedFlight) {
         setSelectedFlight(savedState.formData.selectedFlight);
@@ -166,7 +171,7 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
   useEffect(() => {
     const stateToSave = {
       selectedDate,
-      quantities: isSoloJoiners ? { adult: 1 } : quantities,
+      quantities: isSoloJoiners ? { adult: 1, infant: 0, child: 0 } : quantities,
       currentMonth: currentMonth.toISOString(),
       selectedFlight: selectedFlight
         ? { ...selectedFlight, _savedForPackage: (pkg._id || pkg.id || '').toString() }
@@ -232,36 +237,49 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     if (onPaxChange) onPaxChange(isSoloPkg ? 1 : newPax);
   }, [initialPaxFromFunnel]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sync passengers array with pax count ─────────────────────────────────
+  // ── Sync passengers array with pax count (adults + children + infants) ──
   useEffect(() => {
-    const newTotal = quantities.adult || 1;
+    const newTotal = (quantities.adult || 1) + (quantities.child || 0) + (quantities.infant || 0);
     setPassengers(prev => {
       if (newTotal === prev.length) return prev;
-      return Array.from({ length: newTotal }, (_, idx) =>
-        prev[idx] || {
+      return Array.from({ length: newTotal }, (_, idx) => {
+        const adultCount = quantities.adult || 1;
+        const childCount = quantities.child || 0;
+        let passengerType = 'adult';
+        if (idx >= adultCount && idx < adultCount + childCount) passengerType = 'child';
+        else if (idx >= adultCount + childCount) passengerType = 'infant';
+        return prev[idx] || {
           passengerNumber: idx + 1,
+          passengerType,
           firstName: '', lastName: '', email: '', phone: '',
           dateOfBirth: '', age: '', gender: '', address: '',
           nationality: 'Filipino',
           idFile: null, idFileName: '',
           passportFile: null, passportFileName: ''
-        }
-      );
+        };
+      });
     });
-  }, [quantities.adult]);
+  }, [quantities.adult, quantities.child, quantities.infant]);
 
   // ── Price calculations (same pattern as bookingRightForm) ──────────────
   // ✅ Hotel cost is INCLUDED inside calculateBasePackageTotal — same as bookingRightForm
+  // Age pricing: below 2 yrs = FREE (infants), 3-4 yrs = 50% discount (children), 5+ = full price (adults)
   const calculateBasePackageTotal = () => {
-    const basePax = isSoloPkg ? 1 : (quantities.adult || 1);
+    const adultPax = isSoloPkg ? 1 : (quantities.adult || 1);
+    const childPax = isSoloPkg ? 0 : (quantities.child || 0); // 3-4 yrs: 50% off
+    // infantPax (below 2 yrs) = FREE, not counted in price
     const basePrice = pkg.price || 0;
+    const perPaxPrice = isMinTwoPkg ? basePrice / 2 : basePrice;
 
     let basePackagePrice;
     if (isMinTwoPkg) {
-      basePackagePrice = basePrice + Math.max(0, basePax - 2) * (basePrice / 2);
+      basePackagePrice = basePrice + Math.max(0, adultPax - 2) * perPaxPrice;
     } else {
-      basePackagePrice = basePrice * basePax;
+      basePackagePrice = basePrice * adultPax;
     }
+
+    // Children (3-4 yrs) at 50% of per-pax price
+    basePackagePrice += perPaxPrice * 0.5 * childPax;
 
     if (basePackagePrice <= 0) return 0;
     if (!selectedRoomType) return basePackagePrice;
@@ -269,7 +287,7 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     // ✅ Copied from bookingRightForm — hotel cost added inside base total
     const roomType = selectedRoomType.type?.toUpperCase() || '';
     const roomCapacity = selectedRoomType.capacity || 4;
-    const rooms = Math.ceil(basePax / roomCapacity);
+    const rooms = Math.ceil(adultPax / roomCapacity);
 
     let pricePerNight = 0;
     if (roomType.includes('4')) pricePerNight = 1660;
@@ -285,7 +303,8 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     if (!selectedRoomType) return 0;
     const roomType = selectedRoomType.type?.toUpperCase() || '';
     const roomCapacity = selectedRoomType.capacity || 4;
-    const rooms = Math.ceil(basePax / roomCapacity);
+    const adultPax = isSoloPkg ? 1 : (quantities.adult || 1);
+    const rooms = Math.ceil(adultPax / roomCapacity);
     let pricePerNight = 0;
     if (roomType.includes('4')) pricePerNight = 1660;
     else if (roomType.includes('5')) pricePerNight = 2500;
@@ -459,14 +478,21 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
   };
 
   const handleQuantity = (type, delta) => {
-    const minPaxCount = appliedPromo ? Math.max(4, isMinTwoPkg ? 2 : 1) : (isMinTwoPkg ? 2 : 1);
+    const minAdult = appliedPromo ? Math.max(4, isMinTwoPkg ? 2 : 1) : (isMinTwoPkg ? 2 : 1);
     setQuantities(prev => {
-      const newVal = Math.max(minPaxCount, Math.min(20, (prev[type] || minPaxCount) + delta));
+      let newVal;
+      if (type === 'adult') {
+        newVal = Math.max(minAdult, Math.min(20, (prev.adult || minAdult) + delta));
+      } else {
+        newVal = Math.max(0, Math.min(20, (prev[type] || 0) + delta));
+      }
       const updated = { ...prev, [type]: newVal };
-      if (type === 'adult' && onPaxChange) onPaxChange(newVal);
-      if (type === 'adult' && appliedPromo && newVal < 4) {
-        setAppliedPromo(null); setPromoCode(''); setPromoError(''); setPromoWarning('');
-        toast.warning('Promo removed — minimum 4 passengers required.');
+      if (type === 'adult') {
+        if (onPaxChange) onPaxChange(newVal);
+        if (appliedPromo && newVal < 4) {
+          setAppliedPromo(null); setPromoCode(''); setPromoError(''); setPromoWarning('');
+          toast.warning('Promo removed — minimum 4 passengers required.');
+        }
       }
       return updated;
     });
@@ -596,7 +622,9 @@ const handleRemoveFlight = () => {
         startDate:     fmt(start),
         endDate:       fmt(end),
         duration:      pkg.duration,
-        pax:           { adult: quantities.adult, children: 0, infants: 0 },
+        pax:           { adult: quantities.adult || 1, children: quantities.child || 0, infants: quantities.infant || 0 },
+        childDiscount: 0.5,   // 3-4 yrs: 50% off
+        infantDiscount: 1.0,  // below 2 yrs: FREE
         packageTotal,
         promoCode:     appliedPromo ? appliedPromo.code : null,
         promoId:       appliedPromo ? appliedPromo.promoId : null,
@@ -777,17 +805,18 @@ const handleRemoveFlight = () => {
                 <span className="brf-quantity-label">Standard Pax</span>
                 <span style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontSize: '0.75rem', fontWeight: '700', borderRadius: '999px', padding: '2px 10px' }}>Solo Package</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>1 pax only · 3+ years old</div>
+              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>1 pax only · 5+ years old</div>
             </div>
             <span style={{ fontWeight: '800', fontSize: '1.1rem', color: '#1f2937', minWidth: '32px', textAlign: 'center' }}>1</span>
           </div>
         </div>
       ) : (
         <div className="brf-quantity-section">
+          {/* ── Adult Row ── */}
           <div className="brf-quantity-item">
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span className="brf-quantity-label">Standard Pax</span>
+                <span className="brf-quantity-label">Passengers</span>
                 {isMinTwoPkg && (
                   <span style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', fontSize: '0.75rem', fontWeight: '700', borderRadius: '999px', padding: '2px 10px' }}>min. 2 pax</span>
                 )}
@@ -795,7 +824,7 @@ const handleRemoveFlight = () => {
                   <span style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontSize: '0.75rem', fontWeight: '700', borderRadius: '999px', padding: '2px 10px' }}>Solo / Group</span>
                 )}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>3+ years old</div>
+              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>5+ years old</div>
             </div>
             <div className="brf-quantity-controls">
               <button
@@ -811,6 +840,94 @@ const handleRemoveFlight = () => {
               </button>
             </div>
           </div>
+
+          {/* ── Traveling with young children? checkbox ── */}
+          <div
+            onClick={() => {
+              const next = !showMinorFields;
+              setShowMinorFields(next);
+              if (!next) {
+                setQuantities(prev => ({ ...prev, child: 0, infant: 0 }));
+              }
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              marginTop: '14px', padding: '10px 14px',
+              background: showMinorFields ? '#fff7ed' : '#f9fafb',
+              border: `1.5px solid ${showMinorFields ? '#fc9c1b' : '#e5e7eb'}`,
+              borderRadius: '10px', cursor: 'pointer',
+              transition: 'all 0.2s',
+              userSelect: 'none',
+            }}
+          >
+            <div style={{
+              width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0,
+              border: `2px solid ${showMinorFields ? '#fc9c1b' : '#d1d5db'}`,
+              background: showMinorFields ? '#fc9c1b' : 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}>
+              {showMinorFields && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <span style={{ fontSize: '0.875rem', color: showMinorFields ? '#92400e' : '#374151', fontWeight: showMinorFields ? '600' : '400' }}>
+              Traveling with children under 5 years old?
+            </span>
+          </div>
+
+          {/* ── Child & Infant Rows — only visible when checkbox is checked ── */}
+          {showMinorFields && (
+            <>
+              {/* ── Child Row (3-4 yrs) ── */}
+              <div className="brf-quantity-item" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '12px', marginTop: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span className="brf-quantity-label">Child</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>3–4 years old</div>
+                </div>
+                <div className="brf-quantity-controls">
+                  <button
+                    onClick={() => handleQuantity('child', -1)} className="brf-quantity-btn" type="button"
+                    disabled={quantities.child <= 0}
+                    style={quantities.child <= 0 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                  >
+                    <Minus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+                  </button>
+                  <span className="brf-quantity-value">{quantities.child || 0}</span>
+                  <button onClick={() => handleQuantity('child', 1)} className="brf-quantity-btn" type="button">
+                    <Plus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Infant Row (below 2 yrs) ── */}
+              <div className="brf-quantity-item" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '12px', marginTop: '4px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span className="brf-quantity-label">Infant</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Below 2 years old</div>
+                </div>
+                <div className="brf-quantity-controls">
+                  <button
+                    onClick={() => handleQuantity('infant', -1)} className="brf-quantity-btn" type="button"
+                    disabled={quantities.infant <= 0}
+                    style={quantities.infant <= 0 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                  >
+                    <Minus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+                  </button>
+                  <span className="brf-quantity-value">{quantities.infant || 0}</span>
+                  <button onClick={() => handleQuantity('infant', 1)} className="brf-quantity-btn" type="button">
+                    <Plus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -914,6 +1031,24 @@ const handleRemoveFlight = () => {
       {currencySymbol}{convertedPackageTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
     </span>
   </div>
+
+  {/* ── Child / Infant count note (no pricing shown intentionally) ── */}
+  {(quantities.child > 0 || quantities.infant > 0) && (
+    <div style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '4px', paddingLeft: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {quantities.child > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>👧</span>
+          <span>{quantities.child} child{quantities.child > 1 ? 'ren' : ''} (3–4 yrs) included</span>
+        </div>
+      )}
+      {quantities.infant > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>👶</span>
+          <span>{quantities.infant} infant{quantities.infant > 1 ? 's' : ''} (below 2 yrs) included</span>
+        </div>
+      )}
+    </div>
+  )}
 
   {/* ✅ Hotel accommodation line — same as bookingRightForm */}
   {selectedRoomType && hotelAccommodationTotal > 0 && (
