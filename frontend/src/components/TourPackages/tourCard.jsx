@@ -1,6 +1,6 @@
 // src/components/TourPackages/tourCard.jsx
-import React, { useState } from 'react';
-import { MapPin, Clock, Users, ChevronRight, CheckCircle2, Tag } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Clock, Users, ChevronRight, CheckCircle2, Tag, Heart } from 'lucide-react';
 import './tourCard.css';
 
 // ── Duration color map (reused from packageCard palette) ──────────────────────
@@ -117,8 +117,73 @@ const TourTypeBadge = ({ tourType, minPax }) => {
 };
 
 // ── Main TourCard Component ────────────────────────────────────────────────────
-function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58 }) {
+function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, currentUser = null }) {
   const [imgError, setImgError] = useState(false);
+
+  // ── Wishlist state ──────────────────────────────────────────────────────────
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  // Check if this tour is already in the user's wishlist on mount
+  useEffect(() => {
+    if (!currentUser?._id || !tour?._id) return;
+
+    const checkFavoriteStatus = async () => {
+      try {
+        const res = await fetch(
+          `https://wanderwaveph.onrender.com/api/favorites/${currentUser._id}/${tour._id}`
+        );
+        const data = await res.json();
+        if (data.status === 'ok') {
+          setIsFavorited(data.isFavorite);
+        }
+      } catch (err) {
+        console.error('Error checking tour favorite status:', err);
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [currentUser, tour._id]);
+
+  // Toggle wishlist for this tour
+  const handleWishlistToggle = async (e) => {
+    e.stopPropagation();
+
+    if (!currentUser?._id) {
+      alert('Please log in to add tours to your wishlist.');
+      return;
+    }
+
+    setFavoriteLoading(true);
+    try {
+      const res = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          promo_id: tour._id,
+          user_id: currentUser._id,
+          package_title: tour.title,
+          package_location: tour.destination,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.status === 'ok') {
+        setIsFavorited(data.action === 'added');
+        // Notify navbar / WishlistDropdown to refresh count
+        window.dispatchEvent(new Event('wishlistUpdated'));
+        if (data.action === 'removed') {
+          window.dispatchEvent(new CustomEvent('favoriteRemoved', {
+            detail: { packageId: tour._id }
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling tour wishlist:', err);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   if (!tour) return null;
 
@@ -157,6 +222,26 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58 }) {
           </span>
           <TourTypeBadge tourType={tour.tourType} minPax={tour.minPax} />
         </div>
+
+        {/* ── Wishlist / Heart Button ──────────────────────────────────────── */}
+        <button
+          className={`tour-wishlist-btn ${isFavorited ? 'favorited' : ''}`}
+          onClick={handleWishlistToggle}
+          disabled={favoriteLoading}
+          title={isFavorited ? 'Remove from wishlist' : 'Add to wishlist'}
+          aria-label={isFavorited ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          {favoriteLoading ? (
+            <span className="tour-wishlist-spinner" />
+          ) : (
+            <Heart
+              size={18}
+              fill={isFavorited ? '#ef4444' : 'transparent'}
+              color={isFavorited ? '#ef4444' : '#fff'}
+              strokeWidth={2.5}
+            />
+          )}
+        </button>
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
