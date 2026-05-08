@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MapPin, Bus, ArrowRight, ArrowLeftRight,
-  CheckSquare, ChevronDown, ChevronLeft
+  CheckSquare, ChevronDown, ChevronLeft, Check
 } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
@@ -20,7 +20,6 @@ const TransferTypeBadge = ({ category }) => {
 
   const colors = colorMap[label] || { top: '#ea580c', text: '#ea580c' };
 
-  // Show short label on badge
   const shortLabel = label.includes('INTERNATIONAL') ? 'INTL' : 'LOCAL';
   const gradId  = `tbadge_grad_${shortLabel}`;
   const bodyId  = `tbadge_body_${shortLabel}`;
@@ -64,16 +63,102 @@ const TransferTypeBadge = ({ category }) => {
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80';
 
+// ── Transfer Type Selector ─────────────────────────────────────────────────
+const TransferTypeSelector = ({ transferType, onSelect, oneWayPrice, roundtripPrice, currencySymbol, formatPrice, convertPrice }) => {
+  const options = [
+    {
+      key: 'oneway',
+      icon: <ArrowRight size={28} strokeWidth={2.5} />,
+      label: 'One Way',
+      description: 'Single journey to your destination',
+      price: convertPrice(oneWayPrice),
+      features: ['Flexible departure', 'Direct route', 'No return needed'],
+    },
+    {
+      key: 'roundtrip',
+      icon: <ArrowLeftRight size={28} strokeWidth={2.5} />,
+      label: 'Roundtrip',
+      description: 'Go & return for a complete trip',
+      price: convertPrice(roundtripPrice),
+      features: ['Both-way covered', 'Guaranteed return', 'Priority booking'],
+    },
+  ];
+
+  return (
+    <div className="blc-transfer-type-section">
+      <div className="blc-transfer-type-header">
+        <ArrowLeftRight size={16} color="#f97316" />
+        <span className="blc-transfer-type-label">TRANSFER TYPE</span>
+      </div>
+      <div className="blc-transfer-type-grid">
+        {options.map((opt) => {
+          const isActive = transferType === opt.key;
+          return (
+            <button
+              key={opt.key}
+              type="button"
+              className={`blc-transfer-type-card${isActive ? ' active' : ''}`}
+              onClick={() => onSelect(opt.key)}
+            >
+              {/* Selected check */}
+              <span className={`blc-tt-check${isActive ? ' visible' : ''}`}>
+                {isActive && <Check size={14} strokeWidth={3} />}
+              </span>
+
+              {/* Icon circle */}
+              <div className={`blc-tt-icon-circle${isActive ? ' active' : ''}`}>
+                {opt.icon}
+              </div>
+
+              {/* Label + description */}
+              <p className={`blc-tt-name${isActive ? ' active' : ''}`}>{opt.label}</p>
+              <p className="blc-tt-desc">{opt.description}</p>
+
+              {/* Price */}
+              <p className={`blc-tt-price${isActive ? ' active' : ''}`}>
+                {currencySymbol}{formatPrice(opt.price)}
+              </p>
+
+              {/* Features */}
+              <ul className="blc-tt-features">
+                {opt.features.map((f) => (
+                  <li key={f} className="blc-tt-feature-item">
+                    <Check size={13} strokeWidth={2.5} color="#f97316" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 const TransferBookingLeftColumn = ({
   transfer,
   currency     = 'PHP',
   exchangeRate = 58,
   onGoBack,
-  transferType = 'oneway', // 'oneway' | 'roundtrip'
+  // parent can optionally control transferType; if not passed, managed internally
+  transferType: transferTypeProp,
+  onTransferTypeChange,
 }) => {
   const navigate = useNavigate();
   const toast    = useToast();
+
+  // ── Internal state — used when parent doesn't control transferType ─────────
+  const [internalTransferType, setInternalTransferType] = useState('oneway');
+
+  const isControlled = transferTypeProp !== undefined;
+  const transferType = isControlled ? transferTypeProp : internalTransferType;
+
+  const handleTransferTypeChange = (type) => {
+    if (!isControlled) setInternalTransferType(type);
+    if (onTransferTypeChange) onTransferTypeChange(type);
+  };
 
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const closeConfirmModal = () => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
@@ -96,9 +181,9 @@ const TransferBookingLeftColumn = ({
   const convertPrice   = (phpPrice) => currency === 'PHP' ? (phpPrice || 0) : ((phpPrice || 0) / exchangeRate);
 
   // ── Price from Transfer model fields ──────────────────────────────────────
-  const oneWayPrice      = transfer.oneWayPrice || 0;
-  const roundtripPrice   = transfer.roundtripPrice || 0;
-  const displayPrice     = transferType === 'roundtrip' && roundtripPrice > 0
+  const oneWayPrice    = transfer.oneWayPrice || 0;
+  const roundtripPrice = transfer.roundtripPrice || 0;
+  const displayPrice   = transferType === 'roundtrip' && roundtripPrice > 0
     ? convertPrice(roundtripPrice)
     : convertPrice(oneWayPrice);
 
@@ -107,7 +192,6 @@ const TransferBookingLeftColumn = ({
     maximumFractionDigits: currency === 'USD' ? 2 : 0,
   });
 
-  // ── Use imageUrl from model, fallback to unsplash ─────────────────────────
   const imageUrl = transfer.imageUrl || FALLBACK_IMAGE;
 
   return (
@@ -127,7 +211,6 @@ const TransferBookingLeftColumn = ({
           className="blc-main-image"
           onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
         />
-        {/* Category badge overlay */}
         <div className="blc-offer-badge-overlay">
           <Bus size={14} />
           {transfer.category || 'Transfer'}
@@ -152,54 +235,26 @@ const TransferBookingLeftColumn = ({
         </div>
 
         {/* Meta row — destination */}
-        <div className="blc-meta-row">
-          {transfer.packageDestination && (
+        {transfer.packageDestination && (
+          <div className="blc-meta-row">
             <div className="blc-meta-item">
               <MapPin size={18} color="#f97316" />
               {transfer.packageDestination}
             </div>
-          )}
-        </div>
-
-        {/* Pricing breakdown — one-way and roundtrip */}
-        <div style={{
-          background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
-          border: '1.5px solid #fed7aa',
-          borderRadius: '12px',
-          padding: '14px 16px',
-          marginTop: '12px',
-          marginBottom: '8px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          fontSize: '0.9rem',
-        }}>
-          {/* One Way */}
-          {oneWayPrice > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontWeight: '600' }}>
-                <ArrowRight size={16} color="#f97316" />
-                <span>One Way</span>
-              </div>
-              <span style={{ fontWeight: '800', color: '#ea580c', fontSize: '1rem' }}>
-                {currencySymbol}{formatPrice(convertPrice(oneWayPrice))}
-              </span>
-            </div>
-          )}
-          {/* Roundtrip */}
-          {roundtripPrice > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontWeight: '600' }}>
-                <ArrowLeftRight size={16} color="#f97316" />
-                <span>Roundtrip</span>
-              </div>
-              <span style={{ fontWeight: '800', color: '#ea580c', fontSize: '1rem' }}>
-                {currencySymbol}{formatPrice(convertPrice(roundtripPrice))}
-              </span>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* ── Transfer Type Selector ───────────────────────────────────────── */}
+      <TransferTypeSelector
+        transferType={transferType}
+        onSelect={handleTransferTypeChange}
+        oneWayPrice={oneWayPrice}
+        roundtripPrice={roundtripPrice}
+        currencySymbol={currencySymbol}
+        formatPrice={formatPrice}
+        convertPrice={convertPrice}
+      />
 
       {/* ── Confirm Modal ─────────────────────────────────────────────────── */}
       <CustomConfirmModal

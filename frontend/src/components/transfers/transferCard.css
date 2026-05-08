@@ -1,17 +1,13 @@
-/* transferCard.css */
+/* transferCard.css — WanderWave Enhanced */
 
 /* ── Card shell ── */
 .transfer-card {
   background: #ffffff;
-  border: 1px solid rgba(255, 140, 0, 0.12);
+  border: 1px solid #e8edf2;
   border-radius: 18px;
   overflow: hidden;
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 0 0 0px rgba(255, 140, 0, 0);
-  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.28s ease,
-              border-color 0.28s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   cursor: pointer;
   display: flex;
@@ -21,17 +17,15 @@
 }
 
 .transfer-card:hover {
-  transform: translateY(-6px);
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.11),
-    0 0 0 2px rgba(255, 140, 0, 0.18);
-  border-color: rgba(255, 140, 0, 0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.13);
+  border-color: #d1d9e0;
 }
 
 /* ── Image ── */
 .transfer-card-image {
   width: 100%;
-  height: 190px;
+  height: 270px;
   position: relative;
   flex-shrink: 0;
   overflow: hidden;
@@ -41,109 +35,46 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   display: block;
 }
 
 .transfer-card:hover .transfer-image-content {
-  transform: scale(1.07);
+  transform: scale(1.06);
 }
 
-/* Gradient fade at the bottom of image into card body */
-.transfer-card-image::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.95));
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* ── Badges row (top of image) ── */
-.transfer-badges-row {
-  position: absolute;
-  top: 11px;
-  left: 11px;
-  right: 11px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  z-index: 2;
-}
-
-/* ── Category badge ── */
+/* ── Category badge — top-left over image (legacy, now hidden) ── */
 .transfer-category-badge {
-  padding: 5px 11px;
-  border-radius: 20px;
-  font-size: 0.66rem;
-  font-weight: 800;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  background-color: #FF8C00;
-  color: #fff;
+  display: none;
+}
+
+/* ── Category badge — in body/description section ── */
+.transfer-body-category-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  backdrop-filter: blur(4px);
-}
-
-/* ── Pax badge — warm orange tint ── */
-.transfer-pax-badge {
-  padding: 5px 11px;
+  gap: 4px;
+  padding: 4px 9px;
   border-radius: 20px;
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.25);
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  background-color: #fff3e0;
-  color: #c2410c;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
-  border: 1.5px solid rgba(255, 140, 0, 0.45);
+  white-space: nowrap;
 }
 
-.transfer-pax-badge svg {
-  color: #FF8C00;
-}
-
-/* ── Destination tag (backward compat) ── */
-.transfer-destination-badge {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  background-color: rgba(15, 23, 42, 0.82);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-/* ── Favorite / Wishlist Button ── */
+/* ── Wishlist / Favorite Button ── */
 .transfer-favorite-button {
   position: absolute;
-  top: 11px;
-  right: 11px;
+  top: 12px;
+  right: 12px;
   width: 36px;
   height: 36px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  color: #64748b;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.95);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -151,23 +82,22 @@
   padding: 0;
   cursor: pointer;
   z-index: 3;
-  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .transfer-favorite-button:hover {
   transform: scale(1.15);
   background: #fff;
-  box-shadow: 0 4px 14px rgba(233, 30, 99, 0.25);
-  border-color: #fce4ec;
+  box-shadow: 0 4px 14px rgba(233, 30, 99, 0.2);
 }
 
 .transfer-favorite-button.active {
-  background: #fff;
-  border-color: #fce4ec;
-  box-shadow: 0 4px 14px rgba(233, 30, 99, 0.2);
+  background: #fff0f4;
+  border-color: rgba(233, 30, 99, 0.2);
+  box-shadow: 0 4px 14px rgba(233, 30, 99, 0.25);
 }
 
 .transfer-favorite-button:active {
@@ -176,194 +106,174 @@
 
 /* ── Card Body ── */
 .transfer-card-body {
-  padding: 14px 16px 16px;
+  padding: 16px 18px 18px 18px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  gap: 12px;
-  position: relative;
-  z-index: 2;
+  gap: 11px;
 }
 
-.transfer-card-header {
-  margin: 0;
+/* ── Title + rating row ── */
+.transfer-title-rating-row {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
 }
 
+/* ── Rating badge ── */
+.transfer-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #92400e;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+/* ── Title ── */
 .transfer-card-title {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
   line-height: 1.35;
+  letter-spacing: -0.2px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .transfer-title-text {
-  font-size: inherit;
-  font-weight: inherit;
-  color: inherit;
-  line-height: inherit;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* ── Meta pills wrapper ── */
+/* ── Meta pills ── */
 .transfer-meta-pills {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 /* ── Destination pill ── */
 .transfer-destination-row {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: linear-gradient(135deg, rgba(255,140,0,0.09), rgba(255,140,0,0.05));
-  border: 1px solid rgba(255, 140, 0, 0.28);
+  gap: 3px;
+  background: rgba(234, 88, 12, 0.07);
+  border: 1px solid rgba(234, 88, 12, 0.18);
+  padding: 4px 8px 4px 6px;
   border-radius: 20px;
-  padding: 4px 10px 4px 7px;
-  width: fit-content;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.transfer-card:hover .transfer-destination-row {
-  background: linear-gradient(135deg, rgba(255,140,0,0.14), rgba(255,140,0,0.08));
-  border-color: rgba(255, 140, 0, 0.4);
+  flex-shrink: 0;
 }
 
 .transfer-destination-icon {
-  color: #FF8C00;
+  color: #ea580c;
   flex-shrink: 0;
 }
 
 .transfer-destination-text {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
+  color: #ea580c;
   font-weight: 700;
-  color: #b45309;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
   white-space: nowrap;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
-/* ── Meta row (backward compat) ── */
-.transfer-meta-row { display: none; }
-.transfer-meta-divider { display: none; }
-.transfer-detail-row { display: none; }
-.transfer-detail-icon { display: none; }
-.transfer-detail-text { display: none; }
-
-/* ── Pricing Block ── */
-.transfer-pricing-block {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 11px 12px;
-  background: linear-gradient(135deg, rgba(255,247,237,0.9), rgba(255,237,213,0.5));
-  border: 1px solid rgba(255, 140, 0, 0.2);
-  border-radius: 12px;
-  box-shadow: inset 0 1px 3px rgba(255, 140, 0, 0.07);
-}
-
-.transfer-price-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 11px;
-  border-radius: 9px;
-  background: #ffffff;
-  border: 1px solid rgba(255, 140, 0, 0.15);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.transfer-card:hover .transfer-price-row {
-  border-color: rgba(255, 140, 0, 0.28);
-  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
-}
-
-.transfer-price-row-label {
+/* ── Pax badge ── */
+.transfer-pax-badge {
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: #001b3e;
+  color: #fff;
   display: inline-flex;
   align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 27, 62, 0.35);
+}
+
+/* ─────────────────────────────────────────────
+   TOGGLE TABS — matches reference exactly
+───────────────────────────────────────────── */
+.transfer-toggle-tabs {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 5px;
+  gap: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.transfer-toggle-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  font-size: 0.68rem;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 2px solid transparent;
+  background: transparent;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
   white-space: nowrap;
+  letter-spacing: 0.1px;
+  line-height: 1;
 }
 
-.transfer-price-row-value {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
+.transfer-toggle-btn svg {
+  flex-shrink: 0;
 }
 
-/* ── Markup breakdown ── */
-.transfer-price-breakdown {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #94a3b8;
-  white-space: nowrap;
-  letter-spacing: 0.2px;
+.transfer-toggle-btn:hover:not(.active) {
+  background: #fff;
+  color: #334155;
 }
 
-/* ── Total price pill ── */
-.transfer-price-total {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 1px;
-  background: linear-gradient(135deg, #fff7ed, #ffedd5);
-  border-radius: 7px;
-  padding: 3px 9px;
-  border: 1px solid rgba(255, 140, 0, 0.28);
+/* Orange filled — for both One Way and Roundtrip active */
+.transfer-toggle-btn.active {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.38);
 }
 
-.transfer-price-total .transfer-currency {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #c2410c;
+/* ─────────────────────────────────────────────
+   ACTIVE PRICE ROW — hidden (removed per request)
+───────────────────────────────────────────── */
+.transfer-active-price-row {
+  display: none;
 }
 
-.transfer-price-total .transfer-price-value {
-  font-size: 1rem;
-  font-weight: 900;
-  color: #FF8C00;
-  line-height: 1.2;
-}
-
-/* ── Legacy price row value (non-breakdown) ── */
-.transfer-price-row-value .transfer-currency {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #c2410c;
-}
-
-.transfer-price-row-value .transfer-price-value {
-  font-size: 1rem;
-  font-weight: 900;
-  color: #FF8C00;
-  line-height: 1.2;
-}
-
-/* ── Footer ── */
+/* ─────────────────────────────────────────────
+   FOOTER
+───────────────────────────────────────────── */
 .transfer-card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 11px 16px 14px;
-  border-top: 1px solid rgba(0, 0, 0, 0.055);
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
   margin-top: auto;
   gap: 10px;
-  background: linear-gradient(to bottom, #fafafa, #f8f8f8);
 }
 
 .transfer-price-info {
@@ -375,86 +285,107 @@
 }
 
 .transfer-price-label {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   color: #94a3b8;
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
 }
 
 .transfer-price-amount {
   display: flex;
   align-items: baseline;
-  gap: 1px;
+  gap: 2px;
+  white-space: nowrap;
 }
 
 .transfer-currency {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: #475569;
+  color: #ea580c;
 }
 
 .transfer-price-value {
-  font-size: 1.35rem;
+  font-size: 1.45rem;
   font-weight: 900;
-  color: #FF8C00;
-  line-height: 1;
+  color: #ea580c;
+  letter-spacing: -0.5px;
 }
 
-/* ── Inquire Button ── */
+/* ── Book Now Button ── */
 .transfer-book-button {
-  background: linear-gradient(135deg, #FF8C00 0%, #f97316 100%);
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: #fff;
   border: none;
-  padding: 10px 18px;
+  padding: 11px 22px;
   border-radius: 10px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  font-size: 0.82rem;
+  gap: 6px;
+  font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow:
-    0 4px 12px rgba(255, 140, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  white-space: nowrap;
   letter-spacing: 0.2px;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:
+    0 4px 14px rgba(234, 88, 12, 0.38),
+    0 1px 0 rgba(255,255,255,0.2) inset;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .transfer-book-button:hover {
-  background: linear-gradient(135deg, #e07a00 0%, #ea6c0a 100%);
-  transform: translateY(-2px) scale(1.03);
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  transform: translateY(-2px);
   box-shadow:
-    0 8px 20px rgba(255, 140, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 8px 22px rgba(234, 88, 12, 0.45),
+    0 1px 0 rgba(255,255,255,0.25) inset;
 }
 
 .transfer-book-button:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 6px rgba(255, 140, 0, 0.25);
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.3);
 }
+
+/* ── Legacy unused classes (preserved for backward compat) ── */
+.transfer-badges-row     { display: none; }
+.transfer-card-header    { display: none; }
+.transfer-meta-row       { display: none; }
+.transfer-meta-divider   { display: none; }
+.transfer-detail-row     { display: none; }
+.transfer-detail-icon    { display: none; }
+.transfer-detail-text    { display: none; }
+.transfer-pricing-block  { display: none; }
+.transfer-price-row      { display: none; }
+
+/* ── Active price sub-elements (preserved for backward compat) ── */
+.transfer-active-price-label   { display: none; }
+.transfer-active-price-value   { display: none; }
+.transfer-price-breakdown      { display: none; }
+.transfer-active-price-amount  { display: none; }
+.transfer-price-number         { display: none; }
 
 /* ── Responsive ── */
 @media (max-width: 1024px) {
-  .transfer-card-body { padding: 13px 15px 15px; }
-  .transfer-card-title { font-size: 0.95rem; }
-  .transfer-price-value { font-size: 1.25rem; }
-  .transfer-card-image { height: 175px; }
+  .transfer-card-body    { padding: 14px 16px 16px 16px; }
+  .transfer-card-title   { font-size: 1rem; }
+  .transfer-card-image   { height: 250px; }
+  .transfer-book-button  { padding: 10px 18px; font-size: 0.85rem; }
 }
 
 @media (max-width: 768px) {
-  .transfer-card-body { padding: 12px 14px 14px; }
-  .transfer-card-title { font-size: 0.92rem; }
-  .transfer-price-value { font-size: 1.2rem; }
-  .transfer-card-image { height: 160px; }
+  .transfer-card-body    { padding: 13px 15px 15px 15px; }
+  .transfer-card-title   { font-size: 0.98rem; }
+  .transfer-card-image   { height: 230px; }
 }
 
 @media (max-width: 480px) {
-  .transfer-card-body { padding: 12px; }
-  .transfer-card-title { font-size: 0.9rem; }
-  .transfer-card-image { height: 148px; }
-  .transfer-card-footer { flex-direction: row; gap: 8px; }
-  .transfer-book-button { padding: 9px 14px; font-size: 0.8rem; }
+  .transfer-card-body    { padding: 12px 14px 14px 14px; }
+  .transfer-card-title   { font-size: 0.95rem; }
+  .transfer-card-image   { height: 200px; }
+  .transfer-card-footer  { flex-wrap: nowrap; align-items: center; gap: 10px; }
+  .transfer-price-info   { flex: 1 1 auto; min-width: 0; }
+  .transfer-book-button  { flex-shrink: 0; padding: 11px 18px; }
+  .transfer-toggle-btn   { font-size: 0.76rem; padding: 8px 8px; }
 }

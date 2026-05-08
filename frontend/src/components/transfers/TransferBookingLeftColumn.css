@@ -13,11 +13,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  /* Color matched to screenshot style (slate blue/gray) */
   color: #536279; 
   font-weight: 600;
-  background: transparent; /* Ensure no background */
-  border: none; /* Ensure no border */
+  background: transparent;
+  border: none;
   cursor: pointer;
   margin-bottom: 24px;
   font-size: 1rem;
@@ -28,7 +27,7 @@
 }
 
 .blc-back-btn:hover {
-  color: #f97316; /* Orange on hover */
+  color: #f97316;
   transform: translateX(-4px);
 }
 
@@ -39,19 +38,15 @@
 /* --- Image Section --- */
 .blc-image-wrapper {
   border-radius: 16px;
-  overflow: hidden; /* ✅ clip image to rounded corners */
+  overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   width: 100%;
   position: relative;
-  aspect-ratio: 16 / 9;
-  /* ✅ cap height so image doesn't dominate the panel on wide screens */
-  max-height: 280px;
-  height: auto;
+  /* ✅ BIGGER: increased from 280px to 360px */
+  height: 360px;
   background-color: #e2e8f0;
 }
-
-/* ✅ image clips to border-radius via overflow:hidden on blc-image-wrapper */
 
 .blc-main-image {
   width: 100%;
@@ -90,7 +85,8 @@
 
 /* --- Header Info --- */
 .blc-header-section {
-  margin-bottom: 32px;
+  /* ✅ reduced bottom margin to tighten gap with transfer type */
+  margin-bottom: 12px;
 }
 
 /* --- Title Badge Row: badge left, title+price stacked right --- */
@@ -135,7 +131,7 @@
   word-wrap: break-word;
 }
 
-/* /pax label next to price */
+/* /transfer label next to price */
 .blc-price-pax {
   font-size: 0.9rem;
   color: #94a3b8;
@@ -174,15 +170,16 @@
   font-weight: 700;
 }
 
-/* --- Meta and Other Sections --- */
+/* --- Meta Row --- */
 .blc-meta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
   color: #475569;
   font-size: 0.95rem;
-  margin-top: 20px;
-  margin-bottom: 24px;
+  /* ✅ reduced top/bottom margin to close gap with transfer type */
+  margin-top: 10px;
+  margin-bottom: 0;
 }
 
 .blc-meta-item {
@@ -452,6 +449,181 @@
 }
 
 /* =========================================
+   TRANSFER TYPE SELECTOR
+   ========================================= */
+
+.blc-transfer-type-section {
+  margin-bottom: 32px;
+}
+
+.blc-transfer-type-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.blc-transfer-type-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.blc-transfer-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Card base */
+.blc-transfer-type-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 16px 16px;
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: rgba(249, 115, 22, 0.1);
+}
+
+.blc-transfer-type-card:hover:not(.active) {
+  border-color: #fed7aa;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
+}
+
+.blc-transfer-type-card:focus,
+.blc-transfer-type-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25);
+}
+
+.blc-transfer-type-card.active:focus,
+.blc-transfer-type-card.active:focus-visible {
+  outline: none;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.15);
+}
+
+/* Active card */
+.blc-transfer-type-card.active {
+  border-color: #f97316;
+  background: #fff7ed;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.15);
+}
+
+/* Selected check bubble (top-left) */
+.blc-tt-check {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: transparent;
+}
+
+.blc-tt-check.visible {
+  background: #f97316;
+  border-color: #f97316;
+  color: white;
+}
+
+/* Icon circle */
+.blc-tt-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.blc-tt-icon-circle.active {
+  background: #f97316;
+  color: #ffffff;
+}
+
+/* Type name */
+.blc-tt-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  transition: color 0.2s ease;
+}
+
+.blc-tt-name.active {
+  color: #ea580c;
+}
+
+/* Description */
+.blc-tt-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+/* Price */
+.blc-tt-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #475569;
+  margin: 4px 0 10px;
+  transition: color 0.2s ease;
+}
+
+.blc-tt-price.active {
+  color: #ea580c;
+}
+
+/* Features list */
+.blc-tt-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+  text-align: left;
+}
+
+.blc-tt-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* =========================================
    RESPONSIVE MEDIA QUERIES
    ========================================= */
 
@@ -465,8 +637,11 @@
   .blc-price-original {
     font-size: 1rem;
   }
+
+  .blc-image-wrapper {
+    height: 260px;
+  }
   
-  /* Make the badge smaller on tablet/mobile */
   .blc-offer-badge-overlay {
     font-size: 0.75rem;
     padding: 6px 12px;
@@ -490,6 +665,19 @@
     width: 68px;
     height: 68px;
   }
+
+  .blc-transfer-type-grid {
+    gap: 10px;
+  }
+
+  .blc-tt-icon-circle {
+    width: 48px;
+    height: 48px;
+  }
+
+  .blc-tt-price {
+    font-size: 1.1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -504,9 +692,43 @@
     padding: 4px 10px;
   }
 
+  .blc-image-wrapper {
+    height: 220px;
+  }
+
   .blc-duration-calendar-svg {
     width: 58px;
     height: 58px;
+  }
+
+  .blc-transfer-type-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .blc-transfer-type-card {
+    padding: 16px 10px 12px;
+  }
+
+  .blc-tt-icon-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .blc-tt-name {
+    font-size: 0.9rem;
+  }
+
+  .blc-tt-desc {
+    font-size: 0.72rem;
+  }
+
+  .blc-tt-price {
+    font-size: 1rem;
+  }
+
+  .blc-tt-feature-item {
+    font-size: 0.72rem;
   }
 }
 /* rubber stamp styles removed — stamp overlay no longer used */
