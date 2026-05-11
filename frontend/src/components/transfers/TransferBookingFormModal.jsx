@@ -3,11 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import {
   X, CheckCircle, Wallet, CreditCard,
-  Calendar as CalendarIcon, ChevronLeft, ChevronRight, Car
+  Calendar as CalendarIcon, ChevronLeft, ChevronRight, Car,
 } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
+import CustomTimePicker from '../timePicker/Clock';
 import './TransferBookingFormModal.css';
+import LocationSelect from '../location/LocationSelect';
 
 // ── Custom Date Picker ────────────────────────────────────────────────────────
 const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) => {
@@ -18,7 +20,7 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
   const calendarRef = useRef(null);
 
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const weekDays   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const weekDays   = ['SU','MO','TU','WE','TH','FR','SA'];
 
   const getDaysInMonth = (m, y) => new Date(y, m + 1, 0).getDate();
   const getFirstDay    = (m, y) => new Date(y, m, 1).getDay();
@@ -40,7 +42,6 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
   const firstDay    = getFirstDay(viewMonth, viewYear);
   const todayStr    = new Date().toISOString().split('T')[0];
 
-  // Close calendar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (calendarRef.current && !calendarRef.current.contains(event.target)) {
@@ -50,6 +51,20 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
     if (isOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
+
+  // Sync external value changes
+  useEffect(() => {
+    setSelectedDate(value || '');
+  }, [value]);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  };
 
   return (
     <div className="tbfm-date-picker-wrapper" ref={calendarRef}>
@@ -62,62 +77,41 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
 
       {isOpen && (
         <div className="tbfm-custom-calendar">
+          {/* Calendar Header */}
           <div className="tbfm-calendar-header">
-            <button
-              type="button"
-              className="tbfm-cal-nav-btn"
-              onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }}
-            >
+            <button type="button" className="tbfm-cal-nav-btn" onClick={prevMonth}>
               <ChevronLeft size={16} />
             </button>
 
-            <div className="tbfm-calendar-selectors">
-              <select
-                className="tbfm-month-select"
-                value={viewMonth}
-                onChange={(e) => setViewMonth(parseInt(e.target.value))}
-              >
-                {monthNames.map((name, idx) => (
-                  <option key={idx} value={idx}>{name}</option>
-                ))}
-              </select>
-              <select
-                className="tbfm-year-select"
-                value={viewYear}
-                onChange={(e) => setViewYear(parseInt(e.target.value))}
-              >
-                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+            <div className="tbfm-calendar-month-label">
+              {monthNames[viewMonth]} {viewYear}
             </div>
 
-            <button
-              type="button"
-              className="tbfm-cal-nav-btn"
-              onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }}
-            >
+            <button type="button" className="tbfm-cal-nav-btn" onClick={nextMonth}>
               <ChevronRight size={16} />
             </button>
           </div>
 
+          {/* Weekday headers */}
           <div className="tbfm-calendar-weekdays">
             {weekDays.map(d => (
               <div key={d} className="tbfm-cal-weekday">{d}</div>
             ))}
           </div>
 
+          {/* Day grid */}
           <div className="tbfm-calendar-days">
             {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} className="tbfm-cal-day empty" />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day  = i + 1;
               const dStr = formatDate(viewYear, viewMonth, day);
               const isSelected = dStr === selectedDate;
+              const isToday    = dStr === todayStr;
               const isDisabled = minDate ? dStr < minDate : dStr < todayStr;
               return (
                 <div
                   key={day}
-                  className={`tbfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                  className={`tbfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''} ${isToday && !isSelected ? 'today' : ''}`}
                   onClick={() => !isDisabled && handleDayClick(day)}
                 >
                   {day}
@@ -130,6 +124,8 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
     </div>
   );
 };
+
+// ── CustomTimePicker is imported from ./timePicker/Clock.jsx ─────────────────
 
 // ── Booking Completed Modal ───────────────────────────────────────────────────
 const BookingCompletedModal = ({ isOpen, onClose, activityName }) => {
@@ -404,7 +400,8 @@ const TransferBookingFormModal = ({
             <strong>{transfer.activity}</strong>.
           </span>
 
-          {/* Summary cards — Travel Date / Return Date (roundtrip) / Passengers / Type / Total Amount */}
+          {/* Summary cards — Travel Date / Passengers / Type / Total Amount
+              NOTE: Return Date summary card intentionally removed per request */}
           <div className="tbfm-trip-summary">
             <div className="tbfm-summary-card">
               <span className="tbfm-summary-label">Travel Date</span>
@@ -414,18 +411,6 @@ const TransferBookingFormModal = ({
                   : '—'}
               </strong>
             </div>
-
-            {/* Return Date summary card — roundtrip only */}
-            {transferType === 'roundtrip' && (
-              <div className="tbfm-summary-card">
-                <span className="tbfm-summary-label">Return Date</span>
-                <strong className="tbfm-summary-value">
-                  {returnDate
-                    ? new Date(returnDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                    : '—'}
-                </strong>
-              </div>
-            )}
 
             <div className="tbfm-summary-card">
               <span className="tbfm-summary-label">Passengers</span>
@@ -489,10 +474,12 @@ const TransferBookingFormModal = ({
                     ? <>Arrival Time <span className="tbfm-required">*</span></>
                     : 'Pickup Time'}
                 </label>
-                <input type="time" className="tbfm-form-input"
-                  required={transferType === 'roundtrip'}
+                <CustomTimePicker
                   value={arrivalTime}
-                  onChange={handleArrivalTimeChange} />
+                  onChange={handleArrivalTimeChange}
+                  required={transferType === 'roundtrip'}
+                  placeholder="Select time"
+                />
               </div>
 
               {/* Travel Date — full width */}
@@ -524,31 +511,42 @@ const TransferBookingFormModal = ({
               {transferType === 'roundtrip' && (
                 <div className="tbfm-form-group">
                   <label className="tbfm-form-label">Departure Time <span className="tbfm-required">*</span></label>
-                  <input type="time" className="tbfm-form-input"
-                    required
+                  <CustomTimePicker
                     value={departureTime}
-                    onChange={handleDepartureTimeChange} />
+                    onChange={handleDepartureTimeChange}
+                    required
+                    placeholder="Select time"
+                  />
                 </div>
               )}
 
-              {/* Pickup + Drop-off */}
+              {/* ── PICKUP LOCATION ── */}
               <div className="tbfm-form-group">
-                <label className="tbfm-form-label">Pickup Location <span className="tbfm-required">*</span></label>
-                <input type="text" className="tbfm-form-input" required
-                  placeholder="Hotel name, address, or landmark"
-                  value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)} />
-              </div>
+  <label className="tbfm-form-label">Pickup Location <span className="tbfm-required">*</span></label>
+  <LocationSelect
+    id="pickup-location"
+    value={pickupLocation}
+    onChange={setPickupLocation}
+    placeholder="Hotel, airport, or landmark…"
+    source="transfer"
+    required
+  />
+</div>
 
+              {/* ── DROP-OFF LOCATION (roundtrip only) ── */}
               {transferType === 'roundtrip' && (
-                <div className="tbfm-form-group">
-                  <label className="tbfm-form-label">Drop-off Location <span className="tbfm-required">*</span></label>
-                  <input type="text" className="tbfm-form-input" required
-                    placeholder="Hotel name, address, or landmark"
-                    value={dropoffLocation}
-                    onChange={(e) => setDropoffLocation(e.target.value)} />
-                </div>
-              )}
+  <div className="tbfm-form-group">
+    <label className="tbfm-form-label">Drop-off Location <span className="tbfm-required">*</span></label>
+    <LocationSelect
+      id="dropoff-location"
+      value={dropoffLocation}
+      onChange={setDropoffLocation}
+      placeholder="Hotel, airport, or landmark…"
+      source="transfer"
+      required
+    />
+  </div>
+)}
 
             </div>
 

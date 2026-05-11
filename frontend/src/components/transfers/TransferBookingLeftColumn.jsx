@@ -61,13 +61,19 @@ const TransferTypeBadge = ({ category }) => {
   );
 };
 
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80';
+import onewayImg   from '../../../../backend/assets/oneway.png';
+import roundtripImg from '../../../../backend/assets/roundtrip.png';
+
+const FALLBACK_IMAGE  = 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80';
+const ONEWAY_IMAGE    = onewayImg;
+const ROUNDTRIP_IMAGE = roundtripImg;
 
 // ── Transfer Type Selector ─────────────────────────────────────────────────
 const TransferTypeSelector = ({ transferType, onSelect, oneWayPrice, roundtripPrice, currencySymbol, formatPrice, convertPrice }) => {
   const options = [
     {
       key: 'oneway',
+      bgImage: ONEWAY_IMAGE,
       icon: <ArrowRight size={28} strokeWidth={2.5} />,
       label: 'One Way',
       description: 'Single journey to your destination',
@@ -76,6 +82,7 @@ const TransferTypeSelector = ({ transferType, onSelect, oneWayPrice, roundtripPr
     },
     {
       key: 'roundtrip',
+      bgImage: ROUNDTRIP_IMAGE,
       icon: <ArrowLeftRight size={28} strokeWidth={2.5} />,
       label: 'Roundtrip',
       description: 'Go & return for a complete trip',
@@ -99,11 +106,11 @@ const TransferTypeSelector = ({ transferType, onSelect, oneWayPrice, roundtripPr
               type="button"
               className={`blc-transfer-type-card${isActive ? ' active' : ''}`}
               onClick={() => onSelect(opt.key)}
+              style={{ backgroundImage: `url('${opt.bgImage}')` }}
             >
-              {/* Selected check */}
-              <span className={`blc-tt-check${isActive ? ' visible' : ''}`}>
-                {isActive && <Check size={14} strokeWidth={3} />}
-              </span>
+
+              {/* Dark overlay for readability */}
+              <span className={`blc-tt-overlay${isActive ? ' active' : ''}`} aria-hidden="true" />
 
               {/* Icon circle */}
               <div className={`blc-tt-icon-circle${isActive ? ' active' : ''}`}>
@@ -123,7 +130,7 @@ const TransferTypeSelector = ({ transferType, onSelect, oneWayPrice, roundtripPr
               <ul className="blc-tt-features">
                 {opt.features.map((f) => (
                   <li key={f} className="blc-tt-feature-item">
-                    <Check size={13} strokeWidth={2.5} color="#f97316" />
+                    <Check size={13} strokeWidth={2.5} color="#fb923c" />
                     <span>{f}</span>
                   </li>
                 ))}

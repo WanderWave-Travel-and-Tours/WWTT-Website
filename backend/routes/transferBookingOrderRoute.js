@@ -9,6 +9,8 @@ const express              = require('express');
 const router               = express.Router();
 const TransferBookingOrder = require('../models/transferBookingOrder');
 const { sendTransferBookingToGHL } = require('../utils/ghlService');
+const { syncLocations }            = require('../utils/syncLocations');       // ← ADD
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/transfer-bookings
@@ -117,14 +119,22 @@ router.post('/', async (req, res) => {
       isArchive: 'No',
     });
 
-    await booking.save();
-
-    console.log(`✅ Transfer booking created: ${booking._id} | ${type} | ${activityName} | by: ${booking.createdByType}`);
-
-    // ── Fire GHL webhook (non-blocking — booking is already saved) ──────────
-    sendTransferBookingToGHL(booking).catch((err) =>
-      console.error('⚠️ GHL transfer booking webhook failed (non-fatal):', err.message)
-    );
+await booking.save();
+ 
+console.log(`✅ Transfer booking created: ${booking._id} | …`);
+ 
+// Auto-sync locations — fire-and-forget, never blocks the booking response
+syncLocations({                                                                // ← ADD
+  pickup:  booking.pickupLocation,                                            // ← ADD
+  dropoff: booking.dropoffLocation,                                           // ← ADD
+  source:  'transfer',                                                        // ← ADD
+}).catch((err) =>                                                              // ← ADD
+  console.warn('⚠️ syncLocations failed (non-fatal):', err.message)          // ← ADD
+);                                                                             // ← ADD
+ 
+sendTransferBookingToGHL(booking).catch((err) =>
+  console.error('⚠️ GHL transfer booking webhook failed (non-fatal):', err.message)
+);
 
     return res.status(201).json({
       success:   true,
