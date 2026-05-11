@@ -68,8 +68,20 @@ const TourBookingRightForm = ({
 const [selectedRoomType,      setSelectedRoomType]     = useState(null);
   const [hotelData,             setHotelData]            = useState(null);
   const [loadingHotelData,      setLoadingHotelData]     = useState(false);
-  const durationDays   = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
-  const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1);
+  const durationDays = (() => {
+    const d = pkg.duration || '';
+    // Try "3D", "3 Days", "3 Day", "3D2N", "3 days"
+    const m = d.match(/(\d+)\s*d/i);
+    return m ? parseInt(m[1]) : 1;
+  })();
+  const durationNights = (() => {
+    const d = pkg.duration || '';
+    // Try "2N", "2 Nights", "2 Night", "2 nights"
+    const m = d.match(/(\d+)\s*n/i);
+    if (m) return parseInt(m[1]);
+    // Fallback: days - 1 (e.g. 3D = 2 nights)
+    return Math.max(0, durationDays - 1);
+  })();
   const totalPassengers = quantities.adult || 1;
   const basePax         = totalPassengers;
 
@@ -250,51 +262,49 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     });
   }, [quantities.adult]);
 
-  // ── Price calculations (same pattern as bookingRightForm) ──────────────
-  // ✅ Hotel cost is INCLUDED inside calculateBasePackageTotal — same as bookingRightForm
+  // ── Price calculations ────────────────────────────────────────────────
+  // ✅ calculateBasePackageTotal returns PURE package price only (no hotel cost embedded).
+  //    Hotel cost is calculated separately via calculateHotelTotal() and added to the
+  //    final total explicitly — so the breakdown is clear to the user.
   const calculateBasePackageTotal = () => {
     const basePax = isSoloPkg ? 1 : (quantities.adult || 1);
     const basePrice = pkg.price || 0;
-
-    let basePackagePrice;
-    if (isMinTwoPkg) {
-      basePackagePrice = basePrice + Math.max(0, basePax - 2) * (basePrice / 2);
-    } else {
-      basePackagePrice = basePrice * basePax;
-    }
-
+    const basePackagePrice = basePrice * basePax;
     if (basePackagePrice <= 0) return 0;
-    if (!selectedRoomType) return basePackagePrice;
-
-    // ✅ Copied from bookingRightForm — hotel cost added inside base total
-    const roomType = selectedRoomType.type?.toUpperCase() || '';
-    const roomCapacity = selectedRoomType.capacity || 4;
-    const rooms = Math.ceil(basePax / roomCapacity);
-
-    let pricePerNight = 0;
-    if (roomType.includes('4')) pricePerNight = 1660;
-    else if (roomType.includes('5')) pricePerNight = 2500;
-    // Standard / Budget: pricePerNight stays 0 — no additional cost
-
-    const hotelCost = pricePerNight * durationNights * rooms;
-    return basePackagePrice + hotelCost;
+    return basePackagePrice;
   };
 
-  // ✅ Separate helper for hotel display line item — same as bookingRightForm's calculateHotelTotal
+  // ✅ Separate helper for hotel display line item
+  // Rates: Budget/Standard = ₱0 (included), 4-Star = ₱1,660/night, 5-Star = ₱2,500/night
+  // Room allocation: Math.ceil(totalPax / 4) — 4-pax-per-room rule per spec
+  const getHotelPricePerNight = (roomTypeStr) => {
+    const t = (roomTypeStr || '').toUpperCase();
+    // Match 5-star tier: "5-STAR", "5 STAR", "5STAR", "PREMIUM", "LUXURY", "DELUXE"
+    if (t.includes('5') || t.includes('PREMIUM') || t.includes('LUXURY') || t.includes('DELUXE')) return 2500;
+    // Match 4-star tier: "4-STAR", "4 STAR", "4STAR", "MID", "MIDRANGE", "MID-RANGE", "SUPERIOR"
+    if (t.includes('4') || t.includes('MID') || t.includes('SUPERIOR')) return 1660;
+    // Standard / Budget / 3-Star & below = ₱0 (included in base package price)
+    return 0;
+  };
+
   const calculateHotelTotal = () => {
     if (!selectedRoomType) return 0;
-    const roomType = selectedRoomType.type?.toUpperCase() || '';
-    const roomCapacity = selectedRoomType.capacity || 4;
-    const rooms = Math.ceil(basePax / roomCapacity);
-    let pricePerNight = 0;
-    if (roomType.includes('4')) pricePerNight = 1660;
-    else if (roomType.includes('5')) pricePerNight = 2500;
+    const rooms = Math.ceil(basePax / 4);
+    const pricePerNight = getHotelPricePerNight(selectedRoomType.type);
+    // 🔍 DEBUG — remove after confirming values are correct
+    console.log('[HotelTotal Debug]', {
+      roomType: selectedRoomType.type,
+      pricePerNight,
+      durationNights,
+      basePax,
+      rooms,
+      total: pricePerNight * durationNights * rooms,
+    });
     return pricePerNight * durationNights * rooms;
   };
 
   const calculateRoomsNeeded = () => {
-    if (!selectedRoomType) return 1;
-    return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
+    return Math.ceil(totalPassengers / 4);
   };
   const calculateDiscount = () => {
     if (!appliedPromo) return 0;
@@ -348,23 +358,24 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     return d >= start && d <= end;
   };
 
-  const basePackageTotal        = calculateBasePackageTotal(); // ✅ includes hotel cost
+  const basePackageTotal        = calculateBasePackageTotal(); // pure package price (no hotel embedded)
+  const hotelAccommodationTotal = calculateHotelTotal();       // 0 for Budget/Standard, >0 for 4/5-star
   const packageTotal            = basePackageTotal;
   const discountAmount          = calculateDiscount();
   const finalPackageTotal       = Math.max(0, packageTotal - discountAmount);
   const airfareTotal            = selectedFlight ? selectedFlight.price.amount : 0;
-  const finalTotalAmount        = finalPackageTotal + airfareTotal; // ✅ hotel already inside packageTotal
+  // ✅ TOTAL = package (after discount) + hotel upgrade cost + airfare
+  const finalTotalAmount        = finalPackageTotal + hotelAccommodationTotal + airfareTotal;
   const partialAmount           = calculatePartialAmount();
   const hasValidPackageTotal    = finalPackageTotal > 0;
   const numberOfRooms           = calculateRoomsNeeded();
-  const hotelAccommodationTotal = calculateHotelTotal(); // ✅ for display line item only
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay    = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  const convertedPackageTotal          = convertPrice(packageTotal); // ✅ now includes hotel
-  const convertedHotelTotal            = convertPrice(hotelAccommodationTotal); // for display line
+  const convertedPackageTotal          = convertPrice(packageTotal);
+  const convertedHotelTotal            = convertPrice(hotelAccommodationTotal);
   const convertedFinalPackageTotal     = convertPrice(finalPackageTotal);
   const convertedDiscountAmount        = convertPrice(discountAmount);
   const convertedAirfareTotal          = convertPrice(airfareTotal);
@@ -474,14 +485,16 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
 
   // ✅ Same as bookingRightForm — shows user-friendly category name in toast
   const handleRoomTypeChange = (roomType) => {
+    // 🔍 DEBUG — log exact type string from API so we can confirm matching
+    console.log('[handleRoomTypeChange] selected roomType object:', roomType);
     setSelectedRoomType(roomType);
     const rawType = roomType.type || '';
     const displayName =
       rawType.toLowerCase().includes('budget') || rawType.toLowerCase().includes('standard')
         ? 'Budget Accommodations'
-        : rawType.toLowerCase().includes('4')
+        : rawType.toLowerCase().includes('4') || rawType.toLowerCase().includes('mid')
         ? 'Mid Range Hotels'
-        : rawType.toLowerCase().includes('5')
+        : rawType.toLowerCase().includes('5') || rawType.toLowerCase().includes('premium') || rawType.toLowerCase().includes('luxury')
         ? 'Premium Hotels'
         : rawType;
     toast.success(`${displayName} selected!`);
@@ -820,6 +833,12 @@ const handleRemoveFlight = () => {
           roomTypes={hotelData.roomTypes}
           selectedRoomType={selectedRoomType}
           onRoomTypeChange={handleRoomTypeChange}
+          onHotelTotalChange={(hotelTotal, roomType) => {
+            // selectedRoomType state is already updated via onRoomTypeChange;
+            // hotelAccommodationTotal is re-derived from calculateHotelTotal() on each render.
+            // This callback is a no-op here but kept so HotelRoomSelector's internal
+            // getCategoryHotelTotal stays in sync with the parent's displayed total.
+          }}
           durationNights={durationNights}
           numberOfPax={totalPassengers}
         />
@@ -915,7 +934,7 @@ const handleRemoveFlight = () => {
     </span>
   </div>
 
-  {/* ✅ Hotel accommodation line — same as bookingRightForm */}
+  {/* ✅ Hotel accommodation line item */}
   {selectedRoomType && hotelAccommodationTotal > 0 && (
     <div className="brf-total-row" style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '4px' }}>
       <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -925,8 +944,8 @@ const handleRemoveFlight = () => {
         </span>
         · {durationNights} night{durationNights !== 1 ? 's' : ''} × {numberOfRooms} room{numberOfRooms !== 1 ? 's' : ''}
       </span>
-      <span style={{ fontWeight: '600', color: '#475569' }}>
-        {currencySymbol}{convertPrice(hotelAccommodationTotal).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })} <span style={{ fontWeight: '400', fontSize: '0.75rem' }}>incl.</span>
+      <span style={{ fontWeight: '600', color: '#f97316' }}>
+        +{currencySymbol}{convertedHotelTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
       </span>
     </div>
   )}

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
-  X, MapPin, Calendar, Users, Star, CheckCircle,
-  ChevronRight, ChevronDown, ChevronUp, Plane, Hotel,
-  Utensils, Bus, Camera, Briefcase, Clock, Tag,
-  CalendarDays, ArrowRight, Shield, Zap
+  X, MapPin, Calendar, Users, CheckCircle,
+  ArrowRight, Zap, Shield
 } from 'lucide-react';
-import './TourPreviewModal.css'; // ✅ Reuse same styles
+import './TourPreviewModal.css';
 
 const TourPreviewModal = ({
   isOpen,
@@ -23,12 +21,10 @@ const TourPreviewModal = ({
   paxCount                  = null,
   timerExpired: timerExpiredProp = null,
   selectedFlight            = null,
-  selectedRoomType = null,        // ← ADD THIS
+  selectedRoomType          = null,
 }) => {
-  const [activeTab,          setActiveTab]          = useState('overview');
-  const [expandedDay,        setExpandedDay]        = useState(null);
-  const [timerExpiredLocal,  setTimerExpiredLocal]  = useState(false);
-  const [userIpAddress,      setUserIpAddress]      = useState(null);
+  const [timerExpiredLocal, setTimerExpiredLocal] = useState(false);
+  const [userIpAddress,     setUserIpAddress]     = useState(null);
   const modalRef = useRef(null);
 
   const timerExpired = timerExpiredProp !== null ? timerExpiredProp : timerExpiredLocal;
@@ -60,8 +56,6 @@ const TourPreviewModal = ({
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
-      setActiveTab('overview');
-      setExpandedDay(null);
     }
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
@@ -75,19 +69,18 @@ const TourPreviewModal = ({
   if (!isOpen || !pkg) return null;
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
-  const convertPrice   = (p) => currency === 'PHP' ? p : (p / exchangeRate) * 1.30;
-    // ✅ Final displayed price (tour + hotel + airfare)
+
   const finalTotal = (() => {
     let total = computedFinalPackageTotal || computedPackageTotal || 0;
     if (selectedFlight) total += selectedFlight.price?.amount || 0;
     return total;
   })();
-  const basePrice      = pkg.price || 0;
-  const markupPrice    = Math.round(basePrice * 1.10);
 
-  let displayPrice, originalPrice, discountPct, discountAmount;
+  const basePrice   = pkg.price || 0;
+  const markupPrice = Math.round(basePrice * 1.10);
+
+  let originalPrice, discountPct, discountAmount;
   if (computedFinalPackageTotal !== null) {
-    displayPrice   = computedFinalPackageTotal;
     originalPrice  = (computedOriginalPrice && computedOriginalPrice > computedFinalPackageTotal) ? computedOriginalPrice : null;
     discountAmount = computedDiscountAmount || 0;
     discountPct    = (appliedPromo && appliedPromo.discountType === 'Percentage')
@@ -95,13 +88,15 @@ const TourPreviewModal = ({
       : (!timerExpired && computedOriginalPrice && computedOriginalPrice > computedFinalPackageTotal
           ? Math.round(((computedOriginalPrice - computedFinalPackageTotal) / computedOriginalPrice) * 100) : 0);
   } else {
-    displayPrice   = timerExpired ? markupPrice : basePrice;
     originalPrice  = timerExpired ? null : markupPrice;
     discountPct    = !timerExpired ? Math.round(((markupPrice - basePrice) / markupPrice) * 100) : 0;
     discountAmount = 0;
   }
 
-  const formatPrice = (p) => p.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 });
+  const formatPrice = (p) => p.toLocaleString(undefined, {
+    minimumFractionDigits: currency === 'USD' ? 2 : 0,
+    maximumFractionDigits: currency === 'USD' ? 2 : 0,
+  });
 
   const getPaxNumber = () => {
     if (pkg.minPax) return pkg.minPax;
@@ -112,13 +107,26 @@ const TourPreviewModal = ({
     return 2;
   };
 
-  const itinerary  = pkg.itinerary  || [];
   const inclusions = pkg.inclusions || [];
-  const tabs = [
-    { id: 'overview',   label: 'Overview' },
-    { id: 'inclusions', label: "What's Included" },
-    { id: 'itinerary',  label: 'Itinerary' },
+
+  const CATEGORIES = [
+    { key: 'flight',   label: 'Airfare',    icon: '✈️', kws: ['airfare','flight','airline','plane ticket','rt airfare'] },
+    { key: 'hotel',    label: 'Hotel',      icon: '🏨', kws: ['hotel','accommodation','accomodation','lodging','room','stay','night'] },
+    { key: 'transfer', label: 'Transfer',   icon: '🚌', kws: ['roundtrip','round trip','rt transfer','transfer','pudo'] },
+    { key: 'meals',    label: 'Meals',      icon: '🍽️', kws: ['meal','meals','breakfast','lunch','dinner','buffet','food'] },
+    { key: 'tours',    label: 'Activities', icon: '📸', kws: ['tour','island hopping','activity','activities','snorkeling','diving','trekking','kayaking','surfing','swimming'] },
+    { key: 'guide',    label: 'Tour Guide', icon: '🧭', kws: [] },
   ];
+  const lowerInclusions = inclusions.map(s => s.toLowerCase());
+  const pkgNameLow = (pkg.title || pkg.name || '').toLowerCase();
+  const hasNoGuide = ['no guide','no tour guide','without guide','w/o guide'].some(kw =>
+    pkgNameLow.includes(kw) || lowerInclusions.some(i => i.includes(kw))
+  );
+  const activeCategories = CATEGORIES.filter(cat => {
+    if (cat.key === 'guide') return !hasNoGuide;
+    if (cat.key === 'flight') return !!selectedFlight || lowerInclusions.some(inc => cat.kws.some(kw => inc.includes(kw)));
+    return lowerInclusions.some(inc => cat.kws.some(kw => inc.includes(kw)));
+  });
 
   return ReactDOM.createPortal(
     <div className="ppm-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -161,140 +169,46 @@ const TourPreviewModal = ({
 
         {/* ─── BODY ─── */}
         <div className="ppm-body">
+          <div className="ppm-inclusions-body">
 
-          {/* TABS */}
-          <div className="ppm-tabs">
-            {tabs.map(tab => (
-              <button key={tab.id} className={`ppm-tab ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ─── OVERVIEW ─── */}
-          {activeTab === 'overview' && (
-            <div className="ppm-tab-content">
-              {/* Inclusion icons — uses raw pkg.inclusions (no customizer for tours) */}
-              {(() => {
-                const FLIGHT_KW   = ['airfare','flight','airline','plane ticket','rt airfare'];
-                const HOTEL_KW    = ['hotel','accommodation','accomodation','lodging','room','stay','night'];
-                const TRANSFER_KW = ['roundtrip','round trip','rt transfer','transfer','pudo'];
-                const MEALS_KW    = ['meal','meals','breakfast','lunch','dinner','buffet','food'];
-                const TOURS_KW    = ['tour','island hopping','activity','activities','snorkeling','diving','trekking','kayaking','surfing','swimming'];
-                const NO_GUIDE_KW = ['no guide','no tour guide','without guide','w/o guide'];
-                const active      = (pkg.inclusions || []).map(s => s.toLowerCase().trim());
-                const hasKw       = (kws) => active.some(inc => kws.some(kw => inc.includes(kw)));
-                const pkgNameLow  = (pkg.title || pkg.name || '').toLowerCase();
-                const hasNoGuide  = NO_GUIDE_KW.some(kw => pkgNameLow.includes(kw)) || active.some(inc => NO_GUIDE_KW.some(kw => inc.includes(kw)));
-                const ICONS = [
-                  { Icon: Plane,     label: 'Flights',  active: !!selectedFlight || hasKw(FLIGHT_KW)  },
-                  { Icon: Hotel,     label: 'Hotel',    active: hasKw(HOTEL_KW)                        },
-                  { Icon: Bus,       label: 'Transfer', active: hasKw(TRANSFER_KW)                     },
-                  { Icon: Utensils,  label: 'Meals',    active: hasKw(MEALS_KW)                        },
-                  { Icon: Camera,    label: 'Tours',    active: hasKw(TOURS_KW)                        },
-                  { Icon: Briefcase, label: 'Guide',    active: !hasNoGuide                            },
-                ];
-                return (
-                  <div className="ppm-icons-row">
-                    {ICONS.map(({ Icon, label, active: a }) => (
-                      <div key={label} className={`ppm-icon-chip${a ? ' ppm-icon-chip--active' : ''}`}>
-                        <Icon size={20} className={a ? 'ppm-icon ppm-icon--active' : 'ppm-icon'} />
-                        <span>{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-
-              {pkg.description && <p className="ppm-description">{pkg.description}</p>}
-
+            {/* Header */}
+            <div className="ppm-inclusions-header">
+              <Shield size={17} color="#10b981" />
+              <span>What's Included</span>
               {inclusions.length > 0 && (
-                <div className="ppm-highlights">
-                  <h4 className="ppm-highlights-title"><Shield size={15} color="#10b981" /> Package Highlights</h4>
-                  <div className="ppm-highlights-grid">
-                    {inclusions.slice(0, 4).map((item, i) => (
-                      <div key={i} className="ppm-highlight-item"><CheckCircle size={14} color="#10b981" /><span>{item}</span></div>
-                    ))}
-                    {inclusions.length > 4 && (
-                      <div className="ppm-highlight-item ppm-highlight-more" onClick={() => setActiveTab('inclusions')}>
-                        <ChevronRight size={14} /><span>+{inclusions.length - 4} more inclusions</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {itinerary.length > 0 && (
-                <div className="ppm-itinerary-teaser">
-                  <h4 className="ppm-highlights-title"><CalendarDays size={15} color="#f97316" /> Tour Itinerary</h4>
-                  {itinerary.slice(0, 2).map((day, i) => (
-                    <div key={i} className="ppm-day-teaser">
-                      <span className="ppm-day-label">Day {day.day}</span>
-                      <span className="ppm-day-title">{day.title}</span>
-                    </div>
-                  ))}
-                  {itinerary.length > 2 && (
-                    <button className="ppm-see-more-btn" onClick={() => setActiveTab('itinerary')}>
-                      See full {itinerary.length}-day itinerary <ChevronRight size={14} />
-                    </button>
-                  )}
-                </div>
+                <span className="ppm-inclusions-count">{inclusions.length} items</span>
               )}
             </div>
-          )}
 
-          {/* ─── INCLUSIONS ─── */}
-          {activeTab === 'inclusions' && (
-            <div className="ppm-tab-content">
-              {inclusions.length > 0 ? (
-                <ul className="ppm-inclusions-list">
-                  {inclusions.map((item, i) => (
-                    <li key={i} className="ppm-inclusion-item">
-                      <CheckCircle size={16} color="#10b981" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : <p className="ppm-empty">No inclusions listed.</p>}
-            </div>
-          )}
+            {/* Category pills */}
+            {activeCategories.length > 0 && (
+              <div className="ppm-category-pills">
+                {activeCategories.map(cat => (
+                  <span key={cat.key} className="ppm-category-pill">
+                    <span>{cat.icon}</span>
+                    {cat.label}
+                  </span>
+                ))}
+              </div>
+            )}
 
-          {/* ─── ITINERARY ─── */}
-          {activeTab === 'itinerary' && (
-            <div className="ppm-tab-content">
-              {itinerary.length > 0 ? (
-                <div className="ppm-timeline">
-                  {itinerary.map((day, idx) => {
-                    const isOpen = expandedDay === idx;
-                    return (
-                      <div key={idx} className="ppm-timeline-item">
-                        <div className="ppm-timeline-dot-wrap">
-                          <div className={`ppm-timeline-dot ${isOpen ? 'active' : ''}`} />
-                          {idx < itinerary.length - 1 && <div className="ppm-timeline-line" />}
-                        </div>
-                        <div className="ppm-timeline-content">
-                          <button className={`ppm-day-btn ${isOpen ? 'active' : ''}`} onClick={() => setExpandedDay(isOpen ? null : idx)}>
-                            <div>
-                              <span className="ppm-day-num">Day {day.day}</span>
-                              <span className="ppm-day-name">{day.title}</span>
-                            </div>
-                            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                          </button>
-                          {isOpen && (
-                            <ul className="ppm-activities">
-                              {day.activities?.map((act, i) => (
-                                <li key={i} className="ppm-activity-item"><span className="ppm-activity-dot" />{act}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : <p className="ppm-empty">No itinerary available.</p>}
-            </div>
-          )}
+            {/* Inclusions list */}
+            {inclusions.length > 0 ? (
+              <ul className="ppm-inclusions-list">
+                {inclusions.map((item, i) => (
+                  <li key={i} className="ppm-inclusion-item">
+                    <span className="ppm-inclusion-check">
+                      <CheckCircle size={15} color="#10b981" />
+                    </span>
+                    <span className="ppm-inclusion-text">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="ppm-empty">No inclusions listed.</p>
+            )}
+
+          </div>
         </div>
 
         {/* ─── FOOTER ─── */}
@@ -308,7 +222,7 @@ const TourPreviewModal = ({
               <span className={`ppm-price-main ${!timerExpired ? 'discounted' : ''}`}>
                 {currencySymbol}{finalTotal.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                  maximumFractionDigits: currency === 'USD' ? 2 : 0
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0,
                 })}
               </span>
               {!timerExpired && discountPct > 0 && <span className="ppm-price-save">Save {discountPct}%</span>}

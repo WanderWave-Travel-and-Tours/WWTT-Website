@@ -1,18 +1,11 @@
-/* src/components/Transfers/timePicker/Clock.css
-   Analog Clock Time Picker styles.
-   All class names prefixed with tbfm- to stay consistent with the modal.
-   Green colors replaced with #001b3e.
-*/
-
-/* ============================================
-   TRIGGER BUTTON
-   ============================================ */
+/* Clock.css - MODAL STYLE (same as Night Surcharge) */
 
 .tbfm-time-picker-wrapper {
   position: relative;
   width: 100%;
 }
 
+/* Trigger Button */
 .tbfm-time-trigger {
   width: 100%;
   padding: 8px 10px;
@@ -33,27 +26,36 @@
   background: #fffbf5;
 }
 
-.tbfm-time-value {
-  color: #334155;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.tbfm-time-placeholder {
-  color: #94a3b8;
-  font-size: 0.85rem;
-}
+.tbfm-time-value { color: #334155; font-size: 0.85rem; font-weight: 500; }
+.tbfm-time-placeholder { color: #94a3b8; font-size: 0.85rem; }
 
 /* ============================================
-   OVERLAY BACKDROP
+   CLOCK MODAL (Centered like Night Surcharge)
    ============================================ */
 
 .tbfm-clock-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  z-index: 100002;
-  animation: tbfmFadeIn 0.18s ease-out;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: tbfmFadeIn 0.2s ease-out;
+}
+
+.tbfm-analog-clock-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100001;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+  padding: 28px 28px 24px;
+  width: 380px;
+  animation: clockSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes tbfmFadeIn {
@@ -61,59 +63,39 @@
   to   { opacity: 1; }
 }
 
-/* ============================================
-   ANALOG CLOCK POPUP — fixed centered modal
-   ============================================ */
-
-.tbfm-analog-clock-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 100003;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  padding: 20px 20px 16px 20px;
-  width: 260px;
-  animation: clockSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 @keyframes clockSlideUp {
-  from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
-/* ── Header: HH:MM display + AM/PM stack ── */
+/* Header */
 .tbfm-analog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  gap: 10px;
+  margin-bottom: 18px;
+  gap: 14px;
 }
 
 .tbfm-analog-time-display {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   background: #eef2f8;
-  border-radius: 12px;
-  padding: 6px 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 10px 16px;
   flex: 1;
   justify-content: center;
 }
 
 .tbfm-analog-segment {
-  font-size: 2rem;
+  font-size: 2.8rem;
   font-weight: 700;
   color: #374151;
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 8px;
+  padding: 2px 10px;
+  border-radius: 10px;
   transition: all 0.15s;
-  line-height: 1;
 }
 
 .tbfm-analog-segment.active {
@@ -121,82 +103,65 @@
   color: #001b3e;
 }
 
-.tbfm-analog-segment:hover:not(.active) {
-  background: #e8eef8;
-}
-
 .tbfm-analog-colon {
-  font-size: 1.8rem;
+  font-size: 2.6rem;
   font-weight: 700;
   color: #9ca3af;
-  line-height: 1;
-  padding-bottom: 2px;
 }
 
-/* AM/PM stacked buttons */
+/* AM/PM */
 .tbfm-analog-period-stack {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .tbfm-analog-period-btn {
-  padding: 5px 10px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
   border: 1.5px solid #d1d5db;
   background: white;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: #6b7280;
   cursor: pointer;
   transition: all 0.15s;
-  min-width: 38px;
-  text-align: center;
-}
-
-.tbfm-analog-period-btn:hover:not(.active) {
-  border-color: #001b3e;
-  color: #001b3e;
 }
 
 .tbfm-analog-period-btn.active {
   background: #001b3e;
-  border-color: #001b3e;
   color: white;
+  border-color: #001b3e;
 }
 
-/* ── Clock face ── */
+/* Clock Face */
 .tbfm-analog-face-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 10px;
+  margin: 14px 0;
 }
 
 .tbfm-analog-svg {
-  width: 208px;
-  height: 208px;
+  width: 310px;
+  height: 310px;
   cursor: pointer;
-  border-radius: 50%;
-  display: block;
 }
 
-/* ── Footer: Cancel / OK ── */
+/* Footer */
 .tbfm-analog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .tbfm-analog-cancel-btn,
 .tbfm-analog-ok-btn {
-  padding: 6px 16px;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   border: none;
-  transition: all 0.15s;
-  letter-spacing: 0.02em;
 }
 
 .tbfm-analog-cancel-btn {
@@ -204,34 +169,25 @@
   color: #6b7280;
 }
 
-.tbfm-analog-cancel-btn:hover {
-  background: #e8eef8;
-  color: #374151;
-}
-
 .tbfm-analog-ok-btn {
   background: #001b3e;
   color: white;
-  box-shadow: 0 2px 8px rgba(0, 27, 62, 0.3);
 }
 
-.tbfm-analog-ok-btn:hover {
-  background: #002d6b;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 27, 62, 0.4);
-}
-
-/* ============================================
-   MOBILE (max-width: 640px)
-   ============================================ */
-
+/* Mobile */
 @media (max-width: 640px) {
   .tbfm-analog-clock-popup {
-    width: 240px;
+    width: 330px;
+    padding: 22px 20px 20px;
   }
-
   .tbfm-analog-svg {
-    width: 200px;
-    height: 200px;
+    width: 270px;
+    height: 270px;
+  }
+  .tbfm-analog-segment {
+    font-size: 2.4rem;
+  }
+  .tbfm-analog-colon {
+    font-size: 2.2rem;
   }
 }

@@ -340,7 +340,119 @@
   flex-shrink: 0;
 }
 
-/* ── Calendar popup — styled to match the screenshot ── */
+/* ── Calendar Modal Overlay ── */
+.tbfm-cal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200000;
+  padding: 20px;
+  animation: tbfmFadeIn 0.18s ease-out;
+}
+
+/* ── Calendar Modal Card ── */
+.tbfm-cal-modal-card {
+  background: white;
+  border-radius: 20px;
+  max-width: 340px;
+  width: 100%;
+  padding: 20px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  animation: tbfmSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Modal top bar: title + close btn */
+.tbfm-cal-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.tbfm-cal-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e3a5f;
+}
+
+.tbfm-cal-modal-title-icon {
+  color: #fc9c1b;
+  flex-shrink: 0;
+}
+
+.tbfm-cal-modal-close {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.tbfm-cal-modal-close:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  transform: rotate(90deg);
+}
+
+/* Currently selected date pill */
+.tbfm-cal-selected-display {
+  text-align: center;
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ea580c;
+  margin-bottom: 12px;
+}
+
+/* ── Calendar Header (month nav) inside modal — reuse existing classes ── */
+
+/* ── Calendar Modal Footer ── */
+.tbfm-cal-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.tbfm-cal-modal-cancel-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.tbfm-cal-modal-cancel-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* ── Calendar grid styles (shared between old dropdown & new modal) ── */
 .tbfm-custom-calendar {
   position: absolute;
   top: calc(100% + 6px);
@@ -509,19 +621,36 @@
   font-size: 0.85rem;
 }
 
-/* Analog clock popup */
+/* Clock overlay — full-screen backdrop */
+.tbfm-clock-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: tbfmFadeIn 0.2s ease-out;
+}
+
+/* Analog clock popup — centered on screen */
 .tbfm-analog-clock-popup {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 9999;
-  background: #eef2f8;
-  border: 1px solid #c8d6e8;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100001;
+  background: white;
   border-radius: 20px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
-  padding: 16px 16px 12px 16px;
-  width: 240px;
-  animation: tbfmFadeIn 0.15s ease-out;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+  padding: 24px 24px 20px;
+  width: 280px;
+  animation: clockSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes clockSlideUp {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 /* ── Header: HH:MM display + AM/PM stack ── */
@@ -613,8 +742,8 @@
 }
 
 .tbfm-analog-svg {
-  width: 208px;
-  height: 208px;
+  width: 220px;
+  height: 220px;
   cursor: pointer;
   border-radius: 50%;
   display: block;
@@ -681,6 +810,119 @@
   font-size: 0.95rem;
   flex-shrink: 0;
   margin-top: 1px;
+}
+
+/* ── Restricted payment — redesigned solo layout ── */
+.tbfm-restricted-payment-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tbfm-restricted-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #fef9ec, #fef3c7);
+  border: 1.5px solid #f59e0b;
+  border-radius: 8px;
+}
+
+.tbfm-restricted-banner-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.tbfm-restricted-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tbfm-restricted-banner-text strong {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.tbfm-restricted-banner-text span {
+  font-size: 0.72rem;
+  color: #78350f;
+  line-height: 1.4;
+}
+
+.tbfm-restricted-banner-text span strong {
+  color: #92400e;
+  font-size: inherit;
+}
+
+/* Solo card — horizontal layout when full payment is the only option */
+.tbfm-payment-card-solo {
+  padding: 14px 16px;
+}
+
+.tbfm-solo-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tbfm-solo-card-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.tbfm-solo-card-left .tbfm-payment-card-header {
+  margin-bottom: 4px;
+}
+
+.tbfm-solo-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  text-align: right;
+  padding-left: 16px;
+  border-left: 1.5px dashed #fcd34d;
+}
+
+.tbfm-solo-amount {
+  font-size: 1.4rem !important;
+  white-space: nowrap;
+  justify-content: flex-end;
+}
+
+.tbfm-solo-total-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+@media (max-width: 480px) {
+  .tbfm-solo-card-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .tbfm-solo-card-right {
+    align-items: flex-start;
+    width: 100%;
+    border-left: none;
+    border-top: 1.5px dashed #fcd34d;
+    padding-left: 0;
+    padding-top: 10px;
+    text-align: left;
+  }
+
+  .tbfm-solo-amount {
+    justify-content: flex-start !important;
+  }
 }
 
 /* ============================================
@@ -1125,5 +1367,12 @@
   .tbfm-actions {
     padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px;
     border-radius: 0;
+  }
+
+  /* Calendar modal adjustments on mobile */
+  .tbfm-cal-modal-card {
+    max-width: 100%;
+    border-radius: 16px;
+    padding: 16px;
   }
 }

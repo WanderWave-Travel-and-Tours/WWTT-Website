@@ -22,8 +22,10 @@ import { X, MapPin, User, Phone, Mail, Calendar, Users, ChevronRight, ChevronLef
          Car, Compass, Check, Clock, ArrowRight, FileText, CheckCircle, Plus, Trash2,
          CreditCard, Wallet } from 'lucide-react';
 import './Customizedbookingform.css';
-import tourBg     from '../../../../backend/assets/tour.png';
-import transferBg from '../../../../backend/assets/transfer.png';
+import tourBg          from '../../../../backend/assets/tour.png';
+import transferBg      from '../../../../backend/assets/transfer.png';
+import CustomTimePicker from '../timePicker/Clock';
+import LocationSelect   from '../location/LocationSelect';
 
 const API_BASE = 'https://wanderwaveph.onrender.com';
 
@@ -1304,18 +1306,18 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   <label>Arrival Time <span className="cbf-req">*</span>
                     <span className="cbf-field-hint"> When you arrive at the destination</span>
                   </label>
-                  <div className="cbf-input-wrap">
-                    <Clock size={14} className="cbf-input-icon"/>
-                    <input type="time" value={detailForm.arrivalTime}
-                      onChange={e => {
-                        const val = e.target.value;
-                        if (val && isNightHour(val)) {
-                          setNightChargeModal({ field: 'arrivalTime', pendingValue: val });
-                        } else {
-                          setDetailForm(p => ({...p, arrivalTime: val}));
-                        }
-                      }}/>
-                  </div>
+                  <CustomTimePicker
+                    value={detailForm.arrivalTime}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val && isNightHour(val)) {
+                        setNightChargeModal({ field: 'arrivalTime', pendingValue: val });
+                      } else {
+                        setDetailForm(p => ({...p, arrivalTime: val}));
+                      }
+                    }}
+                    placeholder="Select arrival time"
+                  />
                 </div>
 
                 {isRoundtrip && (
@@ -1323,31 +1325,29 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     <label>Departure Time <span className="cbf-req">*</span>
                       {info.returnDate && <span className="cbf-field-hint"> Return on {fmtDate(info.returnDate)}</span>}
                     </label>
-                    <div className="cbf-input-wrap">
-                      <Clock size={14} className="cbf-input-icon"/>
-                      <input type="time" value={detailForm.departureTime}
-                        onChange={e => {
-                          const val = e.target.value;
-                          if (val && isNightHour(val)) {
-                            setNightChargeModal({ field: 'departureTime', pendingValue: val });
-                          } else {
-                            setDetailForm(p => ({...p, departureTime: val}));
-                          }
-                        }}/>
-                    </div>
+                    <CustomTimePicker
+                      value={detailForm.departureTime}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val && isNightHour(val)) {
+                          setNightChargeModal({ field: 'departureTime', pendingValue: val });
+                        } else {
+                          setDetailForm(p => ({...p, departureTime: val}));
+                        }
+                      }}
+                      placeholder="Select departure time"
+                    />
                   </div>
                 )}
 
                 <div className="cbf-field cbf-full">
                   <label>Pickup Location <span className="cbf-req">*</span></label>
-                  <div className="cbf-input-wrap">
-                    <MapPin size={14} className="cbf-input-icon"/>
-                    <input
-                      placeholder="e.g. Manila Airport Terminal 3"
-                      value={detailForm.pickupLocation}
-                      onChange={e => setDetailForm(p => ({...p, pickupLocation: e.target.value}))}
-                    />
-                  </div>
+                  <LocationSelect
+                    value={detailForm.pickupLocation}
+                    onChange={val => setDetailForm(p => ({...p, pickupLocation: val}))}
+                    placeholder="e.g. Manila Airport Terminal 3"
+                    source="transfer"
+                  />
                 </div>
 
                 {isRoundtrip && (
@@ -1355,14 +1355,12 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     <label>Drop-off Location <span className="cbf-req">*</span>
                       <span className="cbf-field-hint"> Where you return to</span>
                     </label>
-                    <div className="cbf-input-wrap">
-                      <MapPin size={14} className="cbf-input-icon"/>
-                      <input
-                        placeholder="e.g. Manila Airport Terminal 3"
-                        value={detailForm.dropoffLocation}
-                        onChange={e => setDetailForm(p => ({...p, dropoffLocation: e.target.value}))}
-                      />
-                    </div>
+                    <LocationSelect
+                      value={detailForm.dropoffLocation}
+                      onChange={val => setDetailForm(p => ({...p, dropoffLocation: val}))}
+                      placeholder="e.g. Manila Airport Terminal 3"
+                      source="transfer"
+                    />
                   </div>
                 )}
 
@@ -1598,31 +1596,63 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   <h3>Select Payment Option</h3>
                 </div>
 
+                {/* ── Full-payment-only banner — sits at the TOP ── */}
+                {!isPartialPaymentAllowed && (
+                  <div className="bfm-full-payment-banner">
+                    <span className="bfm-fpb-icon">⚡</span>
+                    <div>
+                      <strong>Full Payment Required</strong>
+                      <span>
+                        Partial payment is unavailable for travel dates of{' '}
+                        <strong>today</strong> or <strong>tomorrow</strong>.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bfm-payment-options">
                   {/* Pay in Full */}
                   <div
                     className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
                     onClick={() => setPaymentType('full')}
                   >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <CreditCard size={16} />
-                        <span>Pay in Full</span>
+                    <div
+                      className="bfm-payment-card-header"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px', flexWrap: 'nowrap' }}
+                    >
+                      <div
+                        className="bfm-pch-left"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}
+                      >
+                        <div className="bfm-payment-radio">
+                          <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                        </div>
+                        <CreditCard size={16} className="bfm-pif-icon" />
+                        <span className="bfm-pif-label">Pay in Full</span>
                         <span className="bfm-recommended-badge">Most Popular</span>
                       </div>
+                      {!isPartialPaymentAllowed && (
+                        <div
+                          className="bfm-card-header-price"
+                          style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}
+                        >
+                          <span className="bfm-chp-amount">₱{fmt(grandTotal)}</span>
+                          <span className="bfm-chp-label">TOTAL AMOUNT</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">₱{fmt(grandTotal)}</div>
+                    <div className="bfm-payment-card-body" style={{ paddingLeft: 0, paddingTop: '4px' }}>
+                      {/* Big amount only shown when partial IS allowed */}
+                      {isPartialPaymentAllowed && (
+                        <div className="bfm-payment-amount">₱{fmt(grandTotal)}</div>
+                      )}
                       <div className="bfm-payment-description">
-                        Complete payment now and secure your booking
+                        Complete payment now and secure your booking{!isPartialPaymentAllowed ? ' instantly.' : ''}
                       </div>
                       <ul className="bfm-payment-benefits">
-                        <li>✓ Instant confirmation</li>
-                        <li>✓ No further payments needed</li>
-                        <li>✓ Priority processing</li>
+                        <li>Instant confirmation</li>
+                        <li>No further payments needed</li>
+                        <li>Priority processing</li>
                       </ul>
                     </div>
                   </div>
@@ -1637,11 +1667,9 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                         <div className="bfm-payment-radio">
                           <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
                         </div>
-                        <div className="bfm-payment-card-title">
-                          <Wallet size={16} />
-                          <span>Partial Payment</span>
-                          <span className="bfm-flexible-badge">Flexible</span>
-                        </div>
+                        <Wallet size={16} className="bfm-pif-icon" />
+                        <span className="bfm-pif-label">Partial Payment</span>
+                        <span className="bfm-flexible-badge">Flexible</span>
                       </div>
                       <div className="bfm-payment-card-body">
                         <div className="bfm-payment-amount">
@@ -1665,13 +1693,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     </div>
                   )}
                 </div>
-
-                {/* Notice when partial payment is unavailable */}
-                {!isPartialPaymentAllowed && (
-                  <div className="bfm-partial-unavailable-notice">
-                    ⚠️ Partial payment is not available for bookings with a travel date of today or tomorrow. Full payment is required.
-                  </div>
-                )}
 
                 {/* Payment Summary */}
                 <div className="bfm-payment-summary">
