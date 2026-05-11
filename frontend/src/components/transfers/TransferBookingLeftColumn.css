@@ -480,20 +480,25 @@
   z-index: 1;
 }
 
-/* Card base */
+/* Card base — background image set via inline style */
 .blc-transfer-type-card {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 20px 16px 16px;
-  border-radius: 16px;
+  /* Taller card to give bg image room to breathe */
+  padding: 52px 14px 16px;
+  border-radius: 18px;
   border: 2px solid #e2e8f0;
-  background: #ffffff;
+  background-color: #1e293b; /* dark fallback if image fails */
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
   cursor: pointer;
   pointer-events: auto;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
   gap: 4px;
   width: 100%;
   box-sizing: border-box;
@@ -502,102 +507,112 @@
 
 .blc-transfer-type-card:hover:not(.active) {
   border-color: #fed7aa;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.18);
+  transform: translateY(-2px);
 }
 
 .blc-transfer-type-card:focus,
 .blc-transfer-type-card:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.35);
 }
 
-.blc-transfer-type-card.active:focus,
-.blc-transfer-type-card.active:focus-visible {
-  outline: none;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.15);
-}
-
-/* Active card */
 .blc-transfer-type-card.active {
   border-color: #f97316;
-  background: #fff7ed;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.15);
+  box-shadow: 0 6px 24px rgba(249, 115, 22, 0.35);
+  transform: translateY(-2px);
 }
 
-/* Selected check bubble (top-left) */
-.blc-tt-check {
+/* --- Dark gradient overlay for text legibility --- */
+.blc-tt-overlay {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid #e2e8f0;
-  background: #f8fafc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  color: transparent;
+  inset: 0;
+  /* strong bottom-heavy gradient so text at bottom is always readable */
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0.35) 0%,
+    rgba(15, 23, 42, 0.55) 40%,
+    rgba(15, 23, 42, 0.82) 100%
+  );
+  border-radius: inherit;
+  transition: background 0.25s ease;
+  z-index: 1;
 }
 
-.blc-tt-check.visible {
-  background: #f97316;
-  border-color: #f97316;
-  color: white;
+.blc-tt-overlay.active {
+  background: linear-gradient(
+    to bottom,
+    rgba(194, 65, 12, 0.30) 0%,
+    rgba(15, 23, 42, 0.55) 40%,
+    rgba(15, 23, 42, 0.88) 100%
+  );
+}
+
+/* All inner content sits above the overlay */
+.blc-transfer-type-card > *:not(.blc-tt-bg-img):not(.blc-tt-overlay) {
+  position: relative;
+  z-index: 2;
 }
 
 /* Icon circle */
 .blc-tt-icon-circle {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255,255,255,0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: #ffffff;
   margin-bottom: 8px;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .blc-tt-icon-circle.active {
   background: #f97316;
+  border-color: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25);
   color: #ffffff;
 }
 
 /* Type name */
 .blc-tt-name {
   font-size: 1rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-weight: 800;
+  color: #ffffff;
   margin: 0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
   transition: color 0.2s ease;
 }
 
 .blc-tt-name.active {
-  color: #ea580c;
+  color: #fb923c;
 }
 
 /* Description */
 .blc-tt-desc {
-  font-size: 0.8rem;
-  color: #94a3b8;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.72);
   margin: 0 0 6px;
   line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 /* Price */
 .blc-tt-price {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 800;
-  color: #475569;
+  color: #ffffff;
   margin: 4px 0 10px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
   transition: color 0.2s ease;
 }
 
 .blc-tt-price.active {
-  color: #ea580c;
+  color: #fb923c;
 }
 
 /* Features list */
@@ -609,7 +624,7 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid rgba(255,255,255,0.18);
   padding-top: 10px;
   text-align: left;
 }
@@ -618,9 +633,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.78rem;
-  color: #64748b;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.80);
   font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 /* =========================================
@@ -671,12 +687,16 @@
   }
 
   .blc-tt-icon-circle {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
   }
 
   .blc-tt-price {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+  }
+
+  .blc-transfer-type-card {
+    padding: 46px 12px 14px;
   }
 }
 
@@ -707,28 +727,28 @@
   }
 
   .blc-transfer-type-card {
-    padding: 16px 10px 12px;
+    padding: 40px 10px 12px;
   }
 
   .blc-tt-icon-circle {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
   }
 
   .blc-tt-name {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
   }
 
   .blc-tt-desc {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 
   .blc-tt-price {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .blc-tt-feature-item {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 }
 /* rubber stamp styles removed — stamp overlay no longer used */

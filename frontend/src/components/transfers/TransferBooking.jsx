@@ -14,8 +14,6 @@ function TransferBooking({
 }) {
   const [passengerCount, setPassengerCount] = useState(1);
 
-  // ── Modal state lifted to root so it renders OUTSIDE pb-unified-card
-  //    (overflow:hidden on pb-unified-card traps position:fixed children)
   const [showBookingModal,  setShowBookingModal]  = useState(false);
   const [transferType,      setTransferType]      = useState('oneway');
   const [travelDate,        setTravelDate]        = useState('');
@@ -27,6 +25,31 @@ function TransferBooking({
   const [paymentType,       setPaymentType]       = useState('full');
   const [totalAmount,       setTotalAmount]       = useState(0);
   const [partialAmount,     setPartialAmount]     = useState(0);
+
+  // ── Night Surcharge warning modal — lifted here so it renders ABOVE the
+  //    booking modal (higher z-index) rather than being trapped inside it ──
+  const [nightSurchargeField,   setNightSurchargeField]   = useState(null);
+  const [nightSurchargePending, setNightSurchargePending] = useState('');
+  const NIGHT_SURCHARGE = 500;
+
+  const handleNightSurcharge = ({ field, value }) => {
+    setNightSurchargePending(value);
+    setNightSurchargeField(field);
+  };
+
+  const handleNightSurchargeConfirm = () => {
+    if (nightSurchargeField === 'arrival')   setArrivalTime(nightSurchargePending);
+    if (nightSurchargeField === 'departure') setDepartureTime(nightSurchargePending);
+    setNightSurchargeField(null);
+    setNightSurchargePending('');
+  };
+
+  const handleNightSurchargeClose = () => {
+    if (nightSurchargeField === 'arrival')   setArrivalTime('');
+    if (nightSurchargeField === 'departure') setDepartureTime('');
+    setNightSurchargeField(null);
+    setNightSurchargePending('');
+  };
 
   if (!transfer) return null;
 
@@ -117,7 +140,40 @@ function TransferBooking({
           currency={currency}
           exchangeRate={exchangeRate}
           currencySymbol={currencySymbol}
+          // ── night surcharge modal is handled here at parent level ──
+          onNightSurcharge={handleNightSurcharge}
         />
+      )}
+
+      {/* ── Night Surcharge Warning Modal — rendered here (outside booking modal)
+           so it sits ABOVE the booking modal overlay in the z-index stack ── */}
+      {nightSurchargeField && (
+        <div className="tbfm-night-modal-overlay">
+          <div className="tbfm-night-modal-card">
+            <div className="tbfm-night-modal-icon">🌙</div>
+            <h3 className="tbfm-night-modal-title">Night Schedule Surcharge</h3>
+            <p className="tbfm-night-modal-body">
+              Schedules between <strong>12:00 AM and 5:00 AM</strong> include an additional night fee of{' '}
+              <strong className="tbfm-night-modal-amount">₱500</strong> to cover overnight driver allowances and logistics.
+            </p>
+            <div className="tbfm-night-modal-actions">
+              <button
+                type="button"
+                className="tbfm-night-btn tbfm-night-btn-close"
+                onClick={handleNightSurchargeClose}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="tbfm-night-btn tbfm-night-btn-confirm"
+                onClick={handleNightSurchargeConfirm}
+              >
+                Continue (+₱500)
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

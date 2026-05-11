@@ -340,73 +340,63 @@
   flex-shrink: 0;
 }
 
-/* Calendar popup */
+/* ── Calendar popup — styled to match the screenshot ── */
 .tbfm-custom-calendar {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0;
   z-index: 9999;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
-  padding: 16px;
-  min-width: 280px;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+  padding: 18px 16px 14px 16px;
+  min-width: 300px;
+  width: 300px;
 }
 
+/* Header row: prev arrow | "Month Year" label | next arrow */
 .tbfm-calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.tbfm-calendar-month-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: 0.01em;
 }
 
 .tbfm-cal-nav-btn {
   background: none;
-  border: none;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #475569;
-  transition: background 0.15s;
+  color: #64748b;
+  transition: all 0.15s;
+  padding: 0;
 }
 
 .tbfm-cal-nav-btn:hover {
-  background: #f1f5f9;
-}
-
-.tbfm-calendar-selectors {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.tbfm-month-select,
-.tbfm-year-select {
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  background: #f8fafc;
+  border-color: #cbd5e1;
   color: #1e293b;
-  background: white;
-  cursor: pointer;
-  outline: none;
 }
 
-.tbfm-month-select:focus,
-.tbfm-year-select:focus {
-  border-color: #fc9c1b;
-}
-
+/* Weekday row */
 .tbfm-calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .tbfm-cal-weekday {
@@ -414,9 +404,11 @@
   font-size: 0.68rem;
   font-weight: 700;
   color: #94a3b8;
-  padding: 4px;
+  padding: 4px 0;
+  letter-spacing: 0.04em;
 }
 
+/* Day grid */
 .tbfm-calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -427,24 +419,45 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
-  border-radius: 6px;
-  font-size: 0.82rem;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 0.85rem;
   cursor: pointer;
   color: #374151;
   transition: all 0.15s ease;
   font-weight: 400;
+  position: relative;
 }
 
 .tbfm-cal-day:hover:not(.disabled):not(.empty) {
   background: #fff7ed;
   color: #fc9c1b;
+  font-weight: 600;
 }
 
 .tbfm-cal-day.selected {
   background: #fc9c1b;
   color: white;
   font-weight: 700;
+  border-radius: 8px;
+}
+
+/* Today indicator — orange dot beneath the number */
+.tbfm-cal-day.today:not(.selected) {
+  color: #fc9c1b;
+  font-weight: 700;
+}
+
+.tbfm-cal-day.today:not(.selected)::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: #fc9c1b;
+  border-radius: 50%;
 }
 
 .tbfm-cal-day.disabled {
@@ -454,6 +467,198 @@
 
 .tbfm-cal-day.empty {
   cursor: default;
+}
+
+/* ============================================
+   ANALOG CLOCK TIME PICKER
+   ============================================ */
+
+.tbfm-time-picker-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.tbfm-time-trigger {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.tbfm-time-trigger:hover {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+}
+
+.tbfm-time-value {
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.tbfm-time-placeholder {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Analog clock popup */
+.tbfm-analog-clock-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 9999;
+  background: #eef2f8;
+  border: 1px solid #c8d6e8;
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+  padding: 16px 16px 12px 16px;
+  width: 240px;
+  animation: tbfmFadeIn 0.15s ease-out;
+}
+
+/* ── Header: HH:MM display + AM/PM stack ── */
+.tbfm-analog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+.tbfm-analog-time-display {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: white;
+  border-radius: 12px;
+  padding: 6px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  flex: 1;
+  justify-content: center;
+}
+
+.tbfm-analog-segment {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.tbfm-analog-segment.active {
+  background: #d0ddf0;
+  color: #001b3e;
+}
+
+.tbfm-analog-segment:hover:not(.active) {
+  background: #e8eef8;
+}
+
+.tbfm-analog-colon {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #9ca3af;
+  line-height: 1;
+  padding-bottom: 2px;
+}
+
+/* AM/PM stacked buttons */
+.tbfm-analog-period-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tbfm-analog-period-btn {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #d1d5db;
+  background: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 38px;
+  text-align: center;
+}
+
+.tbfm-analog-period-btn:hover:not(.active) {
+  border-color: #fc9c1b;
+  color: #fc9c1b;
+}
+
+.tbfm-analog-period-btn.active {
+  background: #001b3e;
+  border-color: #001b3e;
+  color: white;
+}
+
+/* ── Clock face ── */
+.tbfm-analog-face-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.tbfm-analog-svg {
+  width: 208px;
+  height: 208px;
+  cursor: pointer;
+  border-radius: 50%;
+  display: block;
+}
+
+/* ── Footer: Cancel / OK ── */
+.tbfm-analog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tbfm-analog-cancel-btn,
+.tbfm-analog-ok-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.tbfm-analog-cancel-btn {
+  background: transparent;
+  color: #6b7280;
+}
+
+.tbfm-analog-cancel-btn:hover {
+  background: #e8eef8;
+  color: #374151;
+}
+
+.tbfm-analog-ok-btn {
+  background: #001b3e;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 27, 62, 0.3);
+}
+
+.tbfm-analog-ok-btn:hover {
+  background: #002d6b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 27, 62, 0.4);
 }
 
 /* Partial payment restricted notice */
@@ -909,11 +1114,7 @@
     transform: translateX(-50%);
   }
 
-  .tbfm-month-select,
-  .tbfm-year-select {
-    font-size: 0.75rem;
-    padding: 5px 6px;
-  }
+  /* Clock adjustments handled in Clock.css (fixed+centered) */
 
   /* Payment section */
   .tbfm-payment-options {

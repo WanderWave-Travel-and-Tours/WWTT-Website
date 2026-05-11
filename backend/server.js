@@ -156,7 +156,7 @@ const destinationRoutes = require('./routes/destinationRoute');
 const transferRoute             = require('./routes/transferBookingRoute');       // Transfer listings (vehicles/options)
 const transferBookingOrderRoute = require('./routes/transferBookingOrderRoute'); // Customer transfer bookings
 const customizedBookingRoute    = require('./routes/Customizedbookingroute');    // ✅ ADDED: Customized booking wizard
-
+const locationRoute             = require('./routes/locationRoute');           // ← ADD
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -325,6 +325,7 @@ app.use('/api/packages', emailSyncRoute);
 app.use('/api/destinations', destinationRoutes);
 app.use('/api/transfers', transferRoute);                     // Transfer listings (CRUD: vehicles/options)
 app.use('/api/transfer-bookings', transferBookingOrderRoute); // Customer transfer bookings
+app.use('/api/locations',         locationRoute);                              // ← ADD
 app.use('/api/customized-bookings', customizedBookingRoute); // ✅ ADDED: Customized booking wizard
 // ✅ Single mount — transferBookingRoute duplicate removed
 
@@ -934,4 +935,4 @@ if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html')))
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-});
+}); 
