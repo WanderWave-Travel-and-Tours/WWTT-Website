@@ -6,14 +6,14 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 // Import the same CSS files as BookingFormModal
 import '../packageDeals/BookingFormModal.css';
 import '../packageDeals/PaymentOption.css';
+import './TourBookingFormModal.css';
 
-// ✅ CUSTOM DATE PICKER COMPONENT - WORKS ON ALL PLATFORMS
+// ✅ CUSTOM DATE PICKER COMPONENT - MODAL STYLE (matches Wanderwave UI)
 const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(value || '');
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
-  const calendarRef = useRef(null);
 
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
@@ -23,17 +23,10 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
 
   const currentDate = parseDate(selectedDate);
 
-  const maxYear = maxDate ? new Date(maxDate).getFullYear() : new Date().getFullYear();
-  const minYear = maxYear - 100;
-  const years = [];
-  for (let y = maxYear; y >= minYear; y--) {
-    years.push(y);
-  }
-
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                       'July', 'August', 'September', 'October', 'November', 'December'];
 
-  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const weekDays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
@@ -46,9 +39,12 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return `${monthNames[month - 1]} ${day}, ${year}`;
   };
+
+  const today = new Date();
+  const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
 
   const handleDateClick = (day) => {
     const newDate = formatDate(viewYear, viewMonth, day);
@@ -67,16 +63,13 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
     else setViewMonth(viewMonth + 1);
   };
 
-  const handleMonthChange = (e) => setViewMonth(parseInt(e.target.value));
-  const handleYearChange = (e) => setViewYear(parseInt(e.target.value));
-
   const generateCalendar = () => {
     const daysInMonth = getDaysInMonth(viewMonth, viewYear);
     const firstDay = getFirstDayOfMonth(viewMonth, viewYear);
     const days = [];
 
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="bfm-cal-day empty"></div>);
+      days.push(<div key={`empty-${i}`} className="cdp-cal-day empty"></div>);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -85,12 +78,13 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
                         currentDate.year === viewYear &&
                         currentDate.month === viewMonth &&
                         currentDate.day === day;
+      const isToday = dateStr === todayStr;
       const isDisabled = maxDate && new Date(dateStr) > new Date(maxDate);
 
       days.push(
         <div
           key={day}
-          className={`bfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+          className={`cdp-cal-day ${isSelected ? 'selected' : ''} ${isToday && !isSelected ? 'today' : ''} ${isDisabled ? 'disabled' : ''}`}
           onClick={() => !isDisabled && handleDateClick(day)}
         >
           {day}
@@ -102,13 +96,9 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
   };
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handleKeyDown = (e) => { if (e.key === 'Escape') setIsOpen(false); };
+    if (isOpen) document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
   useEffect(() => {
@@ -120,40 +110,56 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
   }, [value]);
 
   return (
-    <div className="bfm-date-picker-wrapper" ref={calendarRef}>
-      <div className="bfm-calendar-trigger" onClick={() => setIsOpen(!isOpen)}>
-        <span className={selectedDate ? 'bfm-date-value' : 'bfm-date-placeholder'}>
+    <div className="cdp-wrapper">
+      {/* Trigger */}
+      <div className="cdp-trigger" onClick={() => setIsOpen(true)}>
+        <span className={selectedDate ? 'cdp-date-value' : 'cdp-date-placeholder'}>
           {selectedDate ? formatDisplayDate(selectedDate) : (placeholder || 'Select date')}
         </span>
-        <CalendarIcon size={16} className="bfm-trigger-icon" />
+        <CalendarIcon size={16} className="cdp-trigger-icon" />
       </div>
 
+      {/* Modal Overlay */}
       {isOpen && (
-        <div className="bfm-custom-calendar">
-          <div className="bfm-calendar-header">
-            <button type="button" className="bfm-cal-nav-btn" onClick={previousMonth} aria-label="Previous month">
-              <ChevronLeft size={16} />
-            </button>
-            <div className="bfm-calendar-selectors">
-              <select className="bfm-month-select" value={viewMonth} onChange={handleMonthChange}>
-                {monthNames.map((month, idx) => (
-                  <option key={idx} value={idx}>{month}</option>
-                ))}
-              </select>
-              <select className="bfm-year-select" value={viewYear} onChange={handleYearChange}>
-                {years.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+        <div className="cdp-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsOpen(false); }}>
+          <div className="cdp-modal">
+            {/* Modal Header */}
+            <div className="cdp-modal-header">
+              <div className="cdp-modal-title-row">
+                <CalendarIcon size={17} className="cdp-header-icon" />
+                <span className="cdp-modal-title">Select Date</span>
+              </div>
+              <button type="button" className="cdp-close-btn" onClick={() => setIsOpen(false)} aria-label="Close">
+                <X size={16} />
+              </button>
             </div>
-            <button type="button" className="bfm-cal-nav-btn" onClick={nextMonth} aria-label="Next month">
-              <ChevronRight size={16} />
-            </button>
+
+            {/* Month/Year Navigation */}
+            <div className="cdp-nav-row">
+              <button type="button" className="cdp-nav-btn" onClick={previousMonth} aria-label="Previous month">
+                <ChevronLeft size={16} />
+              </button>
+              <span className="cdp-month-year-label">{monthNames[viewMonth]} {viewYear}</span>
+              <button type="button" className="cdp-nav-btn" onClick={nextMonth} aria-label="Next month">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
+            {/* Weekday Headers */}
+            <div className="cdp-weekdays">
+              {weekDays.map(day => <div key={day} className="cdp-weekday">{day}</div>)}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="cdp-days-grid">{generateCalendar()}</div>
+
+            {/* Footer */}
+            <div className="cdp-footer">
+              <button type="button" className="cdp-cancel-btn" onClick={() => setIsOpen(false)}>
+                Cancel
+              </button>
+            </div>
           </div>
-          <div className="bfm-calendar-weekdays">
-            {weekDays.map(day => <div key={day} className="bfm-cal-weekday">{day}</div>)}
-          </div>
-          <div className="bfm-calendar-days">{generateCalendar()}</div>
         </div>
       )}
     </div>
@@ -233,10 +239,11 @@ const TourBookingFormModal = ({
   const toast = useToast();
   const [localLoading, setLocalLoading] = useState(false);
   const overlayRef = useRef(null);
+  const formWrapperRef = useRef(null);
 
   const handleOverlayWheel = (e) => {
-    if (overlayRef.current) {
-      overlayRef.current.scrollTop += e.deltaY;
+    if (formWrapperRef.current) {
+      formWrapperRef.current.scrollTop += e.deltaY;
     }
   };
 
@@ -636,7 +643,7 @@ const TourBookingFormModal = ({
         </div>
 
         {/* SCROLLABLE FORM CONTENT */}
-        <div className="bfm-form-wrapper">
+        <div className="bfm-form-wrapper" ref={formWrapperRef}>
 
           {/* PROGRESS SECTION */}
           <div className="bfm-progress-section">
@@ -872,36 +879,87 @@ const TourBookingFormModal = ({
                   <h3>Select Payment Option</h3>
                 </div>
 
-                <div className="bfm-payment-options">
-                  <div
-                    className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
-                    onClick={() => setPaymentType('full')}
-                  >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <CreditCard size={16} />
-                        <span>Pay in Full</span>
-                        <span className="bfm-recommended-badge">Most Popular</span>
-                      </div>
+                {/* ── Full Payment Required Notice (shown only when partial is not allowed) ── */}
+                {!isPartialPaymentAllowed && (
+                  <div className="bfm-full-payment-notice">
+                    <div className="bfm-full-payment-notice-title">
+                      <span className="bfm-lightning-icon">⚡</span> Full Payment Required
                     </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">
-                        {currencySymbol}{formatCurrency(finalAmount)}
-                      </div>
-                      <div className="bfm-payment-description">
-                        Complete payment now and secure your booking
-                      </div>
-                      <ul className="bfm-payment-benefits">
-                        <li>Instant confirmation</li>
-                        <li>No further payments needed</li>
-                        <li>Priority processing</li>
-                      </ul>
+                    <div className="bfm-full-payment-notice-text">
+                      Partial payment is unavailable for travel dates of{' '}
+                      <strong>today</strong> or <strong>tomorrow</strong>.
                     </div>
                   </div>
+                )}
 
+                <div className={`bfm-payment-options${!isPartialPaymentAllowed ? ' bfm-payment-options-single' : ''}`}>
+
+                  {/* ── Pay in Full card ── */}
+                  <div
+                    className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}${!isPartialPaymentAllowed ? ' bfm-payment-card-full-only' : ''}`}
+                    onClick={() => setPaymentType('full')}
+                  >
+                    {!isPartialPaymentAllowed ? (
+                      /* New split-header layout when only full payment is available */
+                      <>
+                        <div className="bfm-payment-card-header-split">
+                          <div className="bfm-payment-card-header-left">
+                            <div className="bfm-payment-radio">
+                              <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                            </div>
+                            <div className="bfm-payment-card-title">
+                              <CreditCard size={16} />
+                              <span>Pay in Full</span>
+                              <span className="bfm-recommended-badge">Most Popular</span>
+                            </div>
+                          </div>
+                          <div className="bfm-payment-card-amount-right">
+                            <span className="bfm-payment-amount-right-value">{currencySymbol}{formatCurrency(finalAmount)}</span>
+                            <span className="bfm-payment-amount-right-label">TOTAL AMOUNT</span>
+                          </div>
+                        </div>
+                        <div className="bfm-payment-card-body bfm-payment-card-body-full">
+                          <div className="bfm-payment-description">
+                            Complete payment now and secure your booking instantly.
+                          </div>
+                          <ul className="bfm-payment-benefits bfm-payment-benefits-check">
+                            <li>Instant confirmation</li>
+                            <li>No further payments needed</li>
+                            <li>Priority processing</li>
+                          </ul>
+                        </div>
+                      </>
+                    ) : (
+                      /* Original layout when both options are available */
+                      <>
+                        <div className="bfm-payment-card-header">
+                          <div className="bfm-payment-radio">
+                            <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                          </div>
+                          <div className="bfm-payment-card-title">
+                            <CreditCard size={16} />
+                            <span>Pay in Full</span>
+                            <span className="bfm-recommended-badge">Most Popular</span>
+                          </div>
+                        </div>
+                        <div className="bfm-payment-card-body">
+                          <div className="bfm-payment-amount">
+                            {currencySymbol}{formatCurrency(finalAmount)}
+                          </div>
+                          <div className="bfm-payment-description">
+                            Complete payment now and secure your booking
+                          </div>
+                          <ul className="bfm-payment-benefits">
+                            <li>Instant confirmation</li>
+                            <li>No further payments needed</li>
+                            <li>Priority processing</li>
+                          </ul>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* ── Partial Payment card (only shown when allowed) ── */}
                   {isPartialPaymentAllowed && (
                   <div
                     className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}

@@ -1072,6 +1072,117 @@
   color: #ea580c;
 }
 
+/* ── Full Payment Required Notice ─────────────────────────────── */
+.bfm-full-payment-notice {
+  background: #fffbeb;
+  border: 1.5px solid #fbbf24;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+.bfm-full-payment-notice-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bfm-lightning-icon {
+  font-size: 0.9rem;
+}
+
+.bfm-full-payment-notice-text {
+  font-size: 0.75rem;
+  color: #78350f;
+  line-height: 1.4;
+}
+
+/* ── Single-option grid layout ─────────────────────────────────── */
+.bfm-payment-options-single {
+  grid-template-columns: 1fr;
+}
+
+/* ── Full-only card ────────────────────────────────────────────── */
+.bfm-payment-card-full-only {
+  cursor: default;
+}
+
+/* Split header: title on left, amount on right */
+.bfm-payment-card-header-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bfm-payment-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.bfm-payment-card-amount-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-left: 14px;
+  border-left: 1.5px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.bfm-payment-amount-right-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fc9c1b;
+  line-height: 1.1;
+}
+
+.bfm-payment-amount-right-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+/* Body with no left indent for full-only layout */
+.bfm-payment-card-body-full {
+  padding-left: 0;
+}
+
+/* Checkmark benefits list */
+.bfm-payment-benefits-check {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0 0;
+}
+
+.bfm-payment-benefits-check li {
+  padding: 2px 0;
+  font-size: 0.75rem;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bfm-payment-benefits-check li::before {
+  content: '✓';
+  color: #10b981;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
 /* --- Footer Actions (sticky bottom) --- */
 .bfm-actions {
   display: flex;
@@ -1242,5 +1353,408 @@
   .bfm-back-btn, .bfm-submit-btn {
     width: 100%;
     padding: 12px;
+  }
+}
+
+/* ============================================================
+   TourBookingFormModal.css
+   Additional styles for Tour Booking Modal — full-payment-only UI
+   ============================================================ */
+
+/* ── Full Payment Required Notice ─────────────────────────────── */
+.bfm-full-payment-notice {
+  background: #fffbeb;
+  border: 1.5px solid #fbbf24;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+.bfm-full-payment-notice-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bfm-lightning-icon {
+  font-size: 0.9rem;
+}
+
+.bfm-full-payment-notice-text {
+  font-size: 0.75rem;
+  color: #78350f;
+  line-height: 1.4;
+}
+
+/* ── Single-option grid (1 column when only full payment) ─────── */
+.bfm-payment-options-single {
+  grid-template-columns: 1fr;
+}
+
+/* ── Full-only card tweaks ─────────────────────────────────────── */
+.bfm-payment-card-full-only {
+  cursor: default;
+}
+
+/* Split header: title/radio left | amount right */
+.bfm-payment-card-header-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bfm-payment-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+/* Right-side amount block with vertical divider */
+.bfm-payment-card-amount-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-left: 16px;
+  border-left: 1.5px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.bfm-payment-amount-right-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fc9c1b;
+  line-height: 1.1;
+}
+
+.bfm-payment-amount-right-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+
+/* Body with no left indent for full-only layout */
+.bfm-payment-card-body-full {
+  padding-left: 0;
+}
+
+/* ── Checkmark benefits list ───────────────────────────────────── */
+.bfm-payment-benefits-check {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0 0;
+}
+
+.bfm-payment-benefits-check li {
+  padding: 2px 0;
+  font-size: 0.75rem;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bfm-payment-benefits-check li::before {
+  content: '✓';
+  color: #10b981;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   ✅ MODAL-STYLE CUSTOM DATE PICKER (CDP)
+   Matches Wanderwave "Select Date" calendar UI
+   ============================================================ */
+
+/* Trigger button */
+.cdp-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.cdp-trigger {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.cdp-trigger:hover {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+}
+
+.cdp-date-value {
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.cdp-date-placeholder {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.cdp-trigger-icon {
+  color: #64748b;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.cdp-trigger:hover .cdp-trigger-icon {
+  color: #fc9c1b;
+}
+
+/* Overlay backdrop */
+.cdp-modal-overlay {
+  position: fixed;
+  /* top offset clears the fixed site navbar (orange bar ~40px + white nav ~90px = ~130px) */
+  top: 130px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  animation: cdpFadeIn 0.15s ease-out;
+}
+
+@keyframes cdpFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal card */
+.cdp-modal {
+  background: white;
+  border-radius: 16px;
+  width: 330px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 24px 60px -8px rgba(0, 0, 0, 0.3), 0 12px 20px -6px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: cdpSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cdpSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal header row: title + close */
+.cdp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cdp-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cdp-header-icon {
+  color: #fc9c1b;
+}
+
+.cdp-modal-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  letter-spacing: 0.01em;
+}
+
+.cdp-close-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.cdp-close-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Month/Year navigation row */
+.cdp-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 16px 10px 16px;
+}
+
+.cdp-nav-btn {
+  background: none;
+  border: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  border-radius: 6px;
+  transition: all 0.18s;
+  padding: 0;
+}
+
+.cdp-nav-btn:hover {
+  background: #fff7ed;
+  color: #fc9c1b;
+}
+
+.cdp-month-year-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  letter-spacing: 0.01em;
+}
+
+/* Weekday header row */
+.cdp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 14px;
+  margin-bottom: 4px;
+}
+
+.cdp-weekday {
+  text-align: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #94a3b8;
+  padding: 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Days grid */
+.cdp-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 14px;
+  gap: 2px;
+}
+
+.cdp-cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #334155;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  border: 2px solid transparent;
+}
+
+.cdp-cal-day:not(.empty):not(.disabled):hover {
+  background: #fff7ed;
+  border-color: #fc9c1b;
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.cdp-cal-day.today {
+  border-color: #fc9c1b;
+  color: #fc9c1b;
+  font-weight: 700;
+}
+
+.cdp-cal-day.selected {
+  background: #fc9c1b;
+  color: white;
+  font-weight: 800;
+  border-color: #fc9c1b;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.4);
+}
+
+.cdp-cal-day.empty {
+  cursor: default;
+}
+
+.cdp-cal-day.disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.cdp-cal-day.disabled:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Footer */
+.cdp-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px 16px 16px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 10px;
+}
+
+.cdp-cancel-btn {
+  background: none;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cdp-cancel-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+@media (max-width: 640px) {
+  .cdp-modal-overlay {
+    top: 110px;
+  }
+
+  .cdp-modal {
+    width: calc(100vw - 32px);
+    max-width: 340px;
   }
 }

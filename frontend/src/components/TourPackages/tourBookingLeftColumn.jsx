@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  MapPin, Plane, Hotel,
-  Utensils, Bus, Camera, Briefcase, ChevronDown, ChevronUp,
-  CheckSquare, CalendarDays, ChevronLeft
+  MapPin, CheckCircle, ChevronLeft, User
 } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-import './tourBookingLeftColumn.css'; // ✅ Reuse same styles
+import './tourBookingLeftColumn.css';
 
 // ── Duration color map ────────────────────────────────────────────────────────
 const DURATION_COLORS = {
@@ -108,6 +106,39 @@ const RubberStamp = ({ text }) => {
   );
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const isGuideItem = (text) =>
+  /\b(licensed\s+)?tour\s*guide\b|\bguide\b/i.test(text);
+
+/** Extract a leading emoji from an inclusion string, return { emoji, cleanText } */
+const extractLeadingEmoji = (text) => {
+  const emojiRegex = /^((?:\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF]|\uD83E[\uDD00-\uDDFF]|[\u2600-\u27BF]|[\u2300-\u23FF]|[\u2B00-\u2BFF])\uFE0F?)+\s*/;
+  const match = text.match(emojiRegex);
+  if (!match) return { emoji: null, cleanText: text.trim() };
+  return {
+    emoji: match[0].trim(),
+    cleanText: text.slice(match[0].length).trim(),
+  };
+};
+
+/** Detect category label per inclusion item */
+const detectInclusionCategory = (text) => {
+  const lower = text.toLowerCase();
+  if (/\b(licensed\s+)?tour\s*guide\b|\bguide\b/i.test(lower))    return 'COMPLIMENTARY';
+  if (/\d{1,2}:\d{2}\s*(am|pm)|schedule|itinerary/i.test(lower))  return 'SCHEDULE';
+  if (/hotel|accommodation|accomodation|lodge|resort|inn|stay/i.test(lower)) return 'ACCOMMODATION';
+  if (/breakfast|lunch|dinner|meal|food|buffet|dining/i.test(lower)) return 'MEALS';
+  if (/flight|airfare|airline|air fare/i.test(lower))               return 'AIRFARE';
+  if (/transfer|transport|van|bus|pudo|round.?trip/i.test(lower))   return 'TRANSFER';
+  if (/beach|island hopping|shore|sidetrip/i.test(lower))           return 'BEACH SIDETRIP';
+  if (/safari|sanctuary|wildlife|reserve/i.test(lower))             return 'WILDLIFE SANCTUARY';
+  if (/town|city|heritage|culture|local|museum/i.test(lower))       return 'TOWN VISIT';
+  if (/entrance|admission|ticket|fee/i.test(lower))                  return 'ENTRANCE FEE';
+  if (/island|hopping|snorkel|diving|kayak|trekking|surfing|swimming|activity|activities/i.test(lower)) return 'ACTIVITY';
+  return 'INCLUSION';
+};
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const TourBookingLeftColumn = ({
   pkg,
@@ -123,10 +154,6 @@ const TourBookingLeftColumn = ({
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const closeConfirmModal = () => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
 
-  const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
-  const [expandedDayIndices, setExpandedDayIndices] = useState({});
-  const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
-
   // ✅ Back navigation — uses onGoBack prop if available (same-page view switch)
   const handleBackClick = () => {
     if (onGoBack) {
@@ -140,13 +167,6 @@ const TourBookingLeftColumn = ({
       });
     }
   };
-
-  const itinerary = pkg.itinerary || [];
-  const INITIAL_DAYS = 3;
-  const shouldShowButton = itinerary.length > INITIAL_DAYS;
-  const visibleItinerary = isItineraryExpanded ? itinerary : itinerary.slice(0, INITIAL_DAYS);
-
-  const toggleDay = (index) => setExpandedDayIndices(prev => ({ ...prev, [index]: !prev[index] }));
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice = (phpPrice) => currency === 'PHP' ? phpPrice : (phpPrice / exchangeRate) * 1.30;
@@ -164,13 +184,40 @@ const TourBookingLeftColumn = ({
   const effectivePaxCount = isMinOfTwoPkg ? Math.max(2, paxCount) : isSoloPkg ? 1 : Math.max(1, paxCount);
 
   const basePrice = pkg.price || 0;
-
   const displayPrice = isMinOfTwoPkg
     ? Math.round(basePrice + Math.max(0, effectivePaxCount - 2) * (basePrice / 2))
     : Math.round(basePrice * effectivePaxCount);
   const convertedDisplayPrice = convertPrice(displayPrice);
 
   const { duration, restOfTitle } = parseTitleDuration(pkg.title || pkg.name);
+
+  const inclusions = pkg.inclusions || [];
+
+  // ── Smart category detection (kept for other usage) ───────────────────────
+  const CATEGORIES = [
+    { key: 'flight',   label: 'Airfare',    icon: '✈️', kws: ['airfare','air fare','flight','airline','plane ticket','rt airfare'] },
+    { key: 'hotel',    label: 'Hotel',      icon: '🏨', kws: ['hotel','accommodation','accomodation','lodging','room','stay','night'] },
+    { key: 'transfer', label: 'Transfer',   icon: '🚌', kws: ['roundtrip','round trip','round-trip','rt transfer','transfer','roadtrip','pudo'] },
+    { key: 'meals',    label: 'Meals',      icon: '🍽️', kws: ['meal','meals','breakfast','lunch','dinner','buffet','food','dining'] },
+    { key: 'tours',    label: 'Activities', icon: '📸', kws: ['tour','island hopping','activity','activities','snorkeling','diving','trekking','kayaking','surfing','swimming'] },
+    { key: 'guide',    label: 'Tour Guide', icon: '🧭', kws: [] },
+  ];
+  const lowerInclusions = inclusions.map(s => s.toLowerCase().trim());
+  const pkgNameLow = (pkg.name || pkg.title || '').toLowerCase();
+  const hasNoGuide = ['no guide','no tour guide','without guide','w/o guide'].some(kw =>
+    pkgNameLow.includes(kw) || lowerInclusions.some(i => i.includes(kw))
+  );
+  const activeCategories = CATEGORIES.filter(cat => {
+    if (cat.key === 'guide') return !hasNoGuide;
+    if (cat.key === 'flight') return !!selectedFlight || lowerInclusions.some(inc => cat.kws.some(kw => inc.includes(kw)));
+    return lowerInclusions.some(inc => cat.kws.some(kw => inc.includes(kw)));
+  });
+
+  // ── Build final display list — auto-prepend guide row if not already present
+  const hasGuideInInclusions = inclusions.some(item => isGuideItem(item));
+  const displayInclusions = (!hasNoGuide && !hasGuideInInclusions)
+    ? ['Licensed Tour Guide', ...inclusions]
+    : inclusions;
 
   return (
     <div className="blc-container">
@@ -215,102 +262,67 @@ const TourBookingLeftColumn = ({
             <MapPin size={18} color="#f97316" /> {pkg.location || pkg.destination}
           </div>
         </div>
-
-        {/* ── Inclusion icons ──────────────────────────────────────────── */}
-        <div className="blc-icons-row">
-          {(() => {
-            const FLIGHT_KW   = ['airfare', 'air fare', 'flight', 'airline', 'plane ticket', 'rt airfare'];
-            const HOTEL_KW    = ['hotel', 'accommodation', 'accomodation', 'lodging', 'room', 'stay', 'night'];
-            const TRANSFER_KW = ['roundtrip', 'round trip', 'round-trip', 'rt transfer', 'transfer', 'roadtrip', 'pudo'];
-            const MEALS_KW    = ['meal', 'meals', 'breakfast', 'lunch', 'dinner', 'buffet', 'food', 'dining'];
-            const TOURS_KW    = ['tour', 'island hopping', 'activity', 'activities', 'snorkeling', 'diving', 'trekking', 'kayaking', 'surfing', 'swimming'];
-            const NO_GUIDE_KW = ['no guide', 'no tour guide', 'without guide', 'w/o guide'];
-            const activeInclusions = (pkg.inclusions || []).map(s => s.toLowerCase().trim());
-            const hasKw = (kws) => activeInclusions.some(inc => kws.some(kw => inc.includes(kw)));
-            const pkgNameLow = (pkg.name || pkg.title || '').toLowerCase();
-            const hasNoGuide = NO_GUIDE_KW.some(kw => pkgNameLow.includes(kw)) || activeInclusions.some(inc => NO_GUIDE_KW.some(kw => inc.includes(kw)));
-            const ICONS = [
-              { Icon: Plane,     label: 'Flights',  active: !!selectedFlight || hasKw(FLIGHT_KW)  },
-              { Icon: Hotel,     label: 'Hotel',    active: hasKw(HOTEL_KW)                        },
-              { Icon: Bus,       label: 'Transfer', active: hasKw(TRANSFER_KW)                     },
-              { Icon: Utensils,  label: 'Meals',    active: hasKw(MEALS_KW)                        },
-              { Icon: Camera,    label: 'Tours',    active: hasKw(TOURS_KW)                        },
-              { Icon: Briefcase, label: 'Guide',    active: !hasNoGuide                            },
-            ];
-            return ICONS.map(({ Icon, label, active }) => (
-              <Icon key={label} size={22} className={active ? 'blc-icon blc-icon--active' : 'blc-icon'} />
-            ));
-          })()}
-        </div>
       </div>
 
       {/* ── What's Included ──────────────────────────────────────────────── */}
-      <div className="blc-card">
-        <div className="blc-card-header" onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}>
-          <h3 className="blc-section-title">
-            <CheckSquare size={20} color="#10b981" /> What's Included
-          </h3>
-          <div className={`blc-chevron ${isIncludedExpanded ? 'rotated' : ''}`}>
-            <ChevronDown size={20} />
-          </div>
-        </div>
-        <div className={`blc-collapsible ${isIncludedExpanded ? 'open' : ''}`}>
-          <ul className="blc-list">
-            {(pkg.inclusions || []).map((item, idx) => (
-              <li key={idx} className="blc-list-item">
-                <div style={{ minWidth: '20px', marginTop: '2px' }}><CheckSquare size={16} color="#10b981" /></div>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <div className="blc-inclusions-section">
 
-      {/* ── Itinerary ────────────────────────────────────────────────────── */}
-      <div>
-        <h3 className="blc-section-title" style={{ marginBottom: '24px' }}>
-          <CalendarDays size={20} color="#f97316" /> Tour Itinerary
-        </h3>
-        <div className="blc-timeline-container">
-          <div className="blc-timeline-line"></div>
-          {visibleItinerary.map((day, idx) => {
-            const isOpen = expandedDayIndices[idx];
-            return (
-              <div key={idx} className="blc-timeline-item">
-                <div className={`blc-timeline-dot ${isOpen ? 'active' : ''}`}></div>
-                <div style={{ paddingLeft: '16px' }}>
-                  <div className={`blc-day-card ${isOpen ? 'active' : ''}`} onClick={() => toggleDay(idx)}>
-                    <h4 className="blc-day-title">
-                      Day {day.day}: <span style={{ color: '#f97316' }}>{day.title}</span>
-                    </h4>
-                    <div className={`blc-chevron ${isOpen ? 'rotated' : ''}`}>
-                      <ChevronDown size={20} />
-                    </div>
-                  </div>
-                  <div className={`blc-day-content ${isOpen ? 'open' : ''}`}>
-                    <div className="blc-day-inner">
-                      <ul style={{ paddingLeft: '20px', margin: 0, color: '#475569', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                        {day.activities.map((act, i) => (
-                          <li key={i} style={{ marginBottom: '6px' }}>{act}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          {(!itinerary || itinerary.length === 0) && (
-            <p style={{ color: '#999', paddingLeft: '20px', fontStyle: 'italic' }}>No itinerary available.</p>
+        {/* Header — orange left border */}
+        <div className="blc-inclusions-header">
+          <h3 className="blc-inclusions-title">What's Included</h3>
+          {displayInclusions.length > 0 && (
+            <span className="blc-inclusions-badge">✓ {displayInclusions.length} items</span>
           )}
         </div>
-        {shouldShowButton && (
-          <div className="blc-expand-btn-container">
-            <button onClick={() => setIsItineraryExpanded(!isItineraryExpanded)} className="blc-expand-btn">
-              {isItineraryExpanded ? (<>Show Less Days <ChevronUp size={16} /></>) : (<>Show {itinerary.length - INITIAL_DAYS} More Days <ChevronDown size={16} /></>)}
-            </button>
-          </div>
+
+        {/* Inclusions list — v2 */}
+        {displayInclusions.length > 0 ? (
+          <ul className="blc-inclusions-list">
+            {displayInclusions.map((item, idx) => {
+              const guide = isGuideItem(item);
+              const category = detectInclusionCategory(item);
+              const { emoji, cleanText } = extractLeadingEmoji(item);
+
+              return (
+                <li
+                  key={idx}
+                  className={`blc-inclusion-item-v2${guide ? ' blc-inclusion-item--guide' : ''}`}
+                >
+                  {/* Left: icon circle */}
+                  <div className="blc-incl-icon-col">
+                    <div className={`blc-incl-circle${guide ? ' blc-incl-circle--guide' : ''}`}>
+                      {guide ? (
+                        <User size={15} color="#fff" strokeWidth={2.5} />
+                      ) : emoji ? (
+                        <span className="blc-incl-circle-emoji">{emoji}</span>
+                      ) : (
+                        <span className="blc-incl-circle-num">{idx + 1}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Middle: category label + title */}
+                  <div className="blc-incl-text-col">
+                    <span className="blc-incl-category-label">{category}</span>
+                    <span className="blc-incl-main-title">{cleanText}</span>
+                  </div>
+
+                  {/* Right: checkmark */}
+                  <div className="blc-incl-check-col">
+                    <CheckCircle
+                      size={18}
+                      color={guide ? '#f97316' : '#10b981'}
+                      strokeWidth={1.8}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="blc-inclusions-empty">No inclusions listed.</p>
         )}
+
       </div>
 
       <CustomConfirmModal

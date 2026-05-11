@@ -11,13 +11,12 @@ import CustomTimePicker from '../timePicker/Clock';
 import './TransferBookingFormModal.css';
 import LocationSelect from '../location/LocationSelect';
 
-// ── Custom Date Picker ────────────────────────────────────────────────────────
+// ── Custom Date Picker (Calendar Modal) ──────────────────────────────────────
 const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) => {
   const [isOpen,       setIsOpen]       = useState(false);
   const [selectedDate, setSelectedDate] = useState(value || '');
   const [viewMonth,    setViewMonth]    = useState(new Date().getMonth());
   const [viewYear,     setViewYear]     = useState(new Date().getFullYear());
-  const calendarRef = useRef(null);
 
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const weekDays   = ['SU','MO','TU','WE','TH','FR','SA'];
@@ -42,16 +41,6 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
   const firstDay    = getFirstDay(viewMonth, viewYear);
   const todayStr    = new Date().toISOString().split('T')[0];
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
   // Sync external value changes
   useEffect(() => {
     setSelectedDate(value || '');
@@ -67,57 +56,94 @@ const CustomDatePicker = ({ value, onChange, minDate, required, placeholder }) =
   };
 
   return (
-    <div className="tbfm-date-picker-wrapper" ref={calendarRef}>
-      <div onClick={() => setIsOpen(!isOpen)} className="tbfm-calendar-trigger">
+    <div className="tbfm-date-picker-wrapper">
+      {/* Trigger button */}
+      <div onClick={() => setIsOpen(true)} className="tbfm-calendar-trigger">
         <span className={selectedDate ? 'tbfm-date-value' : 'tbfm-date-placeholder'}>
           {selectedDate ? formatDisplay(selectedDate) : placeholder || 'Select date'}
         </span>
         <CalendarIcon size={16} className="tbfm-trigger-icon" />
       </div>
 
+      {/* Calendar Modal */}
       {isOpen && (
-        <div className="tbfm-custom-calendar">
-          {/* Calendar Header */}
-          <div className="tbfm-calendar-header">
-            <button type="button" className="tbfm-cal-nav-btn" onClick={prevMonth}>
-              <ChevronLeft size={16} />
-            </button>
+        <div className="tbfm-cal-modal-overlay" onClick={() => setIsOpen(false)}>
+          <div className="tbfm-cal-modal-card" onClick={(e) => e.stopPropagation()}>
 
-            <div className="tbfm-calendar-month-label">
-              {monthNames[viewMonth]} {viewYear}
+            {/* Modal Header */}
+            <div className="tbfm-cal-modal-header">
+              <div className="tbfm-cal-modal-title">
+                <CalendarIcon size={16} className="tbfm-cal-modal-title-icon" />
+                <span>Select Date</span>
+              </div>
+              <button
+                type="button"
+                className="tbfm-cal-modal-close"
+                onClick={() => setIsOpen(false)}
+              >
+                <X size={15} />
+              </button>
             </div>
 
-            <button type="button" className="tbfm-cal-nav-btn" onClick={nextMonth}>
-              <ChevronRight size={16} />
-            </button>
-          </div>
+            {/* Selected date display */}
+            {selectedDate && (
+              <div className="tbfm-cal-selected-display">
+                {formatDisplay(selectedDate)}
+              </div>
+            )}
 
-          {/* Weekday headers */}
-          <div className="tbfm-calendar-weekdays">
-            {weekDays.map(d => (
-              <div key={d} className="tbfm-cal-weekday">{d}</div>
-            ))}
-          </div>
+            {/* Month Navigation */}
+            <div className="tbfm-calendar-header">
+              <button type="button" className="tbfm-cal-nav-btn" onClick={prevMonth}>
+                <ChevronLeft size={16} />
+              </button>
+              <div className="tbfm-calendar-month-label">
+                {monthNames[viewMonth]} {viewYear}
+              </div>
+              <button type="button" className="tbfm-cal-nav-btn" onClick={nextMonth}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
 
-          {/* Day grid */}
-          <div className="tbfm-calendar-days">
-            {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} className="tbfm-cal-day empty" />)}
-            {[...Array(daysInMonth)].map((_, i) => {
-              const day  = i + 1;
-              const dStr = formatDate(viewYear, viewMonth, day);
-              const isSelected = dStr === selectedDate;
-              const isToday    = dStr === todayStr;
-              const isDisabled = minDate ? dStr < minDate : dStr < todayStr;
-              return (
-                <div
-                  key={day}
-                  className={`tbfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''} ${isToday && !isSelected ? 'today' : ''}`}
-                  onClick={() => !isDisabled && handleDayClick(day)}
-                >
-                  {day}
-                </div>
-              );
-            })}
+            {/* Weekday headers */}
+            <div className="tbfm-calendar-weekdays">
+              {weekDays.map(d => (
+                <div key={d} className="tbfm-cal-weekday">{d}</div>
+              ))}
+            </div>
+
+            {/* Day grid */}
+            <div className="tbfm-calendar-days">
+              {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} className="tbfm-cal-day empty" />)}
+              {[...Array(daysInMonth)].map((_, i) => {
+                const day  = i + 1;
+                const dStr = formatDate(viewYear, viewMonth, day);
+                const isSelected = dStr === selectedDate;
+                const isToday    = dStr === todayStr;
+                const isDisabled = minDate ? dStr < minDate : dStr < todayStr;
+                return (
+                  <div
+                    key={day}
+                    className={`tbfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''} ${isToday && !isSelected ? 'today' : ''}`}
+                    onClick={() => !isDisabled && handleDayClick(day)}
+                  >
+                    {day}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="tbfm-cal-modal-footer">
+              <button
+                type="button"
+                className="tbfm-cal-modal-cancel-btn"
+                onClick={() => setIsOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -551,39 +577,93 @@ const TransferBookingFormModal = ({
             </div>
             <div className="tbfm-section-divider" />
 
-            <div className="tbfm-payment-options" style={isPartialPaymentRestricted ? { gridTemplateColumns: '1fr' } : {}}>
-              {/* Full Payment */}
-              <div
-                className={`tbfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
-                onClick={() => setPaymentType('full')}
-              >
-                <div className="tbfm-payment-card-header">
-                  <div className="tbfm-payment-radio">
-                    <div className={`tbfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                  </div>
-                  <div className="tbfm-payment-card-title">
-                    <CreditCard size={15} className="tbfm-card-icon" />
-                    <span>Pay in Full</span>
-                    <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+            {isPartialPaymentRestricted ? (
+              /* ── Restricted: only full payment allowed — redesigned solo layout ── */
+              <div className="tbfm-restricted-payment-section">
+
+                {/* Info banner */}
+                <div className="tbfm-restricted-banner">
+                  <span className="tbfm-restricted-banner-icon">⚡</span>
+                  <div className="tbfm-restricted-banner-text">
+                    <strong>Full Payment Required</strong>
+                    <span>Partial payment is unavailable for travel dates of <strong>today</strong> or <strong>tomorrow</strong>.</span>
                   </div>
                 </div>
-                <div className="tbfm-payment-card-body">
-                  <div className="tbfm-payment-amount">
-                    {currencySymbol}{formatCurrency(effectiveTotalAmount)}
+
+                {/* Solo full-payment card — horizontal layout */}
+                <div className="tbfm-payment-card active tbfm-payment-card-solo" onClick={() => setPaymentType('full')}>
+                  <div className="tbfm-solo-card-inner">
+
+                    {/* Left: radio + title + description + benefits */}
+                    <div className="tbfm-solo-card-left">
+                      <div className="tbfm-payment-card-header">
+                        <div className="tbfm-payment-radio">
+                          <div className="tbfm-radio-dot active" />
+                        </div>
+                        <div className="tbfm-payment-card-title">
+                          <CreditCard size={15} className="tbfm-card-icon" />
+                          <span>Pay in Full</span>
+                          <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+                        </div>
+                      </div>
+                      <div className="tbfm-payment-card-body">
+                        <p className="tbfm-payment-description">
+                          Complete payment now and secure your booking instantly.
+                        </p>
+                        <ul className="tbfm-payment-benefits">
+                          <li>✓ Instant confirmation</li>
+                          <li>✓ No further payments needed</li>
+                          <li>✓ Priority processing</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Right: amount display */}
+                    <div className="tbfm-solo-card-right">
+                      <div className="tbfm-payment-amount tbfm-solo-amount">
+                        {currencySymbol}{formatCurrency(effectiveTotalAmount)}
+                      </div>
+                      <span className="tbfm-solo-total-label">Total Amount</span>
+                    </div>
+
                   </div>
-                  <p className="tbfm-payment-description">
-                    Complete payment now and secure your booking
-                  </p>
-                  <ul className="tbfm-payment-benefits">
-                    <li>Instant confirmation</li>
-                    <li>No further payments needed</li>
-                    <li>Priority processing</li>
-                  </ul>
                 </div>
               </div>
 
-              {/* Partial Payment — hidden when travel date is today or tomorrow */}
-              {!isPartialPaymentRestricted && (
+            ) : (
+              /* ── Normal: full + partial payment side by side ── */
+              <div className="tbfm-payment-options">
+                {/* Full Payment */}
+                <div
+                  className={`tbfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
+                  onClick={() => setPaymentType('full')}
+                >
+                  <div className="tbfm-payment-card-header">
+                    <div className="tbfm-payment-radio">
+                      <div className={`tbfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                    </div>
+                    <div className="tbfm-payment-card-title">
+                      <CreditCard size={15} className="tbfm-card-icon" />
+                      <span>Pay in Full</span>
+                      <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+                    </div>
+                  </div>
+                  <div className="tbfm-payment-card-body">
+                    <div className="tbfm-payment-amount">
+                      {currencySymbol}{formatCurrency(effectiveTotalAmount)}
+                    </div>
+                    <p className="tbfm-payment-description">
+                      Complete payment now and secure your booking
+                    </p>
+                    <ul className="tbfm-payment-benefits">
+                      <li>Instant confirmation</li>
+                      <li>No further payments needed</li>
+                      <li>Priority processing</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Partial Payment */}
                 <div
                   className={`tbfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
                   onClick={() => setPaymentType('partial')}
@@ -618,17 +698,6 @@ const TransferBookingFormModal = ({
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Notice when partial payment is restricted */}
-            {isPartialPaymentRestricted && (
-              <div className="tbfm-partial-restricted-notice">
-                <span className="tbfm-partial-restricted-icon">ℹ️</span>
-                <span>
-                  Partial payment is not available for bookings with a travel date of <strong>today or tomorrow</strong>.
-                  Full payment is required.
-                </span>
               </div>
             )}
 
@@ -674,6 +743,7 @@ const TransferBookingFormModal = ({
         </form>
       </div>
 
+  
       {/* ── Night Surcharge Warning Modal ── */}
       {nightSurchargeField && (
         <div className="tbfm-night-modal-overlay">

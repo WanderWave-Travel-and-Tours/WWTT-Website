@@ -300,24 +300,29 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   const hasAutoSelectedRef = useRef(false);
 
   // ✅ Per-night rate lookup based on hotel tier
+  // Matches both star numbers AND tier keywords from the DB
   // Only 4-star and 5-star hotels carry an additional nightly cost.
-  // Standard / Budget hotels are covered by the base package price.
+  // Standard / Budget / 3-Star & below are covered by the base package price.
   const getPerNightRate = (roomType) => {
     const t = (roomType || '').toUpperCase();
-    if (t.includes('5')) return 2500;
-    if (t.includes('4')) return 1660;
-    return 0; // Standard / Budget — no additional charge
+    // 5-star tier: "5-STAR", "5STAR", "PREMIUM", "LUXURY", "DELUXE"
+    if (t.includes('5') || t.includes('PREMIUM') || t.includes('LUXURY') || t.includes('DELUXE')) return 2500;
+    // 4-star tier: "4-STAR", "4STAR", "MID-RANGE", "MIDRANGE", "MID", "SUPERIOR"
+    if (t.includes('4') || t.includes('MID') || t.includes('SUPERIOR')) return 1660;
+    // Standard / Budget = ₱0
+    return 0;
   };
 
-  // ✅ Read actual capacity from DB (first hotel in group), fallback to 2
-  const getRoomsNeeded = (group) => {
-    const capacity = group.hotels[0]?.capacity || 2;
-    return Math.ceil(numberOfPax / capacity);
+  // ✅ 4-pax-per-room rule: Math.ceil(totalPax / 4)
+  // Spec: 1–4 pax = 1 room, 5–8 = 2 rooms, 9–12 = 3 rooms, etc.
+  const getRoomsNeeded = () => {
+    return Math.ceil(numberOfPax / 4);
   };
 
   // ✅ Total hotel cost for a category: rate × nights × rooms
-  const getCategoryHotelTotal = (roomType, group) => {
-    return getPerNightRate(roomType) * durationNights * getRoomsNeeded(group);
+  // Formula: pricePerNight × durationNights × Math.ceil(numberOfPax / 4)
+  const getCategoryHotelTotal = (roomType) => {
+    return getPerNightRate(roomType) * durationNights * getRoomsNeeded();
   };
   useEffect(() => {
     if (roomTypes && roomTypes.length > 0 && !hasAutoSelectedRef.current) {
@@ -395,8 +400,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
     onRoomTypeChange(firstHotel);
     // ✅ Fire callback so parent can add hotel cost to its total without re-implementing logic
     if (onHotelTotalChange) {
-      const group = groupedRoomTypes[roomType];
-      const hotelTotal = getCategoryHotelTotal(roomType, group);
+      const hotelTotal = getCategoryHotelTotal(roomType);
       onHotelTotalChange(hotelTotal, firstHotel);
     }
   };
@@ -440,7 +444,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
           const categoryName = getCategoryDisplayName(roomType);
 
           // ✅ Compute hotel cost for this category for card display
-          const categoryHotelTotal = getCategoryHotelTotal(roomType, group);
+          const categoryHotelTotal = getCategoryHotelTotal(roomType);
 
           return (
             <div 

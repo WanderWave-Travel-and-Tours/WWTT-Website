@@ -2002,7 +2002,7 @@
 .cbf-night-surcharge-row strong {
   color: #c2410c;
 }
-/* Partial payment unavailable notice */
+/* Partial payment unavailable notice (legacy — kept for safety) */
 .bfm-partial-unavailable-notice {
   margin-top: 10px;
   padding: 10px 14px;
@@ -2012,4 +2012,375 @@
   color: #c2410c;
   font-size: 13px;
   line-height: 1.5;
+}
+
+/* ── Full Payment Required banner (top of payment section) ── */
+.bfm-full-payment-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 15px;
+  background: #fffbf2;
+  border: 1.5px solid #fc9c1b;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.bfm-fpb-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bfm-full-payment-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bfm-full-payment-banner strong:first-child {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.bfm-full-payment-banner > div > span {
+  font-size: 0.78rem;
+  color: #78350f;
+}
+
+.bfm-full-payment-banner > div > span strong {
+  color: #92400e;
+  font-weight: 700;
+}
+
+/* ── Price in card header (full-payment-only state) ── */
+/* ── Price in card header (full-payment-only state) — scoped rule above ── */
+
+.bfm-chp-amount {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f97316;
+  line-height: 1.2;
+}
+
+.bfm-chp-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+/* ============================================
+   PAYMENT SECTION — full definitions
+   (mirrors BookingFormModal.css bfm-payment-*)
+   ============================================ */
+
+.bfm-payment-section {
+  margin-top: 20px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 16px 16px;
+}
+
+/* Header row — wallet icon + title */
+.bfm-payment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.bfm-payment-header svg {
+  color: #fc9c1b;
+  flex-shrink: 0;
+}
+
+.bfm-payment-header h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  margin: 0;
+}
+
+/* Cards container */
+.bfm-payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Individual card */
+.bfm-payment-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fff;
+}
+
+.bfm-payment-card:hover {
+  border-color: #fbbf24;
+  box-shadow: 0 2px 10px rgba(252, 156, 27, 0.12);
+}
+
+.bfm-payment-card.active {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+  box-shadow: 0 4px 14px rgba(252, 156, 27, 0.15);
+}
+
+/* Card header row: radio + title + price */
+.bfm-payment-section .bfm-payment-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+  flex-wrap: nowrap !important;
+}
+
+/* Left group: radio + icon + label + badge */
+.bfm-payment-section .bfm-pch-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Price block pinned to the right */
+.bfm-payment-section .bfm-card-header-price {
+  text-align: right !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+}
+
+/* Card body — no left indent */
+.bfm-payment-section .bfm-payment-card-body {
+  padding-left: 0 !important;
+  padding-top: 4px !important;
+}
+
+/* Icon inside card header */
+.bfm-pif-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+/* "Pay in Full" / "Partial Payment" label */
+.bfm-pif-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Radio button */
+.bfm-payment-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+
+.bfm-payment-card.active .bfm-payment-radio {
+  border-color: #fc9c1b;
+}
+
+.bfm-radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.bfm-radio-dot.active {
+  background: #fc9c1b;
+}
+
+/* Title group: icon + label + badge — all inline */
+.bfm-payment-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.bfm-payment-card-title svg {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.bfm-payment-card-title > span:first-of-type {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  white-space: nowrap;
+}
+
+/* "Most Popular" badge */
+.bfm-recommended-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #10b981;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* "Flexible" badge */
+.bfm-flexible-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #0ea5e9;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Card body — see scoped rule under .bfm-payment-section above */
+.bfm-payment-card-body {
+  padding-left: 0;
+  padding-top: 4px;
+}
+
+/* Large amount (shown when both options available) */
+.bfm-payment-amount {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f97316;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.bfm-payment-percentage {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+/* Description */
+.bfm-payment-description {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  line-height: 1.45;
+}
+
+/* Benefits list with green checkmarks */
+.bfm-payment-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bfm-payment-benefits li {
+  font-size: 0.78rem;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bfm-payment-benefits li::before {
+  content: '✓';
+  color: #10b981;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* Remove the text checkmark from JSX since ::before adds it */
+.bfm-payment-benefits li {
+  /* strip the leading "✓ " from the text node */
+}
+
+/* Breakdown (partial payment) */
+.bfm-payment-breakdown {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bfm-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.bfm-breakdown-row strong {
+  color: #1e3a5f;
+  font-weight: 700;
+}
+
+/* Summary box */
+.bfm-payment-summary {
+  border: 1.5px solid #fed7aa;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.bfm-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.bfm-amount-highlight {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f97316;
+}
+
+.bfm-remaining {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.78rem;
+  color: #94a3b8;
 }
