@@ -1,346 +1,327 @@
-// src/components/location/LocationSelect.jsx
+// components/location/LocationSelect.jsx
 // ─────────────────────────────────────────────────────────────────────────────
-// A drop-in replacement for any <input type="text"> location field.
-// Looks and feels identical to your existing .tbfm-form-input.
-// A 🔍 button on the right fires the fetch — typing freely still works.
+// Autocomplete input for pickup / drop-off locations.
 //
-// Usage (exactly replaces a plain <input>):
+// Priority:
+//   1. Your internal /api/locations endpoint (previously-booked spots, sorted by usage)
+//   2. OpenStreetMap Nominatim fallback (for new locations not yet in the DB)
 //
-//   <LocationSelect
-//     value={pickupLocation}
-//     onChange={setPickupLocation}
-//     placeholder="Hotel name, address, or landmark"
-//     required
-//   />
-//
-// Props:
-//   value        {string}         — controlled value
-//   onChange     {(str) => void}  — called with plain string
-//   placeholder  {string}
-//   source       {string}         — optional filter tag: 'transfer' | 'hotel' | 'tour'
-//   disabled     {boolean}
-//   required     {boolean}
+// Uses NO external UI library — plain React state + a styled native <ul> dropdown.
+// This avoids the react-select "Invalid hook call" crash caused by duplicate
+// React instances when react-select is bundled alongside another copy of React.
 // ─────────────────────────────────────────────────────────────────────────────
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, MapPin, X, Loader } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import axios from 'axios';
 
-// ── Inline styles — no extra CSS file needed ─────────────────────────────────
-// All values hardcoded to match the tbfm palette exactly so the component
-// slots in without touching TransferBookingFormModal.css.
+const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+const DEBOUNCE_MS = 300;
+const MIN_CHARS   = 2;
+
+// ── Inline styles (no extra CSS file needed) ──────────────────────────────────
 const S = {
   wrapper: {
     position: 'relative',
-    width:    '100%',
+    width: '100%',
   },
-
-  inputRow: {
-    display:    'flex',
-    alignItems: 'center',
-    gap:        '6px',
-  },
-
-  // Matches .tbfm-form-input exactly
   input: {
-    flex:         1,
-    height:       '40px',
-    padding:      '0 12px',
-    border:       '1px solid #e2e8f0',
+    width: '100%',
+    minHeight: '45px',
+    padding: '0 40px 0 12px',
     borderRadius: '8px',
-    fontSize:     '0.875rem',
-    color:        '#1e293b',
-    background:   '#fff',
-    outline:      'none',
-    transition:   'border 0.15s, box-shadow 0.15s',
-    boxSizing:    'border-box',
-    width:        '100%',
+    border: '1px solid #e2e8f0',
+    fontSize: '0.9rem',
+    color: '#1f2937',
+    background: '#fff',
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
   },
-
   inputFocus: {
-    borderColor: '#2563eb',
-    boxShadow:   '0 0 0 3px rgba(37,99,235,0.12)',
+    border: '1px solid #3b82f6',
   },
-
-  searchBtn: {
-    flexShrink:     0,
-    display:        'flex',
-    alignItems:     'center',
-    justifyContent: 'center',
-    width:          '40px',
-    height:         '40px',
-    borderRadius:   '8px',
-    border:         '1px solid #e2e8f0',
-    background:     '#f8fafc',
-    cursor:         'pointer',
-    color:          '#64748b',
-    transition:     'background 0.15s, border-color 0.15s, color 0.15s',
-  },
-
-  searchBtnHover: {
-    background:  '#2563eb',
-    borderColor: '#2563eb',
-    color:       '#fff',
-  },
-
-  searchBtnLoading: {
-    background:  '#eff6ff',
-    borderColor: '#bfdbfe',
-    color:       '#2563eb',
-    cursor:      'wait',
-  },
-
-  panel: {
-    position:      'absolute',
-    top:           'calc(100% + 6px)',
-    left:          0,
-    right:         '46px',  // doesn't extend under the search button
-    background:    '#fff',
-    border:        '1px solid #e2e8f0',
-    borderRadius:  '10px',
-    boxShadow:     '0 8px 24px rgba(0,0,0,0.10)',
-    zIndex:        9999,
-    overflow:      'hidden',
-    maxHeight:     '232px',
-    display:       'flex',
-    flexDirection: 'column',
-  },
-
-  panelHeader: {
-    padding:       '8px 12px 6px',
-    fontSize:      '0.72rem',
-    fontWeight:    600,
-    letterSpacing: '0.05em',
-    color:         '#94a3b8',
-    textTransform: 'uppercase',
-    borderBottom:  '1px solid #f1f5f9',
-    flexShrink:    0,
-  },
-
-  list: {
-    overflowY: 'auto',
-    flex:      1,
-    padding:   '4px',
-  },
-
-  item: {
-    display:    'flex',
-    alignItems: 'center',
-    gap:        '8px',
-    padding:    '8px 10px',
-    borderRadius:'6px',
-    cursor:     'pointer',
-    fontSize:   '0.875rem',
-    color:      '#1e293b',
-    transition: 'background 0.1s',
-    userSelect: 'none',
-  },
-
-  itemHover: {
-    background: '#f1f5f9',
-  },
-
-  itemIcon: {
-    color:      '#94a3b8',
-    flexShrink: 0,
-  },
-
-  empty: {
-    padding:   '16px 12px',
-    fontSize:  '0.85rem',
-    color:     '#94a3b8',
-    textAlign: 'center',
-  },
-
   clearBtn: {
-    position:   'absolute',
-    right:      '8px',
-    top:        '50%',
-    transform:  'translateY(-50%)',
+    position: 'absolute',
+    right: '10px',
+    top: '50%',
+    transform: 'translateY(-50%)',
     background: 'none',
-    border:     'none',
-    cursor:     'pointer',
-    color:      '#94a3b8',
-    padding:    '2px',
-    display:    'flex',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#9ca3af',
+    fontSize: '16px',
+    lineHeight: 1,
+    padding: '2px',
+    display: 'flex',
     alignItems: 'center',
+  },
+  dropdown: {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    left: 0,
+    right: 0,
+    background: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+    zIndex: 9999,
+    maxHeight: '220px',
+    overflowY: 'auto',
+    padding: '4px 0',
+  },
+  option: (isHighlighted) => ({
+    padding: '10px 14px',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    color: '#374151',
+    background: isHighlighted ? '#eff6ff' : 'transparent',
+    borderBottom: '1px solid #f3f4f6',
+    lineHeight: 1.4,
+  }),
+  optionLast: {
+    borderBottom: 'none',
+  },
+  statusMsg: {
+    padding: '10px 14px',
+    fontSize: '0.85rem',
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+  badge: {
+    display: 'inline-block',
+    fontSize: '0.7rem',
+    background: '#f0fdf4',
+    color: '#16a34a',
+    border: '1px solid #bbf7d0',
+    borderRadius: '4px',
+    padding: '1px 5px',
+    marginLeft: '6px',
+    verticalAlign: 'middle',
+    fontStyle: 'normal',
   },
 };
 
-// ── Inject spin keyframe once ────────────────────────────────────────────────
-if (typeof document !== 'undefined' && !document.getElementById('ls-spin-kf')) {
-  const tag = document.createElement('style');
-  tag.id = 'ls-spin-kf';
-  tag.textContent = '@keyframes ls-spin { to { transform: rotate(360deg); } }';
-  document.head.appendChild(tag);
-}
-
-// ── Component ────────────────────────────────────────────────────────────────
-const LocationSelect = ({
-  value       = '',
-  onChange,
-  placeholder = 'Hotel name, address, or landmark',
-  source      = '',
-  disabled    = false,
-  required    = false,
-}) => {
-  const [suggestions,  setSuggestions]  = useState([]);
+// ── Component ─────────────────────────────────────────────────────────────────
+const LocationSelect = ({ value = '', onChange, placeholder = 'Search location...', source = 'transfer' }) => {
+  const [inputValue,   setInputValue]   = useState(value || '');
+  const [options,      setOptions]      = useState([]);
   const [isOpen,       setIsOpen]       = useState(false);
   const [isLoading,    setIsLoading]    = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
-  const [btnHovered,   setBtnHovered]   = useState(false);
-  const [hoveredIdx,   setHoveredIdx]   = useState(-1);
+  const [highlighted,  setHighlighted]  = useState(-1);
+  const [isFocused,    setIsFocused]    = useState(false);
 
-  const wrapperRef = useRef(null);
-  const inputRef   = useRef(null);
-  const abortRef   = useRef(null);
+  const wrapperRef  = useRef(null);
+  const inputRef    = useRef(null);
+  const debounceRef = useRef(null);
 
-  // ── Close panel on outside click ─────────────────────────────────────────
+  // Sync external value → local input (e.g. when parent clears the field)
+  useEffect(() => {
+    setInputValue(value || '');
+  }, [value]);
+
+  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setIsOpen(false);
+        setHighlighted(-1);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ── Fetch from /api/locations ─────────────────────────────────────────────
-  const fetchSuggestions = useCallback(async (q = '') => {
-    if (abortRef.current) abortRef.current.abort();
-    abortRef.current = new AbortController();
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: 20 });
-      if (q.trim()) params.set('q', q.trim());
-      if (source)   params.set('source', source);
+  // ── Search: internal DB first, OSM fallback ────────────────────────────────
+  const search = useCallback(async (query) => {
+    if (!query || query.trim().length < MIN_CHARS) {
+      setOptions([]);
+      setIsOpen(false);
+      return;
+    }
 
-      const res  = await fetch(`/api/locations?${params}`, { signal: abortRef.current.signal });
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) setSuggestions(json.data);
+    setIsLoading(true);
+    setIsOpen(true);
+
+    try {
+      // 1️⃣ Internal locations (previously booked, ranked by usageCount)
+      const internalRes = await axios.get(`${RENDER_BASE}/api/locations`, {
+        params: { q: query.trim(), source, limit: 8 },
+        timeout: 5000,
+      });
+
+      const internalOpts = (internalRes.data?.data || []).map((opt) => ({
+        label:     opt.label,
+        value:     opt.value,
+        fromDB:    true,
+      }));
+
+      if (internalOpts.length >= 5) {
+        // Enough internal results — skip OSM call
+        setOptions(internalOpts);
+        setIsLoading(false);
+        return;
+      }
+
+      // 2️⃣ OSM fallback to fill remaining slots
+      const osmRes = await axios.get(
+        `https://nominatim.openstreetmap.org/search`,
+        {
+          params: {
+            q:              query.trim(),
+            format:         'json',
+            addressdetails: 1,
+            limit:          6 - internalOpts.length,
+            countrycodes:   'ph',
+          },
+          timeout: 6000,
+        }
+      );
+
+      const osmOpts = (osmRes.data || []).map((item) => ({
+        label:  item.display_name,
+        value:  item.display_name,
+        fromDB: false,
+      }));
+
+      // Deduplicate: remove OSM results whose label already exists in internal results
+      const internalValues = new Set(internalOpts.map((o) => o.value.toLowerCase()));
+      const filteredOSM    = osmOpts.filter(
+        (o) => !internalValues.has(o.label.toLowerCase())
+      );
+
+      setOptions([...internalOpts, ...filteredOSM]);
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.warn('LocationSelect fetch error:', err.message);
-        setSuggestions([]);
+      // If internal API fails, try OSM alone
+      try {
+        const osmRes = await axios.get(
+          `https://nominatim.openstreetmap.org/search`,
+          {
+            params: {
+              q:              query.trim(),
+              format:         'json',
+              addressdetails: 1,
+              limit:          6,
+              countrycodes:   'ph',
+            },
+            timeout: 6000,
+          }
+        );
+        setOptions(
+          (osmRes.data || []).map((item) => ({
+            label:  item.display_name,
+            value:  item.display_name,
+            fromDB: false,
+          }))
+        );
+      } catch {
+        setOptions([]);
       }
     } finally {
       setIsLoading(false);
     }
   }, [source]);
 
-  // ── Search button: fetch with the current typed value as the query ────────
-  const handleSearchClick = async (e) => {
-    e.preventDefault();
-    if (disabled || isLoading) return;
-    await fetchSuggestions(value);
-    setIsOpen(true);
-    setHoveredIdx(-1);
-    inputRef.current?.focus();
+  // ── Input change handler with debounce ─────────────────────────────────────
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInputValue(val);
+    setHighlighted(-1);
+
+    // Notify parent immediately so the field value stays in sync
+    onChange(val);
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(val), DEBOUNCE_MS);
   };
 
-  // ── Pick a suggestion ─────────────────────────────────────────────────────
-  const handleSelect = (opt) => {
-    onChange?.(opt.value);
+  // ── Option select ──────────────────────────────────────────────────────────
+  const selectOption = (opt) => {
+    setInputValue(opt.value);
+    onChange(opt.value);
     setIsOpen(false);
+    setHighlighted(-1);
   };
 
-  // ── Clear the field ───────────────────────────────────────────────────────
-  const handleClear = (e) => {
-    e.preventDefault();
-    onChange?.('');
-    setIsOpen(false);
-    inputRef.current?.focus();
-  };
-
-  // ── Keyboard nav inside the open panel ───────────────────────────────────
+  // ── Keyboard navigation ────────────────────────────────────────────────────
   const handleKeyDown = (e) => {
-    if (!isOpen) return;
-    if      (e.key === 'ArrowDown') { e.preventDefault(); setHoveredIdx(i => Math.min(i + 1, suggestions.length - 1)); }
-    else if (e.key === 'ArrowUp')   { e.preventDefault(); setHoveredIdx(i => Math.max(i - 1, 0)); }
-    else if (e.key === 'Enter' && hoveredIdx >= 0) { e.preventDefault(); handleSelect(suggestions[hoveredIdx]); }
-    else if (e.key === 'Escape')    { setIsOpen(false); }
+    if (!isOpen || options.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlighted((h) => Math.min(h + 1, options.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlighted((h) => Math.max(h - 1, 0));
+    } else if (e.key === 'Enter' && highlighted >= 0) {
+      e.preventDefault();
+      selectOption(options[highlighted]);
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
   };
 
-  const btnStyle = {
-    ...S.searchBtn,
-    ...(isLoading                    ? S.searchBtnLoading : {}),
-    ...(btnHovered && !isLoading     ? S.searchBtnHover   : {}),
+  // ── Clear button ───────────────────────────────────────────────────────────
+  const handleClear = () => {
+    setInputValue('');
+    onChange('');
+    setOptions([]);
+    setIsOpen(false);
+    inputRef.current?.focus();
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div ref={wrapperRef} style={S.wrapper}>
+    <div style={S.wrapper} ref={wrapperRef}>
+      {/* Text input */}
+      <input
+        ref={inputRef}
+        type="text"
+        style={{ ...S.input, ...(isFocused ? S.inputFocus : {}) }}
+        value={inputValue}
+        placeholder={placeholder}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => {
+          setIsFocused(true);
+          if (inputValue.length >= MIN_CHARS) setIsOpen(true);
+        }}
+        onBlur={() => setIsFocused(false)}
+        autoComplete="off"
+      />
 
-      {/* ── Input + search button row ────────────────────────────────── */}
-      <div style={S.inputRow}>
-
-        {/* Text input */}
-        <div style={{ position: 'relative', flex: 1 }}>
-          <input
-            ref={inputRef}
-            type="text"
-            value={value}
-            onChange={(e) => { onChange?.(e.target.value); setIsOpen(false); }}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-            required={required}
-            style={{
-              ...S.input,
-              paddingRight: value ? '30px' : '12px',
-              ...(inputFocused ? S.inputFocus : {}),
-            }}
-          />
-          {value && !disabled && (
-            <button type="button" style={S.clearBtn} onMouseDown={handleClear} tabIndex={-1} aria-label="Clear">
-              <X size={13} />
-            </button>
-          )}
-        </div>
-
-        {/* Search button */}
-        <button
-          type="button"
-          style={btnStyle}
-          onMouseEnter={() => setBtnHovered(true)}
-          onMouseLeave={() => setBtnHovered(false)}
-          onClick={handleSearchClick}
-          disabled={disabled || isLoading}
-          title="Search saved locations"
-          aria-label="Search saved locations"
-        >
-          {isLoading
-            ? <Loader size={15} style={{ animation: 'ls-spin 0.7s linear infinite' }} />
-            : <Search size={15} />}
+      {/* Clear button */}
+      {inputValue && (
+        <button type="button" style={S.clearBtn} onClick={handleClear} tabIndex={-1} aria-label="Clear">
+          ✕
         </button>
-      </div>
+      )}
 
-      {/* ── Suggestions panel ────────────────────────────────────────── */}
+      {/* Dropdown */}
       {isOpen && (
-        <div style={S.panel} role="listbox">
-          <div style={S.panelHeader}>Saved locations</div>
-          {suggestions.length === 0
-            ? <div style={S.empty}>{isLoading ? 'Searching…' : 'No saved locations found'}</div>
-            : (
-              <div style={S.list}>
-                {suggestions.map((opt, i) => (
-                  <div
-                    key={opt.value}
-                    role="option"
-                    aria-selected={i === hoveredIdx}
-                    style={{ ...S.item, ...(i === hoveredIdx ? S.itemHover : {}) }}
-                    onMouseEnter={() => setHoveredIdx(i)}
-                    onMouseLeave={() => setHoveredIdx(-1)}
-                    onMouseDown={() => handleSelect(opt)}
-                  >
-                    <MapPin size={13} style={S.itemIcon} />
-                    <span>{opt.label}</span>
-                  </div>
-                ))}
-              </div>
-            )
-          }
-        </div>
+        <ul style={S.dropdown} role="listbox">
+          {isLoading ? (
+            <li style={S.statusMsg}>Searching…</li>
+          ) : options.length === 0 ? (
+            <li style={S.statusMsg}>
+              {inputValue.length < MIN_CHARS ? 'Type at least 2 characters…' : 'No locations found'}
+            </li>
+          ) : (
+            options.map((opt, i) => (
+              <li
+                key={`${opt.value}-${i}`}
+                role="option"
+                style={{
+                  ...S.option(i === highlighted),
+                  ...(i === options.length - 1 ? S.optionLast : {}),
+                }}
+                onMouseDown={() => selectOption(opt)}
+                onMouseEnter={() => setHighlighted(i)}
+              >
+                {opt.label}
+                {opt.fromDB && <span style={S.badge}>Popular</span>}
+              </li>
+            ))
+          )}
+        </ul>
       )}
     </div>
   );

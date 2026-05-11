@@ -522,28 +522,22 @@ const TransferBookingFormModal = ({
 
               {/* ── PICKUP LOCATION ── */}
               <div className="tbfm-form-group">
-  <label className="tbfm-form-label">Pickup Location <span className="tbfm-required">*</span></label>
+  <label className="tbfm-form-label">Pick-up Destination</label>
   <LocationSelect
-    id="pickup-location"
     value={pickupLocation}
     onChange={setPickupLocation}
-    placeholder="Hotel, airport, or landmark…"
-    source="transfer"
-    required
+    placeholder="Search hotel, airport, or address..."
   />
 </div>
 
               {/* ── DROP-OFF LOCATION (roundtrip only) ── */}
               {transferType === 'roundtrip' && (
   <div className="tbfm-form-group">
-    <label className="tbfm-form-label">Drop-off Location <span className="tbfm-required">*</span></label>
+    <label className="tbfm-form-label">Drop-off Destination</label>
     <LocationSelect
-      id="dropoff-location"
       value={dropoffLocation}
       onChange={setDropoffLocation}
-      placeholder="Hotel, airport, or landmark…"
-      source="transfer"
-      required
+      placeholder="Where should we drop you off?"
     />
   </div>
 )}
