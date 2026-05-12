@@ -938,18 +938,35 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   {/* ── Phase B: Show list of first-chosen type ── */}
                   {firstChoice && !secondPhase && (
                     <>
-                      <div className="cbf-section-title">
-                        {firstChoice === 'tour' ? '🏔️ Select Tours' : '🚐 Select Transfers'}
-                        {((firstChoice === 'tour' && selectedTours.length > 0) ||
-                          (firstChoice === 'transfer' && selectedTransfers.length > 0)) && (
-                          <button
-                            type="button"
-                            className="cbf-change-type-btn"
-                            onClick={() => setFirstChoice(null)}
-                          >
-                            Change
-                          </button>
-                        )}
+                      <div className="cbf-section-title" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {firstChoice === 'tour' ? 'Select Tours' : 'Select Transfers'}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+                          {((firstChoice === 'tour' && selectedTours.length > 0) ||
+                            (firstChoice === 'transfer' && selectedTransfers.length > 0)) && (
+                            <span style={{
+                              background: '#e2e8f0',
+                              color: '#475569',
+                              fontSize: '0.65rem',
+                              fontWeight: 700,
+                              padding: '2px 10px',
+                              borderRadius: '20px',
+                            }}>
+                              {firstChoice === 'tour' ? selectedTours.length : selectedTransfers.length} selected
+                            </span>
+                          )}
+                          {((firstChoice === 'tour' && selectedTours.length > 0) ||
+                            (firstChoice === 'transfer' && selectedTransfers.length > 0)) && (
+                            <button
+                              type="button"
+                              className="cbf-change-type-btn"
+                              onClick={() => setFirstChoice(null)}
+                            >
+                              Change
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {firstChoice === 'tour' && (
@@ -1042,63 +1059,128 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                 </>
               )}
 
-              {/* ── Selected Items Panel — visible whenever anything is picked ── */}
+              {/* ── Selected Items Panel — card layout matching "Your Trip / Selections" design ── */}
               {(selectedTours.length > 0 || selectedTransfers.length > 0) && (
                 <div className="cbf-selected-panel">
-                  <div className="cbf-selected-panel-title">✅ Your Selections</div>
 
-                  {selectedTours.map(t => (
-                    <div key={t._id} className="cbf-selected-row">
-                      {(t.imageUrl||t.image) && (
-                        <img src={t.imageUrl||t.image} alt={t.title||t.name} className="cbf-sr-img"/>
-                      )}
-                      <div className="cbf-sr-info">
-                        <span className="cbf-sr-name">🏔️ {t.title||t.name}</span>
-                        <span className="cbf-sr-sub">
-                          × {pax || info.paxCount} pax · ₱{Number(t.price||0).toLocaleString()} each
-                          {tourDates[t._id] ? ` · 📅 ${fmtDate(tourDates[t._id])}` : ''}
-                        </span>
-                      </div>
-                      <span className="cbf-sr-price">₱{fmt((t.price||0)*(pax||parseInt(info.paxCount)||1))}</span>
-                      <button
-                        type="button"
-                        className="cbf-sr-remove"
-                        onClick={() => toggleTour(t)}
-                        title="Remove tour"
-                      >
-                        <Trash2 size={12}/> Remove
-                      </button>
+                  {/* ── Panel header ── */}
+                  <div className="cbf-sp-header">
+                    <div className="cbf-sp-header-left">
+                      <span className="cbf-sp-your-trip">YOUR TRIP</span>
+                      <h3 className="cbf-sp-title">Selections</h3>
                     </div>
-                  ))}
+                    <span className="cbf-sel-count-badge">
+                      {selectedTours.length + selectedTransfers.length} item{selectedTours.length + selectedTransfers.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
 
-                  {selectedTransfers.map(t => {
-                    const ttype = transferTypes[t._id] || 'oneway';
-                    const tprice = ttype === 'roundtrip' ? (t.roundtripPrice||0) : (t.oneWayPrice||0);
+                  {/* ── Tour cards ── */}
+                  {selectedTours.map(t => {
+                    const tourTotal = (t.price || 0) * (pax || parseInt(info.paxCount) || 1);
                     return (
-                      <div key={t._id} className="cbf-selected-row">
-                        {t.imageUrl && (
-                          <img src={t.imageUrl} alt={t.title} className="cbf-sr-img"/>
-                        )}
-                        <div className="cbf-sr-info">
-                          <span className="cbf-sr-name">🚐 {t.title}</span>
-                          <span className="cbf-sr-sub">{ttype === 'roundtrip' ? '🔄 Roundtrip' : '➡️ One Way'}</span>
-                        </div>
-                        <span className="cbf-sr-price">₱{fmt(tprice)}</span>
-                        <button
-                          type="button"
-                          className="cbf-sr-remove"
-                          onClick={() => toggleTransfer(t)}
-                          title="Remove transfer"
+                      <div key={t._id} className="cbf-sel-card">
+                        {/* Image section — badge left, remove button right */}
+                        <div
+                          className="cbf-sel-card-img"
+                          style={{ backgroundImage: `url(${t.imageUrl || t.image || ''})` }}
                         >
-                          <Trash2 size={12}/> Remove
-                        </button>
+                          <div className="cbf-sel-card-img-overlay"/>
+                          <span className="cbf-sel-card-badge cbf-sel-badge-tour">
+                            {t.category || 'Tour Package'}
+                          </span>
+                          <button
+                            type="button"
+                            className="cbf-sel-card-remove"
+                            onClick={() => toggleTour(t)}
+                          >
+                            <Trash2 size={13}/>
+                          </button>
+                        </div>
+                        {/* Card body — name+sub left, price right */}
+                        <div className="cbf-sel-card-body">
+                          <div className="cbf-sel-card-body-left">
+                            <span className="cbf-sel-card-name">{t.title || t.name}</span>
+                            <span className="cbf-sel-card-sub">
+                              ₱{Number(t.price || 0).toLocaleString()} × {pax || info.paxCount} pax
+                              {t.duration ? ` · ${t.duration}` : ''}
+                              {tourDates[t._id] ? ` · 📅 ${fmtDate(tourDates[t._id])}` : ''}
+                            </span>
+                          </div>
+                          <div className="cbf-sel-card-body-price">
+                            <span className="cbf-sel-body-price-label">PRICE</span>
+                            <span className="cbf-sel-body-price-val">₱{fmt(tourTotal)}</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
 
-                  <div className="cbf-running-grand">
-                    <span>Total:</span>
-                    <strong>₱{fmt(grandTotal)}</strong>
+                  {/* ── Transfer cards ── */}
+                  {selectedTransfers.map(t => {
+                    const ttype  = transferTypes[t._id] || 'oneway';
+                    const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
+                    return (
+                      <div key={t._id} className="cbf-sel-card">
+                        {/* Image section — badge left, remove button right */}
+                        <div
+                          className="cbf-sel-card-img"
+                          style={{ backgroundImage: `url(${t.imageUrl || ''})` }}
+                        >
+                          <div className="cbf-sel-card-img-overlay"/>
+                          <span className="cbf-sel-card-badge cbf-sel-badge-transfer">Transfer</span>
+                          <button
+                            type="button"
+                            className="cbf-sel-card-remove"
+                            onClick={() => toggleTransfer(t)}
+                          >
+                            <Trash2 size={13}/>
+                          </button>
+                        </div>
+                        {/* Card body — name+sub left, price right */}
+                        <div className="cbf-sel-card-body">
+                          <div className="cbf-sel-card-body-left">
+                            <span className="cbf-sel-card-name">{t.title}</span>
+                            <span className="cbf-sel-card-sub">
+                              {ttype === 'roundtrip' ? 'Roundtrip' : 'One Way'}
+                              {t.category ? ` · ${t.category}` : ''}
+                            </span>
+                          </div>
+                          <div className="cbf-sel-card-body-price">
+                            <span className="cbf-sel-body-price-label">PRICE</span>
+                            <span className="cbf-sel-body-price-val">₱{fmt(tprice)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* ── Summary section ── */}
+                  <div className="cbf-sel-summary">
+                    <div className="cbf-sel-summary-label">SUMMARY</div>
+                    {selectedTours.map(t => (
+                      <div key={t._id} className="cbf-sel-summary-row">
+                        <span className="cbf-sel-summary-dot cbf-dot-tour"/>
+                        <span className="cbf-sel-summary-name">{t.title || t.name}</span>
+                        <span className="cbf-sel-summary-price">
+                          ₱{fmt((t.price || 0) * (pax || parseInt(info.paxCount) || 1))}
+                        </span>
+                      </div>
+                    ))}
+                    {selectedTransfers.map(t => {
+                      const ttype  = transferTypes[t._id] || 'oneway';
+                      const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
+                      return (
+                        <div key={t._id} className="cbf-sel-summary-row">
+                          <span className="cbf-sel-summary-dot cbf-dot-transfer"/>
+                          <span className="cbf-sel-summary-name">{t.title}</span>
+                          <span className="cbf-sel-summary-price">₱{fmt(tprice)}</span>
+                        </div>
+                      );
+                    })}
+                    <div className="cbf-sel-total-row">
+                      <span className="cbf-sel-total-label">Total Due</span>
+                      <strong className="cbf-sel-total-amount">₱{fmt(grandTotal)}</strong>
+                    </div>
                   </div>
 
                   {/* Add second service type if only one is picked */}
@@ -1131,82 +1213,171 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
               ════════════════════════════════════════════════════════════════ */}
           {step === 3 && step3Phase === 'tours' && selectedTours[tourDateIdx] && (() => {
             const currentTour = selectedTours[tourDateIdx];
+
+            // Compute days between travel and return
+            const tripDays = (() => {
+              if (!info.travelDate || !info.returnDate) return null;
+              const a = new Date(info.travelDate + 'T00:00:00');
+              const b = new Date(info.returnDate + 'T00:00:00');
+              const diff = Math.round((b - a) / (1000 * 60 * 60 * 24));
+              return diff > 0 ? diff : null;
+            })();
+            const tripNights = tripDays;
+
+            // Day-of-week helper
+            const getDayName = (dateStr) => {
+              if (!dateStr) return '';
+              const d = new Date(dateStr + 'T00:00:00');
+              return d.toLocaleDateString('en-US', { weekday: 'long' });
+            };
+
+            // Split fmtDate into parts for the card
+            const splitDate = (dateStr) => {
+              if (!dateStr) return { month: '', day: '', year: '' };
+              const [y, m, day] = dateStr.split('-');
+              const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+              return { month: months[parseInt(m)-1], day: parseInt(day), year: y };
+            };
+
+            const startParts = splitDate(info.travelDate);
+            const endParts   = splitDate(info.returnDate);
+            const selParts   = splitDate(currentTourDate);
+
             return (
               <div className="cbf-section">
-                <div className="cbf-section-title">
-                  <Calendar size={16}/> Tour Schedule
-                  {selectedTours.length > 1 && (
-                    <span className="cbf-step-sub">
-                      Tour {tourDateIdx + 1} of {selectedTours.length}
-                    </span>
-                  )}
-                </div>
 
-                {/* Tour card */}
-                <div className="cbf-transfer-card">
-                  {(currentTour.imageUrl || currentTour.image) && (
+                {/* ── Tour hero card ── */}
+                <div className="cbf-tour-hero-card">
+                  {(currentTour.imageUrl || currentTour.image) ? (
                     <img
                       src={currentTour.imageUrl || currentTour.image}
                       alt={currentTour.title || currentTour.name}
-                      className="cbf-tc-img"
+                      className="cbf-thc-img"
                     />
+                  ) : (
+                    <div className="cbf-thc-img cbf-thc-img-placeholder">🏝️</div>
                   )}
-                  <div className="cbf-tc-body">
-                    <div className="cbf-tc-title">{currentTour.title || currentTour.name}</div>
-                    <div className="cbf-tc-meta">
-                      {currentTour.category && (
-                        <span className="cbf-tc-tag">{currentTour.category}</span>
-                      )}
-                      {currentTour.duration && (
-                        <span className="cbf-tc-tag">⏱ {currentTour.duration}</span>
-                      )}
-                      {currentTour.destination && (
-                        <span className="cbf-tc-tag">📍 {currentTour.destination}</span>
-                      )}
-                    </div>
-                    <div className="cbf-tc-price">
-                      ₱{fmt((currentTour.price || 0) * (parseInt(info.paxCount) || 1))} total
-                      <span style={{ fontSize: '11px', fontWeight: 400, marginLeft: '6px', opacity: 0.7 }}>
-                        (₱{fmt(currentTour.price || 0)} × {info.paxCount} pax)
+                  <div className="cbf-thc-overlay">
+                    {currentTour.category && (
+                      <span className="cbf-thc-badge">{currentTour.category}</span>
+                    )}
+                    <div className="cbf-thc-title">{currentTour.title || currentTour.name}</div>
+                    <div className="cbf-thc-meta-row">
+                      <span className="cbf-thc-meta-item">
+                        <MapPin size={11}/> {currentTour.destination || info.destination}
+                      </span>
+                      <span className="cbf-thc-price-right">
+                        Total <strong>₱{fmt((currentTour.price || 0) * (parseInt(info.paxCount) || 1))}</strong>
                       </span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Booking context */}
-                <div className="cbf-prefill-box">
-                  <div className="cbf-prefill-label">📋 Booking Context</div>
-                  <div className="cbf-prefill-grid">
-                    {info.travelDate && (
-                      <div className="cbf-prefill-item">
-                        <span className="cbf-pl">Trip Start</span>
-                        <span className="cbf-pv">{fmtDate(info.travelDate)}</span>
-                      </div>
-                    )}
-                    {info.returnDate && (
-                      <div className="cbf-prefill-item">
-                        <span className="cbf-pl">Trip End</span>
-                        <span className="cbf-pv">{fmtDate(info.returnDate)}</span>
-                      </div>
-                    )}
-                    <div className="cbf-prefill-item">
-                      <span className="cbf-pl">Destination</span>
-                      <span className="cbf-pv">{info.destination}</span>
-                    </div>
-                    <div className="cbf-prefill-item">
-                      <span className="cbf-pl">Passengers</span>
-                      <span className="cbf-pv">{info.paxCount} pax</span>
+                    <div className="cbf-thc-sub-row">
+                      <span>₱{fmt(currentTour.price || 0)} × {info.paxCount} pax</span>
+                      {currentTour.rating && (
+                        <span className="cbf-thc-rating">★ {currentTour.rating}</span>
+                      )}
                     </div>
                   </div>
+                  {selectedTours.length > 1 && (
+                    <div className="cbf-thc-counter">
+                      {tourDateIdx + 1} / {selectedTours.length}
+                    </div>
+                  )}
                 </div>
 
-                {/* Scheduled date picker */}
-                <div className="cbf-form-grid">
-                  <div className="cbf-field cbf-full">
-                    <label>
-                      Scheduled Tour Date <span className="cbf-req">*</span>
-                      <span className="cbf-field-hint"> When would you like to take this tour?</span>
-                    </label>
+                {/* ── BOOKING CONTEXT ── */}
+                <div className="cbf-bctx-section-label">BOOKING CONTEXT</div>
+                <div className="cbf-bctx-card">
+                  {/* Trip Start */}
+                  <div className="cbf-bctx-side">
+                    <div className="cbf-bctx-side-label">TRIP START</div>
+                    <div className="cbf-bctx-date-big">
+                      {info.travelDate ? fmtDate(info.travelDate) : '—'}
+                    </div>
+                    <div className="cbf-bctx-day-name">{getDayName(info.travelDate)}</div>
+                    <div className="cbf-bctx-detail">
+                      <MapPin size={11}/> {info.destination}
+                    </div>
+                    <div className="cbf-bctx-detail">
+                      <Users size={11}/> {info.paxCount} Passengers
+                    </div>
+                  </div>
+
+                  {/* Center — days badge */}
+                  <div className="cbf-bctx-center">
+                    {tripDays && (
+                      <>
+                        <div className="cbf-bctx-days-num">{tripDays}</div>
+                        <div className="cbf-bctx-days-lbl">Days</div>
+                      </>
+                    )}
+                    <div className="cbf-bctx-arrow">→</div>
+                  </div>
+
+                  {/* Trip End */}
+                  {info.returnDate ? (
+                    <div className="cbf-bctx-side cbf-bctx-side-right">
+                      <div className="cbf-bctx-side-label">TRIP END</div>
+                      <div className="cbf-bctx-date-big">{fmtDate(info.returnDate)}</div>
+                      <div className="cbf-bctx-day-name">{getDayName(info.returnDate)}</div>
+                      <div className="cbf-bctx-detail">
+                        <MapPin size={11}/> {info.destination}
+                      </div>
+                      {tripNights && (
+                        <div className="cbf-bctx-detail">
+                          <Clock size={11}/> {tripNights} Night{tripNights !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="cbf-bctx-side cbf-bctx-side-right">
+                      <div className="cbf-bctx-side-label">TRIP END</div>
+                      <div className="cbf-bctx-date-big" style={{ opacity: 0.4 }}>—</div>
+                      <div className="cbf-bctx-day-name" style={{ opacity: 0.4 }}>Not set</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="cbf-bctx-info-note">
+                  <Clock size={12}/> Your tour will be scheduled within this trip window.
+                </div>
+
+                {/* ── SCHEDULED TOUR DATE ── */}
+                <div className="cbf-sched-section-label">
+                  SCHEDULED TOUR DATE
+                  
+                </div>
+
+                {currentTourDate ? (
+                  /* Selected date card — orange style like screenshot */
+                  <div className="cbf-sched-date-card">
+                    <div className="cbf-sdc-date-box">
+                      <div className="cbf-sdc-month">{selParts.month.toUpperCase()}</div>
+                      <div className="cbf-sdc-day">{selParts.day}</div>
+                      <div className="cbf-sdc-year">{selParts.year}</div>
+                    </div>
+                    <div className="cbf-sdc-body">
+                      <div className="cbf-sdc-weekday">{getDayName(currentTourDate)}</div>
+                      <div className="cbf-sdc-tour-name">{currentTour.title || currentTour.name}</div>
+                      <div className="cbf-sdc-meta">
+                        <span><MapPin size={11}/> {currentTour.destination || info.destination}</span>
+                        <span><Users size={11}/> {info.paxCount} pax</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="cbf-sdc-change-btn"
+                      onClick={() => setCurrentTourDate('')}
+                      title="Change date"
+                    >
+                      <Calendar size={16}/>
+                    </button>
+                  </div>
+                ) : (
+                  /* Date picker trigger */
+                  <div className="cbf-sched-picker-wrap">
+                    <div className="cbf-sched-picker-label">
+                      When would you like to take this tour?
+                    </div>
                     <DatePicker
                       value={currentTourDate}
                       minDate={info.travelDate || new Date().toISOString().split('T')[0]}
@@ -1218,93 +1389,150 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                       hasError={false}
                       placeholder="Select tour date"
                     />
-                    {!currentTourDate && (
-                      <span className="cbf-field-hint" style={{ color: '#f97316', marginTop: '4px', display: 'block' }}>
-                        Please select a date for this tour to continue.
-                      </span>
-                    )}
-                    {info.travelDate && (
-                      <span className="cbf-field-hint" style={{ marginTop: '4px', display: 'block', opacity: 0.7 }}>
-                        Only dates within your trip ({fmtDate(info.travelDate)}{info.returnDate ? ` – ${fmtDate(info.returnDate)}` : ''}) are available. Each tour must be on a different day.
-                      </span>
-                    )}
+                    <span className="cbf-sched-hint">
+                      Each tour must be scheduled on a separate day.
+                    </span>
                   </div>
-                </div>
+                )}
+
+                {currentTourDate && info.travelDate && (
+                  <p className="cbf-sched-window-note">
+                    Tour date is within your trip window{' '}
+                    <strong>{fmtDate(info.travelDate)}{info.returnDate ? ` – ${fmtDate(info.returnDate)}` : ''}</strong>.{' '}
+                    Each tour must be scheduled on a separate day.
+                  </p>
+                )}
+
               </div>
             );
           })()}
 
           {/* ════════════════════════════════════════════════════════════════
-              STEP 3 — PHASE B: TRANSFER DETAILS (existing)
+              STEP 3 — PHASE B: TRANSFER DETAILS
               ════════════════════════════════════════════════════════════════ */}
           {step === 3 && step3Phase === 'transfers' && currentTransfer && (
             <div className="cbf-section">
-              <div className="cbf-section-title">
-                <Car size={16}/> Transfer Details
-                <span className="cbf-step-sub">{detailsIdx + 1} of {selectedTransfers.length}</span>
-              </div>
 
-              {/* Transfer summary card */}
-              <div className="cbf-transfer-card">
-                {currentTransfer.imageUrl && (
-                  <img src={currentTransfer.imageUrl} alt={currentTransfer.title} className="cbf-tc-img"/>
+              {/* ── Transfer Hero Card ── */}
+              <div className="cbf-t-hero-card">
+                {/* Background image or placeholder */}
+                {currentTransfer.imageUrl ? (
+                  <img src={currentTransfer.imageUrl} alt={currentTransfer.title} className="cbf-t-hero-bg"/>
+                ) : (
+                  <div className="cbf-t-hero-bg cbf-t-hero-bg-placeholder">🚐</div>
                 )}
-                <div className="cbf-tc-body">
-                  <div className="cbf-tc-title">{currentTransfer.title}</div>
-                  <div className="cbf-tc-meta">
-                    {currentTransfer.category && <span className="cbf-tc-tag">{currentTransfer.category}</span>}
-                    <span className={`cbf-tc-tag type-tag ${transferTypes[currentTransfer._id] === 'roundtrip' ? 'rt' : 'ow'}`}>
-                      {transferTypes[currentTransfer._id] === 'roundtrip' ? '🔄 Roundtrip' : '➡️ One Way'}
+                {/* Dark gradient scrim */}
+                <div className="cbf-t-hero-scrim"/>
+                {/* Content overlay */}
+                <div className="cbf-t-hero-content">
+                  {/* Top row: badges left, price right */}
+                  <div className="cbf-t-hero-top">
+                    <div className="cbf-t-badges-row">
+                      {currentTransfer.category && (
+                        <span className="cbf-t-badge-cat">{currentTransfer.category}</span>
+                      )}
+                      <span className={`cbf-t-badge-type ${transferTypes[currentTransfer._id] === 'roundtrip' ? 'rt' : 'ow'}`}>
+                        {transferTypes[currentTransfer._id] === 'roundtrip' ? '🔄 Round Trip' : '➡️ One Way'}
+                      </span>
+                    </div>
+                    <span className="cbf-t-price-badge">
+                      ₱{Number(transferTypes[currentTransfer._id] === 'roundtrip'
+                        ? currentTransfer.roundtripPrice
+                        : currentTransfer.oneWayPrice).toLocaleString()}
                     </span>
                   </div>
-                  <div className="cbf-tc-price">
-                    ₱{fmt(transferTypes[currentTransfer._id] === 'roundtrip'
-                      ? currentTransfer.roundtripPrice
-                      : currentTransfer.oneWayPrice)}
+                  {/* Bottom row: route from → to */}
+                  <div className="cbf-t-route-row">
+                    <div className="cbf-t-route-point">
+                      <div className="cbf-t-route-city">
+                        {currentTransfer.fromCity || currentTransfer.origin || 'Manila'}
+                      </div>
+                      {(currentTransfer.fromTerminal || currentTransfer.fromArea) && (
+                        <div className="cbf-t-route-sub">
+                          {currentTransfer.fromTerminal || currentTransfer.fromArea}
+                        </div>
+                      )}
+                    </div>
+                    <div className="cbf-t-route-mid">
+                      <Car size={12}/>
+                      {currentTransfer.duration && (
+                        <span className="cbf-t-route-dur">~{currentTransfer.duration}</span>
+                      )}
+                    </div>
+                    <div className="cbf-t-route-point cbf-t-route-point-right">
+                      <div className="cbf-t-route-city">
+                        {currentTransfer.toCity || currentTransfer.packageDestination || info.destination}
+                      </div>
+                      {(currentTransfer.toArea || currentTransfer.toTerminal) && (
+                        <div className="cbf-t-route-sub">
+                          {currentTransfer.toArea || currentTransfer.toTerminal}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {selectedTransfers.length > 1 && (
+                  <div className="cbf-t-hero-counter">{detailsIdx + 1} / {selectedTransfers.length}</div>
+                )}
+              </div>
+
+              {/* ── Booking Context ── */}
+              <div className="cbf-bctx-section-label" style={{ marginBottom: '6px' }}>BOOKING CONTEXT</div>
+              <div className="cbf-info-card-grid" style={{ marginBottom: '10px' }}>
+                {info.travelDate && (
+                  <div className="cbf-info-card">
+                    <div className="cbf-ic-icon-wrap date"><Calendar size={13}/></div>
+                    <div className="cbf-ic-body">
+                      <span className="cbf-ic-label">Travel Date</span>
+                      <strong className="cbf-ic-value">{fmtDate(info.travelDate)}</strong>
+                    </div>
+                  </div>
+                )}
+                {isRoundtrip && info.returnDate && (
+                  <div className="cbf-info-card">
+                    <div className="cbf-ic-icon-wrap date"><Calendar size={13}/></div>
+                    <div className="cbf-ic-body">
+                      <span className="cbf-ic-label">Return Date</span>
+                      <strong className="cbf-ic-value">{fmtDate(info.returnDate)}</strong>
+                    </div>
+                  </div>
+                )}
+                <div className="cbf-info-card">
+                  <div className="cbf-ic-icon-wrap destination"><MapPin size={13}/></div>
+                  <div className="cbf-ic-body">
+                    <span className="cbf-ic-label">Destination</span>
+                    <strong className="cbf-ic-value">{info.destination}</strong>
+                  </div>
+                </div>
+                <div className="cbf-info-card">
+                  <div className="cbf-ic-icon-wrap pax"><Users size={13}/></div>
+                  <div className="cbf-ic-body">
+                    <span className="cbf-ic-label">Passengers</span>
+                    <strong className="cbf-ic-value">{info.paxCount} pax</strong>
+                  </div>
+                </div>
+                <div className="cbf-info-card">
+                  <div className="cbf-ic-icon-wrap name"><User size={13}/></div>
+                  <div className="cbf-ic-body">
+                    <span className="cbf-ic-label">Name</span>
+                    <strong className="cbf-ic-value">{info.fullName}</strong>
+                  </div>
+                </div>
+                <div className="cbf-info-card cbf-info-card-full">
+                  <div className="cbf-ic-icon-wrap email"><Mail size={13}/></div>
+                  <div className="cbf-ic-body">
+                    <span className="cbf-ic-label">Email</span>
+                    <strong className="cbf-ic-value">{info.email}</strong>
                   </div>
                 </div>
               </div>
 
-              {/* Pre-filled context */}
-              <div className="cbf-prefill-box">
-                <div className="cbf-prefill-label">📋 Booking Context</div>
-                <div className="cbf-prefill-grid">
-                  {info.travelDate && (
-                    <div className="cbf-prefill-item">
-                      <span className="cbf-pl">Travel Date</span>
-                      <span className="cbf-pv">{fmtDate(info.travelDate)}</span>
-                    </div>
-                  )}
-                  {isRoundtrip && info.returnDate && (
-                    <div className="cbf-prefill-item">
-                      <span className="cbf-pl">Return Date</span>
-                      <span className="cbf-pv">{fmtDate(info.returnDate)}</span>
-                    </div>
-                  )}
-                  <div className="cbf-prefill-item">
-                    <span className="cbf-pl">Destination</span>
-                    <span className="cbf-pv">{info.destination}</span>
-                  </div>
-                  <div className="cbf-prefill-item">
-                    <span className="cbf-pl">Passengers</span>
-                    <span className="cbf-pv">{info.paxCount} pax</span>
-                  </div>
-                  <div className="cbf-prefill-item">
-                    <span className="cbf-pl">Name</span>
-                    <span className="cbf-pv">{info.fullName}</span>
-                  </div>
-                  <div className="cbf-prefill-item">
-                    <span className="cbf-pl">Email</span>
-                    <span className="cbf-pv">{info.email}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Detail form */}
+              {/* ── Transfer Info section ── */}
+              <div className="cbf-transfer-info-label">TRANSFER INFO</div>
               <div className="cbf-form-grid">
                 <div className="cbf-field">
                   <label>Arrival Time <span className="cbf-req">*</span>
-                    <span className="cbf-field-hint"> When you arrive at the destination</span>
+                    <span className="cbf-field-hint"> — when you arrive</span>
                   </label>
                   <CustomTimePicker
                     value={detailForm.arrivalTime}
@@ -1345,7 +1573,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   <LocationSelect
                     value={detailForm.pickupLocation}
                     onChange={val => setDetailForm(p => ({...p, pickupLocation: val}))}
-                    placeholder="e.g. Manila Airport Terminal 3"
+                    placeholder="e.g. NAIA Terminal 3, Pasay City"
                     source="transfer"
                   />
                 </div>
@@ -1358,23 +1586,32 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     <LocationSelect
                       value={detailForm.dropoffLocation}
                       onChange={val => setDetailForm(p => ({...p, dropoffLocation: val}))}
-                      placeholder="e.g. Manila Airport Terminal 3"
+                      placeholder="e.g. NAIA Terminal 3, Pasay City"
                       source="transfer"
                     />
                   </div>
                 )}
 
                 <div className="cbf-field cbf-full">
-                  <label>Message / Special Requests <span className="cbf-optional">(optional)</span></label>
+                  <label>Special Requests <span className="cbf-optional">(optional)</span></label>
                   <textarea
                     className="cbf-textarea"
-                    placeholder="Any special instructions or requests for this transfer..."
+                    placeholder="e.g. Need child seat, extra luggage, late night pick-up..."
                     rows={3}
                     value={detailForm.message}
                     onChange={e => setDetailForm(p => ({...p, message: e.target.value}))}
                   />
                 </div>
               </div>
+
+              {/* ── Luggage notice ── */}
+              <div className="cbf-luggage-notice">
+                <span className="cbf-luggage-icon">🧳</span>
+                <span>
+                  <strong>Luggage included:</strong> Up to 2 check-in bags and 1 carry-on per passenger at no extra charge.
+                </span>
+              </div>
+
             </div>
           )}
 
@@ -1610,15 +1847,19 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                   </div>
                 )}
 
-                <div className="bfm-payment-options">
+                <div
+                  className="bfm-payment-options"
+                  style={!isPartialPaymentAllowed ? { gridTemplateColumns: '1fr' } : {}}
+                >
                   {/* Pay in Full */}
                   <div
                     className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
                     onClick={() => setPaymentType('full')}
                   >
+                    {/* Header row: radio+icon+label+badge on left, price on right */}
                     <div
                       className="bfm-payment-card-header"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px', flexWrap: 'nowrap' }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '12px', flexWrap: 'nowrap' }}
                     >
                       <div
                         className="bfm-pch-left"
@@ -1631,6 +1872,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                         <span className="bfm-pif-label">Pay in Full</span>
                         <span className="bfm-recommended-badge">Most Popular</span>
                       </div>
+                      {/* Price shown on right for both modes when partial is not allowed */}
                       {!isPartialPaymentAllowed && (
                         <div
                           className="bfm-card-header-price"
@@ -1641,18 +1883,19 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                         </div>
                       )}
                     </div>
-                    <div className="bfm-payment-card-body" style={{ paddingLeft: 0, paddingTop: '4px' }}>
+                    {/* Body: description + benefits stacked vertically */}
+                    <div className="bfm-payment-card-body" style={{ paddingLeft: 0, paddingTop: 0 }}>
                       {/* Big amount only shown when partial IS allowed */}
                       {isPartialPaymentAllowed && (
                         <div className="bfm-payment-amount">₱{fmt(grandTotal)}</div>
                       )}
                       <div className="bfm-payment-description">
-                        Complete payment now and secure your booking{!isPartialPaymentAllowed ? ' instantly.' : ''}
+                        Complete payment now and secure your booking instantly.
                       </div>
                       <ul className="bfm-payment-benefits">
-                        <li>Instant confirmation</li>
-                        <li>No further payments needed</li>
-                        <li>Priority processing</li>
+                        <li>✓ Instant confirmation</li>
+                        <li>✓ No further payments needed</li>
+                        <li>✓ Priority processing</li>
                       </ul>
                     </div>
                   </div>
@@ -1839,34 +2082,68 @@ function TourList({ tours, selected, onToggle, paxCount }) {
   return (
     <>
       <p className="cbf-section-desc" style={{ marginBottom: '12px' }}>
-        🏔️ <strong>Select one or more tours</strong> for your trip. You will be asked to set a scheduled date for each tour in the next step.
+        Choose one or more tours — you'll set dates in the next step.
       </p>
       <div className="cbf-service-list">
         {tours.map(tour => {
           const isSelected = selected.some(t => t._id === tour._id);
+          const img = tour.imageUrl || tour.image;
           return (
             <div
               key={tour._id}
-              className={`cbf-service-item ${isSelected ? 'selected' : ''}`}
+              className={`cbf-card-item ${isSelected ? 'selected' : ''}`}
               onClick={() => onToggle(tour)}
             >
-              {(tour.imageUrl || tour.image) && (
-                <img src={tour.imageUrl||tour.image} alt={tour.title||tour.name} className="cbf-si-img"/>
-              )}
-              <div className="cbf-si-body">
-                <div className="cbf-si-name">{tour.title || tour.name}</div>
-                {tour.destination && <div className="cbf-si-meta">📍 {tour.destination}</div>}
-                {tour.duration    && <div className="cbf-si-meta">⏱ {tour.duration}</div>}
-                {tour.category    && <div className="cbf-si-meta">🏷 {tour.category}</div>}
-                {tour.price > 0 && (
-                  <div className="cbf-si-price">
-                    ₱{Number(tour.price).toLocaleString()} / pax
-                    {paxCount > 1 && ` · ₱${Number(tour.price * paxCount).toLocaleString()} total`}
-                  </div>
+              {/* Image section */}
+              <div className="cbf-card-image-wrap">
+                {img
+                  ? <img src={img} alt={tour.title || tour.name} className="cbf-card-img"/>
+                  : <div className="cbf-card-img-placeholder">🏔️</div>
+                }
+                {/* Category badge top-left */}
+                {tour.category && (
+                  <span className="cbf-card-category-badge">{tour.category}</span>
                 )}
+                {/* Title overlay bottom-left */}
+                <div className="cbf-card-img-title">{tour.title || tour.name}</div>
+                {/* Check button top-right */}
+                <button
+                  type="button"
+                  className={`cbf-card-check-btn ${isSelected ? 'checked' : ''}`}
+                  onClick={e => { e.stopPropagation(); onToggle(tour); }}
+                  aria-label={isSelected ? 'Deselect' : 'Select'}
+                  style={{ outline: 'none', boxShadow: isSelected ? '0 2px 8px rgba(252,156,27,0.45)' : '0 2px 6px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                >
+                  {isSelected
+                    ? <Check size={14} style={{ display: 'block', margin: 0 }}/>
+                    : <Plus size={14} style={{ display: 'block', margin: 0 }}/>
+                  }
+                </button>
               </div>
-              <div className={`cbf-si-check ${isSelected ? 'checked' : ''}`}>
-                {isSelected ? <Check size={14}/> : <Plus size={14}/>}
+              {/* Info row below image */}
+              <div className="cbf-card-info-row">
+                <div className="cbf-card-meta-left">
+                  {tour.destination && (
+                    <span className="cbf-card-meta-item">
+                      <MapPin size={11}/> {tour.destination}
+                    </span>
+                  )}
+                  {tour.paxCount > 0 && (
+                    <span className="cbf-card-meta-item">
+                      <Users size={11}/> {paxCount} pax
+                    </span>
+                  )}
+                  {tour.rating > 0 && (
+                    <span className="cbf-card-meta-item cbf-card-rating">
+                      ⭐ {tour.rating}{tour.reviewCount > 0 ? ` (${tour.reviewCount})` : ''}
+                    </span>
+                  )}
+                </div>
+                {tour.price > 0 && (
+                  <span className="cbf-card-price">
+                    ₱{Number(tour.price).toLocaleString()}<span className="cbf-card-price-unit">/pax</span>
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -1902,7 +2179,7 @@ function TransferList({ transfers, selected, transferTypes, onToggle, onTypeChan
     <>
       {userPax > 0 && (
         <p className="cbf-section-desc" style={{ marginBottom: '12px' }}>
-          🚐 Showing transfers that can accommodate <strong>{userPax} passenger{userPax > 1 ? 's' : ''}</strong>.
+          Showing transfers that can accommodate <strong>{userPax} passenger{userPax > 1 ? 's' : ''}</strong>.
         </p>
       )}
       <div className="cbf-service-list">
@@ -1912,16 +2189,54 @@ function TransferList({ transfers, selected, transferTypes, onToggle, onTypeChan
           return (
             <div
               key={transfer._id}
-              className={`cbf-service-item ${isSelected ? 'selected' : ''}`}
+              className={`cbf-card-item ${isSelected ? 'selected' : ''}`}
+              onClick={() => onToggle(transfer)}
             >
-              {transfer.imageUrl && (
-                <img src={transfer.imageUrl} alt={transfer.title} className="cbf-si-img"/>
-              )}
-              <div className="cbf-si-body" onClick={() => onToggle(transfer)}>
-                <div className="cbf-si-name">{transfer.title}</div>
-                {transfer.category           && <div className="cbf-si-meta">🏷 {transfer.category}</div>}
-                {transfer.packageDestination && <div className="cbf-si-meta">📍 {transfer.packageDestination}</div>}
-                {transfer.pax                && <div className="cbf-si-meta">👥 Up to {transfer.pax} pax</div>}
+              {/* Image section */}
+              <div className="cbf-card-image-wrap">
+                {transfer.imageUrl
+                  ? <img src={transfer.imageUrl} alt={transfer.title} className="cbf-card-img"/>
+                  : <div className="cbf-card-img-placeholder">🚐</div>
+                }
+                {/* Category badge top-left */}
+                {transfer.category && (
+                  <span className="cbf-card-category-badge">{transfer.category}</span>
+                )}
+                {/* Title overlay bottom-left */}
+                <div className="cbf-card-img-title">{transfer.title}</div>
+                {/* Check button top-right */}
+                <button
+                  type="button"
+                  className={`cbf-card-check-btn ${isSelected ? 'checked' : ''}`}
+                  onClick={e => { e.stopPropagation(); onToggle(transfer); }}
+                  aria-label={isSelected ? 'Deselect' : 'Select'}
+                  style={{ outline: 'none', boxShadow: isSelected ? '0 2px 8px rgba(252,156,27,0.45)' : '0 2px 6px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                >
+                  {isSelected
+                    ? <Check size={14} style={{ display: 'block', margin: 0 }}/>
+                    : <Plus size={14} style={{ display: 'block', margin: 0 }}/>
+                  }
+                </button>
+              </div>
+              {/* Info row below image */}
+              <div className="cbf-card-info-row">
+                <div className="cbf-card-meta-left">
+                  {transfer.packageDestination && (
+                    <span className="cbf-card-meta-item">
+                      <MapPin size={11}/> {transfer.packageDestination}
+                    </span>
+                  )}
+                  {transfer.pax > 0 && (
+                    <span className="cbf-card-meta-item">
+                      <Users size={11}/> Up to {transfer.pax} pax
+                    </span>
+                  )}
+                </div>
+                {transfer.oneWayPrice > 0 && (
+                  <span className="cbf-card-price">
+                    ₱{Number(transfer.oneWayPrice).toLocaleString()}<span className="cbf-card-price-unit">/trip</span>
+                  </span>
+                )}
               </div>
 
               {/* Type & price selector (only when selected) */}
@@ -1930,7 +2245,7 @@ function TransferList({ transfers, selected, transferTypes, onToggle, onTypeChan
                   <button
                     type="button"
                     className={`cbf-tt-btn ${type === 'oneway' ? 'active' : ''}`}
-                    onClick={() => onTypeChange(transfer._id, 'oneway')}
+                    onClick={e => { e.stopPropagation(); onTypeChange(transfer._id, 'oneway'); }}
                   >
                     ➡️ One Way
                     {transfer.oneWayPrice > 0 && <span className="cbf-tt-price">₱{Number(transfer.oneWayPrice).toLocaleString()}</span>}
@@ -1939,7 +2254,7 @@ function TransferList({ transfers, selected, transferTypes, onToggle, onTypeChan
                     <button
                       type="button"
                       className={`cbf-tt-btn ${type === 'roundtrip' ? 'active' : ''}`}
-                      onClick={() => onTypeChange(transfer._id, 'roundtrip')}
+                      onClick={e => { e.stopPropagation(); onTypeChange(transfer._id, 'roundtrip'); }}
                     >
                       🔄 Roundtrip
                       <span className="cbf-tt-price">₱{Number(transfer.roundtripPrice).toLocaleString()}</span>
@@ -1947,21 +2262,6 @@ function TransferList({ transfers, selected, transferTypes, onToggle, onTypeChan
                   )}
                 </div>
               )}
-
-              {!isSelected && (
-                <div className="cbf-transfer-price-preview">
-                  {transfer.oneWayPrice > 0 && (
-                    <span>from ₱{Number(transfer.oneWayPrice).toLocaleString()}</span>
-                  )}
-                </div>
-              )}
-
-              <div
-                className={`cbf-si-check ${isSelected ? 'checked' : ''}`}
-                onClick={() => onToggle(transfer)}
-              >
-                {isSelected ? <Check size={14}/> : <Plus size={14}/>}
-              </div>
             </div>
           );
         })}
