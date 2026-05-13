@@ -12,8 +12,6 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
-import { Compass } from 'lucide-react';
-import CustomizedBookingForm from '../customizedBooking/CustomizedBookingForm';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -47,11 +45,6 @@ function PackageDealsContent() {
   const [currency, setCurrency] = useState('PHP');        
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
-  const [showCreatePackageWidget, setShowCreatePackageWidget] = useState(false);
-  const [showCustomBookingForm, setShowCustomBookingForm] = useState(false);
-
-  // NEW: Mobile two-tap expansion for the Create Package FAB (mirrors FeedbackWidget)
-  const [isPackageExpanded, setIsPackageExpanded] = useState(false);
 
 
 
@@ -211,17 +204,6 @@ function PackageDealsContent() {
       window.removeEventListener('favoriteRemoved', handleFavoriteRemoved);
     };
   }, []);
-
-  // Collapse the Package FAB text when user taps/clicks outside on mobile
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isPackageExpanded && !event.target.closest('.create-package-fab')) {
-        setIsPackageExpanded(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [isPackageExpanded]);
 
   // ============================================================
   // HANDLE URL PARAMETERS AND CUSTOM EVENTS
@@ -869,25 +851,6 @@ function PackageDealsContent() {
     }
   };
 
-  // NEW: Two-step tap logic for mobile (mirrors FeedbackWidget.handleTriggerClick)
-  const handlePackageFabClick = (e) => {
-    e.stopPropagation(); // prevent the click-outside listener from firing immediately
-    const isMobile = window.innerWidth <= 640;
-    if (isMobile) {
-      if (!isPackageExpanded) {
-        // First tap: just expand to show label
-        setIsPackageExpanded(true);
-      } else {
-        // Second tap: toggle the popup
-        setIsPackageExpanded(false);
-        setShowCreatePackageWidget(prev => !prev);
-      }
-    } else {
-      // Desktop: toggle popup directly (hover handles label expansion)
-      setShowCreatePackageWidget(prev => !prev);
-    }
-  };
-
   // ============================================================
   // OPEN GHL CHAT WIDGET — triggered by mascot GIF click
   // window.openGHLChat is defined in index.html's inline script,
@@ -972,49 +935,6 @@ function PackageDealsContent() {
 
       <MascotGif onClick={openGHLChat} />
 
-      {/* ============================================================
-          FLOATING CREATE YOUR OWN PACKAGE WIDGET
-          Positioned above FeedbackWidget
-      ============================================================ */}
-      <div className="create-package-fab-wrapper">
-        {showCreatePackageWidget && (
-          <div className="create-package-popup">
-            <button
-              className="create-package-popup-close"
-              onClick={() => setShowCreatePackageWidget(false)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-            <div className="create-package-popup-icon">✈️</div>
-            <h4 className="create-package-popup-title">Build Your Dream Trip</h4>
-            <p className="create-package-popup-desc">
-              Tell us your ideal destination, dates, and preferences — we'll craft a personalized package just for you!
-            </p>
-            <button
-              className="create-package-popup-btn"
-              onClick={() => {
-                setShowCreatePackageWidget(false);
-                setIsPackageExpanded(false);
-                setShowCustomBookingForm(true);
-              }}
-            >
-              Create Booking
-            </button>
-          </div>
-        )}
-        <button
-          className={`create-package-fab ${isPackageExpanded ? 'expanded' : ''}`}
-          onClick={handlePackageFabClick}
-          aria-label="Create Your Own Package"
-        >
-          <span className="create-package-fab-icon">
-            <Compass size={21} strokeWidth={2} />
-          </span>
-          <span className="create-package-fab-label">Build a Trip</span>
-        </button>
-      </div>
-
       <FeedbackWidget triggerOpen={feedbackTrigger} />
 
       <div className="section-divider-orange">
@@ -1083,19 +1003,6 @@ function PackageDealsContent() {
       </section>
     </div>
 
-      {/* ============================================================
-          CUSTOMIZED BOOKING FORM MODAL
-          Rendered OUTSIDE .package-deals-page so overflow-x:hidden
-          on the parent cannot trap the fixed overlay.
-      ============================================================ */}
-      <CustomizedBookingForm
-        isOpen={showCustomBookingForm}
-        onClose={() => setShowCustomBookingForm(false)}
-        onSuccess={() => {
-          setShowCustomBookingForm(false);
-          toast.success('Booking submitted successfully!', 'Booking Confirmed', 3500);
-        }}
-      />
     </>
   );
 }

@@ -21,6 +21,7 @@ import UserDashboard from './components/userDashboard/userDashboard.jsx';
 import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
 import TourPackages from './components/TourPackages/tourPackages.jsx';
 import TransferPackages from './components/transfers/transferPackages.jsx';
+import CustomizedBookingForm from './components/customizedBooking/CustomizedBookingForm.jsx';
 
 // --- NEW FEEDBACK COMPONENT ---
 import FeedbackWidget from './components/FeedbackWidget/FeedbackWidget.jsx';
@@ -202,6 +203,11 @@ function MainLayout() {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [isWishlistDropdownOpen, setIsWishlistDropdownOpen] = useState(false);
 
+  // ============================================================
+  // ⭐ CUSTOM BOOKING MODAL STATE
+  // ============================================================
+  const [isCustomBookingOpen, setIsCustomBookingOpen] = useState(false);
+
   const logoNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
 
@@ -210,6 +216,7 @@ function MainLayout() {
     flights: { name: 'Flight Search', path: '/flights' },
     packages: { name: 'Package Deals', path: '/packages' },
     otherservices: { name: 'Other Services', path: '/other-services' },
+    customBooking: { name: 'Custom Booking', path: null, isModal: true },
   };
 
   const languages = [
@@ -399,7 +406,13 @@ function MainLayout() {
 
   const handleNavigation = (pageKey) => {
     const page = pages[pageKey];
-    if (page && page.path) {
+    if (!page) return;
+    if (page.isModal) {
+      setIsCustomBookingOpen(true);
+      setIsMobileMenuOpen(false);
+      return;
+    }
+    if (page.path) {
       if (page.external) {
         window.location.href = page.path;
       } else {
@@ -503,6 +516,18 @@ function MainLayout() {
         currentUser={currentUser}
         wishlistCount={wishlistCount}
         onWishlistUpdate={handleWishlistUpdate}
+      />
+
+      {/* ============================================================ */}
+      {/* ⭐ CUSTOM BOOKING MODAL */}
+      {/* ============================================================ */}
+      <CustomizedBookingForm
+        isOpen={isCustomBookingOpen}
+        onClose={() => setIsCustomBookingOpen(false)}
+        onSuccess={(booking) => {
+          setIsCustomBookingOpen(false);
+          console.log('Custom booking submitted:', booking);
+        }}
       />
       
       {!isDashboardPage && (
