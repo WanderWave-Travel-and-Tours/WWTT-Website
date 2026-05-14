@@ -42,10 +42,33 @@
 .cbk-table tbody tr:hover td { background: #f0fdf4 !important; }
 .cbk-table tbody tr:last-child td { border-bottom: none; }
 
-/* Selected row */
+/* --- CHECKBOX + NUMBER COLUMNS: tight, no wasted space --- */
+.cbk-table th:nth-child(1),
+.cbk-table td:nth-child(1) {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  padding-left: 14px;
+  padding-right: 4px;
+  text-align: center;
+}
+
+.cbk-table th:nth-child(2),
+.cbk-table td:nth-child(2) {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding-left: 4px;
+  padding-right: 10px;
+}
+
+/* Selected row — clean background highlight, no harsh border line */
 .cbk-table tbody tr.cbk-row-selected td {
   background: #ecfdf5 !important;
-  border-left: 3px solid #059669;
+}
+
+.cbk-table tbody tr.cbk-row-selected td:first-child {
+  box-shadow: inset 3px 0 0 #059669;
 }
 
 /* --- BADGES --- */
@@ -163,15 +186,17 @@
   font-weight: 800;
   color: #94a3b8;
   font-size: 13px;
-  text-align: center;
+  text-align: left;
 }
 
 /* Checkbox */
 .cbk-checkbox {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   cursor: pointer;
   accent-color: #059669;
+  display: block;
+  margin: 0 auto;
 }
 
 /* --- ACTION BUTTONS --- */

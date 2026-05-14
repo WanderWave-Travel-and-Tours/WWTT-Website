@@ -702,6 +702,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .rp-chart-card--combined {
@@ -943,12 +944,14 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   grid-template-columns: 1fr 1.4fr;
   gap: 20px;
   align-items: stretch;
+  min-width: 0;
 }
 
 /* Pie card */
 .rp-sv-pie-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .rp-sv-pie-wrap {
@@ -1006,6 +1009,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   display: flex;
   flex-direction: column;
   padding-bottom: 16px;
+  min-width: 0;
 }
 
 .rp-sv-line-card .rp-line-header {
@@ -2050,5 +2054,289 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   }
   .rp-breakdown-right {
     gap: 6px;
+  }
+}
+/* ========================================
+   COMPREHENSIVE MOBILE FIXES
+   (overrides & supplements above breakpoints)
+   ======================================== */
+
+/* ── Tablet ≤ 900px ── */
+@media (max-width: 900px) {
+  .rp-page-title { font-size: 22px; }
+  .rp-chart-card { padding: 16px 18px; }
+  .rp-pv-section { padding: 20px; }
+}
+
+/* ── Mobile Large ≤ 768px ── */
+@media (max-width: 768px) {
+  /* Page header */
+  .rp-page-title { font-size: 19px; letter-spacing: -0.3px; }
+  .rp-page-subtitle { font-size: 12px; }
+  .rp-section-title { font-size: 14px; }
+
+  /* Chart cards */
+  .rp-chart-card { padding: 14px 16px; }
+  .rp-pv-section { padding: 16px; }
+
+  /* ── Period pill bar: stack label + pills + nav ── */
+  .rp-pt-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  /* Pills: horizontal scroll instead of wrapping to keep them on one line */
+  .rp-pt-pills {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .rp-pt-pills::-webkit-scrollbar { display: none; }
+  .rp-pt-pill {
+    padding: 5px 10px;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  /* Month / daily navigator: full-width */
+  .rp-pt-month-nav { margin-left: 0; }
+  .rp-pt-month-label { flex: 1; min-width: unset; }
+
+  /* Line chart header: stack filters below title */
+  .rp-line-header { gap: 10px; }
+  .rp-line-header-filters {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .rp-line-header-filters::-webkit-scrollbar { display: none; }
+
+  /* Platform + campaign tabs: no wrap, scroll */
+  .rp-sv-platform-tabs,
+  .rp-sv-campaign-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .rp-sv-platform-tabs::-webkit-scrollbar,
+  .rp-sv-campaign-tabs::-webkit-scrollbar { display: none; }
+  .rp-sv-platform-tab,
+  .rp-sv-campaign-tab {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 5px 10px;
+    height: 28px;
+  }
+
+  /* Quick stat cards */
+  .rp-stat-value { font-size: 22px; }
+  .rp-stat-label { font-size: 10px; }
+  .rp-stat-card { padding: 16px; }
+
+  /* Platform summary cards */
+  .rp-ps-body { padding: 14px 16px 0; }
+  .rp-ps-stat-value { font-size: 18px; }
+  .rp-ps-spark { padding: 0 16px 12px; }
+
+  /* Breakdown grid — 1 col */
+  .rp-breakdown-grid { grid-template-columns: 1fr; }
+
+  /* Overall totals — reduce font */
+  .rp-overall-value { font-size: 22px; }
+  .rp-overall-item { padding: 14px 12px; }
+  .rp-overall-icon-wrap { width: 40px; height: 40px; }
+
+  /* Page view cards */
+  .rp-pv-card { padding: 12px; gap: 10px; }
+  .rp-pv-card-icon-wrap { width: 34px; height: 34px; border-radius: 8px; }
+  .rp-pv-card-value { font-size: 20px; }
+  .rp-pv-card-label { font-size: 9px; }
+
+  /* Key metrics */
+  .rp-km-value { font-size: 20px; }
+
+  /* Chart metric tabs */
+  .rp-chart-tabs { flex-wrap: wrap; gap: 4px; }
+  .rp-chart-tab { font-size: 12px; padding: 6px 12px; }
+}
+
+/* ── Mobile Medium ≤ 640px ── */
+@media (max-width: 640px) {
+  .rp-page-title { font-size: 17px; }
+  .rp-chart-card { padding: 12px 14px; }
+  .rp-pv-section { padding: 14px; }
+
+  .rp-stat-value { font-size: 20px; }
+  .rp-stat-card { min-height: 120px; }
+
+  /* Period controls */
+  .rp-pt-pill { padding: 5px 9px; font-size: 10.5px; }
+
+  /* Page view header */
+  .rp-pv-title { font-size: 12px; }
+  .rp-pv-header { margin-bottom: 14px; }
+  .rp-pv-live-badge { font-size: 10px; }
+
+  /* Breakdown cards — compact */
+  .rp-breakdown-value { font-size: 16px; }
+  .rp-breakdown-value.total { font-size: 18px; }
+
+  /* Section title */
+  .rp-section-title { font-size: 13px; }
+}
+
+/* ── Mobile Small ≤ 480px ── */
+@media (max-width: 480px) {
+  .rp-page-title { font-size: 15px; }
+  .rp-page-subtitle { font-size: 11px; }
+
+  .rp-chart-card { padding: 11px 12px; }
+  .rp-pv-section { padding: 12px; }
+
+  /* Stats */
+  .rp-stat-value { font-size: 18px; letter-spacing: -0.3px; }
+  .rp-stat-label { font-size: 9.5px; }
+
+  /* Period pills — extra compact */
+  .rp-pt-pill { padding: 4px 8px; font-size: 10px; gap: 3px; }
+  .rp-pt-bar { padding: 10px 12px; gap: 8px; }
+  .rp-pt-custom-row { padding: 10px 12px 12px; gap: 8px; }
+  .rp-pt-date-input { min-width: 130px; font-size: 12px; }
+
+  /* Key metrics — 1 col on very small screens */
+  .rp-key-metrics-grid { grid-template-columns: 1fr; gap: 8px; }
+  .rp-km-value { font-size: 22px; }
+
+  /* Page view cards */
+  .rp-pv-card-value { font-size: 18px; }
+  .rp-pv-card { padding: 10px; gap: 8px; }
+
+  /* Overall breakdown */
+  .rp-overall-value { font-size: 20px; }
+  .rp-overall-label { font-size: 10px; }
+
+  /* Platform summary */
+  .rp-ps-name { font-size: 16px; }
+  .rp-ps-stat-value { font-size: 16px; }
+
+  /* Section */
+  .rp-section { gap: 12px; }
+  .rp-container { gap: 18px; }
+}
+
+/* ── Mobile Extra Small ≤ 360px ── */
+@media (max-width: 360px) {
+  .rp-page-title { font-size: 14px; }
+  .rp-stat-value { font-size: 16px; }
+  .rp-chart-card { padding: 10px; }
+  .rp-pv-section { padding: 10px; }
+  .rp-pv-card-value { font-size: 16px; }
+
+  /* Pills — ultra compact */
+  .rp-pt-pill { padding: 4px 7px; font-size: 9.5px; }
+}
+
+/* ========================================
+   CHART OVERFLOW FIXES — mobile-safe
+   Fixes recharts ResponsiveContainer bleed
+   on small screens (sidebar = 90px)
+   ======================================== */
+
+/* Every flex/grid ancestor of a recharts chart must have min-width:0 */
+.rp-section,
+.rp-container,
+.rp-pv-section,
+.rp-sv-pie-wrap,
+.rp-key-metrics-card {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  /* Stack the pie + line chart vertically on mobile */
+  .rp-sv-charts-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Line header: title stacks above filters, filters scroll horizontally */
+  .rp-line-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  .rp-line-header-filters {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .rp-line-header-filters::-webkit-scrollbar { display: none; }
+}
+
+/* ========================================
+   CHART VISIBILITY FIX
+   Recharts ResponsiveContainer needs a
+   block-level parent with a defined size.
+   Never set overflow:hidden or max-width on
+   recharts-wrapper — it sets its own px width.
+   ======================================== */
+
+/* Ensure the pie chart wrapper always has height */
+.rp-sv-pie-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* ========================================
+   LINE CHART MOBILE — clean header
+   Hide decorative platform legend tags,
+   keep only the campaign filter tabs
+   ======================================== */
+@media (max-width: 768px) {
+  /* Hide the always-on platform color tags (Facebook / Instagram / TikTok)
+     — they're decorative legend only; chart lines already show the colors */
+  .rp-sv-line-card .rp-sv-platform-tabs {
+    display: none;
+  }
+
+  /* Line header: badge left, campaign tabs right — single row */
+  .rp-sv-line-card .rp-line-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: wrap;
+    gap: 8px !important;
+    margin-bottom: 12px;
+  }
+
+  /* Campaign filter tabs — compact pill row */
+  .rp-sv-line-card .rp-line-header-filters {
+    flex: unset;
+    width: auto;
+    overflow-x: visible;
+    flex-wrap: nowrap;
+  }
+
+  .rp-sv-line-card .rp-sv-campaign-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  .rp-sv-line-card .rp-sv-campaign-tab {
+    padding: 5px 10px;
+    font-size: 11px;
+    height: 28px;
   }
 }

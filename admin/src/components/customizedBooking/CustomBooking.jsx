@@ -522,7 +522,7 @@ const CustomBooking = () => {
           {/* ── Bulk Action Bar ── */}
           {selectedBookings.length > 0 && (
             <div className="cbk-bulk-bar">
-              <span>
+              <span data-count={selectedBookings.length}>
                 {selectedBookings.length} booking{selectedBookings.length > 1 ? 's' : ''} selected
               </span>
               <button
