@@ -416,6 +416,7 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
           boxShadow: '0 24px 60px rgba(0,0,0,0.25)',
           overflow: 'hidden',
           animation: 'slideUp 0.22s cubic-bezier(.22,1,.36,1)',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}>
           {/* Header */}
           <div style={{
@@ -510,7 +511,7 @@ const NewTransferBookingModal = ({ isOpen, onClose }) => {
               onMouseOver={e => e.currentTarget.style.background = '#e2e8f0'}
               onMouseOut={e => e.currentTarget.style.background = '#f1f5f9'}
             >
-              ✕ Close & Clear Time
+              Close
             </button>
             <button
               onClick={handleLateNightConfirm}

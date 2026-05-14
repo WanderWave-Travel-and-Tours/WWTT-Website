@@ -6,6 +6,8 @@ import './userLogin.css';
 import { Mail, CheckCircle, XCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'; 
 // Import Toast Hook
 import { useToast } from '../toast/ToastManager';
+// Import WanderLoader
+import WanderLoader from '../loading/WanderLoader';
 
 const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/auth'; 
 
@@ -99,6 +101,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(true);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
     
     // We keep these state variables for logic, but we won't render them in UI anymore
@@ -128,6 +131,12 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             setCurrentSlide((prev) => (prev + 1) % destinations.length);
         }, 4500);
         return () => clearInterval(timer);
+    }, []);
+
+    // Page load animation
+    useEffect(() => {
+        const timer = setTimeout(() => setPageLoading(false), 1800);
+        return () => clearTimeout(timer);
     }, []);
 
     useEffect(() => {
@@ -393,6 +402,14 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
     return (
         <div className="user-login-wrapper">
+
+            {/* WanderLoader Overlay */}
+            <WanderLoader
+                loading={pageLoading || isLoading}
+                text={pageLoading ? 'WELCOME TO WANDERWAVE' : (isSignup ? 'CREATING YOUR ACCOUNT' : 'LOGGING YOU IN')}
+                subtitle="Please wait a moment"
+                fullScreen
+            />
             
             {/* Conditional OTP Modal/Popup */}
             {isOtpFormVisible && (

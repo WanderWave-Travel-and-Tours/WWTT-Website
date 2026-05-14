@@ -668,7 +668,7 @@ html, body {
 
 .requirements-modal-header {
   background: linear-gradient(135deg, var(--os-dark-blue), #1a3a5f);
-  padding: 1.25rem 2rem; 
+  padding: 1.25rem 3.5rem 1.25rem 2rem; 
   text-align: center;
   border-radius: 20px 20px 0 0;
   position: relative;
@@ -795,7 +795,105 @@ html, body {
   background: var(--os-accent);
 }
 
-/* Mobile Responsive for Requirements Modal */
+/* ── Mobile step navigation buttons (hidden on desktop) ── */
+.mobile-proceed-btn {
+  display: none;
+}
+
+.mobile-back-btn {
+  display: none;
+}
+
+.mobile-form-topbar {
+  display: none;
+}
+
+.mobile-form-close-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-proceed-btn {
+    display: block;
+    width: 100%;
+    margin-top: 1rem;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--os-accent), #e88a0a);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(252, 156, 27, 0.4);
+    transition: all 0.3s ease;
+  }
+
+  .mobile-proceed-btn:hover,
+  .mobile-proceed-btn:active {
+    background: linear-gradient(135deg, #e88a0a, #cc7800);
+    transform: translateY(-1px);
+  }
+
+  .mobile-form-topbar {
+    display: flex;
+  }
+
+  .mobile-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    color: var(--os-dark-blue);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: none;
+    letter-spacing: 0.1px;
+  }
+
+  .mobile-back-btn:hover,
+  .mobile-back-btn:active {
+    color: var(--os-accent);
+  }
+
+  /* Top bar in form col: back left, close right */
+  .mobile-form-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .mobile-form-close-btn {
+    display: none;
+  }
+
+  /* Reuse desktop modal-close-btn style inside topbar — override positioning */
+  .mobile-topbar-close {
+    position: static !important;
+    flex-shrink: 0;
+  }
+
+  /* Hide the global floating close btn on mobile — we use topbar close instead */
+  .modal-two-column > .modal-close-btn {
+    display: none;
+  }
+
+  .modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+}
+
+/* Mobile responsive for requirements modal */
 @media (max-width: 768px) {
   .requirements-modal {
     width: 95%;
@@ -1137,7 +1235,83 @@ html, body {
 
   .modal-requirements-col,
   .modal-form-col {
-    padding: 1.5rem;
+    padding: 1.25rem 1.25rem;
+    box-sizing: border-box;
+  }
+
+  /* Mobile step-based layout */
+  .modal-two-column {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-width: 480px;
+    width: 94%;
+    margin: 0 auto;
+    max-height: 92vh;
+  }
+
+  /* On mobile, only show the active step */
+  .modal-requirements-col {
+    border-radius: 20px;
+    overflow-y: auto;
+  }
+
+  .modal-form-col {
+    display: none;
+    border-radius: 20px;
+    overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* When form step is active on mobile */
+  .modal-form-col.mobile-form-active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-requirements-col.mobile-info-hidden {
+    display: none;
+  }
+
+  /* Fix form inputs to not overflow */
+  .modal-form input,
+  .modal-form select,
+  .modal-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.9rem;
+  }
+
+  .modal-form textarea {
+    min-height: 90px;
+  }
+
+  /* Fix footer contact inline on mobile */
+  .modal-footer-contact-inline {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+    padding: 0.75rem 0 0 0;
+  }
+
+  .modal-footer-contact-inline .footer-contact-divider {
+    display: none;
+  }
+
+  .modal-footer-contact-inline .footer-contact-item {
+    font-size: 0.8rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .modal-footer-contact-inline .footer-contact-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .modal-title {
@@ -1163,15 +1337,41 @@ html, body {
   }
 
   .modal-close-btn {
-    top: 10px;
-    right: 10px;
-    width: 36px;
-    height: 36px;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    background: rgba(10, 32, 59, 0.08);
+    border: 1.5px solid rgba(10, 32, 59, 0.15);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   }
 
   .modal-close-btn svg {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Requirements modal close btn on mobile - white version */
+  .requirements-modal .modal-close-btn {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .requirements-modal .modal-close-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .requirements-modal-header {
+    padding: 1.1rem 3rem 1.1rem 1.5rem;
+  }
+
+  .requirements-modal-title {
+    font-size: 1.1rem;
   }
 }
 

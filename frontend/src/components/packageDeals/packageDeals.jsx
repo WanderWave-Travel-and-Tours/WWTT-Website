@@ -12,6 +12,7 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import WanderLoader from '../loading/WanderLoader';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -681,16 +682,9 @@ function PackageDealsContent() {
 
   if (loading) {
     return (
-      <div className="loading-screen" style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px',
-        color: '#FF8C00'
-      }}>
-        Loading packages...
-      </div>
+      <>
+        <WanderLoader loading={loading} text="LOADING TOUR PACKAGES" subtitle="Finding the best deals for you" />
+      </>
     );
   }
 

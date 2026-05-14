@@ -9,6 +9,7 @@ import FlightBookingModal from "./flightBookingModal";
 import { ChevronLeft } from 'lucide-react';
 import { BookingStateManager } from '../../utils/bookingStateManager';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import WanderLoader from '../loading/WanderLoader';
 
 function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestination, prefilledPassengers }) {
   const location = useLocation();
@@ -544,6 +545,13 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
 
   return (
     <div className="flight-search-container">
+      {/* ── WanderLoader overlay — shows whenever loading is true ── */}
+      <WanderLoader
+        loading={loading}
+        text="SEARCHING FLIGHTS"
+        subtitle="Finding the best flights for you"
+      />
+
       {shouldShowBackButton && (
   <div className="back-button-wrapper">
     <button className="back-button" onClick={handleBackToBooking}>

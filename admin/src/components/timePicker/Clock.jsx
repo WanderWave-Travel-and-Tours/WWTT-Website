@@ -13,9 +13,9 @@ const CustomTimePicker = ({ value, onChange, required, placeholder }) => {
   const wrapperRef = useRef(null);
   const clockRef   = useRef(null);
 
-  const CLOCK_R = 130;
-  const CENTER  = 155;
-  const HAND_R  = 105;
+  const CLOCK_R = 110;
+  const CENTER  = 130;
+  const HAND_R  = 82;
 
   // Parse incoming 24h value
   useEffect(() => {
@@ -113,8 +113,8 @@ const CustomTimePicker = ({ value, onChange, required, placeholder }) => {
   });
 
   // Hand tip positions
-  const hourTip   = polarToXY(hourAngleDeg,   75);
-  const minuteTip = polarToXY(minuteAngleDeg, 95);
+  const hourTip   = polarToXY(hourAngleDeg,   60);
+  const minuteTip = polarToXY(minuteAngleDeg, 75);
 
   const displayHour   = String(hour).padStart(2, '0');
   const displayMinute = String(minute).padStart(2, '0');
@@ -169,7 +169,7 @@ const CustomTimePicker = ({ value, onChange, required, placeholder }) => {
             <div className="tbfm-analog-face-wrap">
               <svg
                 ref={clockRef}
-                viewBox="0 0 310 310"
+                viewBox="0 0 260 260"
                 className="tbfm-analog-svg"
                 onClick={handleClockClick}
               >
@@ -179,8 +179,8 @@ const CustomTimePicker = ({ value, onChange, required, placeholder }) => {
                 {/* Minute tick lines */}
                 {Array.from({ length: 60 }, (_, i) => {
                   const a  = (i * 6 - 90) * (Math.PI / 180);
-                  const r1 = i % 5 === 0 ? 116 : 120;
-                  const r2 = 128;
+                  const r1 = i % 5 === 0 ? 96 : 100;
+                  const r2 = 108;
                   return (
                     <line
                       key={i}
@@ -194,9 +194,9 @@ const CustomTimePicker = ({ value, onChange, required, placeholder }) => {
                   );
                 })}
 
-                {/* Hour numbers — only shown in hour mode */}
-                {mode === 'hour' && hourNumbers.map(({ n, x, y }) => {
-                  const isSelected = hour === n;
+                {/* Hour numbers */}
+                {hourNumbers.map(({ n, x, y }) => {
+                  const isSelected = mode === 'hour' && hour === n;
                   return (
                     <g
                       key={n}
