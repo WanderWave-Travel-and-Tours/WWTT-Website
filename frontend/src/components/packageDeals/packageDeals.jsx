@@ -64,12 +64,10 @@ function PackageDealsContent() {
   const [pendingInitialPax, setPendingInitialPax] = useState(null);
 
   const handleLoginRequired = () => {
-    console.log('🚨 Login Required triggered!');
     setShowLoginNotice(true);
   };
 
   const handleGoToLogin = () => {
-    console.log('🚪 Redirecting to login...');
     setShowLoginNotice(false);
     navigate('/login');
   };
@@ -82,22 +80,17 @@ function PackageDealsContent() {
       const userJSON = localStorage.getItem('wanderwave_user');
       const isUserLoggedIn = !!userJSON;
       
-      console.log('👤 Checking login status:', isUserLoggedIn ? 'LOGGED IN' : 'NOT LOGGED IN');
-      
       if (userJSON) {
         try {
           const user = JSON.parse(userJSON);
-          console.log('✅ User data:', { id: user._id, name: user.fullName, email: user.email });
           setCurrentUser(user);
           setIsLoggedIn(true);
         } catch (err) {
-          console.error('❌ Error parsing user data:', err);
           localStorage.removeItem('wanderwave_user');
           setCurrentUser(null);
           setIsLoggedIn(false);
         }
       } else {
-        console.log('❌ No user data in localStorage');
         setCurrentUser(null);
         setIsLoggedIn(false);
       }
@@ -106,7 +99,6 @@ function PackageDealsContent() {
     checkLoginStatus(); 
 
     const handleStorageChange = () => {
-      console.log('📦 Storage changed - rechecking login status');
       checkLoginStatus();
     };
 
@@ -123,14 +115,12 @@ function PackageDealsContent() {
   useEffect(() => {
     const fetchUserFavorites = async () => {
       if (!isLoggedIn || !currentUser) {
-        console.log('❌ User not logged in, clearing favorites');
         setFavorites([]);
         return;
       }
 
       try {
         const userId = currentUser._id;
-        console.log('📥 Fetching favorites for user:', userId);
 
         const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites/${userId}`, {
           method: 'GET',
@@ -139,22 +129,17 @@ function PackageDealsContent() {
           },
         });
 
-        console.log('📡 Favorites API response status:', response.status);
-
         if (!response.ok) {
           throw new Error('Failed to fetch favorites');
         }
 
         const result = await response.json();
-        console.log('✅ Favorites fetched:', result);
         
         if (result.status === 'ok' && result.data) {
           const favoriteIds = result.data.map(fav => fav.promo_id);
-          console.log('❤️ Favorite IDs:', favoriteIds);
           setFavorites(favoriteIds);
         }
       } catch (err) {
-        console.error('❌ Error fetching favorites:', err);
         setFavorites([]);
       }
     };
@@ -189,12 +174,10 @@ function PackageDealsContent() {
   useEffect(() => {
     const handleFavoriteRemoved = (event) => {
       const { packageId } = event.detail;
-      console.log('🔄 Package removed from wishlist in AllPackages:', packageId);
       
       // Update local favorites state
       setFavorites(prev => {
         const newFavorites = prev.filter(id => id !== packageId);
-        console.log('📊 Updated favorites:', newFavorites);
         return newFavorites;
       });
     };
@@ -218,7 +201,6 @@ function PackageDealsContent() {
     // ✅ DESTINATION FILTER — from GHL "Book Now" button
     if (destinationParam) {
       const decodedDestination = decodeURIComponent(destinationParam);
-      console.log('🗺️ URL parameter detected: filtering by destination:', decodedDestination);
       // ✅ Store raw value — will resolve to exact DB case once packages load
       setPendingDestinationFilter(decodedDestination);
 
@@ -234,7 +216,6 @@ function PackageDealsContent() {
     }
     
     if (filterParam === 'favorites') {
-      console.log('🎯 URL parameter detected: showing favorites');
       setScopeFilter('favorites');
       
       // Scroll to packages section after a short delay
@@ -250,7 +231,6 @@ function PackageDealsContent() {
 
     // Listen for custom event to show favorites
     const handleShowFavorites = () => {
-      console.log('🎯 Custom event detected: showing favorites');
       setScopeFilter('favorites');
       
       // Scroll to packages section
@@ -283,7 +263,6 @@ function PackageDealsContent() {
     const bookId = params.get('book');
 
     if (bookId) {
-      console.log('📦 ?book= param detected:', bookId);
       // ✅ FIX: Capture initialPax HERE before navigate() clears the URL
       const initialPax = parseInt(params.get('initialPax')) || null;
       setPendingBookId(bookId);
@@ -303,7 +282,6 @@ function PackageDealsContent() {
     );
 
      if (foundPkg) {
-      console.log('✅ Found package for direct booking:', foundPkg.name);
       
       // ✅ FIX: Use pendingInitialPax (captured before URL was cleared) instead of window.location.search
       setSelectedPackageForBooking({
@@ -319,7 +297,6 @@ function PackageDealsContent() {
       // Package not in current list — fetch it directly by ID from the API
       const fetchAndOpenPackage = async () => {
         try {
-          console.log('🔍 Package not in list, fetching by ID:', pendingBookId);
           const res = await fetch(`https://wanderwaveph.onrender.com/api/packages/${pendingBookId}`);
           if (!res.ok) throw new Error(`Status ${res.status}`);
           const json = await res.json();
@@ -376,10 +353,10 @@ function PackageDealsContent() {
             setCurrentView('booking');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           } else {
-            console.warn('⚠️ Package not found for ID:', pendingBookId);
+            // package not found
           }
-        } catch (err) {
-          console.error('❌ Failed to fetch package by ID:', err);
+        } catch {
+          // silently ignore
         } finally {
           setPendingBookId(null);    // consumed — clear regardless
           setPendingInitialPax(null); // ✅ FIX: clear alongside pendingBookId
@@ -529,8 +506,7 @@ function PackageDealsContent() {
       const endDate = new Date(discountEndDate);
       const now = new Date();
       return now > endDate; // Returns true if expired
-    } catch (error) {
-      console.error('Error checking discount expiration:', error);
+    } catch {
       return false;
     }
   };
@@ -541,7 +517,6 @@ function PackageDealsContent() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        console.log('📦 Fetching packages...');
         const response = await fetch('https://wanderwaveph.onrender.com/api/packages/with-tours'); 
         
         if (!response.ok) {
@@ -650,14 +625,11 @@ function PackageDealsContent() {
               matchedTours: pkg.matchedTours || [],
             };
           });
-          console.log(`✅ Fetched ${formattedPackages.length} packages`);
-          setPackages(formattedPackages);
-        } else {
+          setPackages(formattedPackages);        } else {
           setError(result.error || 'Failed to fetch packages.');
         }
 
       } catch (e) {
-        console.error("❌ Fetch Error:", e);
         setError('Error connecting to the API.');
       } finally {
         setLoading(false);
@@ -760,13 +732,7 @@ function PackageDealsContent() {
   // TOGGLE FAVORITE FUNCTION
   // ============================================================
   const toggleFavorite = async (packageId, packageName, packageLocation) => {
-    console.log('❤️ Toggle favorite clicked');
-    console.log('Package ID:', packageId);
-    console.log('Package Name:', packageName);
-    console.log('🔐 Is logged in:', isLoggedIn);
-    
     if (!isLoggedIn || !currentUser) {
-      console.log('⚠️ User not logged in - showing login modal');
       handleLoginRequired();
       return;
     }
@@ -774,10 +740,6 @@ function PackageDealsContent() {
     try {
       const userId = currentUser._id;
       const isCurrentlyFavorite = favorites.includes(packageId);
-      
-      console.log('📤 Sending API request...');
-      console.log('User ID:', userId);
-      console.log('Currently favorite:', isCurrentlyFavorite);
 
       // Optimistic UI update
       const previousState = [...favorites];
@@ -800,19 +762,15 @@ function PackageDealsContent() {
         }),
       });
 
-      console.log('📡 API Response status:', response.status);
-
       if (!response.ok) {
         // Revert optimistic update on error
         setFavorites(previousState);
         const errorText = await response.text();
-        console.error('❌ API Error:', errorText);
         toast.error('Failed to update wishlist. Please try again.', 'Error', 3000);
         return;
       }
       
       const result = await response.json();
-      console.log('✅ API Success:', result);
       
       // Update with server response
       if (result.data && result.data.favorites) {
@@ -829,18 +787,15 @@ function PackageDealsContent() {
       // NOTIFY NAVBAR TO UPDATE WISHLIST COUNT
       // ============================================================
       window.dispatchEvent(new Event('wishlistUpdated'));
-      console.log('🔔 Wishlist update event dispatched!');
       
       // If removed, also dispatch favoriteRemoved event
       if (result.action === 'removed') {
         window.dispatchEvent(new CustomEvent('favoriteRemoved', { 
           detail: { packageId } 
         }));
-        console.log('🔔 Favorite removed event dispatched!');
       }
 
     } catch (err) {
-      console.error('❌ Error toggling favorite:', err);
       toast.error('Network error. Please check your connection.', 'Connection Error', 3000);
     }
   };

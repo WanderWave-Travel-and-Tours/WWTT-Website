@@ -15,9 +15,13 @@
   z-index: 99999;
   padding: 20px;
   /* ✅ FIX: overflow-y scroll on overlay allows mouse wheel to scroll
-     the entire modal when content is taller than the viewport */
+     the entire modal. touch-action ensures mobile swipe also works.
+     The overlay is fixed/full-viewport so it always receives pointer
+     events regardless of parent overflow:hidden. */
   overflow-y: scroll;
+  overflow-x: hidden;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   animation: bfmFadeIn 0.2s ease-out;
 }
 
@@ -34,10 +38,10 @@
   position: relative;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  height: auto;
-  /* ✅ FIX: Remove max-height and overflow:hidden so the card grows to
-     fit all content. Scrolling is handled by the overlay instead, which
-     lets the mouse wheel work naturally everywhere on the modal. */
+  /* ✅ FIX: Give the card a max-height tied to the viewport so the
+     form-wrapper can scroll inside. The overlay itself stays scrollable
+     as a fallback on very small screens. */
+  max-height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
   /* ✅ FIX: auto margins centre the card inside the flex column */
@@ -210,11 +214,33 @@
 /* --- Scrollable Form Area --- */
 .bfm-form-wrapper {
   flex: 1;
-  /* ✅ FIX: The overlay now handles all scrolling, so this wrapper
-     just renders its full content naturally. */
+  /* ✅ FIX: Give the form wrapper its own scroll context so mouse wheel
+     events are captured anywhere inside the modal, not just on the overlay edges. */
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   padding: 20px 24px;
   background: #f8fafc;
+  /* Scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203, 213, 225, 0.8) transparent;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar {
+  width: 5px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.8);
+  border-radius: 4px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.9);
 }
 
 /* Scrollbar for the overlay */
@@ -950,24 +976,29 @@
    MOBILE (Max width: 640px)
    ============================================ */
 
+/* ============================================
+   MOBILE (Max width: 640px)
+   ============================================ */
+
 @media (max-width: 640px) {
   .bfm-overlay {
     padding: 0;
-    padding-top: 40px;
     align-items: flex-start;
   }
 
   .bfm-modal-card {
-    border-radius: 12px 12px 0 0;
+    border-radius: 0;
     width: 100%;
-    height: auto;
+    min-height: 100%;
     max-width: 100%;
     margin-top: 0;
-    /* ✅ FIX: No max-height restriction on mobile either — overlay scrolls */
+    /* ✅ FIX: On mobile, full height — form-wrapper scrolls inside */
+    max-height: 100vh;
   }
 
   .bfm-modal-header {
     padding: 16px;
+    padding-top: 20px;
   }
 
   .bfm-trip-summary {
@@ -983,11 +1014,14 @@
   .bfm-summary-value { 
     font-size: 0.75rem;
     white-space: normal;
+    word-break: break-word;
   }
 
   .bfm-form-wrapper {
     padding: 16px;
     padding-bottom: 40px;
+    /* On mobile the card is full-height so the wrapper fills and scrolls */
+    flex: 1;
   }
 
   /* Single Column Form on Mobile */
