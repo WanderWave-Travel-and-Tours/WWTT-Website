@@ -6,7 +6,6 @@ export const fetchArchivedPackages = async () => {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const result = await response.json();
-    console.log('📦 Archived Packages Response:', result);
     
     if (result.status === 'ok' && result.data && Array.isArray(result.data)) {
       return result.data.map(pkg => {
@@ -38,7 +37,6 @@ export const fetchArchivedPackages = async () => {
       });
     }
     
-    console.log('⚠️ No archived packages found or invalid response structure');
     return [];
   } catch (error) {
     console.error('❌ Error fetching archived packages:', error);
@@ -48,7 +46,6 @@ export const fetchArchivedPackages = async () => {
 
 export const restorePackage = async (id) => {
   try {
-    console.log('🔄 Attempting to restore package:', id);
     
     // Method 1: Try direct update endpoint
     const updateResponse = await fetch(`${API_URL}/${id}`, {
@@ -61,12 +58,10 @@ export const restorePackage = async (id) => {
     
     if (updateResponse.ok) {
       const result = await updateResponse.json();
-      console.log('✅ Package restored via update:', result);
       return true;
     }
     
     // Method 2: If update fails, try archive toggle endpoint
-    console.log('⚠️ Update method failed, trying archive toggle...');
     const archiveResponse = await fetch(`${API_URL}/${id}/archive`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +78,6 @@ export const restorePackage = async (id) => {
     }
     
     const result = await archiveResponse.json();
-    console.log('✅ Package restored via archive toggle:', result);
     return true;
     
   } catch (error) {

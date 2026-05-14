@@ -193,10 +193,12 @@ const ArchiveComponent = () => {
     return remaining > 0 ? remaining : 0;
   };
 
+  const toastRef = React.useRef(toast);
+  toastRef.current = toast;
+
   const fetchArchiveItems = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('🔄 Starting fetch for all archived items...');
       
       const results = await Promise.allSettled([
         fetchArchivedBookings(), 
@@ -214,18 +216,10 @@ const ArchiveComponent = () => {
         fetchArchivedTransferBookings(),
         fetchArchivedCustomizedBookings(), // ✅ NEW
       ]);
-      
-      console.log('📊 All fetch results:', results);
-      
+
       results.forEach((result, index) => {
-        // ✅ Updated names array to include CustomizedBookings at index 13
-        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'TourBookings', 'TransferBookings', 'CustomizedBookings'];
-        if (result.status === 'fulfilled') {
-          console.log(`✅ ${names[index]}: ${result.value.length} items`);
-          if (names[index] === 'Packages' && result.value.length > 0) {
-            console.log('📦 Package sample data:', result.value[0]);
-          }
-        } else {
+        if (result.status === 'rejected') {
+          const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'TourBookings', 'TransferBookings', 'CustomizedBookings'];
           console.error(`❌ ${names[index]} failed:`, result.reason);
         }
       });
@@ -234,19 +228,8 @@ const ArchiveComponent = () => {
         .map(r => r.status === 'fulfilled' ? r.value : [])
         .flat();
       
-      console.log('📦 Combined data length:', combinedData.length);
-      console.log('📦 Combined data sample:', combinedData.slice(0, 3));
-      
       // Filter out expired items
-      const nonExpiredData = combinedData.filter(item => {
-        const expired = isExpired(item.archivedAt || item.updatedAt);
-        if (expired) {
-          console.log('⏰ Expired item filtered out:', item.itemName || item.name);
-        }
-        return !expired;
-      });
-
-      console.log('📦 Non-expired data length:', nonExpiredData.length);
+      const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt || item.updatedAt));
 
       // Sort chronologically (oldest first)
       const chronologicalData = [...nonExpiredData].sort((a, b) => {
@@ -286,7 +269,7 @@ const ArchiveComponent = () => {
            }
         }
 
-        const formattedItem = {
+        return {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber,
@@ -299,49 +282,30 @@ const ArchiveComponent = () => {
           status: item.isArchive === "Yes" ? 'Archived' : (item.status || 'Archived'), 
           rawData: item.rawData || item
         };
-
-        if (displayType === 'Package') {
-          console.log('📦 Formatted Package Item:', formattedItem);
-        }
-
-        return formattedItem;
       });
 
-      console.log('✅ Final formatted items:', formatted.length);
-      console.log('📦 Packages in formatted:', formatted.filter(i => i.type === 'Package').length);
-      
       setArchiveItems(formatted);
     } catch (err) {
       console.error('❌ Archive Fetch error:', err);
-      toast.error("Failed to load archived items.");
+      toastRef.current.error("Failed to load archived items.");
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
   
   useEffect(() => { 
-    console.log('🚀 Component mounted, fetching archive items...');
     fetchArchiveItems(); 
   }, [fetchArchiveItems]);
 
   useEffect(() => {
-    console.log('🔍 Filter effect triggered');
-    console.log('📊 Archive items before filter:', archiveItems.length);
-    console.log('🎯 Filter type:', filterType);
-    console.log('🎯 Filter list subtype:', filterListSubtype);
-    
     let filtered = [...archiveItems];
     const lowerSearchTerm = searchTerm.toLowerCase();
     
     if (filterType === 'Archived List') {
         const listSubtypeNames = LIST_ARCHIVE_ITEMS.slice(1);
-        console.log('📋 List subtypes:', listSubtypeNames);
         filtered = filtered.filter(item => listSubtypeNames.includes(item.type));
-        console.log('📋 After list filter:', filtered.length);
-        
         if (filterListSubtype !== 'ALL List Items') {
           filtered = filtered.filter(item => item.type === filterListSubtype);
-          console.log(`📋 After "${filterListSubtype}" filter:`, filtered.length);
         }
     } else if (filterType === 'Archived Services') {
         const serviceSubtypeNames = SERVICE_SUBTYPES_LIST.slice(1);
@@ -360,13 +324,9 @@ const ArchiveComponent = () => {
         item.type.toLowerCase().includes(lowerSearchTerm) ||
         item.reference.toLowerCase().includes(lowerSearchTerm)
       );
-      console.log('🔍 After search filter:', filtered.length);
     }
     
     const sorted = [...filtered].sort((a, b) => sortDirection === 'asc' ? a.archiveNumber - b.archiveNumber : b.archiveNumber - a.archiveNumber);
-    
-    console.log('✅ Final filtered items:', sorted.length);
-    console.log('📦 Packages in filtered:', sorted.filter(i => i.type === 'Package').length);
     
     setFilteredArchiveItems(sorted);
     setCurrentPage(1); 
@@ -375,17 +335,13 @@ const ArchiveComponent = () => {
   const performRestore = async (item) => {
     setActionLoading(true);
     try {
-      console.log('🔄 Restoring item:', item.itemName, 'Type:', item.type, 'ID:', item.mongoId);
-      
       let restored = false;
       const id = item.mongoId;
       
       if (item.type === 'User' || item.type === 'Admin') {
         restored = await restoreUser(id);
       } else if (item.type === 'Package') {
-        console.log('📦 Attempting to restore package...');
         restored = await restorePackage(id);
-        console.log('📦 Package restore result:', restored);
       } else if (item.type === 'Booking') {
         restored = await restoreBooking(id);
       } else if (item.type === 'Tour' || item.type === 'Tour Booking') {
@@ -411,7 +367,6 @@ const ArchiveComponent = () => {
       }
       
       if (restored) {
-        console.log('✅ Item successfully restored, removing from archive list');
         setArchiveItems(prev => prev.filter(i => i.mongoId !== id));
         setShowModal(false);
         setSelectedItem(null);
@@ -419,11 +374,9 @@ const ArchiveComponent = () => {
         
         // Refresh the archive items after a short delay to ensure backend is updated
         setTimeout(() => {
-          console.log('🔄 Refreshing archive items...');
           fetchArchiveItems();
         }, 500);
       } else {
-        console.error('❌ Restore returned false');
         toast.error(`Failed to restore: ${item.itemName}`);
       }
     } catch (error) {
@@ -477,7 +430,6 @@ const ArchiveComponent = () => {
               else failCount++;
               
             } catch (err) {
-              console.error('Error restoring item:', item.itemName, err);
               failCount++;
             }
           }
@@ -491,7 +443,6 @@ const ArchiveComponent = () => {
             toast.error(`Failed to restore ${failCount} item(s).`);
           }
         } catch (error) {
-          console.error('Bulk restore error:', error);
           toast.error('An error occurred during bulk restore.');
         } finally { 
           setActionLoading(false); 
@@ -516,8 +467,6 @@ const ArchiveComponent = () => {
     const listCount = archiveItems.filter(i => listSubtypeNames.includes(i.type)).length;
     const serviceCount = archiveItems.filter(i => serviceSubtypeNames.includes(i.type)).length;
     const userCount = archiveItems.filter(i => userTypes.includes(i.type)).length;
-    
-    console.log('📊 Stats - Total:', archiveItems.length, 'List:', listCount, 'Services:', serviceCount, 'Users:', userCount);
     
     return [
       { label: "Total Archived", value: archiveItems.length, icon: <Archive size={24} />, image: ARCHIVE_IMAGES.TOTAL_ITEMS },
