@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Download, Bell, ChevronDown, BarChart2, TrendingUp, Activity, Calendar, Award } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import './DashboardHeader.css';
@@ -32,7 +32,15 @@ const DashboardHeader = ({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
+  // FIX #1: Track consecutive failures to apply backoff and stop hammering a broken endpoint.
+  const failCountRef = useRef(0);
+  const intervalRef = useRef(null);
+  const abortControllerRef = useRef(null);
+
   const API_BASE_URL = 'https://wanderwaveph.onrender.com';
+  const BASE_POLL_INTERVAL = 10000;   // 10 s when healthy
+  const MAX_FAILURES = 5;             // stop polling after 5 consecutive failures
+  const BACKOFF_MULTIPLIER = 2;       // double the interval each failure (unused in setInterval but used to gate restarts)
 
   const sections = [
     { value: 'all', label: 'All Sections', icon: 'BarChart2' },
@@ -43,50 +51,125 @@ const DashboardHeader = ({
     { value: 'top-packages', label: 'Top Performing Packages', icon: 'Award' },
   ];
 
-  // Fetch unread count
-  const fetchUnreadCount = () => {
-    fetch(`${API_BASE_URL}/api/activity-logs?limit=1000`)
-      .then(response => response.json())
-      .then(logs => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const todayLogs = logs.filter(log => {
-          const logDate = new Date(log.createdAt);
-          logDate.setHours(0, 0, 0, 0);
-          return logDate.getTime() === today.getTime();
-        });
-        
-        let readIds = [];
-        try {
-          const stored = localStorage.getItem('readNotifications');
-          if (stored) {
-            const data = JSON.parse(stored);
-            if (data.date === new Date().toDateString()) {
-              readIds = data.ids || [];
-            }
-          }
-        } catch (e) {}
-        
-        const unread = todayLogs.filter(log => !readIds.includes(log._id)).length;
-        setUnreadNotifications(unread);
-      })
-      .catch(error => console.error('Error fetching unread count:', error));
-  };
+  // FIX #1: fetchUnreadCount now uses an AbortController so in-flight requests are
+  // cancelled on unmount, and it applies exponential backoff via a failure counter.
+  const fetchUnreadCount = useCallback(async () => {
+    // Abort any previous in-flight request before starting a new one.
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-  // Fetch on mount and set polling
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/activity-logs?limit=1000`, {
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        // Non-2xx: count as failure but don't throw to console as an unhandled error.
+        failCountRef.current += 1;
+        if (failCountRef.current >= MAX_FAILURES) {
+          console.warn(
+            `[DashboardHeader] Activity-logs endpoint returned ${response.status} ` +
+            `${MAX_FAILURES} times in a row — pausing polling to avoid 404 spam.`
+          );
+          stopPolling();
+        }
+        return;
+      }
+
+      // Successful response — reset failure counter.
+      failCountRef.current = 0;
+
+      const logs = await response.json();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todayLogs = logs.filter(log => {
+        const logDate = new Date(log.createdAt);
+        logDate.setHours(0, 0, 0, 0);
+        return logDate.getTime() === today.getTime();
+      });
+
+      let readIds = [];
+      try {
+        const stored = localStorage.getItem('readNotifications');
+        if (stored) {
+          const data = JSON.parse(stored);
+          if (data.date === new Date().toDateString()) {
+            readIds = data.ids || [];
+          }
+        }
+      } catch (e) { /* ignore parse errors */ }
+
+      const unread = todayLogs.filter(log => !readIds.includes(log._id)).length;
+      setUnreadNotifications(unread);
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        // Request was intentionally cancelled — not a real error.
+        return;
+      }
+      // Network/other error — apply failure tracking.
+      failCountRef.current += 1;
+      console.warn(
+        `[DashboardHeader] fetchUnreadCount failed (attempt ${failCountRef.current}):`,
+        err.message
+      );
+      if (failCountRef.current >= MAX_FAILURES) {
+        console.warn(
+          `[DashboardHeader] Too many consecutive fetch failures — pausing polling.`
+        );
+        stopPolling();
+      }
+    }
+  }, []);
+
+  const stopPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback(() => {
+    stopPolling(); // clear any existing interval first
+    intervalRef.current = setInterval(() => {
+      // Only poll if failure count hasn't maxed out yet.
+      if (failCountRef.current < MAX_FAILURES) {
+        fetchUnreadCount();
+      }
+    }, BASE_POLL_INTERVAL);
+  }, [fetchUnreadCount, stopPolling]);
+
+  // FIX #1: Mount → fetch once, then start polling. Unmount → cancel everything.
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    startPolling();
 
-  // Listen to localStorage changes
+    return () => {
+      stopPolling();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchUnreadCount, startPolling, stopPolling]);
+
+  // FIX #1: Listen to localStorage changes (reset failure count so polling resumes
+  // after the user manually triggers a notification read).
   useEffect(() => {
-    const handler = () => fetchUnreadCount();
+    const handler = () => {
+      // Reset failure count so polling resumes if it was paused.
+      if (failCountRef.current >= MAX_FAILURES) {
+        failCountRef.current = 0;
+        startPolling();
+      }
+      fetchUnreadCount();
+    };
     window.addEventListener('notificationRead', handler);
     return () => window.removeEventListener('notificationRead', handler);
-  }, []);
+  }, [fetchUnreadCount, startPolling]);
 
   const handleSectionSelect = (value) => {
     if (onSectionFilter) {

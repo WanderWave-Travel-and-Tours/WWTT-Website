@@ -163,24 +163,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   useEffect(() => {
     const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-    const mainAdmin = adminData.isMainAdmin === true;
+    const mainAdmin =
+      adminData.isMainAdmin === true ||
+      adminData.email?.toLowerCase() === 'info@wanderwavetravelandtours.com';
     setIsMainAdmin(mainAdmin);
-    
-    console.log('🔐 Sidebar Admin Check:', {
-      email: adminData.email,
-      isMainAdmin: mainAdmin
-    });
-  }, []);
-
-  useEffect(() => {
-    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-    const mainAdmin = adminData.email?.toLowerCase() === 'info@wanderwavetravelandtours.com';
-    setIsMainAdmin(mainAdmin);
-    
-    console.log('🔐 Sidebar Admin Check:', {
-      email: adminData.email,
-      isMainAdmin: mainAdmin
-    });
   }, []);
 
   // ---------------------------------------------------------

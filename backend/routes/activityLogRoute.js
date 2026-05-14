@@ -437,6 +437,61 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 // ===================================================================
+// 🧹 CLEANUP OLD LOGS
+// FIX: Declared BEFORE router.delete('/:id') so Express doesn't
+// swallow "cleanup" as an :id parameter value.
+// ===================================================================
+router.delete('/cleanup/old', async (req, res) => {
+    try {
+        const { days = 90 } = req.query;
+        
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+
+        const result = await ActivityLog.deleteMany({
+            createdAt: { $lt: cutoffDate }
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Deleted ${result.deletedCount} old logs`,
+            deletedCount: result.deletedCount
+        });
+
+    } catch (error) {
+        console.error('❌ Error cleaning up old logs:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to cleanup old logs'
+        });
+    }
+});
+
+// ===================================================================
+// ⚠️ CLEAR ALL LOGS
+// FIX: Declared BEFORE router.delete('/:id') so Express doesn't
+// swallow "clear" as an :id parameter value.
+// ===================================================================
+router.delete('/clear/all', async (req, res) => {
+    try {
+        const result = await ActivityLog.deleteMany({});
+
+        res.status(200).json({
+            success: true,
+            message: `All logs cleared: ${result.deletedCount} logs deleted`,
+            deletedCount: result.deletedCount
+        });
+
+    } catch (error) {
+        console.error('❌ Error clearing all logs:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to clear all logs'
+        });
+    }
+});
+
+// ===================================================================
 // 🗑️ DELETE SINGLE ACTIVITY LOG
 // ===================================================================
 router.delete('/:id', async (req, res) => {
@@ -472,57 +527,6 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to delete activity log'
-        });
-    }
-});
-
-// ===================================================================
-// 🧹 CLEANUP OLD LOGS
-// ===================================================================
-router.delete('/cleanup/old', async (req, res) => {
-    try {
-        const { days = 90 } = req.query;
-        
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
-
-        const result = await ActivityLog.deleteMany({
-            createdAt: { $lt: cutoffDate }
-        });
-
-        res.status(200).json({
-            success: true,
-            message: `Deleted ${result.deletedCount} old logs`,
-            deletedCount: result.deletedCount
-        });
-
-    } catch (error) {
-        console.error('❌ Error cleaning up old logs:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to cleanup old logs'
-        });
-    }
-});
-
-// ===================================================================
-// ⚠️ CLEAR ALL LOGS
-// ===================================================================
-router.delete('/clear/all', async (req, res) => {
-    try {
-        const result = await ActivityLog.deleteMany({});
-
-        res.status(200).json({
-            success: true,
-            message: `All logs cleared: ${result.deletedCount} logs deleted`,
-            deletedCount: result.deletedCount
-        });
-
-    } catch (error) {
-        console.error('❌ Error clearing all logs:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to clear all logs'
         });
     }
 });

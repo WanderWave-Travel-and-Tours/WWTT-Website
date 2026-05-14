@@ -113,12 +113,35 @@ const Dashboard = () => {
     let bookings = [], packages = [], blogs = [], promos = [], testimonials = [], inquiries = [];
 
     try {
-      const bookingsRes = await fetch("https://wanderwaveph.onrender.com/api/admin/bookings");
-      if (bookingsRes.ok) bookings = await bookingsRes.json();
-      
-      const packagesRes = await fetch("https://wanderwaveph.onrender.com/api/packages/all");
-      if (packagesRes.ok) {
-        const pkgData = await packagesRes.json();
+      // FIX #3: Fire all 7 requests in parallel with Promise.allSettled so a single
+      // failure doesn't block the rest and total wait time = slowest request (not sum).
+      const API = "https://wanderwaveph.onrender.com";
+      const [
+        bookingsResult,
+        packagesResult,
+        blogsResult,
+        promosResult,
+        testimonialsResult,
+        inquiriesResult,
+        pageViewsResult,
+      ] = await Promise.allSettled([
+        fetch(`${API}/api/admin/bookings`),
+        fetch(`${API}/api/packages/all`),
+        fetch(`${API}/api/blogs`),
+        fetch(`${API}/api/promos`),
+        fetch(`${API}/api/testimonials`),
+        fetch(`${API}/api/inquiries`),
+        fetch(`${API}/api/page-views/stats`),
+      ]);
+
+      // ── Bookings ──────────────────────────────────────────────────────────────
+      if (bookingsResult.status === 'fulfilled' && bookingsResult.value.ok) {
+        bookings = await bookingsResult.value.json();
+      }
+
+      // ── Packages ──────────────────────────────────────────────────────────────
+      if (packagesResult.status === 'fulfilled' && packagesResult.value.ok) {
+        const pkgData = await packagesResult.value.json();
         let packagesArray = [];
         if (Array.isArray(pkgData)) {
           packagesArray = pkgData;
@@ -129,32 +152,38 @@ const Dashboard = () => {
         }
         packages = packagesArray;
         setAllPackages(packagesArray);
-        console.log('✅ Packages loaded successfully:', packagesArray.length);
       } else {
-        console.error('❌ Packages fetch failed:', packagesRes.status);
+        console.error('❌ Packages fetch failed:', packagesResult.reason || packagesResult.value?.status);
       }
 
-      const blogsRes = await fetch("https://wanderwaveph.onrender.com/api/blogs");
-      if (blogsRes.ok) blogs = await blogsRes.json();
+      // ── Blogs ─────────────────────────────────────────────────────────────────
+      if (blogsResult.status === 'fulfilled' && blogsResult.value.ok) {
+        blogs = await blogsResult.value.json();
+      }
 
-      const promosRes = await fetch("https://wanderwaveph.onrender.com/api/promos");
-      if (promosRes.ok) promos = await promosRes.json();
+      // ── Promos ────────────────────────────────────────────────────────────────
+      if (promosResult.status === 'fulfilled' && promosResult.value.ok) {
+        promos = await promosResult.value.json();
+      }
 
-      const testimonialsRes = await fetch("https://wanderwaveph.onrender.com/api/testimonials");
-      if (testimonialsRes.ok) testimonials = await testimonialsRes.json();
+      // ── Testimonials ──────────────────────────────────────────────────────────
+      if (testimonialsResult.status === 'fulfilled' && testimonialsResult.value.ok) {
+        testimonials = await testimonialsResult.value.json();
+      }
 
-      const inquiriesRes = await fetch("https://wanderwaveph.onrender.com/api/inquiries");
-      if (inquiriesRes.ok) {
-        const inquiriesData = await inquiriesRes.json();
+      // ── Inquiries ─────────────────────────────────────────────────────────────
+      if (inquiriesResult.status === 'fulfilled' && inquiriesResult.value.ok) {
+        const inquiriesData = await inquiriesResult.value.json();
         inquiries = inquiriesData.data || inquiriesData || [];
       }
 
       // ============================================================
-      // FETCH PAGE VIEWS + BOOKING COUNTS (single endpoint)
+      // PAGE VIEWS + BOOKING COUNTS (already fetched in parallel above)
       // ============================================================
       try {
-        const pageViewsRes = await fetch("https://wanderwaveph.onrender.com/api/page-views/stats");
-        if (pageViewsRes.ok) {
+        if (pageViewsResult.status === 'fulfilled' && pageViewsResult.value.ok) {
+          // Re-use the already-settled response directly.
+          const pageViewsRes = pageViewsResult.value;
           const pvData = await pageViewsRes.json();
           const pvStats = pvData.data || pvData || {};
 
@@ -689,9 +718,6 @@ const Dashboard = () => {
 
   const handleExportPDF = async () => {
     try {
-        console.log('Starting PDF export...');
-        console.log('allPackages data:', allPackages);
-        console.log('allPackages length:', allPackages?.length || 0);
         
         if ((revenueViewMode === "weekly" || revenueViewMode === "daily" || revenueViewMode === "specificMonth") && (!allPackages || allPackages.length === 0)) {
             toast.warning("No packages loaded yet. Seller cost & markup will be 0 in the report.", "Package Data Missing");
@@ -713,21 +739,14 @@ const Dashboard = () => {
         };
         
         if (revenueViewMode === "daily") {
-            console.log('Exporting DAILY with allPackages length:', allPackages?.length);
             exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages, pageViewStats, bookingCountStats);
         } else if (revenueViewMode === "weekly") {
-            console.log('Exporting WEEKLY with allPackages length:', allPackages?.length);
             exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages, pageViewStats, bookingCountStats);
         } else if (revenueViewMode === "specificMonth") {
-            console.log('Exporting SPECIFIC MONTH with allPackages length:', allPackages?.length);
-            console.log('Selected Month:', selectedMonth);
-            console.log('Monthly Data:', specificMonthAnalyticsData);
             exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages, pageViewStats, bookingCountStats);
         } else if (revenueViewMode === "custom") {
-            console.log('Exporting CUSTOM with allPackages length:', allPackages?.length);
             exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages, pageViewStats, bookingCountStats);
         } else {
-            console.log('Exporting MONTHLY TREND with allPackages length:', allPackages?.length);
             exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages, pageViewStats, bookingCountStats);
         }
         

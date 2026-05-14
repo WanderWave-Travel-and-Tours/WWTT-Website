@@ -247,8 +247,6 @@ const UnauthorizedAccess = () => {
                        location.pathname.match(/\/(edit-|EditAirline|EditCenomar|EditVisa|EditPassport|EditPSA)/);
 
   useEffect(() => {
-    console.log('🚫 Unauthorized Access Detected:', location.pathname);
-    console.log('🔍 Is Valid Protected Route:', isValidRoute);
   }, [location.pathname, isValidRoute]);
 
   return (
@@ -468,7 +466,6 @@ const ProtectedRoute = ({ children }) => {
       const token = localStorage.getItem('adminToken');
 
       if (!token) {
-        console.log('🔒 No token found - User not logged in');
         if (isMounted) setAuthState('unauthenticated');
         return;
       }
@@ -482,11 +479,9 @@ const ProtectedRoute = ({ children }) => {
         });
 
         if (response.data.status === 'ok') {
-          console.log('✅ Token verified - User authenticated');
           if (isMounted) setAuthState('authenticated');
         } else {
           // Server responded but returned a non-ok body (shouldn't normally happen)
-          console.log('❌ Verify returned non-ok status body');
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
@@ -529,7 +524,6 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (authState === 'unauthenticated') {
-    console.log('⛔ Access denied - Showing unauthorized page');
     return <UnauthorizedAccess />;
   }
 
