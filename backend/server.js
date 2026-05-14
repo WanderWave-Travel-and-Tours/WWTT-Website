@@ -157,6 +157,7 @@ const transferRoute             = require('./routes/transferBookingRoute');     
 const transferBookingOrderRoute = require('./routes/transferBookingOrderRoute'); // Customer transfer bookings
 const customizedBookingRoute    = require('./routes/Customizedbookingroute');    // ✅ ADDED: Customized booking wizard
 const locationRoute             = require('./routes/locationRoute');           // ← ADD
+const activityLogRoutes         = require('./routes/activityLogRoute');         // ✅ ADDED: Activity Logs
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -327,6 +328,7 @@ app.use('/api/transfers', transferRoute);                     // Transfer listin
 app.use('/api/transfer-bookings', transferBookingOrderRoute); // Customer transfer bookings
 app.use('/api/locations',         locationRoute);                              // ← ADD
 app.use('/api/customized-bookings', customizedBookingRoute); // ✅ ADDED: Customized booking wizard
+app.use('/api/activity-logs', activityLogRoutes);           // ✅ ADDED: Activity Logs
 // ✅ Single mount — transferBookingRoute duplicate removed
 
 
@@ -935,4 +937,4 @@ if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html')))
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-}); 
+});
