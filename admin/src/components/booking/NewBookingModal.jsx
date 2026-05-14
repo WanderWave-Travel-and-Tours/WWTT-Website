@@ -763,28 +763,20 @@ const NewBookingModal = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* ── PROGRESS BAR — 3 steps ── */}
+        {/* ── PROGRESS BAR — 2 steps ── */}
         <div className="nbm-progress">
           {/* Step 1 */}
           <div className={`nbm-step ${currentStep === 1 ? 'active' : ''}`}>
             <div className={`nbm-step-dot ${currentStep === 1 ? 'active' : currentStep > 1 ? 'done' : ''}`}>
               {currentStep > 1 ? '✓' : '1'}
             </div>
-            Trip Details
+            <span className="nbm-step-label">Trip Details</span>
           </div>
           <div className="nbm-progress-line" style={{ background: currentStep >= 2 ? '#f59e0b' : '#e2e8f0' }} />
           {/* Step 2 */}
           <div className={`nbm-step ${currentStep === 2 ? 'active' : ''}`}>
-            <div className={`nbm-step-dot ${currentStep === 2 ? 'active' : currentStep > 2 ? 'done' : ''}`}>
-              {currentStep > 2 ? '✓' : '2'}
-            </div>
-            Hotel & Payment
-          </div>
-          <div className="nbm-progress-line" style={{ background: currentStep >= 3 ? '#f59e0b' : '#e2e8f0' }} />
-          {/* Step 3 */}
-          <div className={`nbm-step ${currentStep === 3 ? 'active' : ''}`}>
-            <div className={`nbm-step-dot ${currentStep === 3 ? 'active' : ''}`}>3</div>
-            Add-Ons
+            <div className={`nbm-step-dot ${currentStep === 2 ? 'active' : ''}`}>2</div>
+            <span className="nbm-step-label">Hotel & Payment</span>
           </div>
         </div>
 
@@ -793,7 +785,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
           {/* ════════════════ STEP 1 ════════════════ */}
           {currentStep === 1 && (
-            <>
+            <div className="nbm-step-panel">
               <h3 className="nbm-step-title">Trip Details</h3>
               <p className="nbm-step-subtitle">Fill in customer info, destination, package, and passengers.</p>
 
@@ -905,136 +897,113 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
               </div>{/* end nbm-card */}
 
-              {/* ── PAX + DEPARTURE DATE — Combined Card ── */}
+              {/* ── PAX + DEPARTURE DATE — Trip Configuration Card ── */}
               {selectedPackage && (
-                <div className="nbm-card" style={{ marginTop: '20px' }}>
+                <div className="nbm-tripconfig-card">
 
-                  {/* Divider label */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    marginBottom: '20px'
-                  }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #f59e0b, #fc9c1b)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '16px', flexShrink: 0
-                    }}>🗓️</div>
+                  {/* Card Header */}
+                  <div className="nbm-tripconfig-header">
+                    <div className="nbm-tripconfig-icon">🗓️</div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>Trip Configuration</div>
-                      <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>Set number of travellers and preferred departure</div>
+                      <div className="nbm-tripconfig-title">Trip Configuration</div>
+                      <div className="nbm-tripconfig-sub">Set number of travellers and preferred departure</div>
                     </div>
                   </div>
 
                   {/* Two columns: Pax | Date */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+                  <div className="nbm-tripconfig-grid">
 
                     {/* LEFT — Number of Pax */}
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
-                          Number of Pax
-                        </label>
+                    <div className="nbm-tripconfig-col">
+                      <div className="nbm-tripconfig-label-row">
+                        <span className="nbm-tripconfig-label">Number of Pax</span>
                         {isSoloPkg && <span className="nbm-badge nbm-badge-green">Solo</span>}
                         {isMinTwoPkg && <span className="nbm-badge nbm-badge-blue">Min. 2</span>}
-                        {isSoloJoinersPkg && <span className="nbm-badge nbm-badge-green">Joiners</span>}
+                        {isSoloJoinersPkg && <span className="nbm-badge nbm-badge-amber">Joiners</span>}
                       </div>
 
                       {isSoloPkg ? (
-                        <div className="nbm-pax-solo">1 Pax (Solo - Fixed)</div>
+                        <div className="nbm-pax-solo">1 Pax (Solo — Fixed)</div>
                       ) : (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0',
-                          background: '#f8fafc',
-                          border: '1.5px solid #e2e8f0',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          width: 'fit-content'
-                        }}>
+                        <div className="nbm-pax-stepper">
                           <button
-                            className="nbm-pax-btn"
+                            className="nbm-pax-stepper-btn"
                             onClick={() => {
                               const min = isMinTwoPkg ? 2 : 1;
                               if (paxCount > min) setPaxCount(paxCount - 1);
                             }}
                             disabled={paxCount <= (isMinTwoPkg ? 2 : 1)}
-                            style={{ borderRadius: 0, border: 'none', borderRight: '1.5px solid #e2e8f0', background: '#fff' }}
                           >−</button>
-                          <span className="nbm-pax-count" style={{ padding: '0 20px', fontSize: '1.4rem' }}>{paxCount}</span>
+                          <div className="nbm-pax-stepper-val">
+                            <span className="nbm-pax-stepper-num">{paxCount}</span>
+                            <span className="nbm-pax-stepper-unit">pax</span>
+                          </div>
                           <button
-                            className="nbm-pax-btn"
+                            className="nbm-pax-stepper-btn"
                             onClick={() => setPaxCount(paxCount + 1)}
-                            style={{ borderRadius: 0, border: 'none', borderLeft: '1.5px solid #e2e8f0', background: '#fff' }}
                           >+</button>
                         </div>
                       )}
 
-                      <div style={{ marginTop: '10px', fontSize: '0.82rem', color: '#94a3b8' }}>
+                      <div className="nbm-tripconfig-hint">
                         {isSoloPkg ? 'Fixed at 1 traveller' : isMinTwoPkg ? 'Minimum 2 travellers' : 'Add or remove travellers'}
                       </div>
                     </div>
 
-                    {/* RIGHT — Departure Date */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
-                        Departure Date <span style={{ color: '#ef4444' }}>*</span>
-                      </label>
+                    {/* Divider */}
+                    <div className="nbm-tripconfig-divider" />
 
-                      <input
-                        type="date"
-                        value={departureDate}
-                        onChange={e => {
-                          const val = e.target.value;
-                          if (isRestrictedDestination && !isAllowedBookingDay(val)) {
-                            const label = getAllowedDayLabel();
-                            toast.error(`This package departs on ${label} only.`);
-                            return;
-                          }
-                          setDepartureDate(val);
-                        }}
-                        min={new Date().toISOString().split('T')[0]}
-                        style={{ width: '100%' }}
-                      />
+                    {/* RIGHT — Departure Date */}
+                    <div className="nbm-tripconfig-col">
+                      <div className="nbm-tripconfig-label-row">
+                        <span className="nbm-tripconfig-label">Departure Date <span style={{ color: '#ef4444' }}>*</span></span>
+                      </div>
+
+                      <div className="nbm-tripconfig-date-wrap">
+                        <span className="nbm-tripconfig-date-icon">📅</span>
+                        <input
+                          type="date"
+                          className="nbm-tripconfig-date-input"
+                          value={departureDate}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (isRestrictedDestination && !isAllowedBookingDay(val)) {
+                              const label = getAllowedDayLabel();
+                              toast.error(`This package departs on ${label} only.`);
+                              return;
+                            }
+                            setDepartureDate(val);
+                          }}
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
 
                       {isRestrictedDestination && getAllowedDayLabel() && (
-                        <p style={{ fontSize: '0.8rem', color: '#92400e', margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '5px 8px' }}>
+                        <div className="nbm-tripconfig-restrict">
                           📅 {getAllowedDayLabel()}
-                        </p>
+                        </div>
                       )}
+
+                      <div className="nbm-tripconfig-hint">Select your travel start date</div>
                     </div>
                   </div>
 
                   {/* Date preview strip — shown only when date is picked */}
                   {departureDate && (
-                    <div style={{
-                      marginTop: '20px',
-                      padding: '14px 18px',
-                      background: 'linear-gradient(135deg, #fff7ed, #fefce8)',
-                      border: '1.5px solid #fcd34d',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '8px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '18px' }}>✈️</span>
+                    <div className="nbm-tripconfig-datestrip">
+                      <div className="nbm-tripconfig-datestrip-item">
+                        <span className="nbm-tripconfig-datestrip-emoji">✈️</span>
                         <div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Departure</div>
-                          <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>{departureDate}</div>
+                          <div className="nbm-tripconfig-datestrip-label">Departure</div>
+                          <div className="nbm-tripconfig-datestrip-val">{departureDate}</div>
                         </div>
                       </div>
-                      <div style={{ color: '#f59e0b', fontSize: '1.4rem', fontWeight: 300 }}>→</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '18px' }}>🏠</span>
+                      <div className="nbm-tripconfig-datestrip-arrow">→</div>
+                      <div className="nbm-tripconfig-datestrip-item">
+                        <span className="nbm-tripconfig-datestrip-emoji">🏠</span>
                         <div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Return</div>
-                          <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
+                          <div className="nbm-tripconfig-datestrip-label">Return</div>
+                          <div className="nbm-tripconfig-datestrip-val">
                             {(() => {
                               const s = new Date(departureDate);
                               const days = getDurationDays(selectedPackage.duration);
@@ -1044,15 +1013,8 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                           </div>
                         </div>
                       </div>
-                      <div style={{
-                        background: '#f59e0b',
-                        color: '#fff',
-                        padding: '6px 14px',
-                        borderRadius: '999px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700
-                      }}>
-                        {selectedPackage.duration} • {getDurationDays(selectedPackage.duration)} days
+                      <div className="nbm-tripconfig-datestrip-pill">
+                        {selectedPackage.duration} · {getDurationDays(selectedPackage.duration)} days
                       </div>
                     </div>
                   )}
@@ -1061,7 +1023,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
               )}
 
               {/* PASSENGERS SECTION */}
-              <div style={{ marginTop: '24px', borderTop: '2px solid #e2e8f0', paddingTop: '20px' }}>
+              <div style={{ marginTop: '16px', borderTop: '2px solid #e2e8f0', paddingTop: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}>
                     <Users size={18} /> Passengers
@@ -1083,7 +1045,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Row 1: First Name + Last Name */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="nbm-grid-2">
                       <div className="nbm-pfield">
                         <label>First Name <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
@@ -1103,7 +1065,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Row 2: Email + Phone */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                    <div className="nbm-grid-2" style={{ marginTop: '12px' }}>
                       <div className="nbm-pfield">
                         <label>Email <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem' }}>(optional)</span></label>
                         <input
@@ -1199,7 +1161,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Row 4: Gender + Nationality */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                    <div className="nbm-grid-2" style={{ marginTop: '12px' }}>
                       <div className="nbm-pfield">
                         <label>Gender <span style={{ color: '#ef4444' }}>*</span></label>
                         <select value={p.gender} onChange={e => updatePassenger(i, 'gender', e.target.value)}>
@@ -1251,12 +1213,12 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {/* ════════════════ STEP 2 ════════════════ */}
           {currentStep === 2 && (
-            <>
+            <div className="nbm-step-panel">
               <h3 className="nbm-step-title">Accommodation & Payment</h3>
               <p className="nbm-step-subtitle">Choose hotel tier, apply promo, and review total.</p>
 
@@ -1442,11 +1404,6 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                   </div>
                 )}
 
-                <div className="nbm-total-row" style={{ fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                  <span>Add-Ons</span>
-                  <span>To be selected in Step 3</span>
-                </div>
-
                 <div className="nbm-total-row nbm-total-final">
                   <strong>
                     {formData.paymentType === 'partial'
@@ -1468,244 +1425,12 @@ const NewBookingModal = ({ isOpen, onClose }) => {
                   </p>
                 )}
               </div>
-            </>
-          )}
-
-          {/* ════════════════ STEP 3 — ADD-ONS ════════════════ */}
-          {currentStep === 3 && (
-            <>
-              <h3 className="nbm-step-title">🎭 Add-Ons</h3>
-              <p className="nbm-step-subtitle">
-                Enhance the trip with optional tours and transfers available for{' '}
-                <strong>{selectedDestination}</strong>. All add-ons are optional.
-              </p>
-
-              {loadingAddOns ? (
-                <div className="nbm-addon-loading">
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>⏳</div>
-                  Loading available add-ons for {selectedDestination}...
-                </div>
-              ) : (
-                <>
-                  {/* Summary bar — shown when at least 1 add-on is selected */}
-                  {(selectedTourAddOns.length > 0 || selectedTransferAddOns.length > 0) && (
-                    <div className="nbm-addon-summary-bar">
-                      <span>
-                        🛒 {selectedTourAddOns.length + selectedTransferAddOns.length} add-on(s) selected
-                      </span>
-                      <span className="nbm-addon-summary-total">
-                        +₱{calculateAddOnsTotal().toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* ── TOURS ── */}
-                  {availableTours.length > 0 && (
-                    <div className="nbm-addon-section">
-                      <div className="nbm-addon-section-title">🗺️ Available Tours</div>
-                      <div className="nbm-addon-grid">
-                        {availableTours.map(tour => {
-                          const isSelected = selectedTourAddOns.some(t => t._id === tour._id);
-                          return (
-                            <div
-                              key={tour._id}
-                              className={`nbm-addon-card${isSelected ? ' selected' : ''}`}
-                            >
-                              {tour.image && (
-                                <img
-                                  src={tour.image}
-                                  alt={tour.title}
-                                  className="nbm-addon-image"
-                                />
-                              )}
-                              <div className="nbm-addon-body">
-                                <div className="nbm-addon-title">{tour.title}</div>
-                                <div className="nbm-addon-meta">
-                                  {tour.duration && <span>⏱ {tour.duration}</span>}
-                                  {tour.destination && <span>📍 {tour.destination}</span>}
-                                  {tour.category && <span>🏷 {tour.category}</span>}
-                                </div>
-                                <div className="nbm-addon-price">
-                                  ₱{(tour.price || 0).toLocaleString()}
-                                  <span className="nbm-addon-per"> / person</span>
-                                </div>
-                                {paxCount > 1 && (
-                                  <div className="nbm-addon-subtotal">
-                                    {paxCount} pax total: ₱{((tour.price || 0) * paxCount).toLocaleString()}
-                                  </div>
-                                )}
-                                <button
-                                  className={`nbm-addon-btn${isSelected ? ' selected' : ''}`}
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setSelectedTourAddOns(prev => prev.filter(t => t._id !== tour._id));
-                                    } else {
-                                      setSelectedTourAddOns(prev => [...prev, tour]);
-                                    }
-                                  }}
-                                >
-                                  {isSelected ? '✓ Added' : '+ Add Tour'}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── TRANSFERS ── */}
-                  {availableTransfers.length > 0 && (
-                    <div className="nbm-addon-section">
-                      <div className="nbm-addon-section-title">🚐 Available Transfers</div>
-                      <div className="nbm-addon-grid">
-                        {availableTransfers.map(transfer => {
-                          const isSelected = selectedTransferAddOns.some(t => t._id === transfer._id);
-                          const selectedType = transferTypes[transfer._id] || 'oneway';
-                          const displayPrice = selectedType === 'roundtrip'
-                            ? (transfer.roundtripPrice || 0)
-                            : (transfer.oneWayPrice || 0);
-                          const hasRoundtrip = (transfer.roundtripPrice || 0) > 0;
-
-                          return (
-                            <div
-                              key={transfer._id}
-                              className={`nbm-addon-card${isSelected ? ' selected' : ''}`}
-                            >
-                              {transfer.imageUrl && (
-                                <img
-                                  src={transfer.imageUrl}
-                                  alt={transfer.title}
-                                  className="nbm-addon-image"
-                                />
-                              )}
-                              <div className="nbm-addon-body">
-                                <div className="nbm-addon-title">{transfer.title}</div>
-                                {transfer.category && (
-                                  <div className="nbm-addon-meta">
-                                    <span>🏷 {transfer.category}</span>
-                                  </div>
-                                )}
-
-                                {/* One Way / Roundtrip toggle */}
-                                <div className="nbm-addon-type-toggle">
-                                  <button
-                                    className={`nbm-addon-type-btn${selectedType === 'oneway' ? ' active' : ''}`}
-                                    onClick={() => setTransferTypes(prev => ({ ...prev, [transfer._id]: 'oneway' }))}
-                                  >
-                                    One Way · ₱{(transfer.oneWayPrice || 0).toLocaleString()}
-                                  </button>
-                                  {hasRoundtrip && (
-                                    <button
-                                      className={`nbm-addon-type-btn${selectedType === 'roundtrip' ? ' active' : ''}`}
-                                      onClick={() => setTransferTypes(prev => ({ ...prev, [transfer._id]: 'roundtrip' }))}
-                                    >
-                                      Roundtrip · ₱{(transfer.roundtripPrice || 0).toLocaleString()}
-                                    </button>
-                                  )}
-                                </div>
-
-                                <div className="nbm-addon-price">
-                                  ₱{displayPrice.toLocaleString()}
-                                  <span className="nbm-addon-per"> flat rate</span>
-                                </div>
-
-                                <button
-                                  className={`nbm-addon-btn${isSelected ? ' selected' : ''}`}
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setSelectedTransferAddOns(prev => prev.filter(t => t._id !== transfer._id));
-                                      setTransferDetailsMap(prev => {
-                                        const next = { ...prev };
-                                        delete next[transfer._id];
-                                        return next;
-                                      });
-                                    } else {
-                                      // Open details form first
-                                      setTransferDetailsForm(
-                                        transferDetailsMap[transfer._id] || {
-                                          arrivalTime: '', departureTime: '',
-                                          pickupLocation: '', dropoffLocation: '', message: ''
-                                        }
-                                      );
-                                      setShowTransferDetailsModal(transfer);
-                                    }
-                                  }}
-                                >
-                                  {isSelected ? '✓ Added' : '+ Add Transfer'}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Empty state — no add-ons for this destination */}
-                  {availableTours.length === 0 && availableTransfers.length === 0 && (
-                    <div className="nbm-addon-empty">
-                      <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏖️</div>
-                      <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px', fontSize: '1rem' }}>
-                        No Add-Ons Available
-                      </div>
-                      <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                        No additional tours or transfers are currently listed for {selectedDestination}.
-                        You can still proceed with the booking.
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Grand Total box — shows when add-ons are selected */}
-                  {(selectedTourAddOns.length > 0 || selectedTransferAddOns.length > 0) && (
-                    <div className="nbm-total-box" style={{ marginTop: '24px' }}>
-                      <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
-                        <span>Package + Hotel</span>
-                        <span>₱{(computeFinalTotal() - calculateAddOnsTotal()).toLocaleString()}</span>
-                      </div>
-
-                      {selectedTourAddOns.map(t => (
-                        <div key={t._id} className="nbm-total-row" style={{ fontSize: '0.9rem' }}>
-                          <span>🗺️ {t.title} × {paxCount}</span>
-                          <span>₱{((t.price || 0) * paxCount).toLocaleString()}</span>
-                        </div>
-                      ))}
-
-                      {selectedTransferAddOns.map(t => {
-                        const type  = transferTypes[t._id] || 'oneway';
-                        const price = type === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
-                        return (
-                          <div key={t._id} className="nbm-total-row" style={{ fontSize: '0.9rem' }}>
-                            <span>🚐 {t.title} ({type})</span>
-                            <span>₱{price.toLocaleString()}</span>
-                          </div>
-                        );
-                      })}
-
-                      <div className="nbm-total-row nbm-total-final">
-                        <strong>
-                          {formData.paymentType === 'partial'
-                            ? 'INITIAL PAYMENT DUE NOW (50%)'
-                            : 'GRAND TOTAL'}
-                        </strong>
-                        <strong>₱{payableAmount.toLocaleString()}</strong>
-                      </div>
-
-                      {formData.paymentType === 'partial' && (
-                        <p style={{ textAlign: 'right', fontSize: '0.85rem', color: '#64748b', marginTop: '8px', fontWeight: 600 }}>
-                          (50% deposit • Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure)
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </>
+            </div>
           )}
 
         </div>{/* end nbm-body */}
 
-        {/* ── FOOTER BUTTONS — 3-step navigation ── */}
+        {/* ── FOOTER BUTTONS — 2-step navigation ── */}
         <div className="nbm-footer">
           {currentStep > 1 && (
             <button
@@ -1729,18 +1454,8 @@ const NewBookingModal = ({ isOpen, onClose }) => {
           {currentStep === 2 && (
             <button
               className="nbm-btn nbm-btn-next"
-              onClick={() => setCurrentStep(3)}
-              disabled={!selectedRoomType}
-            >
-              Continue to Add-Ons →
-            </button>
-          )}
-
-          {currentStep === 3 && (
-            <button
-              className="nbm-btn nbm-btn-next"
               onClick={() => setShowConfirm(true)}
-              disabled={loading}
+              disabled={!selectedRoomType || loading}
             >
               {loading ? 'Creating Booking...' : 'Review & Create Booking ✓'}
             </button>

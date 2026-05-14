@@ -83,6 +83,59 @@ const TransferBookingDashboard = () => {
     isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'primary'
   });
 
+  // ── Bulk Selection ────────────────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (isAllSelected) {
+        currentBookings.forEach(b => next.delete(b.mongoId || b.id));
+      } else {
+        currentBookings.forEach(b => next.add(b.mongoId || b.id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectOne = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkArchive = () => {
+    if (selectedIds.size === 0) return;
+    askConfirmation(
+      'Archive Selected Bookings',
+      `Archive ${selectedIds.size} selected booking${selectedIds.size > 1 ? 's' : ''}? They will be moved to the Archive section.`,
+      async () => {
+        setActionLoading(true);
+        try {
+          const ids = [...selectedIds];
+          await Promise.all(ids.map(mongoId =>
+            fetch(`${BASE_URL}/api/transfer-bookings/archive/${mongoId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+            })
+          ));
+          clearSelection();
+          await fetchBookings();
+          toast.success(`${ids.length} booking${ids.length > 1 ? 's' : ''} archived successfully.`, 'Bulk Archive', 4000);
+        } catch (err) {
+          toast.error(err.message || 'Bulk archive failed', 'Error', 5000);
+        } finally {
+          setActionLoading(false);
+        }
+      },
+      'danger'
+    );
+  };
+
   const toggleSidebar = () => setIsSidebarCollapsed(p => !p);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
@@ -307,6 +360,10 @@ const TransferBookingDashboard = () => {
   const startIndex      = (currentPage - 1) * itemsPerPage;
   const currentBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
+  // ── Bulk selection derived state (must be after currentBookings) ───────────
+  const isAllSelected   = currentBookings.length > 0 && currentBookings.every(b => selectedIds.has(b.mongoId || b.id));
+  const isIndeterminate = !isAllSelected && currentBookings.some(b => selectedIds.has(b.mongoId || b.id));
+
   // ── Transfer type badge helper ─────────────────────────────────────────────
   const getTransferTypeBadge = (type) => {
     const t = (type || '').toLowerCase();
@@ -353,12 +410,54 @@ const TransferBookingDashboard = () => {
             createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
           />
 
+          {/* ── Bulk Action Bar ───────────────────────────────────── */}
+          {selectedIds.size > 0 && (
+            <div className="trk-bulk-bar">
+              <div className="trk-bulk-bar-left">
+                <div className="trk-bulk-count-pill">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect x="1" y="1" width="12" height="12" rx="3" fill="#6366f1" />
+                    <path d="M4 7l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>{selectedIds.size}</span>
+                </div>
+                <span className="trk-bulk-label">
+                  booking{selectedIds.size !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <div className="trk-bulk-bar-actions">
+                <button
+                  className="trk-bulk-archive-btn"
+                  onClick={handleBulkArchive}
+                  disabled={actionLoading}
+                >
+                  <Archive size={14} />
+                  Archive Selected
+                </button>
+                <button className="trk-bulk-clear-btn" onClick={clearSelection}>
+                  ✕ Clear Selection
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ── Table ────────────────────────────────────────────── */}
           <div className="bkm-table-container">
             <table className="bkm-table">
               <thead>
                 <tr>
-                  <th style={{ width: 50 }}>No.</th>
+                  <th className="trk-th-check-no">
+                    <div className="trk-check-no-wrap">
+                      <input
+                        type="checkbox"
+                        className="trk-checkbox"
+                        checked={isAllSelected}
+                        ref={el => { if (el) el.indeterminate = isIndeterminate; }}
+                        onChange={toggleSelectAll}
+                      />
+                      <span className="trk-col-no-label">No.</span>
+                    </div>
+                  </th>
                   <th>Booking ID</th>
                   <th>Customer</th>
                   <th>Route</th>
@@ -376,13 +475,13 @@ const TransferBookingDashboard = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="12" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="13" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       Loading transfer bookings...
                     </td>
                   </tr>
                 ) : currentBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="12" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="13" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       No transfer bookings found
                     </td>
                   </tr>
@@ -390,12 +489,22 @@ const TransferBookingDashboard = () => {
                   currentBookings.map((booking, i) => {
                     const payBadge      = getPaymentBadge(booking);
                     const typeBadge     = getTransferTypeBadge(booking.transferType);
+                    const rowId         = booking.mongoId || booking.id;
+                    const isChecked     = selectedIds.has(rowId);
 
                     return (
-                      <tr key={booking.mongoId || booking.id}>
-                        {/* No. */}
-                        <td style={{ fontWeight: 700, color: '#0f172a', textAlign: 'center' }}>
-                          {startIndex + i + 1}
+                      <tr key={rowId} className={isChecked ? 'trk-row-selected' : ''}>
+                        {/* Checkbox + No. combined */}
+                        <td className="trk-td-check-no">
+                          <div className="trk-check-no-wrap">
+                            <input
+                              type="checkbox"
+                              className="trk-checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleSelectOne(rowId)}
+                            />
+                            <span className="trk-row-num">{startIndex + i + 1}</span>
+                          </div>
                         </td>
 
                         {/* Booking ID */}
@@ -414,15 +523,27 @@ const TransferBookingDashboard = () => {
                         </td>
 
                         {/* Route */}
-                        <td>
-                          <div className="trk-route-inline" title={`${booking.pickupLocation} → ${booking.dropoffLocation}`}>
+                        <td className="trk-route-td">
+                          <div className="trk-route-stack">
                             <span className={`trk-type-badge ${typeBadge.cls}`}>{typeBadge.label}</span>
-                            <span className="trk-route-sep">—</span>
-                            <Navigation size={11} className="trk-icon-pickup" />
-                            <span className="trk-route-text">{booking.pickupLocation}</span>
-                            <span className="trk-route-sep">→</span>
-                            <MapPin size={11} className="trk-icon-dropoff" />
-                            <span className="trk-route-text">{booking.dropoffLocation}</span>
+                            <div className="trk-route-legs">
+                              <div className="trk-route-leg trk-has-tooltip">
+                                <Navigation size={10} className="trk-icon-pickup" style={{ color: '#0284c7', flexShrink: 0 }} />
+                                <span className="trk-route-leg-text">{booking.pickupLocation}</span>
+                                <div className="trk-tooltip trk-tooltip-pickup">
+                                  <span className="trk-tooltip-label">📍 Pickup</span>
+                                  <span className="trk-tooltip-value">{booking.pickupLocation}</span>
+                                </div>
+                              </div>
+                              <div className="trk-route-leg trk-has-tooltip">
+                                <MapPin size={10} className="trk-icon-dropoff" style={{ color: '#e11d48', flexShrink: 0 }} />
+                                <span className="trk-route-leg-text">{booking.dropoffLocation}</span>
+                                <div className="trk-tooltip trk-tooltip-dropoff">
+                                  <span className="trk-tooltip-label">🏁 Dropoff</span>
+                                  <span className="trk-tooltip-value">{booking.dropoffLocation}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </td>
 

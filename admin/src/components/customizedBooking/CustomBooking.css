@@ -97,61 +97,84 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
 /* --- BULK ACTION BAR --- */
 .cbk-bulk-bar {
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 10px;
-  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.2);
-  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px 10px 16px;
+  margin-bottom: 12px;
+  background: #0f172a;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.cbk-bulk-bar span {
-  font-weight: 700;
-  font-size: 14px;
-  flex: 1;
-  min-width: 140px;
+/* Count pill on the left */
+.cbk-bulk-bar > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: 0.1px;
+  flex: 1;
+}
+
+.cbk-bulk-bar > span::before {
+  content: attr(data-count);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  background: #059669;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0;
 }
 
 .cbk-bulk-bar button {
-  padding: 9px 18px;
+  height: 34px;
+  padding: 0 16px;
   border-radius: 7px;
+  font-family: 'DM Sans', sans-serif;
   font-weight: 700;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s;
   border: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.cbk-bulk-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+.cbk-bulk-bar button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .cbk-bulk-archive-btn {
   background: #ef4444;
-  color: white;
+  color: #fff;
+  letter-spacing: 0.2px;
 }
 
 .cbk-bulk-archive-btn:hover:not(:disabled) {
   background: #dc2626;
-  transform: translateY(-1px);
 }
 
 .cbk-bulk-clear-btn {
-  background: transparent;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.3) !important;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 .cbk-bulk-clear-btn:hover:not(:disabled) {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.5) !important;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
 /* --- LOADING / EMPTY --- */
@@ -215,4 +238,5 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   .cbk-btn-add { width: 100%; justify-content: center; }
   .cbk-overlay { padding: 0; align-items: flex-end; }
   .cbk-modal-shell { border-radius: 16px 16px 0 0; max-width: 100%; margin: 0; }
+  .cbk-bulk-bar { flex-wrap: wrap; }
 }

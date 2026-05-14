@@ -44,7 +44,6 @@ import {
   Line,
 } from 'recharts';
 import { exportReportingToPDF } from './utils/reportingPdfExport';
-import VisitorJourney from '../dashboard/components/VisitorJourney';
 import '../dashboard/components/RevenueAnalytics.css';
 import './Reporting.css';
 
@@ -905,6 +904,7 @@ const Reporting = () => {
               <span className="rp-pt-label"><Clock size={13} /> Period</span>
               <div className="rp-pt-pills">
                 {[
+                  { key: 'daily',   icon: <Clock size={13} />,             label: 'Daily'    },
                   { key: 'weekly',  icon: <Calendar size={13} />,          label: 'Weekly'   },
                   { key: 'monthly', icon: <CalendarDays size={13} />,      label: 'Monthly'  },
                   { key: '6months', icon: <TrendingUp size={13} />,        label: '6 Months' },
@@ -919,6 +919,38 @@ const Reporting = () => {
                   </button>
                 ))}
               </div>
+
+              {/* Daily date picker */}
+              {svActivePeriod === 'daily' && (
+                <div className="rp-pt-month-nav">
+                  <button
+                    className="rp-pt-nav-arrow"
+                    onClick={() => {
+                      const d = new Date(svSelectedDailyDate + 'T00:00:00');
+                      d.setDate(d.getDate() - 1);
+                      setSvSelectedDailyDate(d.toISOString().split('T')[0]);
+                    }}
+                    disabled={svSelectedDailyDate <= '2020-01-01'}
+                  >&#8249;</button>
+                  <input
+                    type="date"
+                    className="rp-pt-date-input"
+                    value={svSelectedDailyDate}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={e => setSvSelectedDailyDate(e.target.value)}
+                    style={{ border: 'none', background: 'transparent', fontWeight: 600, fontSize: '0.85rem', color: '#001f3f', cursor: 'pointer' }}
+                  />
+                  <button
+                    className="rp-pt-nav-arrow"
+                    onClick={() => {
+                      const d = new Date(svSelectedDailyDate + 'T00:00:00');
+                      d.setDate(d.getDate() + 1);
+                      setSvSelectedDailyDate(d.toISOString().split('T')[0]);
+                    }}
+                    disabled={svSelectedDailyDate >= new Date().toISOString().split('T')[0]}
+                  >&#8250;</button>
+                </div>
+              )}
 
               {/* Monthly inline navigator */}
               {svActivePeriod === 'monthly' && (() => {
@@ -1019,17 +1051,15 @@ const Reporting = () => {
                   <ResponsiveContainer width="100%" height={240}>
                     <PieChart>
                       <Pie
-                        data={svPieData}
+                        data={svPieData.filter(d => d.value > 0)}
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
                         outerRadius={100}
                         paddingAngle={3}
                         dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
                       >
-                        {svPieData.map((entry) => (
+                        {svPieData.filter(d => d.value > 0).map((entry) => (
                           <Cell key={entry.name} fill={entry.color} />
                         ))}
                       </Pie>
@@ -1113,7 +1143,7 @@ const Reporting = () => {
               ) : svLineData.length === 0 ? (
                 <div className="rp-empty"><p>No data for selected platform and period.</p></div>
               ) : (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                <div style={{ width: '100%' }}>
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={svLineData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1419,10 +1449,7 @@ const Reporting = () => {
         </section>
 
 
-        {/* ── VISITOR JOURNEY TRACKER ── */}
-        <section className="rp-section">
-          <VisitorJourney recentViews={pageViewStats.recentViews} />
-        </section>
+
 
         </div>{/* end rp-container */}
       </main>

@@ -25,7 +25,89 @@
 .trk-type-hotel    { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 .trk-type-default  { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
-/* ── Route cell (inline) ── */
+/* ── Route cell (stacked + truncated) ── */
+.trk-route-td {
+  max-width: 220px;
+  width: 220px;
+}
+
+.trk-route-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.trk-route-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.trk-route-leg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.trk-route-leg-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ── Route leg tooltip ── */
+.trk-has-tooltip {
+  position: relative;
+}
+
+.trk-tooltip {
+  display: none;
+  position: absolute;
+  left: 0;
+  z-index: 999;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 200px;
+  max-width: 300px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  flex-direction: column;
+  gap: 3px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.trk-tooltip-pickup  { bottom: calc(100% + 6px); }
+.trk-tooltip-dropoff { top: calc(100% + 6px); }
+
+.trk-has-tooltip:hover .trk-tooltip {
+  display: flex;
+}
+
+.trk-tooltip-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+
+.trk-tooltip-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+  line-height: 1.45;
+}
 .trk-route-inline {
   display: flex;
   align-items: center;
@@ -72,7 +154,192 @@
   background: #fffbeb; padding: 2px 8px; border-radius: 20px; margin-top: 2px;
 }
 
-/* ── Archive action button ── */
+/* ── Bulk Action Bar ── */
+.trk-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-radius: 10px;
+  border: 1px solid #4338ca;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
+  animation: trk-bar-slide-in 0.2s ease;
+}
+
+@keyframes trk-bar-slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.trk-bulk-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trk-bulk-count-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 4px 10px 4px 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+.trk-bulk-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.1px;
+}
+
+.trk-bulk-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trk-bulk-archive-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #ef4444;
+  color: #fff;
+  border: 1px solid #dc2626;
+  cursor: pointer;
+  transition: all 0.18s;
+  letter-spacing: 0.2px;
+}
+.trk-bulk-archive-btn:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
+}
+.trk-bulk-archive-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trk-bulk-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.trk-bulk-clear-btn:hover {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+/* ── Compact Checkbox + No. column ── */
+.trk-th-check-no,
+.trk-td-check-no {
+  width: 64px !important;
+  min-width: 64px !important;
+  max-width: 64px !important;
+  padding-left: 12px !important;
+  padding-right: 6px !important;
+}
+
+.trk-check-no-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trk-col-no-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  user-select: none;
+}
+
+.trk-row-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  min-width: 18px;
+}
+
+/* ── Custom Checkbox ── */
+.trk-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+.trk-checkbox:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+.trk-checkbox:checked {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+.trk-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+.trk-checkbox:indeterminate {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+.trk-checkbox:indeterminate::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 5px;
+  width: 8px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+/* ── Selected row highlight ── */
+.trk-row-selected {
+  background: #f5f3ff !important;
+}
+.trk-row-selected:hover {
+  background: #ede9fe !important;
+}
+
 .bkm-archive-btn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 6px 12px; border-radius: 6px;
