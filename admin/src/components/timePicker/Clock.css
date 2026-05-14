@@ -53,10 +53,8 @@
   background: white;
   border-radius: 24px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
-  padding: 28px 24px 24px;
-  width: 460px;
-  max-width: 95vw;
-  box-sizing: border-box;
+  padding: 28px 28px 24px;
+  width: 380px;
   animation: clockSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -143,12 +141,9 @@
 }
 
 .tbfm-analog-svg {
-  width: 100%;
-  max-width: 400px;
-  height: auto;
-  aspect-ratio: 1 / 1;
+  width: 310px;
+  height: 310px;
   cursor: pointer;
-  display: block;
 }
 
 /* Footer */
@@ -182,11 +177,12 @@
 /* Mobile */
 @media (max-width: 640px) {
   .tbfm-analog-clock-popup {
-    width: 95vw;
-    padding: 20px 16px 20px;
+    width: 330px;
+    padding: 22px 20px 20px;
   }
   .tbfm-analog-svg {
-    max-width: 100%;
+    width: 270px;
+    height: 270px;
   }
   .tbfm-analog-segment {
     font-size: 2.4rem;

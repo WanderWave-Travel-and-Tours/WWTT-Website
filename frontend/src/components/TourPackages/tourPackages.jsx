@@ -7,6 +7,7 @@ import './tourPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
+import WanderLoader from '../loading/WanderLoader';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -196,6 +197,8 @@ function TourPackagesContent({ currentUser: propCurrentUser = null }) {
     }
   };
 
+
+
   // ============================================================
   // RENDER — Booking view takes over the whole page when active
   // ============================================================
@@ -214,21 +217,19 @@ function TourPackagesContent({ currentUser: propCurrentUser = null }) {
   return (
     <div className="tour-packages-page">
 
+      {/* ── Tours Full-Screen Loader Overlay ─────────────────────────── */}
+      <WanderLoader loading={loading} text="LOADING TOUR PACKAGES" />
+
       {/* ── Hero section ────────────────────────────────────────────── */}
       <section className="tours-top-section-bg">
         <div className="tours-content-container">
-          {loading ? (
-            <div className="tours-loading-state">
-              <div className="tours-loading-spinner"></div>
-              <p>Loading tour packages...</p>
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="tours-error-state">
               <h3>Oops! Something went wrong.</h3>
               <p>{error}</p>
               <button onClick={() => window.location.reload()}>Try Again</button>
             </div>
-          ) : (
+          ) : loading ? null : (
             <AllTours
               tours={filteredTours}
               toursRef={toursRef}

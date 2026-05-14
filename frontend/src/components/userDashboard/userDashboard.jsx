@@ -8,6 +8,7 @@ import AccountSettings from './AccountSettings';
 import * as Icons from './Icons'; 
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
+import WanderLoader from '../loading/WanderLoader';
 
 // ─────────────────────────────────────────────────────────────
 // Inner component — must be inside ToastProvider to use useToast
@@ -72,48 +73,38 @@ const UserDashboardInner = ({ user, onLogout }) => {
         localStorage.setItem('wanderwave_viewed_history', JSON.stringify(newHistory));
     };
 
-    const fetchUserData = async () => {
+    const fetchUserData = async (showLoader = false) => {
         // FIX: If user or email is missing, stop loading immediately to avoid blank page
         if (!user || !user.email) {
             setIsLoading(false);
             return;
         }
 
+        // Only show the WanderLoader on the very first load, not on background refreshes
+        if (showLoader) setIsLoading(true);
+
         try {
-            // Add small delay between requests instead of Promise.all
-            const inquiriesData = await fetch(
-                `https://wanderwaveph.onrender.com/api/inquiries/email/${user.email}`
-            ).then(res => res.json());
-            
-            // Small delay before next request
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
-            const bookingsData = await fetch(
-                `https://wanderwaveph.onrender.com/api/bookings/user/${user.email}`
-            ).then(res => res.json());
+            // ── Fire all 5 requests in parallel — no artificial delays ──
+            const [
+                inquiriesRes,
+                bookingsRes,
+                tourBookingsRes,
+                transferBookingsRes,
+                customizedBookingsRes,
+            ] = await Promise.allSettled([
+                fetch(`https://wanderwaveph.onrender.com/api/inquiries/email/${user.email}`).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/bookings/user/${user.email}`).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/tour-bookings?email=${user.email}`).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/transfer-bookings?email=${user.email}`).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/customized-bookings?email=${user.email}`).then(r => r.json()),
+            ]);
 
-            // Small delay before next request
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            const tourBookingsData = await fetch(
-                `https://wanderwaveph.onrender.com/api/tour-bookings?email=${user.email}`
-            ).then(res => res.json());
-
-            // Small delay before next request
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            // ── Fetch transfer bookings ──────────────────────────────
-            const transferBookingsData = await fetch(
-                `https://wanderwaveph.onrender.com/api/transfer-bookings?email=${user.email}`
-            ).then(res => res.json());
-
-            // Small delay before next request
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            // ── NEW: Fetch customized bookings ───────────────────────
-            const customizedBookingsData = await fetch(
-                `https://wanderwaveph.onrender.com/api/customized-bookings?email=${user.email}`
-            ).then(res => res.json());
+            // Safely unwrap — a rejected/failed call returns null so it's skipped below
+            const inquiriesData        = inquiriesRes.status        === 'fulfilled' ? inquiriesRes.value        : null;
+            const bookingsData         = bookingsRes.status         === 'fulfilled' ? bookingsRes.value         : null;
+            const tourBookingsData     = tourBookingsRes.status     === 'fulfilled' ? tourBookingsRes.value     : null;
+            const transferBookingsData = transferBookingsRes.status === 'fulfilled' ? transferBookingsRes.value : null;
+            const customizedBookingsData = customizedBookingsRes.status === 'fulfilled' ? customizedBookingsRes.value : null;
 
             let combinedData = [];
 
@@ -218,12 +209,12 @@ const UserDashboardInner = ({ user, onLogout }) => {
 
     useEffect(() => {
         // FIX: Ensure logic runs correctly even if user is not fully ready initially
-        setIsLoading(true);
-        fetchUserData();
+        // Pass showLoader=true only for the initial fetch so WanderLoader appears once
+        fetchUserData(true);
         
-        // Only set interval if user exists
+        // Only set interval if user exists — background refreshes skip the loader
         if (user?.email) {
-            const interval = setInterval(fetchUserData, 30000); 
+            const interval = setInterval(() => fetchUserData(false), 30000); 
             return () => clearInterval(interval);
         } else {
             // Safety turn off loading if no user
@@ -439,6 +430,9 @@ const UserDashboardInner = ({ user, onLogout }) => {
 
     return (
         <div className="ud-wrapper">
+            {/* ── WanderLoader Overlay — fullScreen covers entire viewport incl. navbar ── */}
+            <WanderLoader loading={isLoading} fullScreen />
+
             {/* ── Custom Confirm Modal ── */}
             <CustomConfirmModal
                 isOpen={confirmModal.isOpen}

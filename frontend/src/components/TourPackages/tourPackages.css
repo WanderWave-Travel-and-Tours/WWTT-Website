@@ -34,8 +34,7 @@
   box-sizing: border-box;
 }
 
-/* ── Loading / Error states ── */
-.tours-loading-state,
+/* ── Error state ── */
 .tours-error-state {
   display: flex;
   flex-direction: column;
@@ -47,25 +46,6 @@
   gap: 16px;
 }
 
-.tours-loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid rgba(255,255,255,0.2);
-  border-top-color: #FF8C00;
-  border-radius: 50%;
-  animation: toursSpin 0.8s linear infinite;
-}
-
-@keyframes toursSpin {
-  to { transform: rotate(360deg); }
-}
-
-.tours-loading-state p {
-  font-size: 1.1rem;
-  font-weight: 600;
-  opacity: 0.85;
-  margin: 0;
-}
 
 .tours-error-state h3 {
   font-size: 1.5rem;

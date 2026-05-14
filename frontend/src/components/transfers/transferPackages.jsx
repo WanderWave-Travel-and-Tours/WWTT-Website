@@ -7,6 +7,7 @@ import './transferPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import MascotGif from '../MascotGif/MascotGif';
 import { usePageTracker } from '../../hooks/usePageTracker';
+import WanderLoader from '../loading/WanderLoader';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -18,6 +19,7 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
 
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [contentVisible, setContentVisible] = useState(false);
   const [error, setError] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,6 +114,14 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
 
     fetchTransfers();
   }, []);
+
+  // ── Reveal content only after WanderLoader finishes fading out ──────────
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => setContentVisible(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   // ============================================================
   // FETCH FAVORITES FOR CURRENT USER
@@ -210,9 +220,9 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          promo_id: transferId,
           user_id: currentUser._id,
-          package_title: transfer.title,
+          promo_id: transferId,
+          package_name: transfer.title,
           package_location: transfer.packageDestination,
           itemType: 'transfer',
         }),
@@ -324,47 +334,51 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
   }
 
   return (
-    <div className="transfer-packages-page">
+    <div className="transfer-packages-page" style={!contentVisible ? { background: '#001b3e', minHeight: '100vh' } : {}}>
+
+      {/* ── WanderLoader overlay — shown while fetching transfers ── */}
+      <WanderLoader
+        loading={loading}
+        text="LOADING TRANSFER PACKAGES"
+        subtitle="Finding the best transfers for you"
+      />
 
       {/* ── Hero section (mirrors tours-top-section-bg) ── */}
-      <section className="transfers-top-section-bg">
-        <div className="transfers-content-container">
-          {loading ? (
-            <div className="transfers-loading-state">
-              <div className="transfers-loading-spinner"></div>
-              <p>Loading transfer packages...</p>
-            </div>
-          ) : error ? (
-            <div className="transfers-error-state">
-              <h3>Oops! Something went wrong.</h3>
-              <p>{error}</p>
-              <button onClick={() => window.location.reload()}>Try Again</button>
-            </div>
-          ) : (
-            <AllTransfers
-              transfers={filteredTransfers}
-              transfersRef={transfersRef}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              priceRange={priceRange}
-              setPriceRange={setPriceRange}
-              selectedDestinations={selectedDestinations}
-              setSelectedDestinations={setSelectedDestinations}
-              allDestinations={allDestinations}
-              currency={currency}
-              exchangeRate={exchangeRate}
-              setCurrency={setCurrency}
-              onInquire={handleInquire}
-              currentUser={currentUser}
-              userFavorites={userFavorites}
-              onFavoriteToggle={handleFavoriteToggle}
-            />
-          )}
-        </div>
-      </section>
+      {contentVisible && (
+        <section className="transfers-top-section-bg">
+          <div className="transfers-content-container">
+            {error ? (
+              <div className="transfers-error-state">
+                <h3>Oops! Something went wrong.</h3>
+                <p>{error}</p>
+                <button onClick={() => window.location.reload()}>Try Again</button>
+              </div>
+            ) : (
+              <AllTransfers
+                transfers={filteredTransfers}
+                transfersRef={transfersRef}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                selectedDestinations={selectedDestinations}
+                setSelectedDestinations={setSelectedDestinations}
+                allDestinations={allDestinations}
+                currency={currency}
+                exchangeRate={exchangeRate}
+                setCurrency={setCurrency}
+                onInquire={handleInquire}
+                currentUser={currentUser}
+                userFavorites={userFavorites}
+                onFavoriteToggle={handleFavoriteToggle}
+              />
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ── Scrolling location bar (mirrors tourPackages divider) ── */}
-      <div className="transfers-section-divider">
+      {contentVisible && <div className="transfers-section-divider">
         <div className="transfers-divider-airplane-container">
           <img
             src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/696e04c1439b6b5ce06f5f51.webp"
@@ -404,9 +418,9 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
-      <MascotGif onClick={openGHLChat} />
+      {contentVisible && <MascotGif onClick={openGHLChat} />}
     </div>
   );
 }

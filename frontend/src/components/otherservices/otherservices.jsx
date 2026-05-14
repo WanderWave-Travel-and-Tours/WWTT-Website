@@ -35,6 +35,7 @@ import { useToast } from "../toast/ToastManager";
 // Import the Custom Confirm Modal
 import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
 import { usePageTracker } from '../../hooks/usePageTracker';
+import WanderLoader from '../loading/WanderLoader';
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -152,6 +153,9 @@ const OtherServices = ({ setAuthPage }) => {
     message: "",
   });
 
+  // ── Mobile step state for inquiry modal ──────────────────────────────────────
+  const [mobileStep, setMobileStep] = useState("info"); // "info" | "form"
+
   const iconMap = {
     Plane: <Plane size={24} />,
     Hotel: <Hotel size={24} />,
@@ -188,6 +192,8 @@ const OtherServices = ({ setAuthPage }) => {
 
   
 
+  const FALLBACK_IMG = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
+
   const fetchServices = async () => {
     try {
       const response = await fetch('https://wanderwaveph.onrender.com/api/services');
@@ -195,12 +201,19 @@ const OtherServices = ({ setAuthPage }) => {
 
       if (data.success) {
         const transformedServices = data.data.map(service => {
+          const rawImg = service.image;
+          const img = rawImg
+            ? rawImg.startsWith('http')
+              ? rawImg
+              : `https://wanderwaveph.onrender.com/uploads/${rawImg}`
+            : FALLBACK_IMG;
+
           return {
             _id: service._id,
             icon: iconMap[service.icon] || <Globe size={24} />,
             title: service.title,
             desc: service.description,
-            img: service.image.startsWith('http') ? service.image : `https://wanderwaveph.onrender.com/uploads/${service.image}`,
+            img,
             price: service.price,
             requirements: service.requirements || [],
             order: service.order || 999,
@@ -377,6 +390,7 @@ const OtherServices = ({ setAuthPage }) => {
       serviceId: item._id,
     });
     setFormData({ fullName: "", email: "", message: "" });
+    setMobileStep("info");
     setShowModal(true);
   };
 
@@ -389,6 +403,7 @@ const OtherServices = ({ setAuthPage }) => {
       price: visaData.price || visaData.estimatedPrice,
     }));
     setShowVisaCountries(false);
+    setMobileStep("info");
     setShowModal(true);
   };
 
@@ -401,6 +416,7 @@ const OtherServices = ({ setAuthPage }) => {
       price: psaData.estimatedPrice,
     }));
     setShowPSADocuments(false);
+    setMobileStep("info");
     setShowModal(true);
   };
 
@@ -413,6 +429,7 @@ const OtherServices = ({ setAuthPage }) => {
       price: cenomarData.estimatedPrice,
     }));
     setShowCENOMARDocuments(false);
+    setMobileStep("info");
     setShowModal(true);
   };
 
@@ -426,6 +443,7 @@ const OtherServices = ({ setAuthPage }) => {
       serviceType: passportData.serviceType
     }));
     setShowPassportService(false);
+    setMobileStep("info");
     setShowModal(true);
   };
 
@@ -585,6 +603,9 @@ const OtherServices = ({ setAuthPage }) => {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
+      {/* ── WanderLoader overlay ─────────────────────────────────────────────── */}
+      <WanderLoader loading={loading} text="LOADING SERVICES" subtitle="Please wait a moment" />
+
       <div className="os-overlay"></div>
       <div className="os-content-wrapper">
         <div className="os-header">
@@ -605,11 +626,7 @@ const OtherServices = ({ setAuthPage }) => {
           {/* wrapperRef is on the SCROLLABLE element only */}
           <div className="os-carousel-wrapper" ref={wrapperRef}>
             <div className="os-slider" ref={sliderRef}>
-              {loading ? (
-                <div style={{ color: 'white', textAlign: 'center', width: '100%', padding: '2rem' }}>
-                  Loading services...
-                </div>
-              ) : (
+              {!loading && (
                 services.map((item, index) => (
                   <div
                     className={`os-card ${item.isComingSoon ? 'os-card--coming-soon' : ''}`}
@@ -617,7 +634,7 @@ const OtherServices = ({ setAuthPage }) => {
                   >
                     <div
                       className="os-card-img"
-                      style={{ backgroundImage: `url(${item.img})` }}
+                      style={{ backgroundImage: `url(${item.img}), url(${FALLBACK_IMG})` }}
                     >
                       <div className="os-card-overlay"></div>
                       {item.isComingSoon && <span className="os-card-soon-tag">Coming Soon</span>}
@@ -687,7 +704,7 @@ const OtherServices = ({ setAuthPage }) => {
                 <X size={44} strokeWidth={3} />
               </button>
 
-              <div className="modal-requirements-col">
+              <div className={`modal-requirements-col${mobileStep === "form" ? " mobile-info-hidden" : ""}`}>
                 <div className="modal-requirements-content">
                   <div
                     className="modal-header-image"
@@ -744,6 +761,14 @@ const OtherServices = ({ setAuthPage }) => {
                       <CheckCircle size={20} /> View Requirements
                     </button>
                   </div>
+
+                  {/* Mobile-only proceed button */}
+                  <button
+                    className="mobile-proceed-btn"
+                    onClick={() => setMobileStep("form")}
+                  >
+                    Proceed to Inquiry Form →
+                  </button>
                 </div>
 
                 <p className="modal-contact-note">
@@ -751,7 +776,29 @@ const OtherServices = ({ setAuthPage }) => {
                 </p>
               </div>
 
-              <div className="modal-form-col">
+              <div className={`modal-form-col${mobileStep === "form" ? " mobile-form-active" : ""}`}>
+                {/* Mobile-only top bar: back left, close right */}
+                <div className="mobile-form-topbar">
+                  <button
+                    className="mobile-back-btn"
+                    onClick={() => setMobileStep("info")}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    className="modal-close-btn mobile-topbar-close"
+                    onClick={() => {
+                      setShowModal(false);
+                      setIsVisaService(false);
+                      setIsPSAService(false);
+                      setIsCENOMARService(false);
+                      setIsPassportService(false);
+                    }}
+                    aria-label="Close Modal"
+                  >
+                    <X size={20} strokeWidth={2.5} />
+                  </button>
+                </div>
                 <UniversalInquiryForm
                   pkgTitle={selectedPackage.title}
                   formData={formData}
