@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X, CheckCircle, AlertCircle, XCircle, Check,
   User, Mail, Calendar, Users, MapPin, Clock,
-  CreditCard, Wallet, Plane, Tag, FileText, PhoneCall, ReceiptText
+  CreditCard, Wallet, Plane, Tag, FileText, PhoneCall, ReceiptText, Pencil
 } from 'lucide-react';
 import './TourBookingDetailModal.css';
 import VoucherPreviewModal from '../booking/VoucherPreviewModal';
@@ -57,6 +58,7 @@ const TourBookingDetailModal = ({
   handleCancel,
   actionLoading,
 }) => {
+  const navigate = useNavigate();
   const [showVoucherPreview, setShowVoucherPreview] = useState(false);
   const [voucherData, setVoucherData] = useState(null);
   const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
@@ -512,6 +514,23 @@ const TourBookingDetailModal = ({
             >
               <ReceiptText size={16} />
               Order Slip
+            </button>
+
+            {/* ✅ EDIT BOOKING BUTTON */}
+            <button
+              className="cnm-btn cnm-btn-left"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(245,158,11,0.25)',
+              }}
+              onClick={() => {
+                setShowModal(false);
+                navigate(`/EditTourBooking/${b.mongoId}`);
+              }}
+            >
+              <Pencil size={16} />
+              Edit Booking
             </button>
 
             {/* ✅ View Voucher — visible for all statuses */}

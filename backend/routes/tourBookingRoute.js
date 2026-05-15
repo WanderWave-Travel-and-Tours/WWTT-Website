@@ -345,6 +345,88 @@ router.patch('/:id/payment', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/tour-bookings/:id  (admin full edit — from EditTourBooking)
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id', async (req, res) => {
+  console.log(`\n🟡 [PATCH /api/tour-bookings/${req.params.id}] Full booking update`);
+  console.log('   Payload keys:', Object.keys(req.body));
+  try {
+    const booking = await TourBooking.findById(req.params.id);
+    if (!booking) {
+      console.log('   ❌ Booking not found');
+      return res.status(404).json({ success: false, message: 'Tour booking not found.' });
+    }
+
+    const d = req.body;
+
+    // ── Tour reference ────────────────────────────────────────────────
+    if (d.packageName   !== undefined) booking.packageName   = d.packageName;
+    if (d.destination   !== undefined) booking.destination   = d.destination;
+    if (d.duration      !== undefined) booking.duration      = d.duration;
+    if (d.bookingSource !== undefined) booking.bookingSource = d.bookingSource;
+    if (d.createdByType !== undefined) booking.createdByType = d.createdByType;
+
+    // ── Dates ─────────────────────────────────────────────────────────
+    if (d.startDate !== undefined) booking.startDate = d.startDate || null;
+    if (d.endDate   !== undefined) booking.endDate   = d.endDate   || null;
+
+    // ── PAX ───────────────────────────────────────────────────────────
+    if (d.pax !== undefined) {
+      booking.pax = {
+        adult:    d.pax.adult    ?? booking.pax?.adult    ?? 1,
+        children: d.pax.children ?? booking.pax?.children ?? 0,
+        infants:  d.pax.infants  ?? booking.pax?.infants  ?? 0,
+      };
+    }
+
+    // ── Contact ───────────────────────────────────────────────────────
+    if (d.fullName !== undefined) booking.fullName = d.fullName;
+    if (d.email    !== undefined) booking.email    = d.email;
+    if (d.message  !== undefined) booking.message  = d.message;
+
+    // ── Pricing ───────────────────────────────────────────────────────
+    if (d.packagePrice   !== undefined) booking.packagePrice   = d.packagePrice;
+    if (d.discountAmount !== undefined) booking.discountAmount = d.discountAmount;
+    if (d.airfareTotal   !== undefined) booking.airfareTotal   = d.airfareTotal;
+    if (d.totalAmount    !== undefined) booking.totalAmount    = d.totalAmount;
+    if (d.sellerPrice    !== undefined) booking.sellerPrice    = d.sellerPrice;
+    if (d.markup         !== undefined) booking.markup         = d.markup;
+
+    // ── Airfare ───────────────────────────────────────────────────────
+    if (d.includesAirfare !== undefined) booking.includesAirfare = d.includesAirfare;
+
+    // ── Payment ───────────────────────────────────────────────────────
+    if (d.paymentType          !== undefined) booking.paymentType          = d.paymentType;
+    if (d.initialPaymentAmount !== undefined) booking.initialPaymentAmount = d.initialPaymentAmount;
+    if (d.remainingBalance     !== undefined) booking.remainingBalance     = d.remainingBalance;
+    if (d.paymentStatus        !== undefined) booking.paymentStatus        = d.paymentStatus;
+
+    // ── Status ────────────────────────────────────────────────────────
+    if (d.status !== undefined) {
+      const allowed = ['pending', 'confirmed', 'cancelled', 'completed'];
+      if (!allowed.includes(d.status)) {
+        return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${allowed.join(', ')}` });
+      }
+      if (d.status === 'cancelled' && booking.status !== 'cancelled') booking.cancelledAt = new Date();
+      booking.status = d.status;
+    }
+
+    booking.updatedAt = new Date();
+
+    await booking.save();
+    console.log(`   ✅ Booking updated: ${booking._id} | Package: ${booking.packageName}`);
+    res.status(200).json({ success: true, message: 'Tour booking updated successfully.', data: booking });
+  } catch (err) {
+    console.error('   ❌ Full update error:', err.message);
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ success: false, message: `Validation failed: ${messages}` });
+    }
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/tour-bookings/:id  (admin only — hard delete)
 // ─────────────────────────────────────────────────────────────────────────────
 router.delete('/:id', async (req, res) => {

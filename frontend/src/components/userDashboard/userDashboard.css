@@ -199,7 +199,7 @@
     .ud-main-content {
         margin-left: 0;
         width: 100%;
-        padding: 28px 20px;
+        padding: 16px 14px 80px 14px; /* bottom padding for thumb reachability */
     }
     
     .ud-welcome-icon {
@@ -218,7 +218,7 @@
 
 @media (max-width: 480px) {
     .ud-main-content {
-        padding: 24px 16px;
+        padding: 12px 10px 80px 10px;
     }
     
     .ud-welcome-icon {

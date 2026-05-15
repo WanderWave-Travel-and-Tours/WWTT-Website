@@ -204,31 +204,134 @@ router.get('/:id', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/transfer-bookings/:id
-// General field update — used by the archive restore to set isArchive: 'No'.
-// Also supports updating status and paymentStatus in one call if needed.
+// Dual-purpose handler:
+//   1. Quick field update — isArchive / status / paymentStatus only (dashboard toggles)
+//   2. Full edit update  — all fields sent by EditTransferBooking page
+//
+// Distinguisher: if the body contains any of the "full edit" fields (activityName,
+// fullName, email, travelDate, transferType, …) the full-edit path runs and
+// updates every provided field. Otherwise the lightweight toggle path runs.
 // ─────────────────────────────────────────────────────────────────────────────
 router.patch('/:id', async (req, res) => {
   try {
-    const { isArchive, status, paymentStatus } = req.body;
-
     const booking = await TransferBookingOrder.findById(req.params.id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
 
-    if (isArchive !== undefined) {
-      if (!['Yes', 'No'].includes(isArchive)) {
-        return res.status(400).json({ success: false, message: 'isArchive must be "Yes" or "No".' });
+    // ── Detect which path to take ──────────────────────────────────────────
+    const FULL_EDIT_FIELDS = [
+      'activityName', 'fullName', 'email', 'travelDate', 'transferType',
+      'pickupLocation', 'oneWayPrice', 'roundtripPrice', 'sellingPrice',
+      'totalAmount', 'passengerCount',
+    ];
+    const isFullEdit = FULL_EDIT_FIELDS.some((f) => req.body[f] !== undefined);
+
+    if (isFullEdit) {
+      // ── FULL EDIT (from EditTransferBooking page) ────────────────────────
+      const {
+        activityName,
+        destination,
+        category,
+        supplierName,
+        promoCode,
+        pax,
+        transferType,
+        travelDate,
+        returnDate,
+        arrivalTime,
+        departureTime,
+        pickupLocation,
+        dropoffLocation,
+        fullName,
+        email,
+        phone,
+        message,
+        specialRequests,
+        passengerCount,
+        oneWayPrice,
+        roundtripPrice,
+        sellingPrice,
+        totalAmount,
+        currency,
+        paymentType,
+        initialPaymentAmount,
+        remainingBalance,
+        paymentStatus,
+        status,
+      } = req.body;
+
+      const type = transferType === 'roundtrip' ? 'roundtrip' : 'oneway';
+
+      // Roundtrip validation
+      if (type === 'roundtrip') {
+        if (!arrivalTime)   return res.status(400).json({ success: false, message: 'arrivalTime is required for roundtrip bookings.' });
+        if (!departureTime) return res.status(400).json({ success: false, message: 'departureTime is required for roundtrip bookings.' });
+        if (!returnDate)    return res.status(400).json({ success: false, message: 'returnDate is required for roundtrip bookings.' });
       }
-      booking.isArchive = isArchive;
+
+      if (activityName  !== undefined) booking.activityName  = activityName;
+      if (destination   !== undefined) booking.destination   = destination   || '';
+      if (category      !== undefined) booking.category      = category      || '';
+      if (supplierName  !== undefined) booking.supplierName  = supplierName  || '';
+      if (promoCode     !== undefined) booking.promoCode     = promoCode     || null;
+      if (pax           !== undefined) booking.pax           = pax           || '';
+      if (travelDate    !== undefined) booking.travelDate    = travelDate;
+      if (fullName      !== undefined) booking.fullName      = fullName;
+      if (email         !== undefined) booking.email         = email;
+      if (phone         !== undefined) booking.phone         = phone         || '';
+      if (message       !== undefined) booking.message       = message       || '';
+      if (specialRequests !== undefined) booking.specialRequests = specialRequests || '';
+
+      if (passengerCount    !== undefined) booking.passengerCount    = parseInt(passengerCount)    || 1;
+      if (oneWayPrice       !== undefined) booking.oneWayPrice       = parseFloat(oneWayPrice)       || 0;
+      if (roundtripPrice    !== undefined) booking.roundtripPrice    = parseFloat(roundtripPrice)    || 0;
+      if (sellingPrice      !== undefined) booking.sellingPrice      = parseFloat(sellingPrice)      || 0;
+      if (totalAmount       !== undefined) booking.totalAmount       = parseFloat(totalAmount)       || 0;
+      if (initialPaymentAmount !== undefined) booking.initialPaymentAmount = parseFloat(initialPaymentAmount) || 0;
+      if (remainingBalance  !== undefined) booking.remainingBalance  = parseFloat(remainingBalance)  || 0;
+
+      if (currency      !== undefined) booking.currency      = currency      || 'PHP';
+      if (paymentType   !== undefined) booking.paymentType   = paymentType   || 'full';
+      if (paymentStatus !== undefined) booking.paymentStatus = paymentStatus || 'pending';
+      if (status        !== undefined) booking.status        = status        || 'pending';
+
+      // Transfer-type-specific fields — enforce clean separation
+      booking.transferType    = type;
+      booking.arrivalTime     = arrivalTime     || '';
+      booking.departureTime   = type === 'roundtrip' ? (departureTime  || '') : '';
+      booking.returnDate      = type === 'roundtrip' ? (returnDate     || '') : '';
+      booking.pickupLocation  = pickupLocation  || '';
+      booking.dropoffLocation = type === 'roundtrip' ? (dropoffLocation || '') : '';
+
+      await booking.save();
+
+      console.log(`✅ Transfer booking ${booking._id} fully edited by admin.`);
+      return res.status(200).json({ success: true, message: 'Transfer booking updated.', data: booking });
+
+    } else {
+      // ── QUICK TOGGLE (dashboard archive / status updates) ────────────────
+      const { isArchive, status, paymentStatus } = req.body;
+
+      if (isArchive !== undefined) {
+        if (!['Yes', 'No'].includes(isArchive)) {
+          return res.status(400).json({ success: false, message: 'isArchive must be "Yes" or "No".' });
+        }
+        booking.isArchive = isArchive;
+      }
+      if (status)        booking.status        = status;
+      if (paymentStatus) booking.paymentStatus = paymentStatus;
+
+      await booking.save();
+
+      console.log(`✅ Transfer booking ${booking._id} toggled — isArchive: ${booking.isArchive}, status: ${booking.status}`);
+      return res.status(200).json({ success: true, message: 'Transfer booking updated.', data: booking });
     }
-    if (status)        booking.status        = status;
-    if (paymentStatus) booking.paymentStatus = paymentStatus;
 
-    await booking.save();
-
-    console.log(`✅ Transfer booking ${booking._id} updated — isArchive: ${booking.isArchive}, status: ${booking.status}`);
-    return res.status(200).json({ success: true, message: 'Transfer booking updated.', data: booking });
   } catch (err) {
     console.error('❌ PATCH transfer booking error:', err);
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map((e) => e.message).join(', ');
+      return res.status(400).json({ success: false, message: `Validation failed: ${messages}` });
+    }
     return res.status(500).json({ success: false, message: err.message });
   }
 });

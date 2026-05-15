@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   FileText, Wallet, CheckCircle, CreditCard,
   Archive, ChevronLeft, ChevronRight,
@@ -61,6 +61,7 @@ const ITEMS_PER_PAGE = 10;
 const CustomBooking = () => {
   const toast = useToast();
   const { serviceType } = useParams();
+  const navigate = useNavigate(); // ✅ NEW: for Edit navigation
 
   // ── Resolve page title from service type ───────────────────────────────────
   const serviceInfo = SERVICE_LABELS[serviceType] || {
@@ -412,6 +413,12 @@ const CustomBooking = () => {
     setShowDetailModal(true);
   };
 
+  // ── Edit: navigate to EditCustomBooking page ──────────────────────────────
+  // ✅ NEW: Called by the Edit button inside CustomBookingDetailModal
+  const handleEdit = (booking) => {
+    navigate(`/EditCustomBooking/${booking.mongoId}`);
+  };
+
   // ═══════════════════════════════════════════════════════════════════════════
   // STATS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -604,6 +611,7 @@ const CustomBooking = () => {
         handleConfirm={handleConfirm}
         handleCancel={handleCancel}
         handleArchive={handleArchive}
+        handleEdit={handleEdit}
         actionLoading={actionLoading}
       />
 

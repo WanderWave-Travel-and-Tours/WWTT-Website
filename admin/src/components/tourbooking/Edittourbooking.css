@@ -1,0 +1,324 @@
+/* ============================================================
+   EDIT TOUR BOOKING
+   Reuses all ea- classes from EditAirline.css.
+   Tour-specific additions use etbk- prefix.
+   ============================================================ */
+
+/* Import base ea- styles */
+@import '../services/AirlineBooking/EditAirline.css';
+
+/* ── Header background override ────────────────────────────────────────────── */
+.etbk-header {
+  background-image: url('https://images.unsplash.com/photo-1488085061387-422e29b40080?q=80&w=2070&auto=format&fit=crop') !important;
+}
+
+/* ── Tour type badge (inside section header) ────────────────────────────────── */
+.etbk-tour-badge {
+  display: inline-block;
+  margin-left: 12px;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+
+.etbk-tour-badge--private {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.etbk-tour-badge--joiners {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* ── PAX block ─────────────────────────────────────────────────────────────── */
+.etbk-pax-block {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-top: 8px;
+}
+
+.etbk-pax-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.etbk-pax-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.etbk-pax-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.etbk-pax-item label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Schedule date block ────────────────────────────────────────────────────── */
+.etbk-date-block {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.etbk-date-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.etbk-date-label--start { color: #f59e0b; }
+.etbk-date-label--end   { color: #10b981; }
+
+/* ── Airfare toggle row ─────────────────────────────────────────────────────── */
+.etbk-airfare-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.etbk-airfare-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.etbk-airfare-info {
+  flex: 1;
+}
+
+.etbk-airfare-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.etbk-airfare-desc {
+  font-size: 11px;
+  color: #3b82f6;
+  margin-top: 2px;
+}
+
+/* Toggle switch */
+.etbk-toggle-wrap {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.etbk-toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.etbk-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #cbd5e1;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.etbk-toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.etbk-toggle-input:checked + .etbk-toggle-slider {
+  background: #3b82f6;
+}
+
+.etbk-toggle-input:checked + .etbk-toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* ── Total strip ────────────────────────────────────────────────────────────── */
+.etbk-total-strip {
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: #fffbeb;
+  border: 2px solid #fcd34d;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.etbk-total-amount {
+  font-size: 20px;
+  color: #f59e0b;
+}
+
+/* ── Status row ─────────────────────────────────────────────────────────────── */
+.etbk-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.etbk-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.etbk-status-dot--pending   { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+.etbk-status-dot--confirmed { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+.etbk-status-dot--cancelled { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+.etbk-status-dot--completed { background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.5); }
+
+.etbk-status-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* ── Booking summary card ───────────────────────────────────────────────────── */
+.etbk-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.etbk-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #64748b;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.etbk-summary-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.etbk-summary-row strong {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.etbk-summary-row--total {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 2px solid #e2e8f0;
+  border-bottom: none;
+}
+
+.etbk-summary-row--total span {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+.etbk-summary-row--total strong {
+  font-size: 16px;
+  color: #FF8C42;
+}
+
+/* ── Airfare summary row ─────────────────────────────────────────────────────── */
+.etbk-summary-row--airfare {
+  background: #eff6ff;
+  border-radius: 6px;
+  padding: 6px 8px;
+  border-bottom: none;
+  margin: 0 -4px;
+}
+
+.etbk-summary-row--airfare span {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.etbk-summary-row--airfare strong {
+  color: #1d4ed8 !important;
+}
+
+/* ── Discount summary row ────────────────────────────────────────────────────── */
+.etbk-summary-row--discount {
+  background: #f0fdf4;
+  border-radius: 6px;
+  padding: 6px 8px;
+  border-bottom: none;
+  margin: 0 -4px;
+}
+
+.etbk-summary-row--discount span { color: #16a34a; font-weight: 600; }
+.etbk-summary-row--discount strong { color: #16a34a !important; }
+
+/* ── Loading spinner ─────────────────────────────────────────────────────────── */
+.ea-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #FF8C42;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

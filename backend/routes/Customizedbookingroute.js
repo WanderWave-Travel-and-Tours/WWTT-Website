@@ -209,6 +209,78 @@ router.get('/:id', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/customized-bookings/:id
+// Full update — used by EditCustomBooking admin page.
+// Accepts all top-level fields plus tours[] and transfers[] arrays.
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id', async (req, res) => {
+  console.log(`\n🟡 [PATCH /api/customized-bookings/${req.params.id}] Updating booking`);
+
+  try {
+    const booking = await CustomizedBooking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
+
+    const body = req.body;
+
+    // ── Basic Info ──────────────────────────────────────────────────────────
+    if (body.destination !== undefined) booking.destination = body.destination;
+    if (body.fullName    !== undefined) booking.fullName    = body.fullName;
+    if (body.email       !== undefined) booking.email       = body.email;
+    if (body.phone       !== undefined) booking.phone       = body.phone;
+    if (body.travelDate  !== undefined) booking.travelDate  = body.travelDate;
+    if (body.returnDate  !== undefined) booking.returnDate  = body.returnDate;
+    if (body.paxCount    !== undefined) booking.paxCount    = parseInt(body.paxCount) || 1;
+    if (body.message     !== undefined) booking.message     = body.message;
+    if (body.notes       !== undefined) booking.notes       = body.notes;
+    if (body.promoCode   !== undefined) booking.promoCode   = body.promoCode || null;
+
+    // ── Services ────────────────────────────────────────────────────────────
+    if (Array.isArray(body.tours)) {
+      const { builtTours } = buildServices({ tours: body.tours, transfers: [] });
+      booking.tours = builtTours;
+    }
+    if (Array.isArray(body.transfers)) {
+      const { builtTransfers } = buildServices({ tours: [], transfers: body.transfers });
+      booking.transfers = builtTransfers;
+    }
+
+    // ── Pricing ─────────────────────────────────────────────────────────────
+    if (body.toursTotal     !== undefined) booking.toursTotal     = parseNum(body.toursTotal);
+    if (body.transfersTotal !== undefined) booking.transfersTotal = parseNum(body.transfersTotal);
+    if (body.totalAmount    !== undefined) booking.totalAmount    = parseNum(body.totalAmount);
+
+    // ── Payment ─────────────────────────────────────────────────────────────
+    const allowedPaymentStatus = ['pending', 'paid', 'partial', 'failed', 'refunded'];
+    const allowedPaymentType   = ['full', 'partial'];
+
+    if (body.currency             !== undefined) booking.currency             = body.currency;
+    if (body.paymentType          !== undefined && allowedPaymentType.includes(body.paymentType))
+      booking.paymentType = body.paymentType;
+    if (body.initialPaymentAmount !== undefined) booking.initialPaymentAmount = parseNum(body.initialPaymentAmount);
+    if (body.remainingBalance     !== undefined) booking.remainingBalance     = parseNum(body.remainingBalance);
+    if (body.paymentStatus        !== undefined && allowedPaymentStatus.includes(body.paymentStatus))
+      booking.paymentStatus = body.paymentStatus;
+
+    // ── Status ───────────────────────────────────────────────────────────────
+    const allowedStatus = ['pending', 'confirmed', 'cancelled', 'completed'];
+    if (body.status !== undefined && allowedStatus.includes(body.status))
+      booking.status = body.status;
+
+    await booking.save();
+    console.log(`✅ Customized booking updated: ${booking._id}`);
+    return res.status(200).json({ success: true, message: 'Booking updated successfully.', data: booking });
+
+  } catch (err) {
+    console.error('❌ Update customized booking error:', err);
+    if (err.name === 'ValidationError') {
+      const msgs = Object.values(err.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ success: false, message: `Validation failed: ${msgs}` });
+    }
+    return res.status(500).json({ success: false, message: 'Server error.', error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/customized-bookings/:id/status
 // Update booking status and/or payment status.
 // ─────────────────────────────────────────────────────────────────────────────

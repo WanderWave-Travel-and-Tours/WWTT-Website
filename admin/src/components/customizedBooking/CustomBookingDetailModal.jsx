@@ -6,6 +6,7 @@ import {
   File, Phone, MapPin, Tag, Hash,
   Users, MessageSquare, Info,
   ArrowRight, Clock, Navigation, Repeat,
+  Pencil,
 } from 'lucide-react';
 import './CustomBookingDetailModal.css';
 import CustomizedBookingOrderSlipModal from './CustomizedBookingOrderSlipModal';
@@ -44,6 +45,7 @@ const CustomBookingDetailModal = ({
   handleConfirm,
   handleCancel,
   handleArchive,
+  handleEdit,
   actionLoading,
 }) => {
   const [submittedDocs, setSubmittedDocs]   = useState([]);
@@ -567,6 +569,18 @@ const CustomBookingDetailModal = ({
                 ? <><RotateCcw size={14} /> Unarchive</>
                 : <><Archive size={14} /> Archive</>}
             </button>
+
+            {/* Edit button */}
+            {handleEdit && (
+              <button
+                className="cbk-modal-btn cbk-modal-btn-neutral"
+                onClick={() => { close(); handleEdit(selectedBooking); }}
+                disabled={actionLoading}
+                style={{ background: '#0f172a', color: 'white' }}
+              >
+                <Pencil size={14} /> Edit
+              </button>
+            )}
 
             {/* Order Slip & Voucher buttons — always available */}
             <button
