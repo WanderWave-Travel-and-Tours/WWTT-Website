@@ -12,7 +12,7 @@ import {
 import Sidebar from "../sidebar/sidebar";
 import { useToast } from "../toast/ToastManager";
 import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
-import "./EditTourBooking.css";
+import "./Edittourbooking.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
