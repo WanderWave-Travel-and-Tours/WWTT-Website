@@ -180,24 +180,7 @@ const TourBookingDetailModal = ({
           <div className="modal-body">
 
             {/* Tour Hero Strip */}
-            <div className="cnm-tour-hero" style={{ marginBottom: '15px' }}>
-              {raw.image && <img src={raw.image} alt="" className="cnm-tour-hero-img" />}
-              <div className="cnm-tour-hero-content">
-                <div className="cnm-tour-hero-icon">🏝️</div>
-                <div className="cnm-tour-hero-info">
-                  <p className="cnm-tour-hero-name">{b.packageName}</p>
-                  <div className="cnm-tour-hero-tags">
-                    {tourType && (
-                      <span className={`cnm-hero-tag ${tourType === 'private' ? 'private' : 'joiners'}`}>
-                        {tourType === 'private' ? '🔒 Private' : '👥 Joiners'}
-                      </span>
-                    )}
-                    {category && <span className="cnm-hero-tag category">{category}</span>}
-                    {hasAirfare && <span className="cnm-hero-tag airfare">✈️ With Airfare</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             {/* BOOKING INFORMATION */}
             <div className="cnm-card">
@@ -233,14 +216,7 @@ const TourBookingDetailModal = ({
                     <span className="cnm-info-value">{b.endDate ? formatDate(b.endDate) : '—'}</span>
                   </div>
                 </div>
-                <div className="cnm-info-item">
-                  <div className="cnm-info-icon"><MapPin size={18} /></div>
-                  <div className="cnm-info-content">
-                    <label className="cnm-info-label">Destination</label>
-                    <span className="cnm-info-value">{b.destination || raw.destination || '—'}</span>
-                  </div>
-                </div>
-                <div className="cnm-info-item">
+<div className="cnm-info-item">
                   <div className="cnm-info-icon"><Clock size={18} /></div>
                   <div className="cnm-info-content">
                     <label className="cnm-info-label">Duration</label>
@@ -258,14 +234,7 @@ const TourBookingDetailModal = ({
                     </span>
                   </div>
                 </div>
-                <div className="cnm-info-item">
-                  <div className="cnm-info-icon"><Wallet size={18} /></div>
-                  <div className="cnm-info-content">
-                    <label className="cnm-info-label">Total Amount</label>
-                    <span className="cnm-info-value cnm-val-amount">₱{totalAmount.toLocaleString()}</span>
-                  </div>
-                </div>
-                {b.promoCode && (
+{b.promoCode && (
                   <div className="cnm-info-item">
                     <div className="cnm-info-icon"><Tag size={18} /></div>
                     <div className="cnm-info-content">
@@ -275,6 +244,81 @@ const TourBookingDetailModal = ({
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* PASSENGER DETAILS */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Passenger Details</h3>
+                <span className="cnm-badge cnm-badge-blue">{passengers.length} PAX</span>
+              </div>
+              {passengers.length === 0 ? (
+                <div className="cnm-no-passengers">No passenger details provided.</div>
+              ) : (
+                <div className="cnm-pax-list">
+                  {passengers.map((p, i) => (
+                    <div key={i} className="cnm-pax-card">
+                      <div className="cnm-pax-card-header">
+                        <span className="cnm-pax-number">{i + 1}</span>
+                        <span className="cnm-pax-name">{`${p.firstName || ''} ${p.lastName || ''}`.trim() || '—'}</span>
+                      </div>
+                      <div className="cnm-grid cnm-grid-teal">
+                        <div className="cnm-info-item">
+                          <div className="cnm-info-icon"><Mail size={16} /></div>
+                          <div className="cnm-info-content">
+                            <label className="cnm-info-label">Email</label>
+                            <span className="cnm-info-value">{p.email || '—'}</span>
+                          </div>
+                        </div>
+                        <div className="cnm-info-item">
+                          <div className="cnm-info-icon"><PhoneCall size={16} /></div>
+                          <div className="cnm-info-content">
+                            <label className="cnm-info-label">Phone</label>
+                            <span className="cnm-info-value">{p.phone || '—'}</span>
+                          </div>
+                        </div>
+                        <div className="cnm-info-item">
+                          <div className="cnm-info-icon"><Calendar size={16} /></div>
+                          <div className="cnm-info-content">
+                            <label className="cnm-info-label">Date of Birth</label>
+                            <span className="cnm-info-value">{p.dateOfBirth || '—'}</span>
+                          </div>
+                        </div>
+                        <div className="cnm-info-item">
+                          <div className="cnm-info-icon"><User size={16} /></div>
+                          <div className="cnm-info-content">
+                            <label className="cnm-info-label">Age</label>
+                            <span className="cnm-info-value">{p.age || '—'}</span>
+                          </div>
+                        </div>
+                        <div className="cnm-info-item">
+                          <div className="cnm-info-icon"><Users size={16} /></div>
+                          <div className="cnm-info-content">
+                            <label className="cnm-info-label">Gender</label>
+                            <span className="cnm-info-value">{p.gender || '—'}</span>
+                          </div>
+                        </div>
+                        <div className="cnm-info-item">
+                          <div className="cnm-info-icon"><MapPin size={16} /></div>
+                          <div className="cnm-info-content">
+                            <label className="cnm-info-label">Nationality</label>
+                            <span className="cnm-info-value">{p.nationality || 'Filipino'}</span>
+                          </div>
+                        </div>
+                        {p.address && (
+                          <div className="cnm-info-item" style={{ gridColumn: 'span 2' }}>
+                            <div className="cnm-info-icon"><MapPin size={16} /></div>
+                            <div className="cnm-info-content">
+                              <label className="cnm-info-label">Address</label>
+                              <span className="cnm-info-value">{p.address}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* PAYMENT DETAILS */}
@@ -408,52 +452,6 @@ const TourBookingDetailModal = ({
               </div>
             </div>
 
-            {/* PASSENGER DETAILS */}
-            <div className="cnm-card">
-              <div className="cnm-card-header">
-                <h3 className="cnm-card-title">Passenger Details</h3>
-                <span className="cnm-badge cnm-badge-blue">{passengers.length} PAX</span>
-              </div>
-              {passengers.length === 0 ? (
-                <div className="cnm-no-passengers">No passenger details provided.</div>
-              ) : (
-                <div className="cnm-table-wrapper">
-                  <table className="cnm-passengers-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Date of Birth</th>
-                        <th>Age</th>
-                        <th>Gender</th>
-                        <th>Nationality</th>
-                        <th>Address</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {passengers.map((p, i) => (
-                        <tr key={i}>
-                          <td><span className="cnm-pax-number">{i + 1}</span></td>
-                          <td style={{ fontWeight: 600 }}>
-                            {`${p.firstName || ''} ${p.lastName || ''}`.trim() || '—'}
-                          </td>
-                          <td>{p.email || '—'}</td>
-                          <td>{p.phone || '—'}</td>
-                          <td>{p.dateOfBirth || '—'}</td>
-                          <td>{p.age || '—'}</td>
-                          <td>{p.gender || '—'}</td>
-                          <td>{p.nationality || 'Filipino'}</td>
-                          <td>{p.address || '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
             {/* FLIGHT DETAILS (if airfare included) */}
             {hasAirfare && flight && (
               <div className="cnm-card">
@@ -499,74 +497,79 @@ const TourBookingDetailModal = ({
 
           {/* ── FOOTER ──────────────────────────────────────────── */}
           <div className="modal-footer">
-            <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
-
-            {/* ✅ ORDER SLIP BUTTON — available for all bookings */}
-            <button
-              className="cnm-btn cnm-btn-left"
-              style={{
-                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-                color: 'white',
-                boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
-                marginRight: 'auto',
-              }}
-              onClick={() => setShowOrderSlip(true)}
-            >
-              <ReceiptText size={16} />
-              Order Slip
-            </button>
-
-            {/* ✅ EDIT BOOKING BUTTON */}
-            <button
-              className="cnm-btn cnm-btn-left"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                color: 'white',
-                boxShadow: '0 4px 12px rgba(245,158,11,0.25)',
-              }}
-              onClick={() => {
-                setShowModal(false);
-                navigate(`/EditTourBooking/${b.mongoId}`);
-              }}
-            >
-              <Pencil size={16} />
-              Edit Booking
-            </button>
-
-            {/* ✅ View Voucher — visible for all statuses */}
-            <button
-              className="cnm-btn cnm-btn-voucher cnm-btn-left"
-              onClick={generateVoucherData}
-              disabled={isGeneratingVoucher}
-            >
-              <FileText size={16} />
-              {isGeneratingVoucher ? 'Loading...' : 'View Voucher'}
-            </button>
-
-            {/* Cancel — pending or confirmed */}
-            {(status === 'PENDING' || status === 'CONFIRMED') && (
+            {/* LEFT GROUP */}
+            <div className="modal-footer-left">
+              {/* ✅ ORDER SLIP BUTTON — available for all bookings */}
               <button
-                className="cnm-btn cnm-btn-danger cnm-btn-outline"
-                onClick={() => handleCancel(selectedBooking)}
-                disabled={actionLoading}
+                className="cnm-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
+                }}
+                onClick={() => setShowOrderSlip(true)}
               >
-                <X size={16} /> Cancel Booking
+                <ReceiptText size={14} />
+                Order Slip
               </button>
-            )}
+            </div>
 
-            {/* Confirm — pending only */}
-            {status === 'PENDING' && (
+            {/* RIGHT GROUP */}
+            <div className="modal-footer-right">
+              {/* ✅ EDIT BOOKING BUTTON */}
               <button
-                className="cnm-btn cnm-btn-success"
-                onClick={() => handleConfirm(selectedBooking)}
-                disabled={actionLoading}
+                className="cnm-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(245,158,11,0.25)',
+                }}
+                onClick={() => {
+                  setShowModal(false);
+                  navigate(`/EditTourBooking/${b.mongoId}`);
+                }}
               >
-                {actionLoading
-                  ? <><span className="cnm-spinner" /> Processing...</>
-                  : <><Check size={16} /> Confirm Booking</>
-                }
+                <Pencil size={14} />
+                Edit
               </button>
-            )}
+
+              {/* ✅ View Voucher — confirmed status lang */}
+              {status === 'CONFIRMED' && (
+                <button
+                  className="cnm-btn cnm-btn-voucher"
+                  onClick={generateVoucherData}
+                  disabled={isGeneratingVoucher}
+                >
+                  <FileText size={14} />
+                  {isGeneratingVoucher ? 'Loading...' : 'Voucher'}
+                </button>
+              )}
+
+              {/* Cancel — pending or confirmed */}
+              {(status === 'PENDING' || status === 'CONFIRMED') && (
+                <button
+                  className="cnm-btn cnm-btn-danger cnm-btn-outline"
+                  onClick={() => handleCancel(selectedBooking)}
+                  disabled={actionLoading}
+                >
+                  <X size={14} /> Cancel
+                </button>
+              )}
+
+              {/* Confirm — pending only */}
+              {status === 'PENDING' && (
+                <button
+                  className="cnm-btn cnm-btn-success"
+                  onClick={() => handleConfirm(selectedBooking)}
+                  disabled={actionLoading}
+                >
+                  {actionLoading
+                    ? <><span className="cnm-spinner" /> Processing...</>
+                    : <><Check size={14} /> Confirm</>
+                  }
+                </button>
+              )}
+            </div>
           </div>
 
         </div>

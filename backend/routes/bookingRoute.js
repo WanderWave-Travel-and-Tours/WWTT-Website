@@ -479,6 +479,85 @@ router.get('/:id/destination-payload', async (req, res) => {
   }
 });
 
+// ============================================
+// PUT /:id/confirm — MANUALLY CONFIRM BOOKING (Admin/Sales)
+// ⚠️ Must be declared BEFORE router.get('/:id') to avoid Express
+//    treating "confirm" as an ObjectId for the :id param.
+// ============================================
+router.put('/:id/confirm', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userEmail, adminId } = req.body;
+
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.status === 'confirmed' || booking.status === 'fully_paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already confirmed'
+      });
+    }
+
+    // Set status based on payment type
+    if (booking.paymentType === 'full') {
+      booking.status = 'confirmed';
+    } else if (booking.paymentType === 'partial') {
+      booking.status = 'partial_paid';
+    } else {
+      booking.status = 'confirmed';
+    }
+
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    console.log(`✅ Booking manually confirmed by admin: ${id}`);
+
+    try {
+      if (userEmail) {
+        await ActivityLog.create({
+          action: 'UPDATE',
+          module: 'Bookings',
+          user: userEmail,
+          userId: adminId || null,
+          severity: 'SUCCESS',
+          description: `Manually confirmed booking: ${booking.packageName} (${booking.fullName})`,
+          details: {
+            recordTitle: `${booking.packageName} - ${booking.fullName}`,
+            recordId: booking._id.toString(),
+            method: 'PUT',
+            endpoint: `/api/bookings/${id}/confirm`,
+            newStatus: booking.status,
+          },
+        });
+        console.log('✅ Activity Log saved for Manual Booking Confirmation');
+      }
+    } catch (logError) {
+      console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Booking confirmed successfully',
+      booking: booking,
+    });
+
+  } catch (error) {
+    console.error('❌ Error confirming booking:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to confirm booking',
+      error: error.message,
+    });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)

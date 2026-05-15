@@ -128,24 +128,32 @@ const CustomBookingDetailModal = ({
           {/* ── HEADER ── */}
           <div className="cbk-modal-header">
             <div className="cbk-modal-header-left">
-              <h2 className="cbk-modal-title">Booking Details</h2>
-              <div className="cbk-modal-meta">
-                <span style={{ color: '#94a3b8' }}>ID: {selectedBooking.id}</span>
-                <span className="cbk-modal-meta-divider">•</span>
-                <span style={{ color: '#64748b' }}>Booked: {fmt(createdAt)}</span>
-                {updatedAt && (
-                  <>
-                    <span className="cbk-modal-meta-divider">•</span>
-                    <span style={{ color: '#64748b' }}>Updated: {fmt(updatedAt)}</span>
-                  </>
-                )}
+              <div className="cbk-modal-title-group">
+                <h2 className="cbk-modal-title">Booking Details</h2>
+                <div className="cbk-modal-meta">
+                  <span className="cbk-modal-meta-ref">ID: #{selectedBooking.id}</span>
+                  <span className="cbk-modal-meta-divider">•</span>
+                  <span>Booked: {fmt(createdAt)}</span>
+                  {updatedAt && (
+                    <>
+                      <span className="cbk-modal-meta-divider">•</span>
+                      <span>Updated: {fmt(updatedAt)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className={`cbk-modal-status-chip ${statusChip.cls}`}>
+                <div className="cbk-modal-status-chip-icon">{statusChip.icon}</div>
+                <div className="cbk-modal-status-chip-content">
+                  <span className="cbk-modal-status-chip-label">{statusChip.label}</span>
+                  <span className="cbk-modal-status-chip-desc">
+                    {status === 'PENDING' ? 'Awaiting confirmation' : status === 'CONFIRMED' ? 'Booking is active' : status === 'COMPLETED' ? 'Trip completed' : 'Request was cancelled'}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className={`cbk-modal-status-chip ${statusChip.cls}`}>
-              {statusChip.icon} {statusChip.label}
-            </div>
             <button className="cbk-modal-close" onClick={close} aria-label="Close">
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
 
@@ -248,7 +256,7 @@ const CustomBookingDetailModal = ({
                 {/* Walk-in */}
                 {isWalkin && (
                   <div className="cbk-pay-status-box paid">
-                    <div>
+                    <div className="cbk-pay-status-left">
                       <div className="cbk-pay-status-label"><CheckCircle size={12} /> Fully Paid (Walk-in)</div>
                       <div className="cbk-pay-status-amount">₱{totalAmount.toLocaleString()}</div>
                     </div>
@@ -265,7 +273,7 @@ const CustomBookingDetailModal = ({
                     </div>
                     {remainingBalance > 0 ? (
                       <div className="cbk-pay-status-box pending">
-                        <div>
+                        <div className="cbk-pay-status-left">
                           <div className="cbk-pay-status-label"><AlertCircle size={12} /> Pending Balance</div>
                           <div className="cbk-pay-status-amount">₱{remainingBalance.toLocaleString()}</div>
                         </div>
@@ -273,7 +281,7 @@ const CustomBookingDetailModal = ({
                       </div>
                     ) : (
                       <div className="cbk-pay-status-box paid">
-                        <div>
+                        <div className="cbk-pay-status-left">
                           <div className="cbk-pay-status-label"><CheckCircle size={12} /> Fully Paid</div>
                           <div className="cbk-pay-status-amount">₱{totalAmount.toLocaleString()}</div>
                         </div>
@@ -287,7 +295,7 @@ const CustomBookingDetailModal = ({
                 {!isWalkin && !isPartial && (
                   isPendingPay ? (
                     <div className="cbk-pay-status-box pending">
-                      <div>
+                      <div className="cbk-pay-status-left">
                         <div className="cbk-pay-status-label"><AlertCircle size={12} /> Pending Payment</div>
                         <div className="cbk-pay-status-amount">₱{totalAmount.toLocaleString()}</div>
                       </div>
@@ -295,7 +303,7 @@ const CustomBookingDetailModal = ({
                     </div>
                   ) : (
                     <div className="cbk-pay-status-box paid">
-                      <div>
+                      <div className="cbk-pay-status-left">
                         <div className="cbk-pay-status-label"><CheckCircle size={12} /> Fully Paid</div>
                         <div className="cbk-pay-status-amount">₱{totalAmount.toLocaleString()}</div>
                       </div>
@@ -357,35 +365,34 @@ const CustomBookingDetailModal = ({
                 <div className="cbk-info-card-body">
                   {tours.map((t, i) => (
                     <div className="cbk-addon-item" key={i}>
+                      {/* Header bar */}
                       <div className="cbk-addon-item-row">
-                        <div className="cbk-addon-icon" style={{ background: '#ecfdf5' }}>🗺️</div>
+                        <div className="cbk-addon-icon tour">🗺️</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div className="cbk-addon-name">{t.title || 'Tour'}</div>
                           <div className="cbk-addon-meta">
-                            {t.destination && `📍 ${t.destination}`}
-                            {t.duration    && ` · ⏱ ${t.duration}`}
-                            {t.category    && ` · 🏷 ${t.category}`}
+                            {t.destination && <span>📍 {t.destination}</span>}
+                            {t.duration    && <span>⏱ {t.duration}</span>}
+                            {t.category    && <span>🏷 {t.category}</span>}
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          <div className="cbk-addon-price">₱{(t.subtotal || 0).toLocaleString()}</div>
+                        <div className="cbk-addon-price-col">
+                          <span className="cbk-addon-price">₱{(t.subtotal || 0).toLocaleString()}</span>
                           {t.paxCount > 0 && (
-                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                              {t.paxCount} pax × ₱{(t.price || 0).toLocaleString()}
-                            </div>
+                            <span className="cbk-addon-price-sub">{t.paxCount} pax × ₱{(t.price || 0).toLocaleString()}</span>
                           )}
                         </div>
                       </div>
 
-                      {/* All tour fields */}
-                      <div className="cbk-addon-detail-grid" style={{ marginTop: 10 }}>
-                        <DetailPair label="Pax Count"    value={t.paxCount    ? `${t.paxCount} pax`                              : null} />
-                        <DetailPair label="Price / Pax"  value={t.price       ? `₱${Number(t.price).toLocaleString()}`           : null} />
-                        <DetailPair label="Subtotal"     value={t.subtotal    ? `₱${Number(t.subtotal).toLocaleString()}`        : null} />
-                        <DetailPair label="Seller Price" value={t.sellerPrice ? `₱${Number(t.sellerPrice).toLocaleString()}`    : null} />
-                        <DetailPair label="Destination"  value={t.destination || null} />
-                        <DetailPair label="Duration"     value={t.duration    || null} />
-                        <DetailPair label="Category"     value={t.category    || null} />
+                      {/* Detail table */}
+                      <div className="cbk-addon-detail-grid">
+                        {t.paxCount    && <><div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Pax Count</span><span className="cbk-addon-detail-value">{t.paxCount} pax</span></div></>}
+                        {t.price       && <><div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Price / Pax</span><span className="cbk-addon-detail-value">₱{Number(t.price).toLocaleString()}</span></div></>}
+                        {t.subtotal    && <><div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Subtotal</span><span className="cbk-addon-detail-value">₱{Number(t.subtotal).toLocaleString()}</span></div></>}
+                        {t.sellerPrice && <><div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Seller Price</span><span className="cbk-addon-detail-value">₱{Number(t.sellerPrice).toLocaleString()}</span></div></>}
+                        {t.destination && <><div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Destination</span><span className="cbk-addon-detail-value">{t.destination}</span></div></>}
+                        {t.duration    && <><div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Duration</span><span className="cbk-addon-detail-value">{t.duration}</span></div></>}
+                        {t.category    && <><div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Category</span><span className="cbk-addon-detail-value">{t.category}</span></div></>}
                       </div>
                     </div>
                   ))}
@@ -409,79 +416,56 @@ const CustomBookingDetailModal = ({
                 <div className="cbk-info-card-body">
                   {transfers.map((t, i) => {
                     const isRoundtrip = t.transferType === 'roundtrip';
+                    const hasSchedule = t.travelDate || t.arrivalTime || t.pickupLocation || t.dropoffLocation || t.returnDate || t.departureTime;
                     return (
                       <div className="cbk-addon-item" key={i}>
+                        {/* Header bar */}
                         <div className="cbk-addon-item-row">
-                          <div className="cbk-addon-icon" style={{ background: '#eff6ff' }}>🚐</div>
+                          <div className="cbk-addon-icon transfer">🚐</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div className="cbk-addon-name">{t.title || 'Transfer'}</div>
-                            <div className="cbk-addon-meta">
-                              {isRoundtrip
-                                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Repeat size={11} /> Roundtrip</span>
-                                : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><ArrowRight size={11} /> One Way</span>
-                              }
-                              {t.category       && ` · 🏷 ${t.category}`}
-                              {t.passengerCount && ` · 👥 ${t.passengerCount} pax`}
-                            </div>
+                          <div className="cbk-addon-meta">
+                            {isRoundtrip
+                              ? <span><Repeat size={10} style={{ verticalAlign: 'middle', marginRight: 3 }} />Roundtrip</span>
+                              : <span><ArrowRight size={10} style={{ verticalAlign: 'middle', marginRight: 3 }} />One Way</span>}
+                            {t.category       && <span>🏷 {t.category}</span>}
+                            {t.passengerCount && <span>👥 {t.passengerCount} pax</span>}
                           </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div className="cbk-addon-price">
-                              ₱{(t.subtotal || t.selectedPrice || 0).toLocaleString()}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                              {isRoundtrip ? 'Roundtrip rate' : 'One-way rate'}
-                            </div>
+                          </div>
+                          <div className="cbk-addon-price-col">
+                            <span className="cbk-addon-price">₱{(t.subtotal || t.selectedPrice || 0).toLocaleString()}</span>
+                            <span className="cbk-addon-price-sub">{isRoundtrip ? 'Roundtrip rate' : 'One-way rate'}</span>
                           </div>
                         </div>
 
-                        {/* Pricing breakdown */}
-                        <div className="cbk-addon-detail-grid" style={{ marginTop: 10 }}>
-                          <DetailPair label="Transfer Type"   value={isRoundtrip ? 'Roundtrip' : 'One Way'} />
-                          <DetailPair label="Passengers"      value={t.passengerCount ? `${t.passengerCount} pax`               : null} />
-                          <DetailPair label="One-Way Price"   value={t.oneWayPrice    ? `₱${Number(t.oneWayPrice).toLocaleString()}`   : null} />
-                          <DetailPair label="Roundtrip Price" value={t.roundtripPrice ? `₱${Number(t.roundtripPrice).toLocaleString()}` : null} />
-                          <DetailPair label="Selected Price"  value={t.selectedPrice  ? `₱${Number(t.selectedPrice).toLocaleString()}`  : null} />
-                          <DetailPair label="Subtotal"        value={t.subtotal       ? `₱${Number(t.subtotal).toLocaleString()}`       : null} />
-                          <DetailPair label="Category"        value={t.category       || null} />
+                        {/* Pricing detail table */}
+                        <div className="cbk-addon-detail-grid">
+                          <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Transfer Type</span><span className="cbk-addon-detail-value">{isRoundtrip ? 'Roundtrip' : 'One Way'}</span></div>
+                          {t.passengerCount && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Passengers</span><span className="cbk-addon-detail-value">{t.passengerCount} pax</span></div>}
+                          {t.oneWayPrice    && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">One-Way Price</span><span className="cbk-addon-detail-value">₱{Number(t.oneWayPrice).toLocaleString()}</span></div>}
+                          {t.roundtripPrice && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Roundtrip Price</span><span className="cbk-addon-detail-value">₱{Number(t.roundtripPrice).toLocaleString()}</span></div>}
+                          {t.selectedPrice  && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Selected Price</span><span className="cbk-addon-detail-value">₱{Number(t.selectedPrice).toLocaleString()}</span></div>}
+                          {t.subtotal       && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Subtotal</span><span className="cbk-addon-detail-value">₱{Number(t.subtotal).toLocaleString()}</span></div>}
+                          {t.category       && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Category</span><span className="cbk-addon-detail-value">{t.category}</span></div>}
+
+                          {/* Schedule sub-section */}
+                          {hasSchedule && (
+                            <>
+                              <div className="cbk-addon-schedule-header"><Clock size={10} /> Schedule</div>
+                              {t.travelDate     && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Travel Date</span><span className="cbk-addon-detail-value">{fmt(t.travelDate)}</span></div>}
+                              {t.arrivalTime    && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Arrival Time</span><span className="cbk-addon-detail-value">{t.arrivalTime}</span></div>}
+                              {t.pickupLocation && <div className="cbk-addon-detail-cell" style={{ gridColumn: '1 / -1' }}><span className="cbk-addon-detail-label" style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Navigation size={9} /> Pickup Location</span><span className="cbk-addon-detail-value">{t.pickupLocation}</span></div>}
+                              {isRoundtrip && t.returnDate    && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Return Date</span><span className="cbk-addon-detail-value">{fmt(t.returnDate)}</span></div>}
+                              {isRoundtrip && t.departureTime && <div className="cbk-addon-detail-cell"><span className="cbk-addon-detail-label">Departure Time</span><span className="cbk-addon-detail-value">{t.departureTime}</span></div>}
+                              {isRoundtrip && t.dropoffLocation && <div className="cbk-addon-detail-cell" style={{ gridColumn: '1 / -1' }}><span className="cbk-addon-detail-label" style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Navigation size={9} /> Dropoff Location</span><span className="cbk-addon-detail-value">{t.dropoffLocation}</span></div>}
+                            </>
+                          )}
+
+                          {/* Transfer message */}
+                          {t.message && (
+                            <div className="cbk-addon-message">💬 {t.message}</div>
+                          )}
                         </div>
-
-                        {/* Schedule section */}
-                        {(t.travelDate || t.arrivalTime || t.pickupLocation || t.dropoffLocation || t.returnDate || t.departureTime) && (
-                          <>
-                            <div style={{ margin: '10px 0 6px', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <Clock size={11} /> Schedule
-                            </div>
-                            <div className="cbk-addon-detail-grid">
-                              {t.travelDate     && <DetailPair label="Travel Date"    value={fmt(t.travelDate)} />}
-                              {t.arrivalTime    && <DetailPair label="Arrival Time"   value={t.arrivalTime} />}
-                              {t.pickupLocation && (
-                                <>
-                                  <div className="cbk-addon-detail-label" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <Navigation size={10} /> Pickup Location
-                                  </div>
-                                  <div className="cbk-addon-detail-value">{t.pickupLocation}</div>
-                                </>
-                              )}
-                              {isRoundtrip && t.returnDate      && <DetailPair label="Return Date"    value={fmt(t.returnDate)} />}
-                              {isRoundtrip && t.departureTime   && <DetailPair label="Departure Time" value={t.departureTime} />}
-                              {isRoundtrip && t.dropoffLocation && (
-                                <>
-                                  <div className="cbk-addon-detail-label" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <Navigation size={10} /> Dropoff Location
-                                  </div>
-                                  <div className="cbk-addon-detail-value">{t.dropoffLocation}</div>
-                                </>
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* Transfer-specific message */}
-                        {t.message && (
-                          <div style={{ marginTop: 8, fontSize: 12, color: '#64748b', padding: '6px 10px', background: '#f8fafc', borderRadius: 6 }}>
-                            💬 {t.message}
-                          </div>
-                        )}
                       </div>
                     );
                   })}
@@ -498,13 +482,9 @@ const CustomBookingDetailModal = ({
 
             {/* Services Grand Total — only when BOTH tours + transfers exist */}
             {hasTours && hasTransfers && (
-              <div style={{
-                background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 10,
-                padding: '14px 18px', display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', fontWeight: 700,
-              }}>
-                <span style={{ color: '#065f46', fontSize: 13 }}>Services Grand Total</span>
-                <span style={{ color: '#059669', fontSize: 17 }}>₱{(toursTotal + transfersTotal).toLocaleString()}</span>
+              <div className="cbk-addon-total" style={{ borderRadius: 10 }}>
+                <span>Services Grand Total</span>
+                <strong>₱{(toursTotal + transfersTotal).toLocaleString()}</strong>
               </div>
             )}
 
@@ -570,33 +550,31 @@ const CustomBookingDetailModal = ({
                 : <><Archive size={14} /> Archive</>}
             </button>
 
-            {/* Edit button */}
             {handleEdit && (
               <button
                 className="cbk-modal-btn cbk-modal-btn-neutral"
                 onClick={() => { close(); handleEdit(selectedBooking); }}
                 disabled={actionLoading}
-                style={{ background: '#0f172a', color: 'white' }}
               >
                 <Pencil size={14} /> Edit
               </button>
             )}
 
-            {/* Order Slip & Voucher buttons — always available */}
             <button
               className="cbk-modal-btn cbk-modal-btn-neutral"
               onClick={() => setShowOrderSlip(true)}
-              style={{ background: '#0f172a', color: 'white' }}
             >
               <FileText size={14} /> Order Slip
             </button>
-            <button
-              className="cbk-modal-btn cbk-modal-btn-neutral"
-              onClick={() => setShowVoucher(true)}
-              style={{ background: '#1e3a8a', color: 'white' }}
-            >
-              <FileText size={14} /> Voucher
-            </button>
+
+            {status === 'CONFIRMED' && (
+              <button
+                className="cbk-modal-btn cbk-modal-btn-primary"
+                onClick={() => setShowVoucher(true)}
+              >
+                <FileText size={14} /> Voucher
+              </button>
+            )}
 
             {status === 'PENDING' && (
               <>
