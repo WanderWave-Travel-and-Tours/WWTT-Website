@@ -32,6 +32,7 @@ import AddTour from './components/addtours/addtours.jsx';
 import ViewTours from './components/viewtours/viewtours.jsx';
 import EditTour from './components/viewtours/EditTour.jsx';
 import TourBookingDashboard from './components/tourbooking/tourBooking.jsx'; // ✅ Tour Booking Dashboard
+import EditTourBooking from './components/tourbooking/Edittourbooking.jsx'; // ✅ Edit Tour Booking
 import TransferBookingDashboard from './components/transferbooking/TransferBooking.jsx'; // ✅ Transfer Booking Dashboard
 
 // ✅ NEW: Add Transfer
@@ -83,6 +84,8 @@ import CenomarRequest from './components/services/CenomarRequest/CenomarRequest.
 import PassportAppt from './components/services/PassportAppt/PassportAppt.jsx';
 import AirlineBooking from './components/services/AirlineBooking/AirlineBooking.jsx';
 import EditAirline from './components/services/AirlineBooking/EditAirline.jsx';
+import EditTransferBooking from './components/transferbooking/EditTransferBooking.jsx';
+import EditCustomBooking from './components/customizedBooking/EditCustomBooking.jsx'; // ✅ NEW
 import EditCenomar from './components/services/CenomarRequest/EditCenomar.jsx';
 import EditVisa from './components/services/VisaProcessing/EditVisa.jsx';
 import EditPassport from './components/services/PassportAppt/EditPassport.jsx';
@@ -144,6 +147,7 @@ const VALID_PROTECTED_ROUTES = [
   '/services/airlinebooking',
   '/services/hotelbooking',
   '/tour-booking',
+  '/EditTourBooking',
   '/services/tourarrangements',
   '/services/ferrybooking',
   '/services/marriagecert',
@@ -151,6 +155,8 @@ const VALID_PROTECTED_ROUTES = [
   '/services/billspayment',
   '/seller-rate',
   '/services/transfers',
+  '/EditTransferBooking',
+  '/EditCustomBooking',               // ✅ NEW
   '/services/custombooking',      // kept for backwards compat (redirects below)
   '/services/custombooking/all'   // ✅ Fixed: default serviceType route
 ];
@@ -616,12 +622,15 @@ function App() {
           {/* Airline Booking Routes */}
           <Route path="/services/airlinebooking" element={<ProtectedRoute><AirlineBooking /></ProtectedRoute>} />
           <Route path="/EditAirline/:id" element={<ProtectedRoute><EditAirline /></ProtectedRoute>} />
+          <Route path="/EditTransferBooking/:id" element={<ProtectedRoute><EditTransferBooking /></ProtectedRoute>} />
+          <Route path="/EditCustomBooking/:id" element={<ProtectedRoute><EditCustomBooking /></ProtectedRoute>} /> {/* ✅ NEW */}
           <Route path="/EditCenomar/:id" element={<ProtectedRoute><EditCenomar /></ProtectedRoute>} />
           <Route path="/EditVisa/:id" element={<ProtectedRoute><EditVisa /></ProtectedRoute>} />
           <Route path="/EditPassport/:id" element={<ProtectedRoute><EditPassport /></ProtectedRoute>} />
           <Route path="/EditPSA/:id" element={<ProtectedRoute><EditPSA /></ProtectedRoute>} />
           <Route path="/services/hotelbooking" element={<ProtectedRoute><HotelBooking /></ProtectedRoute>} />
           <Route path="/tour-booking" element={<ProtectedRoute><TourBookingDashboard /></ProtectedRoute>} />
+          <Route path="/EditTourBooking/:id" element={<ProtectedRoute><EditTourBooking /></ProtectedRoute>} />
           <Route path="/services/tourarrangements" element={<ProtectedRoute><TourBookingDashboard /></ProtectedRoute>} />
           <Route path="/services/ferrybooking" element={<ProtectedRoute><FerryBooking /></ProtectedRoute>} />
           <Route path="/services/transfers" element={<ProtectedRoute><TransferBookingDashboard /></ProtectedRoute>} />

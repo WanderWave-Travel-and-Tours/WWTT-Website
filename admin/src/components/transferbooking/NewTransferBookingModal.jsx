@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Users, Calendar, MapPin, CreditCard, Car, Clock, ArrowRightLeft, Navigation } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
-import LocationSelect from '../location/LocationSelect';
-import CustomTimePicker from '../timePicker/Clock';
+  import LocationSelect from '../location/LocationSelect';
+  import CustomTimePicker from '../timePicker/Clock';
 import './newBookingModal.css';
 import './PaymentOption.css';
 

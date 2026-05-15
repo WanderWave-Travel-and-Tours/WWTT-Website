@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X, CheckCircle, AlertCircle, XCircle,
   User, Mail, Calendar, MapPin, Clock,
   CreditCard, Wallet, Car, PhoneCall, Navigation,
   FileText, Check, Tag, Truck, ArrowLeftRight,
-  Receipt, Ticket
+  Receipt, Ticket, Pencil
 } from 'lucide-react';
 import './TransferBookingDetailModal.css';
 import TransferOrderSlipModal from './TransferOrderSlipModal';
@@ -33,6 +34,7 @@ const TransferBookingDetailModal = ({
   handleCancel,
   actionLoading,
 }) => {
+  const navigate = useNavigate();
   const [showOrderSlip, setShowOrderSlip] = useState(false);
   const [showVoucher,   setShowVoucher]   = useState(false);
 
@@ -88,13 +90,15 @@ const TransferBookingDetailModal = ({
   );
 
   // ── The booking object passed to child modals ─────────────────────────────
-  // Both TransferOrderSlipModal and TransferVoucherModal accept:
-  //   booking.rawData  (the mongoose doc)  OR  booking  (direct doc)
-  // selectedBooking already has rawData set from the dashboard, but we
-  // also ensure the raw fields are accessible via a unified shape.
   const modalBooking = {
     id:      b._id || b.id,
-    rawData: b.rawData || b,   // pass through original doc
+    rawData: b.rawData || b,
+  };
+
+  // ── Edit handler — close modal then navigate to edit page ─────────────────
+  const handleEdit = () => {
+    setShowModal(false);
+    navigate(`/EditTransferBooking/${b._id || b.id}`);
   };
 
   return (
@@ -182,20 +186,24 @@ const TransferBookingDetailModal = ({
                 <div className="trd-route-from">
                   <div className="trd-route-dot trd-dot-pickup" />
                   <div>
-                    <div className="trd-route-label">FROM</div>
-                    <div className="trd-route-place">{b.pickupLocation || 'N/A'}</div>
+                    <div className="trd-route-label">Pickup</div>
+                    <div className="trd-route-place" title={b.pickupLocation}>
+                      {b.pickupLocation || 'N/A'}
+                    </div>
                   </div>
                 </div>
                 <div className="trd-route-line">
                   <div className="trd-route-car">
-                    <Car size={16} style={{ color: '#0284c7' }} />
+                    <Car size={16} color="#475569" />
                   </div>
                 </div>
                 <div className="trd-route-to">
                   <div className="trd-route-dot trd-dot-dropoff" />
                   <div>
-                    <div className="trd-route-label">TO</div>
-                    <div className="trd-route-place">
+                    <div className="trd-route-label">
+                      {isRoundtrip ? 'Dropoff' : 'Destination'}
+                    </div>
+                    <div className="trd-route-place" title={isRoundtrip ? b.dropoffLocation : b.destination}>
                       {isRoundtrip ? (b.dropoffLocation || 'N/A') : (b.destination || 'Destination')}
                     </div>
                   </div>
@@ -305,7 +313,17 @@ const TransferBookingDetailModal = ({
             >
               Close
             </button>
+
             <div className="trd-footer-actions">
+
+              {/* ── Edit button ── */}
+              <button
+                className="trd-btn trd-btn-edit"
+                onClick={handleEdit}
+                title="Edit this booking"
+              >
+                <Pencil size={15} /> Edit
+              </button>
 
               {/* ── Document buttons ── */}
               <button
