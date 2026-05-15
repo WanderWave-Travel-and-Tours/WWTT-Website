@@ -1,94 +1,152 @@
 /* ========================================
-   CUSTOM BOOKING STATS CARDS
+   CUSTOM BOOKING — STATS CARDS
+   Visual style mirrors BookingStats (bkm-):
+   dark image background + navy gradient overlay
    ======================================== */
 
+/* ── Grid ── */
 .cbk-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  margin-bottom: 28px;
+  gap: 20px;
+  margin-bottom: 32px;
 }
 
+/* ── Base Card ── */
 .cbk-stat-card {
-  background: white;
-  border-radius: 14px;
-  padding: 22px;
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
-  transition: all 0.25s ease;
+  justify-content: space-between;
+  align-items: flex-start;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
+
+  /* Background image */
+  background-size: cover;
+  background-position: center;
+  background-color: #2b3a4a;
+  color: white;
 }
 
+/* ── Dark navy gradient overlay ── */
 .cbk-stat-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 100%;
   height: 100%;
-  background: var(--accent, #059669);
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.9) 0%,
+    rgba(15, 23, 42, 0.7) 40%,
+    rgba(15, 23, 42, 0.4) 70%,
+    rgba(15, 23, 42, 0.1) 100%
+  );
+  z-index: 1;
 }
 
+/* ── Hover ── */
 .cbk-stat-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
-.cbk-stat-icon-wrap {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+/* ── Text body ── */
+.cbk-stat-body {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--icon-bg, #ecfdf5);
-  color: var(--accent, #059669);
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  z-index: 2;
 }
-
-.cbk-stat-content { flex: 1; min-width: 0; }
 
 .cbk-stat-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
-  color: #0f172a;
+  color: white;
+  letter-spacing: -0.05em;
   line-height: 1;
   margin: 0 0 4px 0;
-  letter-spacing: -0.5px;
 }
 
 .cbk-stat-label {
   font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
+  font-weight: 600;
+  color: white;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
 }
 
 .cbk-stat-sub {
-  display: block;
   font-size: 11px;
-  color: #059669;
   font-weight: 600;
-  margin-top: 4px;
+  color: white;
+  opacity: 0.75;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
 }
 
-/* Color variants via CSS custom properties */
-.cbk-stat-card.total   { --accent: #059669; --icon-bg: #ecfdf5; }
-.cbk-stat-card.pending { --accent: #f59e0b; --icon-bg: #fffbeb; }
-.cbk-stat-card.confirmed { --accent: #3b82f6; --icon-bg: #eff6ff; }
-.cbk-stat-card.revenue { --accent: #8b5cf6; --icon-bg: #f5f3ff; }
+/* ── Icon wrapper ── */
+.cbk-stat-icon-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
-@media (max-width: 1024px) {
+/* ══════════════════════════════════════
+   VARIANT ICON COLORS
+   ══════════════════════════════════════ */
+
+/* Total (Amber — matches bkm-card-total-bookings) */
+.cbk-stat-card--total .cbk-stat-icon-wrap {
+  color: #f59e0b;
+}
+
+/* Pending (Blue — matches bkm-card-pending) */
+.cbk-stat-card--pending .cbk-stat-icon-wrap {
+  color: #3b82f6;
+}
+
+/* Confirmed (Green — matches bkm-card-confirmed) */
+.cbk-stat-card--confirmed .cbk-stat-icon-wrap {
+  color: #16a34a;
+}
+
+/* Revenue (Sky Blue — matches bkm-card-total-revenue) */
+.cbk-stat-card--revenue .cbk-stat-icon-wrap {
+  color: #0284c7;
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════ */
+
+@media (max-width: 1280px) {
   .cbk-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 1024px) {
+  .cbk-stats-grid { gap: 14px; }
+  .cbk-stat-value { font-size: 24px; }
+}
+
+@media (max-width: 640px) {
+  .cbk-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+  .cbk-stat-card { padding: 16px; }
+  .cbk-stat-value { font-size: 20px; }
+  .cbk-stat-label { font-size: 9.5px; }
+  .cbk-stat-sub   { font-size: 10px; }
+}
+
+@media (max-width: 380px) {
   .cbk-stats-grid { grid-template-columns: 1fr; }
   .cbk-stat-value { font-size: 22px; }
 }

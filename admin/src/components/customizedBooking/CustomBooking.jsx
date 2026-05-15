@@ -58,6 +58,13 @@ import CustomBookingForm from './CustomizedBookingForm';
 const API = 'https://wanderwaveph.onrender.com';
 const ITEMS_PER_PAGE = 10;
 
+const DESTINATION_IMAGES = {
+  TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',
+  PENDING:        'https://picsum.photos/seed/mountain/800/600',
+  CONFIRMED:      'https://picsum.photos/seed/city/800/600',
+  TOTAL_REVENUE:  'https://picsum.photos/seed/forest/800/600',
+};
+
 const CustomBooking = () => {
   const toast = useToast();
   const { serviceType } = useParams();
@@ -65,7 +72,7 @@ const CustomBooking = () => {
 
   // ── Resolve page title from service type ───────────────────────────────────
   const serviceInfo = SERVICE_LABELS[serviceType] || {
-    title: 'Booking Management',
+    title: 'Customized Booking Management',
     subtitle: 'View and manage all active customer bookings',
   };
 
@@ -440,27 +447,31 @@ const CustomBooking = () => {
       {
         label: 'Total Active Bookings',
         value: bookings.length,
-        icon: <FileText size={22} />,
+        icon: <FileText size={24} />,
         variant: 'total',
+        image: DESTINATION_IMAGES.TOTAL_BOOKINGS,
       },
       {
         label: 'Pending Balance',
         value: pendingBalanceCount,
-        icon: <Wallet size={22} />,
+        icon: <Wallet size={24} />,
         variant: 'pending',
         subtext: `₱${totalPendingBalance.toLocaleString()} total`,
+        image: DESTINATION_IMAGES.PENDING,
       },
       {
         label: 'Confirmed',
         value: bookings.filter(b => b.status === 'confirmed').length,
-        icon: <CheckCircle size={22} />,
+        icon: <CheckCircle size={24} />,
         variant: 'confirmed',
+        image: DESTINATION_IMAGES.CONFIRMED,
       },
       {
         label: 'Revenue (Confirmed)',
         value: `₱${confirmedRevenue.toLocaleString()}`,
-        icon: <CreditCard size={22} />,
+        icon: <CreditCard size={24} />,
         variant: 'revenue',
+        image: DESTINATION_IMAGES.TOTAL_REVENUE,
       },
     ];
   }, [bookings]);
