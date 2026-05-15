@@ -5,15 +5,18 @@ import {
   User, Mail, Calendar, MapPin, Clock,
   CreditCard, Wallet, Car, PhoneCall, Navigation,
   FileText, Check, Tag, Truck, ArrowLeftRight,
-  Receipt, Ticket, Pencil
+  Receipt, Ticket, Pencil, DollarSign
 } from 'lucide-react';
 import './TransferBookingDetailModal.css';
 import TransferOrderSlipModal from './TransferOrderSlipModal';
 import TransferVoucherModal from './TransferVoucherModal';
 
+/* ─── Helpers ─────────────────────────────────────────────────── */
 const formatDate = (d) => {
   if (!d) return 'N/A';
-  return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(d).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+  });
 };
 
 const getStatusConfig = (status) => {
@@ -26,6 +29,20 @@ const getStatusConfig = (status) => {
   return configs[(status || 'PENDING').toUpperCase()] || configs.PENDING;
 };
 
+/* ─── InfoItem — matches cnm-info-item pattern ────────────────── */
+const InfoItem = ({ label, value, icon: Icon }) => (
+  <div className="cnm-info-item">
+    <div className="cnm-info-icon">
+      {Icon && <Icon size={18} />}
+    </div>
+    <div className="cnm-info-content">
+      <label className="cnm-info-label">{label}</label>
+      <span className="cnm-info-value">{value || 'N/A'}</span>
+    </div>
+  </div>
+);
+
+/* ─── Component ───────────────────────────────────────────────── */
 const TransferBookingDetailModal = ({
   showModal,
   selectedBooking,
@@ -42,34 +59,21 @@ const TransferBookingDetailModal = ({
 
   const b      = selectedBooking;
   const status = (b.status || 'pending').toUpperCase();
-  const statusConfig = getStatusConfig(status);
-  const StatusIcon   = statusConfig.Icon;
+  const { color: statusColor, Icon: StatusIcon, label: statusLabel, description: statusDesc } = getStatusConfig(status);
 
-  // ── Derived payment values from model fields ─────────────────────────────
+  /* ── Payment values ─────────────────────────────────────────── */
   const isPartialPayment = b.paymentType === 'partial';
   const totalAmount      = b.totalAmount || 0;
   const remainingBalance = b.remainingBalance || 0;
   const initialPaid      = b.initialPaymentAmount || (totalAmount - remainingBalance);
   const isFullyPaid      = remainingBalance <= 0 && initialPaid > 0;
-
-  // ── Currency symbol from model: currency (default 'PHP') ─────────────────
-  const currencySymbol = b.currency === 'PHP' ? '₱' : (b.currency || '₱');
+  const currencySymbol   = b.currency === 'PHP' ? '₱' : (b.currency || '₱');
 
   const canConfirm = status === 'PENDING';
   const canCancel  = status === 'PENDING' || status === 'CONFIRMED';
-
-  // ── Roundtrip flag ───────────────────────────────────────────────────────
   const isRoundtrip = b.transferType === 'roundtrip';
 
-  const colorMap = {
-    amber: { bg: '#fffbeb', border: '#fcd34d', text: '#92400e', badge: '#f59e0b' },
-    green: { bg: '#f0fdf4', border: '#86efac', text: '#14532d', badge: '#22c55e' },
-    red:   { bg: '#fef2f2', border: '#fecaca', text: '#7f1d1d', badge: '#ef4444' },
-    blue:  { bg: '#eff6ff', border: '#93c5fd', text: '#1e3a5f', badge: '#3b82f6' },
-  };
-  const colors = colorMap[statusConfig.color] || colorMap.amber;
-
-  // ── Payment status badge config ───────────────────────────────────────────
+  /* ── Payment status badge ───────────────────────────────────── */
   const paymentStatusMap = {
     pending:  { label: 'Pending',  color: '#f59e0b' },
     paid:     { label: 'Paid',     color: '#22c55e' },
@@ -79,131 +83,125 @@ const TransferBookingDetailModal = ({
   };
   const paymentStatusConfig = paymentStatusMap[(b.paymentStatus || 'pending').toLowerCase()] || paymentStatusMap.pending;
 
-  const InfoRow = ({ label, value, icon: Icon }) => (
-    <div className="trd-info-row">
-      {Icon && <Icon size={14} className="trd-info-icon" />}
-      <div className="trd-info-content">
-        <span className="trd-info-label">{label}</span>
-        <span className="trd-info-value">{value || 'N/A'}</span>
-      </div>
-    </div>
-  );
+  /* ── Handlers ───────────────────────────────────────────────── */
+  const closeModal = () => setShowModal(false);
 
-  // ── The booking object passed to child modals ─────────────────────────────
-  const modalBooking = {
-    id:      b._id || b.id,
-    rawData: b.rawData || b,
-  };
-
-  // ── Edit handler — close modal then navigate to edit page ─────────────────
   const handleEdit = () => {
     setShowModal(false);
     navigate(`/EditTransferBooking/${b._id || b.id}`);
   };
 
+  const modalBooking = { id: b._id || b.id, rawData: b.rawData || b };
+
   return (
     <>
-      <div className="trd-overlay" onClick={() => setShowModal(false)}>
-        <div className="trd-modal" onClick={e => e.stopPropagation()}>
+      {/* ── Overlay ──────────────────────────────────────────── */}
+      <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-content trd-modal-content" onClick={e => e.stopPropagation()}>
 
-          {/* ── Header ─────────────────────────────────────────── */}
-          <div className="trd-header" style={{ borderBottom: `3px solid ${colors.badge}` }}>
-            <div className="trd-header-left">
-              <div className="trd-header-icon" style={{ background: colors.bg, border: `1px solid ${colors.border}` }}>
-                <Car size={22} style={{ color: colors.badge }} />
+          {/* ── Header ─────────────────────────────────────── */}
+          <div className={`modal-header trd-header-accent trd-accent-${statusColor}`}>
+            <div className="cnm-header-content">
+              {/* Title group */}
+              <div className="cnm-title-group">
+                <div className="trd-title-row">
+                  <div className={`trd-header-icon-wrap trd-icon-${statusColor}`}>
+                    <Car size={20} />
+                  </div>
+                  <div>
+                    <h2 className="cnm-title">Transfer Booking Details</h2>
+                    <div className="cnm-meta">
+                      <span className="cnm-ref">ID: #{b._id || b.id}</span>
+                      <span className="cnm-divider">•</span>
+                      <span className="cnm-date">Booked: {formatDate(b.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h2 className="trd-title">Transfer Booking Details</h2>
-                <p className="trd-subtitle">
-                  <span className="trd-booking-id">{b._id || b.id}</span>
-                  <span className="trd-dot">•</span>
-                  Booked {formatDate(b.createdAt)}
-                </p>
+
+              {/* Rich status badge — matches BookingDetailModal */}
+              <div className={`cnm-status-badge cnm-status-${statusColor}`}>
+                <div className="cnm-status-icon">
+                  <StatusIcon size={16} />
+                </div>
+                <div className="cnm-status-content">
+                  <span className="cnm-status-label">{statusLabel}</span>
+                  <span className="cnm-status-desc">{statusDesc}</span>
+                </div>
               </div>
             </div>
-            <div className="trd-header-right">
-              <div className="trd-status-pill" style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text }}>
-                <StatusIcon size={14} />
-                <span>{statusConfig.label}</span>
-              </div>
-              <button className="trd-close-btn" onClick={() => setShowModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
+
+            <button className="modal-close" onClick={closeModal} aria-label="Close modal">
+              <X size={20} />
+            </button>
           </div>
 
-          {/* ── Body ───────────────────────────────────────────── */}
-          <div className="trd-body">
+          {/* ── Body ───────────────────────────────────────── */}
+          <div className="modal-body">
 
-            {/* Customer Info */}
-            <div className="trd-section">
-              <h3 className="trd-section-title">
-                <User size={16} /> Customer Information
-              </h3>
-              <div className="trd-info-grid">
-                <InfoRow label="Full Name"   value={b.fullName}       icon={User}      />
-                <InfoRow label="Email"       value={b.email}          icon={Mail}      />
-                <InfoRow label="Phone"       value={b.phone}          icon={PhoneCall} />
+            {/* ── Customer Information ──────────────────────── */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Customer Information</h3>
+              </div>
+              <div className="cnm-grid">
+                <InfoItem label="Full Name"    value={b.fullName}  icon={User}      />
+                <InfoItem label="Email"        value={b.email}     icon={Mail}      />
+                <InfoItem label="Phone Number" value={b.phone}     icon={PhoneCall} />
               </div>
             </div>
 
-            {/* Transfer Details */}
-            <div className="trd-section">
-              <h3 className="trd-section-title">
-                <Navigation size={16} /> Transfer Details
-              </h3>
-              <div className="trd-info-grid">
-                <InfoRow label="Activity"         value={b.activityName}                                            icon={FileText}       />
-                {b.bookingType && (
-                  <InfoRow label="Booking Type"   value={b.bookingType}                                             icon={FileText}       />
-                )}
-                <InfoRow label="Transfer Type"    value={b.transferType === 'roundtrip' ? 'Round Trip' : 'One Way'} icon={ArrowLeftRight} />
-                {b.destination && (
-                  <InfoRow label="Destination"    value={b.destination}                                             icon={MapPin}         />
-                )}
-                {b.category && (
-                  <InfoRow label="Category"       value={b.category}                                                icon={FileText}       />
-                )}
-                {b.supplierName && (
-                  <InfoRow label="Supplier"       value={b.supplierName}                                            icon={Truck}          />
-                )}
-                <InfoRow label="Pickup Location"  value={b.pickupLocation}                                          icon={Navigation}     />
-                {isRoundtrip && (
-                  <InfoRow label="Dropoff Location" value={b.dropoffLocation}                                       icon={MapPin}         />
-                )}
-                <InfoRow label="Travel Date"      value={formatDate(b.travelDate)}                                  icon={Calendar}       />
-                {isRoundtrip && (
-                  <InfoRow label="Return Date"    value={formatDate(b.returnDate)}                                  icon={Calendar}       />
-                )}
-                <InfoRow label="Arrival Time"     value={b.arrivalTime || 'Not specified'}                          icon={Clock}          />
-                {isRoundtrip && (
-                  <InfoRow label="Departure Time" value={b.departureTime || 'Not specified'}                        icon={Clock}          />
-                )}
+            {/* ── Transfer Details ─────────────────────────── */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Transfer Details</h3>
+                {/* Transfer type badge */}
+                <span className={`cnm-badge trd-type-badge ${
+                  isRoundtrip ? 'trd-type-roundtrip' : 'trd-type-oneway'
+                }`}>
+                  <ArrowLeftRight size={11} />
+                  {isRoundtrip ? 'Round Trip' : 'One Way'}
+                </span>
               </div>
 
-              {/* Route visual */}
+              <div className="cnm-grid">
+                <InfoItem label="Activity / Service" value={b.activityName}                                              icon={FileText}       />
+                {b.bookingType  && <InfoItem label="Booking Type"    value={b.bookingType}                               icon={FileText}       />}
+                {b.destination  && <InfoItem label="Destination"     value={b.destination}                               icon={MapPin}         />}
+                {b.category     && <InfoItem label="Category"        value={b.category}                                  icon={FileText}       />}
+                {b.supplierName && <InfoItem label="Supplier"        value={b.supplierName}                              icon={Truck}          />}
+                <InfoItem label="Pickup Location"   value={b.pickupLocation}                                             icon={Navigation}     />
+                {isRoundtrip    && <InfoItem label="Dropoff Location" value={b.dropoffLocation}                          icon={MapPin}         />}
+                <InfoItem label="Travel Date"       value={formatDate(b.travelDate)}                                     icon={Calendar}       />
+                {isRoundtrip    && <InfoItem label="Return Date"      value={formatDate(b.returnDate)}                   icon={Calendar}       />}
+                <InfoItem label="Arrival Time"      value={b.arrivalTime    || 'Not specified'}                          icon={Clock}          />
+                {isRoundtrip    && <InfoItem label="Departure Time"   value={b.departureTime  || 'Not specified'}        icon={Clock}          />}
+              </div>
+
+              {/* ── Route visual ──────────────────────────── */}
               <div className="trd-route-visual">
+                {/* FROM */}
                 <div className="trd-route-from">
                   <div className="trd-route-dot trd-dot-pickup" />
                   <div>
                     <div className="trd-route-label">Pickup</div>
-                    <div className="trd-route-place" title={b.pickupLocation}>
-                      {b.pickupLocation || 'N/A'}
-                    </div>
+                    <div className="trd-route-place">{b.pickupLocation || 'N/A'}</div>
                   </div>
                 </div>
+
+                {/* Line + car icon */}
                 <div className="trd-route-line">
                   <div className="trd-route-car">
-                    <Car size={16} color="#475569" />
+                    <Car size={14} color="#475569" />
                   </div>
                 </div>
+
+                {/* TO */}
                 <div className="trd-route-to">
                   <div className="trd-route-dot trd-dot-dropoff" />
                   <div>
-                    <div className="trd-route-label">
-                      {isRoundtrip ? 'Dropoff' : 'Destination'}
-                    </div>
-                    <div className="trd-route-place" title={isRoundtrip ? b.dropoffLocation : b.destination}>
+                    <div className="trd-route-label">Drop-off</div>
+                    <div className="trd-route-place">
                       {isRoundtrip ? (b.dropoffLocation || 'N/A') : (b.destination || 'Destination')}
                     </div>
                   </div>
@@ -211,185 +209,203 @@ const TransferBookingDetailModal = ({
               </div>
             </div>
 
-            {/* Additional Notes */}
+            {/* ── Additional Notes ─────────────────────────── */}
             {(b.specialRequests || b.message) && (
-              <div className="trd-section">
-                <h3 className="trd-section-title">
-                  <FileText size={16} /> Additional Notes
-                </h3>
-                <div className="trd-info-grid">
+              <div className="cnm-card">
+                <div className="cnm-card-header">
+                  <h3 className="cnm-card-title">Additional Notes</h3>
+                </div>
+                <div className="cnm-grid">
                   {b.specialRequests && (
-                    <InfoRow label="Special Requests" value={b.specialRequests} icon={FileText} />
+                    <InfoItem label="Special Requests" value={b.specialRequests} icon={FileText} />
                   )}
                   {b.message && (
-                    <InfoRow label="Message"          value={b.message}         icon={FileText} />
+                    <InfoItem label="Message" value={b.message} icon={FileText} />
                   )}
                 </div>
               </div>
             )}
 
-            {/* Payment */}
-            <div className="trd-section">
-              <h3 className="trd-section-title">
-                <Wallet size={16} /> Payment Summary
-              </h3>
-              <div className="trd-payment-box">
-                <div className="trd-payment-row">
-                  <span>Payment Type</span>
-                  <span className="trd-payment-type">{isPartialPayment ? 'Partial Payment' : 'Full Payment'}</span>
+            {/* ── Payment Details ──────────────────────────── */}
+            <div className="cnm-payment-card">
+              <div className="cnm-payment-header">
+                <div className="cnm-payment-title">
+                  <CreditCard size={16} />
+                  Payment Details
                 </div>
-                <div className="trd-payment-row">
-                  <span>Payment Status</span>
-                  <span style={{ fontWeight: 600, color: paymentStatusConfig.color }}>
-                    {paymentStatusConfig.label}
-                  </span>
+                <div className={`cnm-payment-badge ${isPartialPayment ? 'partial' : 'full'}`}>
+                  {isPartialPayment ? 'Partial Payment' : 'Full Payment'}
                 </div>
-                <div className="trd-payment-row">
-                  <span>Currency</span>
-                  <span style={{ fontWeight: 600, color: '#1e293b' }}>{b.currency || 'PHP'}</span>
-                </div>
-                {b.oneWayPrice > 0 && (
-                  <div className="trd-payment-row">
-                    <span>One Way Price</span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{currencySymbol}{b.oneWayPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {b.roundtripPrice > 0 && (
-                  <div className="trd-payment-row">
-                    <span>Roundtrip Price</span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{currencySymbol}{b.roundtripPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {b.sellingPrice > 0 && (
-                  <div className="trd-payment-row">
-                    <span>Selling Price</span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{currencySymbol}{b.sellingPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {isPartialPayment && (
-                  <>
-                    <div className="trd-payment-row">
-                      <span>Amount Paid</span>
-                      <span className="trd-paid-amount">{currencySymbol}{initialPaid.toLocaleString()}</span>
-                    </div>
-                    <div className="trd-payment-row">
-                      <span>Remaining Balance</span>
-                      <span className={remainingBalance > 0 ? 'trd-balance-due' : 'trd-balance-clear'}>
-                        {currencySymbol}{remainingBalance.toLocaleString()}
-                      </span>
-                    </div>
-                  </>
-                )}
-                <div className="trd-payment-row trd-payment-total">
-                  <span>Total Amount</span>
-                  <span>{currencySymbol}{totalAmount.toLocaleString()}</span>
-                </div>
-                {b.promoCode && (
-                  <div className="trd-payment-row">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Tag size={13} /> Promo Code
+              </div>
+
+              <div className="cnm-payment-body">
+                <div className="cnm-payment-section">
+
+                  <div className="cnm-payment-row">
+                    <span className="cnm-payment-label">Payment Status</span>
+                    <span className="cnm-payment-value" style={{ color: paymentStatusConfig.color, fontWeight: 800 }}>
+                      {paymentStatusConfig.label}
                     </span>
-                    <span style={{ fontWeight: 600, color: '#7c3aed' }}>{b.promoCode}</span>
                   </div>
-                )}
-                <div className="trd-payment-status">
-                  {isFullyPaid
-                    ? <span className="trd-fully-paid"><Check size={14} /> Fully Paid</span>
-                    : remainingBalance > 0
-                      ? <span className="trd-balance-label">Balance Due: {currencySymbol}{remainingBalance.toLocaleString()}</span>
-                      : <span className="trd-pending-payment">Pending Payment</span>
-                  }
+
+                  <div className="cnm-payment-row">
+                    <span className="cnm-payment-label">Payment Type</span>
+                    <span className="cnm-payment-value">
+                      {isPartialPayment ? 'Pay in Partial' : 'Pay in Full'}
+                    </span>
+                  </div>
+
+                  <div className="cnm-payment-row">
+                    <span className="cnm-payment-label">Currency</span>
+                    <span className="cnm-payment-value">{b.currency || 'PHP'}</span>
+                  </div>
+
+                  {b.oneWayPrice > 0 && (
+                    <div className="cnm-payment-row">
+                      <span className="cnm-payment-label">One Way Price</span>
+                      <span className="cnm-payment-value">{currencySymbol}{b.oneWayPrice.toLocaleString()}</span>
+                    </div>
+                  )}
+
+                  {b.roundtripPrice > 0 && (
+                    <div className="cnm-payment-row">
+                      <span className="cnm-payment-label">Round Trip Price</span>
+                      <span className="cnm-payment-value">{currencySymbol}{b.roundtripPrice.toLocaleString()}</span>
+                    </div>
+                  )}
+
+                  {b.sellingPrice > 0 && (
+                    <div className="cnm-payment-row">
+                      <span className="cnm-payment-label">Selling Price</span>
+                      <span className="cnm-payment-value">{currencySymbol}{b.sellingPrice.toLocaleString()}</span>
+                    </div>
+                  )}
+
+                  {isPartialPayment && (
+                    <>
+                      <div className="cnm-payment-row">
+                        <span className="cnm-payment-label">Amount Paid</span>
+                        <span className="cnm-payment-value" style={{ color: '#059669', fontWeight: 800 }}>
+                          {currencySymbol}{initialPaid.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="cnm-payment-row">
+                        <span className="cnm-payment-label">Remaining Balance</span>
+                        <span className="cnm-payment-value" style={{
+                          color: remainingBalance > 0 ? '#d97706' : '#059669', fontWeight: 800
+                        }}>
+                          {currencySymbol}{remainingBalance.toLocaleString()}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="cnm-payment-row">
+                    <span className="cnm-payment-label" style={{ fontWeight: 800, color: '#0f172a' }}>
+                      Total Amount
+                    </span>
+                    <span className="cnm-payment-value cnm-val-amount">
+                      {currencySymbol}{totalAmount.toLocaleString()}
+                    </span>
+                  </div>
+
+                  {b.promoCode && (
+                    <div className="cnm-payment-row">
+                      <span className="cnm-payment-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Tag size={13} /> Promo Code
+                      </span>
+                      <span className="cnm-payment-value" style={{ color: '#7c3aed' }}>{b.promoCode}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Payment status summary box ──────────── */}
+                <div className={`cnm-payment-status-box ${isFullyPaid ? 'paid' : 'pending'}`}>
+                  <div className="cnm-payment-status-left">
+                    <div className="cnm-payment-status-title">
+                      {isFullyPaid
+                        ? <><Check size={13} style={{ marginRight: 5 }} /> Fully Paid</>
+                        : remainingBalance > 0
+                          ? 'Balance Due'
+                          : 'Pending Payment'}
+                    </div>
+                    <div className="cnm-payment-status-amount">
+                      {isFullyPaid
+                        ? `${currencySymbol}${totalAmount.toLocaleString()}`
+                        : remainingBalance > 0
+                          ? `${currencySymbol}${remainingBalance.toLocaleString()}`
+                          : `${currencySymbol}0`}
+                    </div>
+                  </div>
+                  <div className="cnm-payment-status-icon">
+                    {isFullyPaid ? <CheckCircle size={22} /> : <AlertCircle size={22} />}
+                  </div>
                 </div>
               </div>
             </div>
 
-          </div>
+          </div>{/* /modal-body */}
 
-          {/* ── Footer Actions ──────────────────────────────────── */}
-          <div className="trd-footer">
-            <button
-              className="trd-btn trd-btn-close"
-              onClick={() => setShowModal(false)}
-            >
-              Close
+          {/* ── Footer Actions ──────────────────────────── */}
+          <div className="modal-footer">
+
+            {/* Edit */}
+            <button className="cnm-btn trd-btn-edit" onClick={handleEdit} title="Edit booking">
+              <Pencil size={14} /> Edit
             </button>
 
-            <div className="trd-footer-actions">
+            {/* Order Slip */}
+            <button
+              className="cnm-btn"
+              style={{
+                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
+              }}
+              onClick={() => setShowOrderSlip(true)}
+            >
+              <Receipt size={14} /> Order Slip
+            </button>
 
-              {/* ── Edit button ── */}
-              <button
-                className="trd-btn trd-btn-edit"
-                onClick={handleEdit}
-                title="Edit this booking"
-              >
-                <Pencil size={15} /> Edit
+            {/* Voucher */}
+            {status === 'CONFIRMED' && (
+              <button className="cnm-btn cnm-btn-primary" onClick={() => setShowVoucher(true)}>
+                <Ticket size={14} /> View Voucher
               </button>
+            )}
 
-              {/* ── Document buttons ── */}
+            {/* Cancel */}
+            {canCancel && (
               <button
-                className="trd-btn"
-                style={{
-                  background: '#fff7ed',
-                  color: '#ea580c',
-                  border: '1px solid #fed7aa',
-                }}
-                onClick={() => setShowOrderSlip(true)}
-                title="View Order Slip"
+                className="cnm-btn cnm-btn-danger cnm-btn-outline"
+                onClick={() => { closeModal(); handleCancel(b); }}
+                disabled={actionLoading}
               >
-                <Receipt size={15} /> Order Slip
+                <XCircle size={14} /> Cancel Booking
               </button>
+            )}
 
+            {/* Confirm */}
+            {canConfirm && (
               <button
-                className="trd-btn"
-                style={{
-                  background: '#eff6ff',
-                  color: '#1d4ed8',
-                  border: '1px solid #bfdbfe',
-                }}
-                onClick={() => setShowVoucher(true)}
-                title="View Travel Voucher"
+                className="cnm-btn cnm-btn-success"
+                onClick={() => { closeModal(); handleConfirm(b); }}
+                disabled={actionLoading}
               >
-                <Ticket size={15} /> Voucher
+                <CheckCircle size={14} /> Confirm Booking
               </button>
-
-              {/* ── Booking action buttons ── */}
-              {canCancel && (
-                <button
-                  className="trd-btn trd-btn-cancel"
-                  onClick={() => { setShowModal(false); handleCancel(b); }}
-                  disabled={actionLoading}
-                >
-                  <XCircle size={16} /> Cancel Booking
-                </button>
-              )}
-              {canConfirm && (
-                <button
-                  className="trd-btn trd-btn-confirm"
-                  onClick={() => { setShowModal(false); handleConfirm(b); }}
-                  disabled={actionLoading}
-                >
-                  <CheckCircle size={16} /> Confirm Booking
-                </button>
-              )}
-            </div>
+            )}
           </div>
 
         </div>
       </div>
 
-      {/* ── Child document modals ─────────────────────────── */}
+      {/* ── Child modals ────────────────────────────────── */}
       {showOrderSlip && (
-        <TransferOrderSlipModal
-          booking={modalBooking}
-          onClose={() => setShowOrderSlip(false)}
-        />
+        <TransferOrderSlipModal booking={modalBooking} onClose={() => setShowOrderSlip(false)} />
       )}
-
       {showVoucher && (
-        <TransferVoucherModal
-          booking={modalBooking}
-          onClose={() => setShowVoucher(false)}
-        />
+        <TransferVoucherModal booking={modalBooking} onClose={() => setShowVoucher(false)} />
       )}
     </>
   );

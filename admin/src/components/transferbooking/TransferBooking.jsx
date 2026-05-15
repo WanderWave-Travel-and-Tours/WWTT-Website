@@ -264,10 +264,22 @@ const TransferBookingDashboard = () => {
     });
   };
 
+  // ── Normalise booking shape ───────────────────────────────────────────────
+  // handleConfirm / handleCancel are called from TWO places:
+  //   1. The table row  → formatted booking  { mongoId, customerName, id }
+  //   2. The detail modal → rawData           { _id,     fullName        }
+  // This helper returns a valid Mongo ID and display strings for both shapes.
+  const normaliseBooking = (booking) => ({
+    id:   booking.mongoId || booking._id,
+    name: booking.customerName || booking.fullName || 'Customer',
+    tag:  booking.id || `#${String(booking.mongoId || booking._id).slice(-6).toUpperCase()}`,
+  });
+
   const updateStatus = async (booking, status) => {
+    const { id, name, tag } = normaliseBooking(booking);
     setActionLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/transfer-bookings/${booking.mongoId}/status`, {
+      const res = await fetch(`${BASE_URL}/api/transfer-bookings/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -276,7 +288,7 @@ const TransferBookingDashboard = () => {
       if (!res.ok) throw new Error(json.message || `Server returned ${res.status}`);
       await fetchBookings();
       toast.success(
-        `Transfer booking ${booking.id} for ${booking.customerName} ${status}!`,
+        `Transfer booking ${tag} for ${name} ${status}!`,
         `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
         4000
       );
@@ -287,21 +299,25 @@ const TransferBookingDashboard = () => {
     }
   };
 
-  const handleConfirm = (booking) =>
+  const handleConfirm = (booking) => {
+    const { name, tag } = normaliseBooking(booking);
     askConfirmation(
       'Confirm Transfer Booking',
-      `Confirm transfer booking ${booking.id} for ${booking.customerName}?`,
+      `Confirm transfer booking ${tag} for ${name}?`,
       () => updateStatus(booking, 'confirmed'),
       'primary'
     );
+  };
 
-  const handleCancel = (booking) =>
+  const handleCancel = (booking) => {
+    const { name, tag } = normaliseBooking(booking);
     askConfirmation(
       'Cancel Transfer Booking',
-      `Cancel transfer booking ${booking.id} for ${booking.customerName}? This cannot be undone.`,
+      `Cancel transfer booking ${tag} for ${name}? This cannot be undone.`,
       () => updateStatus(booking, 'cancelled'),
       'danger'
     );
+  };
 
   const handleViewDetails = (booking) => { setSelected(booking.rawData || booking); setShowModal(true); };
 

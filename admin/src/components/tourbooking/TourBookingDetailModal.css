@@ -188,6 +188,56 @@
 .cnm-info-value   { font-size: 15px; font-weight: 700; color: #0f172a; word-break: break-word; }
 .cnm-val-amount   { color: #16a34a; font-size: 18px; }
 
+
+/* ===== PASSENGER GRID CARDS ===== */
+.cnm-pax-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cnm-pax-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cnm-pax-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #f0fdfa, #ccfbf1);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cnm-pax-card .cnm-pax-number {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #0d9488; color: white;
+  font-size: 12px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.cnm-pax-name {
+  font-size: 14px; font-weight: 700; color: #0f172a;
+}
+
+.cnm-pax-card .cnm-grid {
+  padding: 16px;
+}
+
+/* ===== BOOKING INFO — TEAL STYLE (passenger grid) ===== */
+.cnm-grid-teal .cnm-info-icon {
+  background: linear-gradient(135deg, #ccfbf1, #99f6e4);
+  color: #0d9488;
+  box-shadow: 0 2px 8px rgba(13,148,136,0.15);
+}
+
+.cnm-grid-teal .cnm-info-label {
+  color: #0d9488;
+}
+
 /* MESSAGE BOX */
 .cnm-message-box {
   background: linear-gradient(135deg, #f8fafc, #f1f5f9);
@@ -385,21 +435,36 @@
 
 /* ===== FOOTER ===== */
 .modal-footer {
-  padding: 24px 32px;
+  padding: 12px 20px;
   border-top: 2px solid #e2e8f0;
   background: linear-gradient(to top, #fafbfc, #ffffff);
   display: flex;
-  justify-content: flex-end;
-  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   border-radius: 0 0 20px 20px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.modal-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.modal-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 /* ===== BUTTONS ===== */
 .cnm-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  gap: 10px; padding: 12px 24px; border-radius: 10px;
-  font-size: 14px; font-weight: 700; cursor: pointer;
+  gap: 5px; padding: 7px 10px; border-radius: 8px;
+  font-size: 11.5px; font-weight: 700; cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none; white-space: nowrap; position: relative; overflow: hidden;
 }
@@ -423,7 +488,6 @@
 .cnm-btn-danger.cnm-btn-outline { border: 2px solid #fee2e2; background: white; color: #dc2626; box-shadow: none; }
 .cnm-btn-danger.cnm-btn-outline:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; transform: translateY(-2px); }
 
-.cnm-btn-left { margin-right: auto; }
 
 /* ===== SPINNER ===== */
 .cnm-spinner {
@@ -448,9 +512,9 @@
   .cnm-status-badge { width: 100%; margin-top: 10px; }
   .cnm-payment-header { flex-direction: column; align-items: flex-start; }
   .cnm-payment-badge { margin-top: 5px; }
-  .modal-footer { flex-direction: column-reverse; gap: 12px; }
-  .cnm-btn { width: 100%; justify-content: center; }
-  .cnm-btn-left { margin-right: 0; }
+  .modal-footer { flex-wrap: wrap; padding: 10px 16px; }
+  .modal-footer-left, .modal-footer-right { gap: 5px; }
+  .cnm-btn { font-size: 11px; padding: 6px 9px; }
 }
 
 @media (max-width: 576px) {
