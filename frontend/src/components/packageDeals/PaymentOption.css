@@ -103,9 +103,11 @@
   margin-bottom: 20px;
 }
 
-@media (max-width: 768px) {
+/* Mobile: stack payment cards vertically (same behaviour as TransferBookingFormModal) */
+@media (max-width: 640px) {
   .bfm-payment-options {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 }
 
