@@ -4,8 +4,6 @@ import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as Calendar
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 // Import the same CSS files as BookingFormModal
-import '../packageDeals/BookingFormModal.css';
-import '../packageDeals/PaymentOption.css';
 import './TourBookingFormModal.css';
 
 // ✅ CUSTOM DATE PICKER COMPONENT - MODAL STYLE (matches Wanderwave UI)
@@ -873,140 +871,132 @@ const TourBookingFormModal = ({
 
             {/* PAYMENT OPTIONS */}
             {isLastPassenger && (
-              <div className="bfm-payment-section">
-                <div className="bfm-payment-header">
-                  <Wallet size={18} />
-                  <h3>Select Payment Option</h3>
-                </div>
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '2px solid #e2e8f0' }}>
 
-                {/* ── Full Payment Required Notice (shown only when partial is not allowed) ── */}
-                {!isPartialPaymentAllowed && (
-                  <div className="bfm-full-payment-notice">
-                    <div className="bfm-full-payment-notice-title">
-                      <span className="bfm-lightning-icon">⚡</span> Full Payment Required
+                <div className="tbfm-section-header" style={{ marginTop: '8px' }}>
+                  <CreditCard size={16} className="tbfm-section-icon" />
+                  <span>Payment Option</span>
+                </div>
+                <div className="tbfm-section-divider" />
+
+                {!isPartialPaymentAllowed ? (
+                  /* ── Restricted: only full payment ── */
+                  <div className="tbfm-restricted-payment-section">
+                    <div className="tbfm-restricted-banner">
+                      <span className="tbfm-restricted-banner-icon">⚡</span>
+                      <div className="tbfm-restricted-banner-text">
+                        <strong>Full Payment Required</strong>
+                        <span>Partial payment is unavailable for travel dates of <strong>today</strong> or <strong>tomorrow</strong>.</span>
+                      </div>
                     </div>
-                    <div className="bfm-full-payment-notice-text">
-                      Partial payment is unavailable for travel dates of{' '}
-                      <strong>today</strong> or <strong>tomorrow</strong>.
+                    <div className="tbfm-payment-card active tbfm-payment-card-solo" onClick={() => setPaymentType('full')}>
+                      <div className="tbfm-solo-card-inner">
+                        <div className="tbfm-solo-card-left">
+                          <div className="tbfm-payment-card-header">
+                            <div className="tbfm-payment-radio">
+                              <div className="tbfm-radio-dot active" />
+                            </div>
+                            <div className="tbfm-payment-card-title">
+                              <CreditCard size={15} className="tbfm-card-icon" />
+                              <span>Pay in Full</span>
+                              <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+                            </div>
+                          </div>
+                          <div className="tbfm-payment-card-body">
+                            <p className="tbfm-payment-description">Complete payment now and secure your booking instantly.</p>
+                            <ul className="tbfm-payment-benefits">
+                              <li>✓ Instant confirmation</li>
+                              <li>✓ No further payments needed</li>
+                              <li>✓ Priority processing</li>
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="tbfm-solo-card-right">
+                          <div className="tbfm-payment-amount tbfm-solo-amount">
+                            {currencySymbol}{formatCurrency(finalAmount)}
+                          </div>
+                          <span className="tbfm-solo-total-label">Total Amount</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                ) : (
+                  /* ── Normal: full + partial side by side ── */
+                  <div className="tbfm-payment-options">
+                    {/* Full Payment */}
+                    <div
+                      className={`tbfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
+                      onClick={() => setPaymentType('full')}
+                    >
+                      <div className="tbfm-payment-card-header">
+                        <div className="tbfm-payment-radio">
+                          <div className={`tbfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                        </div>
+                        <div className="tbfm-payment-card-title">
+                          <CreditCard size={15} className="tbfm-card-icon" />
+                          <span>Pay in Full</span>
+                          <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+                        </div>
+                      </div>
+                      <div className="tbfm-payment-card-body">
+                        <div className="tbfm-payment-amount">
+                          {currencySymbol}{formatCurrency(finalAmount)}
+                        </div>
+                        <p className="tbfm-payment-description">Complete payment now and secure your booking</p>
+                        <ul className="tbfm-payment-benefits">
+                          <li>Instant confirmation</li>
+                          <li>No further payments needed</li>
+                          <li>Priority processing</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Partial Payment */}
+                    <div
+                      className={`tbfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
+                      onClick={() => setPaymentType('partial')}
+                    >
+                      <div className="tbfm-payment-card-header">
+                        <div className="tbfm-payment-radio">
+                          <div className={`tbfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
+                        </div>
+                        <div className="tbfm-payment-card-title">
+                          <Wallet size={15} className="tbfm-card-icon" />
+                          <span>Partial Payment</span>
+                          <span className="tbfm-badge tbfm-badge-flexible">Flexible</span>
+                        </div>
+                      </div>
+                      <div className="tbfm-payment-card-body">
+                        <div className="tbfm-payment-amount">
+                          {currencySymbol}{formatCurrency(partialAmount)}
+                          <span className="tbfm-payment-percentage">{partialPercentageText} Down Payment</span>
+                        </div>
+                        <p className="tbfm-payment-description">Pay {partialPercentageText} now, remaining balance before departure</p>
+                        <div className="tbfm-payment-breakdown">
+                          <div className="tbfm-breakdown-row">
+                            <span>Now ({partialPercentageText}):</span>
+                            <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
+                          </div>
+                          <div className="tbfm-breakdown-row">
+                            <span>Later ({100 - partialPercentage}%):</span>
+                            <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <div className={`bfm-payment-options${!isPartialPaymentAllowed ? ' bfm-payment-options-single' : ''}`}>
-
-                  {/* ── Pay in Full card ── */}
-                  <div
-                    className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}${!isPartialPaymentAllowed ? ' bfm-payment-card-full-only' : ''}`}
-                    onClick={() => setPaymentType('full')}
-                  >
-                    {!isPartialPaymentAllowed ? (
-                      /* New split-header layout when only full payment is available */
-                      <>
-                        <div className="bfm-payment-card-header-split">
-                          <div className="bfm-payment-card-header-left">
-                            <div className="bfm-payment-radio">
-                              <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                            </div>
-                            <div className="bfm-payment-card-title">
-                              <CreditCard size={16} />
-                              <span>Pay in Full</span>
-                              <span className="bfm-recommended-badge">Most Popular</span>
-                            </div>
-                          </div>
-                          <div className="bfm-payment-card-amount-right">
-                            <span className="bfm-payment-amount-right-value">{currencySymbol}{formatCurrency(finalAmount)}</span>
-                            <span className="bfm-payment-amount-right-label">TOTAL AMOUNT</span>
-                          </div>
-                        </div>
-                        <div className="bfm-payment-card-body bfm-payment-card-body-full">
-                          <div className="bfm-payment-description">
-                            Complete payment now and secure your booking instantly.
-                          </div>
-                          <ul className="bfm-payment-benefits bfm-payment-benefits-check">
-                            <li>Instant confirmation</li>
-                            <li>No further payments needed</li>
-                            <li>Priority processing</li>
-                          </ul>
-                        </div>
-                      </>
-                    ) : (
-                      /* Original layout when both options are available */
-                      <>
-                        <div className="bfm-payment-card-header">
-                          <div className="bfm-payment-radio">
-                            <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                          </div>
-                          <div className="bfm-payment-card-title">
-                            <CreditCard size={16} />
-                            <span>Pay in Full</span>
-                            <span className="bfm-recommended-badge">Most Popular</span>
-                          </div>
-                        </div>
-                        <div className="bfm-payment-card-body">
-                          <div className="bfm-payment-amount">
-                            {currencySymbol}{formatCurrency(finalAmount)}
-                          </div>
-                          <div className="bfm-payment-description">
-                            Complete payment now and secure your booking
-                          </div>
-                          <ul className="bfm-payment-benefits">
-                            <li>Instant confirmation</li>
-                            <li>No further payments needed</li>
-                            <li>Priority processing</li>
-                          </ul>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* ── Partial Payment card (only shown when allowed) ── */}
-                  {isPartialPaymentAllowed && (
-                  <div
-                    className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
-                    onClick={() => setPaymentType('partial')}
-                  >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <Wallet size={16} />
-                        <span>Partial Payment</span>
-                        <span className="bfm-flexible-badge">Flexible</span>
-                      </div>
-                    </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">
-                        {currencySymbol}{formatCurrency(partialAmount)}
-                        <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
-                      </div>
-                      <div className="bfm-payment-description">
-                        Pay {partialPercentageText} now, remaining balance before departure
-                      </div>
-                      <div className="bfm-payment-breakdown">
-                        <div className="bfm-breakdown-row">
-                          <span>Now ({partialPercentageText}):</span>
-                          <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
-                        </div>
-                        <div className="bfm-breakdown-row">
-                          <span>Later ({100 - partialPercentage}%):</span>
-                          <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  )}
-                </div>
-
-                <div className="bfm-payment-summary">
-                  <div className="bfm-summary-row">
+                <div className="tbfm-payment-summary">
+                  <div className="tbfm-summary-row">
                     <span>Amount to pay now:</span>
-                    <strong className="bfm-amount-highlight">
+                    <strong className="tbfm-amount-highlight">
                       {currencySymbol}{formatCurrency(!isPartialPaymentAllowed && paymentType === 'partial' ? finalAmount : paymentType === 'full' ? finalAmount : partialAmount)}
                     </strong>
                   </div>
                   {paymentType === 'partial' && isPartialPaymentAllowed && (
-                    <div className="bfm-summary-row bfm-remaining">
+                    <div className="tbfm-summary-row tbfm-remaining">
                       <span>Remaining balance:</span>
                       <span>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</span>
                     </div>

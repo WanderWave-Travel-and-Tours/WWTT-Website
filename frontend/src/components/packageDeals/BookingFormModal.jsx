@@ -5,7 +5,6 @@ import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 // Import the new CSS file
 import './BookingFormModal.css';
-import './PaymentOption.css'
 
 // ✅ CUSTOM DATE PICKER COMPONENT - WORKS ON ALL PLATFORMS
 const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) => {
@@ -310,14 +309,22 @@ const BookingFormModal = ({
   const toast = useToast();
   const [localLoading, setLocalLoading] = useState(false);
   const overlayRef = useRef(null);
+  const formWrapperRef = useRef(null);
 
-  // ✅ FIX: Forward wheel events from anywhere inside the modal card to the overlay.
-  // Without this, mouse wheel only scrolls when the cursor is over the overlay edges
-  // (the black area outside the white card). With this handler, scrolling works
-  // regardless of where inside the modal the cursor is.
+  // ✅ FIX: Forward wheel events from anywhere inside the modal card to the
+  // bfm-form-wrapper scroll container. This ensures mouse wheel scrolling works
+  // regardless of where inside the modal the cursor is — not just on the overlay edges.
   const handleModalWheel = (e) => {
-    if (overlayRef.current) {
-      overlayRef.current.scrollTop += e.deltaY;
+    if (formWrapperRef.current) {
+      // Only hijack if the form-wrapper itself isn't the scroll target
+      // (prevents double-scroll when cursor is already over the scrollbar)
+      const el = formWrapperRef.current;
+      const atTop = el.scrollTop === 0 && e.deltaY < 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight && e.deltaY > 0;
+      if (!atTop && !atBottom) {
+        e.preventDefault();
+      }
+      el.scrollTop += e.deltaY;
     }
   };
 
@@ -664,7 +671,7 @@ const BookingFormModal = ({
 
   return (
     <div className="bfm-overlay" ref={overlayRef}>
-      <div className="bfm-modal-card">
+      <div className="bfm-modal-card" onWheel={handleModalWheel}>
         
         {/* Updated Close Button with X Icon */}
         <button 
@@ -756,7 +763,7 @@ const BookingFormModal = ({
         </div>
 
         {/* SCROLLABLE FORM CONTENT */}
-        <div className="bfm-form-wrapper">
+        <div className="bfm-form-wrapper" ref={formWrapperRef}>
           
           {/* PROGRESS SECTION */}
           <div className="bfm-progress-section">
@@ -978,113 +985,133 @@ const BookingFormModal = ({
 
             {/* ✅ PAYMENT OPTIONS - Show only on last passenger */}
             {isLastPassenger && (
-              <div className="bfm-payment-section">
-                <div className="bfm-payment-header">
-                  <Wallet size={18} />
-                  <h3>Select Payment Option</h3>
+              <div className="tbfm-payment-section-wrapper" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '2px solid #e2e8f0' }}>
+
+                <div className="tbfm-section-header" style={{ marginTop: '8px' }}>
+                  <CreditCard size={16} className="tbfm-section-icon" />
+                  <span>Payment Option</span>
                 </div>
+                <div className="tbfm-section-divider" />
 
-                {/* ✅ NOTICE: Show when departure is today or tomorrow */}
-                {isDepartureSoon && (
-                  <div style={{
-                    background: '#fff7ed',
-                    border: '1.5px solid #fb923c',
-                    borderRadius: '10px',
-                    padding: '12px 16px',
-                    marginBottom: '16px',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '10px',
-                    fontSize: '0.875rem',
-                    color: '#9a3412',
-                  }}>
-                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>⚠️</span>
-                    <span>
-                      <strong>Full payment required.</strong> Your departure date is today or within 1 day — partial payment is no longer available for this booking.
-                    </span>
-                  </div>
-                )}
-                
-                <div className="bfm-payment-options" style={isDepartureSoon ? { gridTemplateColumns: '1fr' } : {}}>
-                  {/* PAY IN FULL */}
-                  <div 
-                    className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
-                    onClick={() => setPaymentType('full')}
-                  >
-                    <div className="bfm-payment-card-header">
-                      <div className="bfm-payment-radio">
-                        <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
-                      </div>
-                      <div className="bfm-payment-card-title">
-                        <CreditCard size={16} />
-                        <span>Pay in Full</span>
-                        <span className="bfm-recommended-badge">Most Popular</span>
+                {isDepartureSoon ? (
+                  /* ── Restricted: only full payment ── */
+                  <div className="tbfm-restricted-payment-section">
+                    <div className="tbfm-restricted-banner">
+                      <span className="tbfm-restricted-banner-icon">⚡</span>
+                      <div className="tbfm-restricted-banner-text">
+                        <strong>Full Payment Required</strong>
+                        <span>Partial payment is unavailable for departure dates of <strong>today</strong> or <strong>tomorrow</strong>.</span>
                       </div>
                     </div>
-                    <div className="bfm-payment-card-body">
-                      <div className="bfm-payment-amount">
-                        {currencySymbol}{formatCurrency(finalAmount)}
+                    <div className="tbfm-payment-card active tbfm-payment-card-solo" onClick={() => setPaymentType('full')}>
+                      <div className="tbfm-solo-card-inner">
+                        <div className="tbfm-solo-card-left">
+                          <div className="tbfm-payment-card-header">
+                            <div className="tbfm-payment-radio">
+                              <div className="tbfm-radio-dot active" />
+                            </div>
+                            <div className="tbfm-payment-card-title">
+                              <CreditCard size={15} className="tbfm-card-icon" />
+                              <span>Pay in Full</span>
+                              <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+                            </div>
+                          </div>
+                          <div className="tbfm-payment-card-body">
+                            <p className="tbfm-payment-description">Complete payment now and secure your booking instantly.</p>
+                            <ul className="tbfm-payment-benefits">
+                              <li>✓ Instant confirmation</li>
+                              <li>✓ No further payments needed</li>
+                              <li>✓ Priority processing</li>
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="tbfm-solo-card-right">
+                          <div className="tbfm-payment-amount tbfm-solo-amount">
+                            {currencySymbol}{formatCurrency(finalAmount)}
+                          </div>
+                          <span className="tbfm-solo-total-label">Total Amount</span>
+                        </div>
                       </div>
-                      <div className="bfm-payment-description">
-                        Complete payment now and secure your booking
-                      </div>
-                      <ul className="bfm-payment-benefits">
-                        <li>Instant confirmation</li>
-                        <li>No further payments needed</li>
-                        <li>Priority processing</li>
-                      </ul>
                     </div>
                   </div>
 
-                  {/* PARTIAL PAYMENT — hidden when departure is today or tomorrow */}
-                  {!isDepartureSoon && (
-                    <div 
-                      className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
+                ) : (
+                  /* ── Normal: full + partial side by side ── */
+                  <div className="tbfm-payment-options">
+                    {/* Full Payment */}
+                    <div
+                      className={`tbfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
+                      onClick={() => setPaymentType('full')}
+                    >
+                      <div className="tbfm-payment-card-header">
+                        <div className="tbfm-payment-radio">
+                          <div className={`tbfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                        </div>
+                        <div className="tbfm-payment-card-title">
+                          <CreditCard size={15} className="tbfm-card-icon" />
+                          <span>Pay in Full</span>
+                          <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+                        </div>
+                      </div>
+                      <div className="tbfm-payment-card-body">
+                        <div className="tbfm-payment-amount">
+                          {currencySymbol}{formatCurrency(finalAmount)}
+                        </div>
+                        <p className="tbfm-payment-description">Complete payment now and secure your booking</p>
+                        <ul className="tbfm-payment-benefits">
+                          <li>Instant confirmation</li>
+                          <li>No further payments needed</li>
+                          <li>Priority processing</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Partial Payment */}
+                    <div
+                      className={`tbfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
                       onClick={() => setPaymentType('partial')}
                     >
-                      <div className="bfm-payment-card-header">
-                        <div className="bfm-payment-radio">
-                          <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
+                      <div className="tbfm-payment-card-header">
+                        <div className="tbfm-payment-radio">
+                          <div className={`tbfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
                         </div>
-                        <div className="bfm-payment-card-title">
-                          <Wallet size={16} />
+                        <div className="tbfm-payment-card-title">
+                          <Wallet size={15} className="tbfm-card-icon" />
                           <span>Partial Payment</span>
-                          <span className="bfm-flexible-badge">Flexible</span>
+                          <span className="tbfm-badge tbfm-badge-flexible">Flexible</span>
                         </div>
                       </div>
-                      <div className="bfm-payment-card-body">
-                        <div className="bfm-payment-amount">
+                      <div className="tbfm-payment-card-body">
+                        <div className="tbfm-payment-amount">
                           {currencySymbol}{formatCurrency(partialAmount)}
-                          <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
+                          <span className="tbfm-payment-percentage">{partialPercentageText} Down Payment</span>
                         </div>
-                        <div className="bfm-payment-description">
-                          Pay {partialPercentageText} now, remaining balance before departure
-                        </div>
-                        <div className="bfm-payment-breakdown">
-                          <div className="bfm-breakdown-row">
+                        <p className="tbfm-payment-description">Pay {partialPercentageText} now, remaining balance before departure</p>
+                        <div className="tbfm-payment-breakdown">
+                          <div className="tbfm-breakdown-row">
                             <span>Now ({partialPercentageText}):</span>
                             <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
                           </div>
-                          <div className="bfm-breakdown-row">
+                          <div className="tbfm-breakdown-row">
                             <span>Later ({100 - partialPercentage}%):</span>
                             <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
                           </div>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Payment Summary */}
-                <div className="bfm-payment-summary">
-                  <div className="bfm-summary-row">
+                <div className="tbfm-payment-summary">
+                  <div className="tbfm-summary-row">
                     <span>Amount to pay now:</span>
-                    <strong className="bfm-amount-highlight">
+                    <strong className="tbfm-amount-highlight">
                       {currencySymbol}{formatCurrency(paymentType === 'full' ? finalAmount : partialAmount)}
                     </strong>
                   </div>
                   {paymentType === 'partial' && !isDepartureSoon && (
-                    <div className="bfm-summary-row bfm-remaining">
+                    <div className="tbfm-summary-row tbfm-remaining">
                       <span>Remaining balance:</span>
                       <span>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</span>
                     </div>

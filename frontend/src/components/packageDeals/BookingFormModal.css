@@ -10,7 +10,7 @@
   background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   z-index: 99999;
   padding: 20px;
@@ -1054,7 +1054,7 @@
     font-size: 0.75rem;
   }
 
-  /* Payment Section Mobile */
+  /* Payment Section Mobile — stack vertically, matches TransferBookingFormModal */
   .bfm-payment-options {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -1068,5 +1068,56 @@
   .bfm-back-btn, .bfm-submit-btn {
     width: 100%;
     padding: 12px;
+  }
+}
+
+/* ============================================
+   VERY SMALL MOBILE (Max width: 400px)
+   Already handled by 640px rule above
+   ============================================ */
+
+/* ============================================
+   COMPACT PAYMENT CARDS FOR MOBILE MODAL
+   Ensures side-by-side cards fit inside the
+   full-screen modal on small viewports
+   ============================================ */
+@media (max-width: 640px) {
+  .bfm-payment-section {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .bfm-payment-card {
+    padding: 8px;
+  }
+
+  .bfm-payment-card-body {
+    padding-left: 0;
+  }
+
+  .bfm-payment-amount {
+    font-size: 1rem;
+  }
+
+  .bfm-payment-card-title {
+    font-size: 0.7rem;
+    gap: 3px;
+  }
+
+  .bfm-payment-description {
+    font-size: 0.62rem;
+  }
+
+  .bfm-payment-benefits li {
+    font-size: 0.62rem;
+    padding: 1px 0;
+  }
+
+  .bfm-payment-breakdown {
+    padding: 4px 6px;
+  }
+
+  .bfm-breakdown-row {
+    font-size: 0.62rem;
   }
 }
