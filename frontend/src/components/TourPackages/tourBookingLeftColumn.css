@@ -183,28 +183,42 @@
 .blc-inclusions-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-/* Header — orange left border */
+/* Header row */
 .blc-inclusions-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 14px;
-  border-left: 4px solid #f97316;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fff7ed 0%, #fff4e6 100%);
+  border: 1.5px solid #fed7aa;
+  border-radius: 12px;
 }
 
 .blc-inclusions-title {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #1e293b;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blc-inclusions-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: #f97316;
+  border-radius: 2px;
 }
 
 /* Green pill — "✓ N items" */
 .blc-inclusions-badge {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #10b981;
   background: #ecfdf5;
@@ -249,10 +263,10 @@
   display: flex;
   flex-direction: column;
   background: #fff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #e2e8f0;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 /* ─── v2 inclusion item ─── */
@@ -260,22 +274,24 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 13px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
   background: #fff;
   transition: background 0.15s ease;
 }
 .blc-inclusion-item-v2:last-child { border-bottom: none; }
 .blc-inclusion-item-v2:not(.blc-inclusion-item--guide):hover {
-  background: #fafafa;
+  background: #fafbfc;
 }
 
-/* Guide / complimentary row — dark navy */
+/* ─── Complimentary row — warm orange card ─── */
 .blc-inclusion-item--guide {
-  background: #1e2d4a !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #fff4e6 100%) !important;
+  border-left: 4px solid #f97316 !important;
+  padding-left: 12px !important;
 }
 .blc-inclusion-item--guide:hover {
-  background: #1a2841 !important;
+  background: linear-gradient(135deg, #ffedd5 0%, #fff7ed 100%) !important;
 }
 
 /* Left icon col */
@@ -348,12 +364,32 @@
   word-break: break-word;
 }
 
-/* Guide row text overrides */
+/* FREE badge on complimentary item */
+.blc-incl-free-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #f97316;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+/* Guide row text overrides — warm orange bg, so dark text */
 .blc-inclusion-item--guide .blc-incl-category-label {
-  color: #f97316;
+  color: #ea580c;
+  font-weight: 800;
 }
 .blc-inclusion-item--guide .blc-incl-main-title {
-  color: #ffffff;
+  color: #7c2d12;
+  font-weight: 800;
+}
+.blc-inclusion-item--guide .blc-incl-circle {
+  background: #f97316;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
 }
 
 /* Right checkmark */
@@ -509,4 +545,29 @@
     font-size: 0.88rem;
   }
 }
+/* ─── See More / See Less button ─── */
+.blc-see-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 16px;
+  background: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: 10px;
+  color: #f97316;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+.blc-see-more-btn:hover {
+  background: #ffedd5;
+  border-color: #f97316;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.15);
+}
+.blc-see-more-btn:focus { outline: none; }
+
 /* rubber stamp styles removed — stamp overlay no longer used */

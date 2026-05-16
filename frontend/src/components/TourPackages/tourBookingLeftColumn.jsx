@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  MapPin, CheckCircle, ChevronLeft, User
+  MapPin, CheckCircle, ChevronLeft, User,
+  Clock, BedDouble, UtensilsCrossed, Plane,
+  Bus, Waves, TreePine, Landmark, Ticket,
+  Camera, Tag
 } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
@@ -139,6 +142,25 @@ const detectInclusionCategory = (text) => {
   return 'INCLUSION';
 };
 
+/** Return a lucide icon component for a given category */
+const getCategoryIcon = (category) => {
+  const props = { size: 15, color: '#fff', strokeWidth: 2.2 };
+  switch (category) {
+    case 'COMPLIMENTARY':      return <User       {...props} />;
+    case 'SCHEDULE':           return <Clock      {...props} />;
+    case 'ACCOMMODATION':      return <BedDouble  {...props} />;
+    case 'MEALS':              return <UtensilsCrossed {...props} />;
+    case 'AIRFARE':            return <Plane      {...props} />;
+    case 'TRANSFER':           return <Bus        {...props} />;
+    case 'BEACH SIDETRIP':     return <Waves      {...props} />;
+    case 'WILDLIFE SANCTUARY': return <TreePine   {...props} />;
+    case 'TOWN VISIT':         return <Landmark   {...props} />;
+    case 'ENTRANCE FEE':       return <Ticket     {...props} />;
+    case 'ACTIVITY':           return <Camera     {...props} />;
+    default:                   return <Tag        {...props} />;
+  }
+};
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const TourBookingLeftColumn = ({
   pkg,
@@ -153,6 +175,7 @@ const TourBookingLeftColumn = ({
 
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const closeConfirmModal = () => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+  const [showAllInclusions, setShowAllInclusions] = useState(false);
 
   // ✅ Back navigation — uses onGoBack prop if available (same-page view switch)
   const handleBackClick = () => {
@@ -213,11 +236,21 @@ const TourBookingLeftColumn = ({
     return lowerInclusions.some(inc => cat.kws.some(kw => inc.includes(kw)));
   });
 
-  // ── Build final display list — auto-prepend guide row if not already present
+  // ── Build final display list — guide row always first ────────────────────
   const hasGuideInInclusions = inclusions.some(item => isGuideItem(item));
-  const displayInclusions = (!hasNoGuide && !hasGuideInInclusions)
-    ? ['Licensed Tour Guide', ...inclusions]
-    : inclusions;
+  let displayInclusions;
+  if (!hasNoGuide && !hasGuideInInclusions) {
+    // No guide in list yet — auto-prepend
+    displayInclusions = ['Licensed Tour Guide', ...inclusions];
+  } else if (!hasNoGuide && hasGuideInInclusions) {
+    // Guide exists somewhere in the array — move it/them to the front
+    const guideItems    = inclusions.filter(item => isGuideItem(item));
+    const nonGuideItems = inclusions.filter(item => !isGuideItem(item));
+    displayInclusions = [...guideItems, ...nonGuideItems];
+  } else {
+    // hasNoGuide — show inclusions as-is, no guide row
+    displayInclusions = inclusions;
+  }
 
   return (
     <div className="blc-container">
@@ -277,11 +310,12 @@ const TourBookingLeftColumn = ({
 
         {/* Inclusions list — v2 */}
         {displayInclusions.length > 0 ? (
-          <ul className="blc-inclusions-list">
-            {displayInclusions.map((item, idx) => {
+          <>
+            <ul className="blc-inclusions-list">
+              {(showAllInclusions ? displayInclusions : displayInclusions.slice(0, 5)).map((item, idx) => {
               const guide = isGuideItem(item);
               const category = detectInclusionCategory(item);
-              const { emoji, cleanText } = extractLeadingEmoji(item);
+              const { cleanText } = extractLeadingEmoji(item);
 
               return (
                 <li
@@ -291,20 +325,19 @@ const TourBookingLeftColumn = ({
                   {/* Left: icon circle */}
                   <div className="blc-incl-icon-col">
                     <div className={`blc-incl-circle${guide ? ' blc-incl-circle--guide' : ''}`}>
-                      {guide ? (
-                        <User size={15} color="#fff" strokeWidth={2.5} />
-                      ) : emoji ? (
-                        <span className="blc-incl-circle-emoji">{emoji}</span>
-                      ) : (
-                        <span className="blc-incl-circle-num">{idx + 1}</span>
-                      )}
+                      {getCategoryIcon(category)}
                     </div>
                   </div>
 
                   {/* Middle: category label + title */}
                   <div className="blc-incl-text-col">
                     <span className="blc-incl-category-label">{category}</span>
-                    <span className="blc-incl-main-title">{cleanText}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className="blc-incl-main-title">{cleanText}</span>
+                      {guide && (
+                        <span className="blc-incl-free-badge">FREE</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Right: checkmark */}
@@ -318,7 +351,21 @@ const TourBookingLeftColumn = ({
                 </li>
               );
             })}
-          </ul>
+            </ul>
+
+            {/* See More / See Less button */}
+            {displayInclusions.length > 5 && (
+              <button
+                className="blc-see-more-btn"
+                onClick={() => setShowAllInclusions(prev => !prev)}
+                type="button"
+              >
+                {showAllInclusions
+                  ? '▲ See Less'
+                  : `▼ See ${displayInclusions.length - 5} More Item${displayInclusions.length - 5 > 1 ? 's' : ''}`}
+              </button>
+            )}
+          </>
         ) : (
           <p className="blc-inclusions-empty">No inclusions listed.</p>
         )}
