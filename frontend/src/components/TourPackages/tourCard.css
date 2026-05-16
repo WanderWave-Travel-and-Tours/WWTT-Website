@@ -87,9 +87,10 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  justify-content: space-between;
+  /* Remove justify-content: space-between here; let inner flex do the work */
 }
 
+/* FIX: This inner wrapper takes all remaining space and pushes footer down */
 .tour-card-body > div:first-child {
   flex: 1;
   display: flex;
@@ -104,7 +105,7 @@
   font-size: 1.25rem;
   font-weight: 800;
   color: #1e293b;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   line-height: 1.4;
 }
 
@@ -214,8 +215,12 @@
 
 /* ── Inclusions (reused from packageCard) ── */
 .inclusions-section {
-  margin-bottom: 12px;
-  margin-top: auto;
+  min-height: 110px;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .inclusions-list {
@@ -246,10 +251,16 @@
   color: #475569;
   font-weight: 500;
   line-height: 1.4;
+  /* FIX: Clamp each inclusion to 1 line so rows don't grow unexpectedly */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inclusions-more {
   display: inline-block;
+  width: fit-content;
+  align-self: flex-start;
   margin-top: 7px;
   font-size: 0.72rem;
   font-weight: 700;
@@ -267,6 +278,7 @@
   align-items: center;
   padding-top: 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
+  /* Footer always pinned to bottom — absorbs all extra vertical space */
   margin-top: auto;
   gap: 12px;
   flex-wrap: wrap;
@@ -427,4 +439,5 @@
   .tour-price-info { width: 100%; }
   .tour-book-button { width: 100%; padding: 12px 0; }
   .tour-wishlist-btn { width: 38px; height: 38px; }
+  .inclusions-section { min-height: 90px; }
 }
