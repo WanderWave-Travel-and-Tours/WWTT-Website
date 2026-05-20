@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Calendar, ChevronRight } from 'lucide-react';
-import { fmtDate } from './utils';
+import { fmtDate } from '../utils';
 
 const MONTH_NAMES = [
   'January','February','March','April','May','June',

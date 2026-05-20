@@ -1,8 +1,8 @@
 // cbf/steps/Step3TourDates.jsx
 import React from 'react';
 import { MapPin, Users, Clock, Calendar } from 'lucide-react';
-import DatePicker from './DatePicker';
-import { fmt, fmtDate } from './utils';
+import DatePicker from '../components/DatePicker';
+import { fmt, fmtDate } from '../utils';
 
 /**
  * Step 3 Phase A — collect a scheduled date for each selected tour.

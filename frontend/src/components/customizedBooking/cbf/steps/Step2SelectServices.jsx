@@ -1,10 +1,10 @@
 // cbf/steps/Step2SelectServices.jsx
 import React from 'react';
 import { Compass, ChevronRight, Plus } from 'lucide-react';
-import TourList from './TourList';
-import TransferList from './TransferList';
-import SelectedPanel from './SelectedPanel';
-import { fmt } from './utils';
+import TourList from '../components/TourList';
+import TransferList from '../components/TransferList';
+import SelectedPanel from '../components/SelectedPanel';
+import { fmt } from '../utils';
 
 /**
  * Step 2 — Select Services

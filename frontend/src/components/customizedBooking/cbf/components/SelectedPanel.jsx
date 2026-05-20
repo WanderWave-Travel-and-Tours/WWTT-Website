@@ -1,7 +1,7 @@
 // cbf/components/SelectedPanel.jsx
 import React from 'react';
 import { Trash2, Plus } from 'lucide-react';
-import { fmt, fmtDate } from './utils';
+import { fmt, fmtDate } from '../utils';
 
 /**
  * Shows selected tours & transfers as cards with a summary footer.

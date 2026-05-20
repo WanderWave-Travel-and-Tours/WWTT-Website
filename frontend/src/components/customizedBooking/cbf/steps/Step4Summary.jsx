@@ -1,7 +1,7 @@
 // cbf/steps/Step4Summary.jsx
 import React from 'react';
 import { MapPin, User, Mail, Phone, Calendar, Users, FileText, CreditCard, Wallet, Clock } from 'lucide-react';
-import { fmt, fmtDate } from './utils';
+import { fmt, fmtDate } from '../utils';
 
 /**
  * Step 4 — Booking Summary + Payment Option selection.

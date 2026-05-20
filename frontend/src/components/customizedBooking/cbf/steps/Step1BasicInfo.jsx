@@ -1,7 +1,7 @@
 // cbf/steps/Step1BasicInfo.jsx
 import React from 'react';
 import { MapPin, User, Mail, Phone, Users } from 'lucide-react';
-import DatePicker from './DatePicker';
+import DatePicker from '../components/DatePicker';
 
 /**
  * Step 1 — Basic Info

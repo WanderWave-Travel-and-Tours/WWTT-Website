@@ -11,10 +11,10 @@
      responsive  → tablet + mobile breakpoints
    ─────────────────────────────────────────────────────────── */
 
-@import './base.css';
-@import './step2.css';
-@import './step3.css';
-@import './step4.css';
-@import './datepicker.css';
-@import './modals.css';
-@import './responsive.css';
+@import './cbf/css/base.css';
+@import './cbf/css/step2.css';
+@import './cbf/css/step3.css';
+@import './cbf/css/step4.css';
+@import './cbf/css/datepicker.css';
+@import './cbf/css/modals.css';
+@import './cbf/css/responsive.css';
