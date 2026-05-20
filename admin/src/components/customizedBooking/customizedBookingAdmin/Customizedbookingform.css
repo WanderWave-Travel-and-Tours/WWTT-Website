@@ -1,0 +1,20 @@
+/* Customizedbookingform.css
+   Main entry point — imports all split stylesheets in order.
+   ─────────────────────────────────────────────────────────
+   Split files live in cbf/css/ and are grouped by concern:
+     base        → overlay, modal, header, steps, fields, footer
+     step2       → service type cards, card items, selected panel
+     step3       → hero cards, booking context, scheduled dates
+     step4       → summary blocks, payment section
+     datepicker  → custom calendar trigger + modal
+     modals      → night charge warning modal
+     responsive  → tablet + mobile breakpoints
+   ─────────────────────────────────────────────────────────── */
+
+@import './cbf/css/base.css';
+@import './cbf/css/step2.css';
+@import './cbf/css/step3.css';
+@import './cbf/css/step4.css';
+@import './cbf/css/datepicker.css';
+@import './cbf/css/modals.css';
+@import './cbf/css/responsive.css';

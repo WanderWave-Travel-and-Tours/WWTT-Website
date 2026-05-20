@@ -5,7 +5,7 @@
    ============================================================ */
 
 /* Import base ea- styles */
-@import '../services/AirlineBooking/EditAirline.css';
+@import '../../services/AirlineBooking/EditAirline.css';
 
 /* ── Header background override ────────────────────────────────────────────── */
 .etb-header {

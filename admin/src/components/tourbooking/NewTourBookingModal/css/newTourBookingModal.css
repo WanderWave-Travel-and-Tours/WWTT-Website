@@ -1,0 +1,14 @@
+/* ========================================
+   NEW TOUR BOOKING MODAL (ntbm-)
+   Reuses same design language as newBookingModal.css
+
+   CSS is split into four focused files:
+     ntbm-layout.css  — overlay, shell, header, progress, footer, buttons, responsive
+     ntbm-tours.css   — destination dropdown, tour grid & cards
+     ntbm-form.css    — inputs, pax counter, date preview, passenger cards, DOB, age badge
+     ntbm-preview.css — Step 2 preview sections, rows, total box
+   ======================================== */
+@import './css/ntbm-layout.css';
+@import './css/ntbm-tours.css';
+@import './css/ntbm-form.css';
+@import './css/ntbm-preview.css';

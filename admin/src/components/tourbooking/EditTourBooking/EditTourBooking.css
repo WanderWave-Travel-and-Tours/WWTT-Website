@@ -5,7 +5,7 @@
    ============================================================ */
 
 /* Import base ea- styles */
-@import '../services/AirlineBooking/EditAirline.css';
+@import '../../services/AirlineBooking/EditAirline.css';
 
 /* ── Header background override ────────────────────────────────────────────── */
 .etbk-header {
@@ -126,7 +126,7 @@
   margin-top: 2px;
 }
 
-/* Toggle switch */
+/* ── Toggle switch ──────────────────────────────────────────────────────────── */
 .etbk-toggle-wrap {
   position: relative;
   width: 44px;
@@ -295,7 +295,7 @@
   margin: 0 -4px;
 }
 
-.etbk-summary-row--discount span { color: #16a34a; font-weight: 600; }
+.etbk-summary-row--discount span  { color: #16a34a; font-weight: 600; }
 .etbk-summary-row--discount strong { color: #16a34a !important; }
 
 /* ── Loading spinner ─────────────────────────────────────────────────────────── */

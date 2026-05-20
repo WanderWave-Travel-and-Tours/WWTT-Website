@@ -1,0 +1,73 @@
+/* cbf/css/modals.css
+   Night charge warning modal (portal).
+   ============================================================= */
+
+.cbf-night-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  padding: 20px;
+  animation: cbfFadeIn 0.18s ease-out;
+}
+
+.cbf-night-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  animation: cbfSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.cbf-nm-moon   { font-size: 48px; line-height: 1; margin-bottom: 12px; display: block; }
+.cbf-nm-title  { font-size: 18px; font-weight: 700; color: #1e3a5f; margin: 0 0 10px; }
+
+.cbf-nm-desc   { font-size: 14px; color: #374151; line-height: 1.55; margin: 0 0 8px; }
+.cbf-nm-desc strong { color: #f97316; }
+
+.cbf-nm-sub    { font-size: 13px; color: #6b7280; margin: 0 0 24px; }
+
+.cbf-nm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.cbf-nm-close-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1.5px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cbf-nm-close-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+
+.cbf-nm-confirm-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #fc9c1b, #f97316);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.35);
+}
+
+.cbf-nm-confirm-btn:hover { opacity: 0.92; transform: translateY(-1px); }
