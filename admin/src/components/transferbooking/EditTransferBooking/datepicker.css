@@ -1,0 +1,170 @@
+/* cbf/css/datepicker.css
+   Custom inline date picker — trigger button + floating modal calendar.
+   ============================================================= */
+
+.cbf-datepicker-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.cbf-datepicker-trigger {
+  cursor: pointer;
+  user-select: none;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px 8px 32px !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #334155;
+  transition: all 0.2s ease;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.cbf-datepicker-trigger:hover,
+.cbf-datepicker-trigger:focus {
+  border-color: #fc9c1b;
+  box-shadow: 0 0 0 3px rgba(252,156,27,0.1);
+  outline: none;
+}
+
+.cbf-datepicker-trigger.cbf-dp-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+}
+
+.cbf-dp-display     { flex: 1; font-size: 0.85rem; color: #334155; }
+.cbf-dp-placeholder { color: #94a3b8; }
+.cbf-dp-chevron     { color: #94a3b8; flex-shrink: 0; transition: transform 0.2s ease; }
+
+/* Floating modal backdrop */
+.cbf-dp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: cbfFadeIn 0.15s ease-out;
+}
+
+.cbf-dp-calendar {
+  background: white;
+  border: 1.5px solid #fc9c1b;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  padding: 16px;
+  animation: cbfSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 300px;
+  max-width: calc(100vw - 32px);
+}
+
+.cbf-dp-calendar-modal { position: relative; }
+
+/* Modal top row: title + close */
+.cbf-dp-modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cbf-dp-modal-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cbf-dp-modal-close {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 24px; height: 24px;
+  font-size: 0.7rem;
+  color: #64748b;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0; line-height: 1;
+}
+
+.cbf-dp-modal-close:hover { background: #fee2e2; color: #ef4444; }
+
+/* Month navigation row */
+.cbf-dp-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cbf-dp-month-label { font-size: 0.82rem; font-weight: 800; color: #1e3a5f; }
+
+.cbf-dp-nav {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 6px;
+  width: 26px; height: 26px;
+  font-size: 1.1rem; line-height: 1;
+  color: #475569;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+  padding: 0;
+}
+
+.cbf-dp-nav:hover { background: #fff7ed; color: #fc9c1b; }
+
+/* Day labels */
+.cbf-dp-day-labels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.cbf-dp-day-labels span {
+  text-align: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  padding: 2px 0;
+}
+
+/* Day grid */
+.cbf-dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cbf-dp-cell {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #334155;
+  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.cbf-dp-cell:hover:not(.cbf-dp-past):not(.cbf-dp-selected) {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.cbf-dp-empty    { cursor: default; }
+.cbf-dp-past     { color: #cbd5e1; cursor: not-allowed; pointer-events: none; }
+.cbf-dp-today    { color: #fc9c1b; font-weight: 800; }
+.cbf-dp-selected { background: #fc9c1b !important; color: white !important; box-shadow: 0 2px 6px rgba(252,156,27,0.35); }

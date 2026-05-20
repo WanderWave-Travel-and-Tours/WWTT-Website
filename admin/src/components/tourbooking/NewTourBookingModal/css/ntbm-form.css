@@ -1,0 +1,267 @@
+/* ========================================
+   ntbm-form.css
+   Inputs, field labels, pax counter,
+   date preview, passenger cards,
+   DOB selects, age badge, and
+   add-passenger button.
+   ======================================== */
+
+/* ── Fields ── */
+.ntbm-field          { margin-bottom: 0; }
+.ntbm-field label,
+.ntbm-pfield label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.ntbm-field-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+/* ── Inputs / selects ── */
+.ntbm-input {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.97rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #fff;
+  color: #0f172a;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  appearance: auto;
+}
+.ntbm-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.18);
+  outline: none;
+}
+.ntbm-input::placeholder { color: #94a3b8; }
+
+/* ── Pax counter ── */
+.ntbm-pax-row {
+  display: inline-flex;
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ntbm-pax-btn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  background: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.ntbm-pax-btn:first-child { border-right: 1.5px solid #e2e8f0; }
+.ntbm-pax-btn:last-child  { border-left:  1.5px solid #e2e8f0; }
+.ntbm-pax-btn:hover:not(:disabled) { background: #fff7ed; color: #f59e0b; }
+.ntbm-pax-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ntbm-pax-count {
+  font-size: 1.4rem;
+  font-weight: 800;
+  padding: 0 20px;
+  color: #0f172a;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* ── Date preview ── */
+.ntbm-date-preview {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #fff7ed, #fefce8);
+  border: 1.5px solid #fcd34d;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ntbm-date-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ntbm-date-preview-emoji { font-size: 18px; }
+.ntbm-date-preview-lbl {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ntbm-date-preview-val {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+.ntbm-duration-chip {
+  background: #f59e0b;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* ── Passenger card ── */
+.ntbm-passenger-card {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: border-color 0.2s;
+}
+.ntbm-passenger-card:focus-within {
+  border-color: #f59e0b;
+  box-shadow: 0 2px 12px rgba(245,158,11,0.1);
+}
+
+.ntbm-passenger-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.ntbm-passenger-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #fc9c1b);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ntbm-passenger-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+  flex: 1;
+}
+
+.ntbm-remove-pax-btn {
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all 0.15s;
+}
+.ntbm-remove-pax-btn:hover { background: #fee2e2; border-color: #f87171; }
+
+.ntbm-pfield label {
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
+  margin-bottom: 5px;
+}
+
+/* ── DOB selects ── */
+.ntbm-dob-select {
+  padding: 10px 8px !important;
+  font-size: 0.94rem !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  appearance: auto !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  cursor: pointer;
+}
+.ntbm-dob-select:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.18) !important;
+  outline: none !important;
+}
+
+/* ── Age badge ── */
+.ntbm-age-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 14px;
+  min-height: 42px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #166534;
+  white-space: nowrap;
+  min-width: 66px;
+}
+.ntbm-age-badge.empty { background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; }
+
+/* ── Add passenger button ── */
+.ntbm-btn-add-passenger {
+  background: #fff7ed;
+  color: #f59e0b;
+  border: 1.5px solid #fcd34d;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all 0.15s;
+}
+.ntbm-btn-add-passenger:hover { background: #fef3c7; }
+
+/* ── Total mini box ── */
+.ntbm-total-mini {
+  margin-top: 18px;
+  border-top: 1.5px solid #e2e8f0;
+  padding-top: 16px;
+}
+.ntbm-total-mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 0.95rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ntbm-total-mini-row:last-child { border-bottom: none; }
+.ntbm-total-mini-final {
+  padding: 12px 0;
+  font-size: 1rem;
+  color: #0f172a;
+  border-top: 2px solid #f59e0b;
+  margin-top: 4px;
+}

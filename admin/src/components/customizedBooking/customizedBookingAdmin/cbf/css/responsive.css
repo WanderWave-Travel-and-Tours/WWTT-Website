@@ -1,0 +1,123 @@
+/* cbf/css/responsive.css
+   Tablet (641px – 1024px) and mobile (≤ 640px) overrides.
+   ============================================================= */
+
+/* ============================================================
+   TABLET (641px – 1024px)
+   ============================================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .cbf-overlay { padding: 16px; }
+  .cbf-modal   { max-width: 600px; }
+  .cbf-service-type-grid { gap: 10px; }
+  .cbf-yesno-grid        { gap: 8px; }
+}
+
+/* ============================================================
+   MOBILE (max-width: 640px)
+   ============================================================ */
+
+@media (max-width: 640px) {
+  /* Sheet from bottom */
+  .cbf-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .cbf-modal {
+    border-radius: 12px 12px 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 95vh;
+    margin-top: 0;
+  }
+
+  .cbf-header {
+    border-radius: 12px 12px 0 0;
+    padding: 16px 16px 14px;
+  }
+
+  .cbf-header-title { font-size: 1rem; }
+  .cbf-header-sub   { font-size: 0.7rem; }
+
+  .cbf-step-label { display: none; }
+  .cbf-step-line  { margin: 0 4px; margin-bottom: 0; }
+
+  .cbf-body   { padding: 16px; }
+  .cbf-footer { padding: 12px 16px; }
+
+  /* Single-column forms */
+  .cbf-form-grid,
+  .cbf-summary-grid,
+  .cbf-prefill-grid,
+  .cbf-detail-grid,
+  .cbf-info-card-grid,
+  .cbf-tsc-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .cbf-info-card-full,
+  .cbf-tsc-dg-full {
+    grid-column: 1;
+  }
+
+  /* Service type cards stacked */
+  .cbf-service-type-grid { grid-template-columns: 1fr; }
+  .cbf-yesno-grid        { grid-template-columns: 1fr; }
+
+  /* Service item: wrap on mobile */
+  .cbf-service-item {
+    flex-wrap: wrap;
+    gap: 8px;
+    position: relative;
+    padding-top: 14px;
+  }
+
+  .cbf-si-img { width: 44px; height: 44px; }
+
+  .cbf-si-body { flex: 1 1 0; min-width: 0; }
+
+  .cbf-si-name {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.78rem;
+  }
+
+  .cbf-si-check {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 22px; height: 22px;
+  }
+
+  /* Transfer type buttons — full-width row */
+  .cbf-transfer-type-select {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .cbf-tt-btn {
+    flex: 1 1 auto;
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    padding: 7px 8px;
+  }
+
+  .cbf-tt-price { font-size: 0.68rem; }
+  .cbf-transfer-price-preview { font-size: 0.68rem; }
+
+  /* Footer stacks vertically */
+  .cbf-footer { flex-direction: column-reverse; gap: 10px; }
+
+  .cbf-back-btn,
+  .cbf-next-btn,
+  .cbf-submit-btn {
+    width: 100%;
+    padding: 12px;
+    flex: unset;
+  }
+}

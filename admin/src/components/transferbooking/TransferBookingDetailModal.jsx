@@ -88,7 +88,7 @@ const TransferBookingDetailModal = ({
 
   const handleEdit = () => {
     setShowModal(false);
-    navigate(`/EditTransferBooking/${b._id || b.id}`);
+    navigate(`./EditTransferBooking/EditTransferBooking/${b._id || b.id}`);
   };
 
   const modalBooking = { id: b._id || b.id, rawData: b.rawData || b };
