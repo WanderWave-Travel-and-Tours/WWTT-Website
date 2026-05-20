@@ -1,0 +1,413 @@
+/* ========================================
+   NEW BOOKING MODAL — STEP 1 FORM STYLES
+   Fields · Destination Dropdown · Trip Config Card
+   ======================================== */
+
+/* ── Field Label ── */
+.nbm-field label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 7px;
+}
+
+/* ── Inputs & Selects ── */
+.nbm-body input,
+.nbm-body select {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.97rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #fff;
+  color: var(--nbm-dark);
+  transition: border-color 0.22s, box-shadow 0.22s, background 0.2s;
+  appearance: auto;
+  box-sizing: border-box;
+}
+
+.nbm-body input:focus,
+.nbm-body select:focus {
+  border-color: var(--nbm-amber);
+  box-shadow: 0 0 0 3.5px rgba(245, 158, 11, 0.15);
+  outline: none;
+  background: #fffdf7;
+}
+
+.nbm-body input:hover:not(:focus),
+.nbm-body select:hover:not(:focus) { border-color: #b0bcc9; }
+
+.nbm-body input::placeholder { color: #b8c1cc; font-style: italic; }
+
+/* ── 2-Column Grid Utility ── */
+.nbm-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.nbm-grid-align-start { align-items: start; }
+
+/* ── Destination Searchable Dropdown ── */
+.nbm-dest-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid var(--nbm-border);
+  border-radius: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.12);
+  scrollbar-width: thin;
+  scrollbar-color: var(--nbm-amber) #f1f5f9;
+  animation: dropdownIn 0.18s ease;
+}
+
+.nbm-dest-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 0.93rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.12s, padding-left 0.15s, color 0.12s;
+}
+
+.nbm-dest-option:last-child { border-bottom: none; }
+.nbm-dest-option:hover {
+  background: #fff7ed;
+  color: var(--nbm-amber);
+  padding-left: 22px;
+}
+
+/* ── Trip Configuration Card ── */
+.nbm-tripconfig-card {
+  margin-top: 14px;
+  border-radius: 16px;
+  border: 1.5px solid #e8eef5;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.nbm-tripconfig-card:focus-within {
+  border-color: rgba(245, 158, 11, 0.40);
+  box-shadow: 0 6px 28px rgba(245, 158, 11, 0.10);
+}
+
+.nbm-tripconfig-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #f8fafc 0%, #fff7ed 100%);
+  border-bottom: 1.5px solid #edf2f7;
+}
+
+.nbm-tripconfig-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f59e0b, #fc9c1b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.30);
+}
+
+.nbm-tripconfig-title {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.nbm-tripconfig-sub {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.nbm-tripconfig-grid {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+}
+
+.nbm-tripconfig-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.nbm-tripconfig-divider {
+  width: 1px;
+  background: #e2e8f0;
+  margin: 12px 0;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.nbm-tripconfig-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.nbm-tripconfig-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.nbm-tripconfig-hint {
+  font-size: 0.73rem;
+  color: #b0bcc9;
+  margin-top: 0;
+  text-align: center;
+}
+
+/* ── Pax Stepper ── */
+.nbm-pax-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  width: fit-content;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.nbm-pax-stepper:focus-within {
+  border-color: var(--nbm-amber);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.nbm-pax-stepper-btn {
+  width: 36px;
+  height: 40px;
+  border: none;
+  background: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.nbm-pax-stepper-btn:hover:not(:disabled) { background: #fff7ed; color: var(--nbm-amber); }
+.nbm-pax-stepper-btn:active:not(:disabled) { transform: scale(0.9); }
+.nbm-pax-stepper-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.nbm-pax-stepper-btn:first-child { border-right: 1.5px solid #e2e8f0; }
+.nbm-pax-stepper-btn:last-child  { border-left:  1.5px solid #e2e8f0; }
+
+.nbm-pax-stepper-val {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  min-width: 52px;
+  height: 40px;
+  background: #fff;
+}
+
+.nbm-pax-stepper-num  { font-size: 1.2rem; font-weight: 800; color: #0f172a; line-height: 1; }
+.nbm-pax-stepper-unit { font-size: 0.65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+
+/* ── Date Input Wrapper ── */
+.nbm-tripconfig-date-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  height: 40px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.nbm-tripconfig-date-wrap:focus-within {
+  border-color: var(--nbm-amber);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  background: #fffdf7;
+}
+
+.nbm-tripconfig-date-icon  { font-size: 16px; flex-shrink: 0; line-height: 1; }
+
+.nbm-tripconfig-date-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  width: 100% !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  outline: none !important;
+  cursor: pointer;
+  height: 100%;
+}
+
+.nbm-tripconfig-restrict {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: #92400e;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Date Preview Strip ── */
+.nbm-tripconfig-datestrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 18px 16px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #fff7ed, #fefce8);
+  border: 1.5px solid #fcd34d;
+  border-radius: 12px;
+  animation: cardFadeIn 0.3s ease;
+}
+
+.nbm-tripconfig-datestrip-item     { display: flex; align-items: center; gap: 10px; }
+.nbm-tripconfig-datestrip-emoji    { font-size: 20px; line-height: 1; }
+.nbm-tripconfig-datestrip-label    { font-size: 0.7rem; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.06em; }
+.nbm-tripconfig-datestrip-val      { font-size: 0.92rem; font-weight: 700; color: #0f172a; margin-top: 1px; }
+.nbm-tripconfig-datestrip-arrow    { font-size: 1.3rem; color: #f59e0b; font-weight: 300; flex-shrink: 0; }
+.nbm-tripconfig-datestrip-pill     { background: var(--nbm-amber); color: #fff; padding: 5px 14px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.30); }
+
+/* ── Pax Solo Display ── */
+.nbm-pax-solo {
+  padding: 14px 20px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+/* ── Pax Counter (legacy — kept for any reuse) ── */
+.nbm-pax-counter { display: flex; align-items: center; gap: 16px; padding: 10px 14px; background: #fff; border: 1.5px solid var(--nbm-border); border-radius: 10px; width: fit-content; }
+.nbm-pax-btn { width: 40px; height: 40px; border-radius: 8px; border: 1.5px solid var(--nbm-border); background: var(--nbm-bg); font-size: 22px; font-weight: 600; cursor: pointer; color: #374151; display: flex; align-items: center; justify-content: center; transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.nbm-pax-btn:hover:not(:disabled)  { background: #fff7ed; border-color: var(--nbm-amber); color: var(--nbm-amber); transform: scale(1.08); }
+.nbm-pax-btn:active:not(:disabled) { transform: scale(0.95); }
+.nbm-pax-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.nbm-pax-count { font-size: 1.5rem; font-weight: 800; min-width: 36px; text-align: center; color: var(--nbm-dark); transition: transform 0.15s; }
+
+/* ── Badges ── */
+.nbm-badge         { padding: 3px 12px; border-radius: 9999px; font-size: 0.78rem; font-weight: 700; }
+.nbm-badge-green   { background: #f0fdf4; color: #166534; }
+.nbm-badge-blue    { background: #eff6ff; color: #1d4ed8; }
+.nbm-badge-amber   { background: #fff7ed; color: #92400e; }
+
+/* ── Total Summary Box ── */
+.nbm-total-box {
+  background: linear-gradient(135deg, #fff7ed, #fefce8);
+  border: 2px solid #fc9c1b;
+  border-radius: var(--nbm-radius);
+  padding: 16px 20px;
+  margin: 16px 0 0;
+  box-shadow: 0 4px 22px rgba(245, 158, 11, 0.09);
+  animation: cardFadeIn 0.3s ease;
+}
+
+.nbm-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.nbm-total-row:last-child { margin-bottom: 0; }
+
+.nbm-total-final {
+  border-top: 2px solid #fc9c1b;
+  padding-top: 14px;
+  margin-top: 4px;
+  font-size: 1.25rem !important;
+  font-weight: 800;
+  color: var(--nbm-amber) !important;
+}
+
+/* ── Responsive: Tablet ── */
+@media (max-width: 768px) {
+  .nbm-body     { padding: 16px; }
+  .nbm-header, .nbm-footer, .nbm-progress { padding: 12px 18px; }
+  .nbm-step     { font-size: 0.82rem; }
+}
+
+/* ── Responsive: Mobile ── */
+@media (max-width: 640px) {
+  .nbm-overlay  { padding: 0; align-items: flex-end; }
+  .nbm-modal    { max-width: 100%; border-radius: 22px 22px 0 0; max-height: 96vh; animation: nbmModalSlideUp 0.38s cubic-bezier(0.32, 0.72, 0, 1); }
+  .nbm-footer   { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .nbm-header   { padding: 18px 20px; }
+  .nbm-progress { padding: 12px 20px; gap: 6px; }
+  .nbm-body     { padding: 20px 18px; max-height: 62vh; }
+  .nbm-footer   { padding: 16px 20px; flex-direction: column-reverse; gap: 10px; }
+  .nbm-btn-back { flex: 1; padding: 14px; order: 2; }
+  .nbm-btn-next { order: 1; }
+  .nbm-grid-2, .nbm-grid-align-start { grid-template-columns: 1fr; gap: 10px; }
+  .nbm-card     { padding: 16px; }
+  .nbm-step-dot  { width: 28px; height: 28px; font-size: 12px; }
+  .nbm-step-label { display: none; }
+  .nbm-step     { gap: 5px; }
+  .nbm-pax-btn  { width: 44px; height: 44px; }
+}
+
+/* ── Responsive: Small Mobile ── */
+@media (max-width: 400px) {
+  .nbm-body     { padding: 16px; }
+  .nbm-header   { padding: 16px; }
+  .nbm-card     { padding: 14px; }
+  .nbm-step-label { display: none; }
+}
+
+/* ── Responsive: Trip Config Card ── */
+@media (max-width: 540px) {
+  .nbm-tripconfig-grid    { flex-direction: column; }
+  .nbm-tripconfig-divider { width: 100%; height: 1px; margin: 0; }
+}

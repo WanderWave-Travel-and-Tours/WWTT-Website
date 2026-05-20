@@ -12,7 +12,7 @@ import BookingDetailModal from './BookingDetailModal';
 import PaginationControls from './PaginationControls';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-import NewBookingModal from './NewBookingModal';
+import NewBookingModal from './salesbooking/NewBookingModal';
 
 const DESTINATION_IMAGES = {
     TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',

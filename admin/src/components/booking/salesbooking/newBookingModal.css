@@ -1,0 +1,9 @@
+/* ========================================
+   NEW BOOKING MODAL — MAIN CSS ENTRY
+   Import order matters: base → steps → passenger → add-ons → modals
+   ======================================== */
+@import '../components/base.css';
+@import '../components/step1.css';
+@import '../components/passenger.css';
+@import '../components/addons.css';
+@import '../components/modals.css';
