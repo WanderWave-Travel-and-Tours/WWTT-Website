@@ -9,7 +9,7 @@ import BookingStats from '../booking/BookingStats';
 import BookingFilters from '../booking/BookingFilters';
 import PaginationControls from '../booking/PaginationControls';
 import TransferBookingDetailModal from './TransferBookingDetailModal';
-import NewTransferBookingModal from './NewTransferBookingModal';
+import NewTransferBookingModal from './salestransferbooking/NewTransferBookingModal';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
