@@ -1,9 +1,9 @@
 // cbf/steps/Step3TransferDetails.jsx
 import React from 'react';
 import { MapPin, Users, Mail, User, Calendar, Car, Clock, FileText } from 'lucide-react';
-import CustomTimePicker from '../timePicker/Clock';
-import LocationSelect   from '../location/LocationSelect';
-import { fmt, fmtDate, isNightHour } from './utils';
+import CustomTimePicker from '../../../timePicker/Clock';
+import LocationSelect   from '../../../location/LocationSelect';
+import { fmt, fmtDate, isNightHour } from '../utils';
 
 /**
  * Step 3 Phase B — collect scheduling details for each selected transfer.

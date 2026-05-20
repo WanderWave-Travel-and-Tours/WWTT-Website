@@ -1,20 +1,4 @@
-// CustomizedBookingForm.jsx
-// ─────────────────────────────────────────────────────────────────────────────
-// 4-step booking wizard for fully customized bookings.
-//
-// Step 1 → Basic Info (destination, contact details, travel dates, pax)
-// Step 2 → Select Services (tours and/or transfers filtered by destination)
-//           - Asks if they want to also add the other service type
-//           - Multiple tours can now be selected
-// Step 3 → Service Details
-//           - Phase A: scheduled date per selected tour
-//           - Phase B: transfer scheduling details per selected transfer
-// Step 4 → Summary → submit
-//
-// Props:
-//   isOpen    – boolean
-//   onClose   – () => void
-//   onSuccess – (booking) => void  (called after successful submit)
+
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -32,14 +16,14 @@ import {
   fmt,
   fmtDate,
   isNightHour,
-} from './utils';
+} from './cbf/utils';
 
-import NightChargeModal    from './NightChargeModal';
-import Step1BasicInfo      from './Step1BasicInfo';
-import Step2SelectServices from './Step2SelectServices';
-import Step3TourDates      from './Step3TourDates';
-import Step3TransferDetails from './Step3TransferDetails';
-import Step4Summary        from './Step4Summary';
+import NightChargeModal    from './cbf/components/NightChargeModal';
+import Step1BasicInfo      from './cbf/steps/Step1BasicInfo';
+import Step2SelectServices from './cbf/steps/Step2SelectServices';
+import Step3TourDates      from './cbf/steps/Step3TourDates';
+import Step3TransferDetails from './cbf/steps/Step3TransferDetails';
+import Step4Summary        from './cbf/steps/Step4Summary';
 
 // ─── Step metadata ────────────────────────────────────────────────────────────
 const STEPS = [
