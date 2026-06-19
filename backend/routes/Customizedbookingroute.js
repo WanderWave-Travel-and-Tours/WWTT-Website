@@ -23,39 +23,47 @@ function buildServices(body) {
   const tours     = Array.isArray(body.tours)     ? body.tours     : [];
   const transfers = Array.isArray(body.transfers) ? body.transfers : [];
 
-  const builtTours = tours.map(t => ({
-    tourId:        t.tourId        || null,
-    title:         t.title         || '',
-    destination:   t.destination   || '',
-    duration:      t.duration      || '',
-    category:      t.category      || '',
-    imageUrl:      t.imageUrl      || null,
-    price:         parseNum(t.price),
-    sellerPrice:   parseNum(t.sellerPrice),
-    paxCount:      parseInt(t.paxCount) || 1,
-    subtotal:      parseNum(t.subtotal),
-    scheduledDate: t.scheduledDate || '',
-  }));
+  const builtTours = tours.map(t => {
+    const price    = parseNum(t.price);
+    const paxCount = parseInt(t.paxCount) || 1;
+    return {
+      tourId:        t.tourId        || null,
+      title:         t.title         || '',
+      destination:   t.destination   || '',
+      duration:      t.duration      || '',
+      category:      t.category      || '',
+      imageUrl:      t.imageUrl      || null,
+      price,
+      sellerPrice:   parseNum(t.sellerPrice),
+      paxCount,
+      subtotal:      price * paxCount,
+      scheduledDate: t.scheduledDate || '',
+    };
+  });
 
-  const builtTransfers = transfers.map(tr => ({
-    transferId:      tr.transferId      || null,
-    title:           tr.title           || '',
-    category:        tr.category        || '',
-    imageUrl:        tr.imageUrl        || null,
-    transferType:    tr.transferType    === 'roundtrip' ? 'roundtrip' : 'oneway',
-    oneWayPrice:     parseNum(tr.oneWayPrice),
-    roundtripPrice:  parseNum(tr.roundtripPrice),
-    selectedPrice:   parseNum(tr.selectedPrice),
-    subtotal:        parseNum(tr.subtotal),
-    travelDate:      tr.travelDate      || '',
-    returnDate:      tr.returnDate      || '',
-    arrivalTime:     tr.arrivalTime     || '',
-    departureTime:   tr.departureTime   || '',
-    pickupLocation:  tr.pickupLocation  || '',
-    dropoffLocation: tr.dropoffLocation || '',
-    message:         tr.message         || '',
-    passengerCount:  parseInt(tr.passengerCount) || 1,
-  }));
+  const builtTransfers = transfers.map(tr => {
+    const selectedPrice  = parseNum(tr.selectedPrice);
+    const passengerCount = parseInt(tr.passengerCount) || 1;
+    return {
+      transferId:      tr.transferId      || null,
+      title:           tr.title           || '',
+      category:        tr.category        || '',
+      imageUrl:        tr.imageUrl        || null,
+      transferType:    tr.transferType    === 'roundtrip' ? 'roundtrip' : 'oneway',
+      oneWayPrice:     parseNum(tr.oneWayPrice),
+      roundtripPrice:  parseNum(tr.roundtripPrice),
+      selectedPrice,
+      subtotal:        selectedPrice * passengerCount,
+      travelDate:      tr.travelDate      || '',
+      returnDate:      tr.returnDate      || '',
+      arrivalTime:     tr.arrivalTime     || '',
+      departureTime:   tr.departureTime   || '',
+      pickupLocation:  tr.pickupLocation  || '',
+      dropoffLocation: tr.dropoffLocation || '',
+      message:         tr.message         || '',
+      passengerCount,
+    };
+  });
 
   return { builtTours, builtTransfers };
 }
@@ -81,14 +89,36 @@ router.post('/', async (req, res) => {
 
     const { builtTours, builtTransfers } = buildServices(body);
 
+    // Boundary guard: reject negative or zero prices on individual items
+    for (const t of builtTours) {
+      if (t.price < 0 || t.paxCount <= 0) {
+        return res.status(400).json({ success: false, message: 'Tour price and paxCount must be positive values.' });
+      }
+    }
+    for (const tr of builtTransfers) {
+      if (tr.selectedPrice < 0 || tr.passengerCount <= 0) {
+        return res.status(400).json({ success: false, message: 'Transfer price and passengerCount must be positive values.' });
+      }
+    }
+
     const toursTotal     = builtTours.reduce((s, t) => s + t.subtotal, 0);
     const transfersTotal = builtTransfers.reduce((s, t) => s + t.subtotal, 0);
-    const totalAmount    = parseNum(body.totalAmount) || (toursTotal + transfersTotal);
+    // Always compute totalAmount server-side — never trust the client-provided value
+    const totalAmount    = toursTotal + transfersTotal;
 
-    const paymentType          = body.paymentType === 'partial' ? 'partial' : 'full';
+    if (totalAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Booking must have at least one service with a valid price.' });
+    }
+
+    const paymentType = body.paymentType === 'partial' ? 'partial' : 'full';
     const initialPaymentAmount = paymentType === 'partial'
-      ? parseNum(body.initialPaymentAmount) || Math.ceil(totalAmount * 0.5)
+      ? Math.ceil(totalAmount * 0.5)
       : totalAmount;
+
+    if (initialPaymentAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'initialPaymentAmount must be a positive value.' });
+    }
+
     const remainingBalance = paymentType === 'partial'
       ? totalAmount - initialPaymentAmount
       : 0;

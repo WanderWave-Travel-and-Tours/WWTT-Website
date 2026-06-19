@@ -6,6 +6,7 @@
 
 .login-wrapper {
     min-height: 100vh;
+    min-height: 100dvh; /* ✅ Uses dynamic viewport height so mobile browser address bars don't cause extra/cut-off space */
     width: 100%;
     display: flex;
     align-items: center;
@@ -19,12 +20,14 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     position: relative;
     overflow-x: hidden;
+    overflow-y: auto; /* ✅ Guarantees the wrapper itself can scroll so the full form is always reachable */
+    -webkit-overflow-scrolling: touch; /* ✅ Smooth momentum scrolling on iOS */
 }
 
 /* Dark overlay */
 .login-wrapper::before {
     content: '';
-    position: fixed;
+    position: absolute; /* ✅ Was "fixed" — that only darkened the first screen height and could misbehave/clip on mobile browsers once the page scrolled past 100vh. Absolute ties it to the wrapper's full (scrollable) height instead. */
     top: 0;
     left: 0;
     right: 0;
@@ -275,24 +278,9 @@
     }
     
     .slideshow-panel {
-        height: 220px; /* Reduced height for header-style image */
-        min-height: 220px;
+        display: none; /* ✅ Slideshow removed on mobile/tablet so the form is fully visible without scrolling — still shows on desktop (above 900px) */
     }
     
-    .slide-content-overlay {
-        padding: 20px;
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
-    }
-    
-    .slide-title {
-        font-size: 1.5rem;
-    }
-
-    .slide-description {
-        font-size: 0.9rem;
-        display: none; /* Hide description on small screens to save space */
-    }
-
     .login-panel {
         padding: 30px 25px;
     }
@@ -309,19 +297,20 @@
 /* Mobile Screens (Below 480px) */
 @media (max-width: 480px) {
     .login-wrapper {
-        padding: 15px;
-        align-items: flex-start; /* Move to top slightly on mobile */
-        padding-top: 40px;
+        padding: 15px 15px 30px;
+        align-items: center; /* ✅ Was flex-start, which is what made it look off-center — now centers vertically when content fits, and simply scrolls cleanly when it doesn't */
+        background-attachment: scroll; /* ✅ "fixed" backgrounds are known to glitch/clip on mobile browsers — "scroll" renders reliably */
     }
 
     .login-container {
         border-radius: 16px;
         width: 100%;
+        margin: auto; /* ✅ Extra safety net for horizontal centering */
     }
 
     .slideshow-panel {
-        height: 180px; /* Even smaller image area */
-        min-height: 180px;
+        height: 160px; /* Slightly shorter so more of the form fits above the fold */
+        min-height: 160px;
     }
 
     .slide-title {
@@ -329,7 +318,23 @@
     }
 
     .login-panel {
-        padding: 25px 20px;
+        padding: 22px 20px;
+    }
+
+    .logo-section {
+        margin-bottom: 18px; /* ✅ Was 30px (inherited) — frees up vertical room on small phones */
+    }
+
+    .admin-title {
+        font-size: 1.4rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .input-group {
+        margin-bottom: 14px; /* ✅ Was 18px (inherited) — frees up vertical room on small phones */
     }
 
     .input-field {
@@ -343,8 +348,8 @@
     }
 }
 
-/* Very Small Height Screens (Landscape Mobile) */
-@media (max-height: 600px) {
+/* Very Small Height Screens (Landscape Mobile/Desktop) */
+@media (max-height: 600px) and (min-width: 901px) {
     .login-wrapper {
         padding: 10px;
         align-items: center;
@@ -419,4 +424,15 @@
     display: flex;
     justify-content: center;
     margin-bottom: 15px;
+    width: 100%;
+}
+
+/* ✅ reCAPTCHA's real rendered size is fixed (304px wide). Giving its
+   direct container that same explicit width + margin: 0 auto guarantees
+   centering regardless of how flexbox tries to size the widget's own
+   internal divs/iframes. */
+.recaptcha-inner {
+    width: 304px;
+    max-width: 100%;
+    margin: 0 auto;
 }

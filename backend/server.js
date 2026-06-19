@@ -6,6 +6,11 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
+// Initialise PBKDF2 session key synchronously at startup (one-time cost ~300ms)
+const { initSession } = require('./utils/payloadCrypto');
+initSession();
+const encryptResponse = require('./middleware/encryptResponse');
+
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
@@ -114,6 +119,17 @@ app.use((req, res, next) => {
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Global API rate limiter — 100 req / 15 min per IP; skips the raw PayMongo webhook
+const { apiLimiter } = require('./middleware/rateLimiters');
+app.use('/api/', (req, res, next) => {
+  if (req.path === '/payment/webhook') return next();
+  apiLimiter(req, res, next);
+});
+
+// Encrypt all 2xx JSON responses. Must come AFTER body-parsing, BEFORE routes.
+// Routes that must skip encryption (e.g. /api/crypto/session-hint) set res.locals.skipEncrypt = true.
+app.use(encryptResponse);
+
 mongoose.connect(process.env.MONGODB_URI) 
     .then(() => console.log("✅ DATABASE CONNECTED!"))
     .catch((err) => {
@@ -160,6 +176,7 @@ const locationRoute             = require('./routes/locationRoute');           /
 const activityLogRoutes         = require('./routes/activityLogRoute');
 const feedbackRoutes            = require('./routes/feedbackRoutes');
 const favoriteRoutes            = require('./routes/favoriteRoute');
+const cryptoRoute               = require('./routes/cryptoRoute');
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -333,6 +350,7 @@ app.use('/api/customized-bookings', customizedBookingRoute); // ✅ ADDED: Custo
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/crypto',    cryptoRoute);
 // ✅ Single mount — transferBookingRoute duplicate removed
 
 
