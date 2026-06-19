@@ -302,7 +302,6 @@ const BookingCustomizer = ({
   // ─────────────────────────────────────────────────────────────
   const fetchSellerRates = useCallback(async (destination) => {
     if (!destination || destination === 'Unknown' || destination === 'Unknown Destination') {
-      console.log('⚠️ Invalid destination, skipping fetch');
       return;
     }
 
@@ -347,7 +346,6 @@ const BookingCustomizer = ({
       currentDestinationRef.current = destKey;
 
     } catch (err) {
-      console.error('❌ Error fetching seller rates:', err);
       setError(`Failed to load activities: ${err.message}`);
       setAvailableActivities([]);
       setFilteredActivities([]);
@@ -382,12 +380,10 @@ const BookingCustomizer = ({
     // real destination without needing a title match.
     if (bookingId) {
       try {
-        console.log(`🔍 Fetching populated booking: ${bookingId}`);
         const res  = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`);
         const data = await res.json();
 
         if (data?.packageId && typeof data.packageId === 'object' && data.packageId.destination) {
-          console.log('✅ Got destination from populated booking:', data.packageId.destination);
           // Build a synthetic package-like object from the populated data
           const syntheticPkg = {
             _id:         data.packageId._id,
@@ -403,7 +399,6 @@ const BookingCustomizer = ({
           return syntheticPkg;
         }
       } catch (err) {
-        console.warn('⚠️ Could not fetch populated booking:', err.message);
       }
     }
 
@@ -413,7 +408,6 @@ const BookingCustomizer = ({
     if (!packageTitle) return null;
 
     try {
-      console.log(`🔍 Fetching package by title: "${packageTitle}"`);
       
       const response = await fetch(`${API_BASE_URL}/api/packages/all`);
       const data = await response.json();
@@ -435,13 +429,10 @@ const BookingCustomizer = ({
         }
 
         if (matchedPackage) {
-          console.log('✅ Found matching package:', matchedPackage.title);
-          console.log('   - Inclusions:', matchedPackage.inclusions);
           if (bookingId) hasFetchedPackageRef.current.add(bookingId);
           setFetchedPackageData(matchedPackage);
           return matchedPackage;
         } else {
-          console.log('⚠️ No matching package found for:', packageTitle);
           // Mark as attempted so we don't keep re-trying on every re-render
           if (bookingId) hasFetchedPackageRef.current.add(bookingId);
         }
@@ -449,7 +440,6 @@ const BookingCustomizer = ({
 
       return null;
     } catch (error) {
-      console.error('❌ Error fetching package:', error);
       return null;
     }
   };
@@ -474,7 +464,6 @@ const BookingCustomizer = ({
   // we fall back gracefully to un-priced (price = 0) inclusions.
   useEffect(() => {
     if (!booking) {
-      console.log('⚠️ No booking provided to BookingCustomizer');
       return;
     }
 
@@ -484,16 +473,10 @@ const BookingCustomizer = ({
       // which calls onUpdate → parent setState) creates a new booking object
       // reference, fires this effect again, and resets the user's changes.
       if (initializedBookingIdRef.current === booking._id) {
-        console.log('⏭️ Already initialized for booking:', booking._id, '— skipping');
         return;
       }
       initializedBookingIdRef.current = booking._id;
 
-      console.log('📦 Initializing BookingCustomizer for booking:', booking._id);
-      console.log('   - customizedInclusions:', booking.customizedInclusions?.length || 0);
-      console.log('   - originalInclusions:', booking.originalInclusions?.length || 0);
-      console.log('   - packageId:', booking.packageId || 'null');
-      console.log('   - packageName:', booking.packageName || 'null');
 
       // ── Helper: extract matching params from the booking object ──────────
       const getMatchingParams = (pkg = null) => ({
@@ -549,7 +532,6 @@ const BookingCustomizer = ({
           setMatchedInclusionCount(matchCount);
           return matched;
         } catch (err) {
-          console.error('⚠️ Error matching inclusions with prices:', err);
           return null; // signals caller to use skeleton fallback
         } finally {
           setIsPricingLoading(false);
@@ -564,7 +546,6 @@ const BookingCustomizer = ({
           Array.isArray(booking.customizedInclusions) && 
           booking.customizedInclusions.length > 0) {
         
-        console.log('✅ Found customizedInclusions:', booking.customizedInclusions.length, 'items');
         
         const clonedInclusions = booking.customizedInclusions.map((inc, index) => ({
           id:                 inc.id || `inc-${index}-${Date.now()}`,
@@ -588,7 +569,6 @@ const BookingCustomizer = ({
         setCustomizedInclusions(clonedInclusions);
         const originalCount = clonedInclusions.filter(inc => inc.isOriginal).length;
         setMatchedInclusionCount(originalCount);
-        console.log(`✅ Loaded ${clonedInclusions.length} customized inclusions`);
         return;
       } 
       
@@ -600,7 +580,6 @@ const BookingCustomizer = ({
           Array.isArray(booking.packageId.inclusions) && 
           booking.packageId.inclusions.length > 0) {
         
-        console.log('📋 Found packageId.inclusions:', booking.packageId.inclusions.length, 'items');
 
         // Show skeleton immediately while prices load
         setCustomizedInclusions(buildSkeleton(booking.packageId.inclusions));
@@ -610,11 +589,9 @@ const BookingCustomizer = ({
         
         if (matched) {
           setCustomizedInclusions(matched);
-          console.log(`✅ Initialized ${matched.length} inclusions from packageId with prices`);
         } else {
           // Keep skeleton (already set above)
           setMatchedInclusionCount(0);
-          console.log(`✅ Initialized ${booking.packageId.inclusions.length} inclusions from packageId (no prices)`);
         }
         return;
       }
@@ -626,7 +603,6 @@ const BookingCustomizer = ({
           Array.isArray(booking.originalInclusions) && 
           booking.originalInclusions.length > 0) {
         
-        console.log('📋 Found originalInclusions:', booking.originalInclusions.length, 'items');
 
         // Show skeleton immediately while prices load
         setCustomizedInclusions(buildSkeleton(booking.originalInclusions));
@@ -636,10 +612,8 @@ const BookingCustomizer = ({
 
         if (matched) {
           setCustomizedInclusions(matched);
-          console.log(`✅ Initialized ${matched.length} inclusions from originalInclusions with prices`);
         } else {
           setMatchedInclusionCount(0);
-          console.log(`✅ Initialized ${booking.originalInclusions.length} inclusions from originalInclusions (no prices)`);
         }
         return;
       }
@@ -648,11 +622,9 @@ const BookingCustomizer = ({
       // PRIORITY 4: FETCH PACKAGE BY TITLE (last-resort fallback)
       // ══════════════════════════════════════════════════════════
       if (booking.packageName) {
-        console.log('🔍 Attempting to fetch package by title:', booking.packageName);
         const fetchedPackage = await fetchPackageByTitle(booking.packageName);
         
         if (fetchedPackage && fetchedPackage.inclusions && fetchedPackage.inclusions.length > 0) {
-          console.log('✅ Using inclusions from fetched package');
 
           // Show skeleton immediately while prices load
           setCustomizedInclusions(buildSkeleton(fetchedPackage.inclusions));
@@ -662,10 +634,8 @@ const BookingCustomizer = ({
 
           if (matched) {
             setCustomizedInclusions(matched);
-            console.log(`✅ Initialized ${matched.length} inclusions from fetched package with prices`);
           } else {
             setMatchedInclusionCount(0);
-            console.log(`✅ Initialized ${fetchedPackage.inclusions.length} inclusions from fetched package (no prices)`);
           }
           return;
         }
@@ -674,7 +644,6 @@ const BookingCustomizer = ({
       // ══════════════════════════════════════════════════════════
       // PRIORITY 5: EMPTY STATE
       // ══════════════════════════════════════════════════════════
-      console.error('❌ No inclusions found in any source!');
       setCustomizedInclusions([]);
       setMatchedInclusionCount(0);
     };
@@ -715,14 +684,12 @@ const BookingCustomizer = ({
       // Guard: only fetch once per booking ID
       if (hasFetchedPackageRef.current.has(bookingId)) return;
 
-      console.log('🌍 Resolving destination for booking:', bookingId, '(packageId is null)');
 
       try {
         const res  = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`);
         const data = await res.json();
 
         if (data?.packageId && typeof data.packageId === 'object' && data.packageId.destination) {
-          console.log('✅ Destination resolved from server:', data.packageId.destination);
           const syntheticPkg = {
             _id:         data.packageId._id,
             title:       data.packageId.title || booking.packageName,
@@ -739,7 +706,6 @@ const BookingCustomizer = ({
 
         // Server also returned no destination — try package title lookup
         if (booking.packageName) {
-          console.log('🔍 Trying package title lookup:', booking.packageName);
           const pkgRes  = await fetch(`${API_BASE_URL}/api/packages/all`);
           const pkgData = await pkgRes.json();
 
@@ -753,7 +719,6 @@ const BookingCustomizer = ({
               });
             }
             if (match) {
-              console.log('✅ Destination resolved from package lookup:', match.destination);
               hasFetchedPackageRef.current.add(bookingId);
               setFetchedPackageData(match);
               return;
@@ -763,11 +728,9 @@ const BookingCustomizer = ({
 
         // Nothing found — mark as attempted so we do not retry endlessly
         hasFetchedPackageRef.current.add(bookingId);
-        console.warn('⚠️ Could not resolve destination for booking:', bookingId);
 
       } catch (err) {
         hasFetchedPackageRef.current.add(bookingId);
-        console.warn('⚠️ Destination resolution failed:', err.message);
       }
     };
 
@@ -798,13 +761,10 @@ const BookingCustomizer = ({
     const packageDestination = _effectDestination || 'Unknown Destination';
     const packageName        = _effectPackageName;
 
-    console.log('🎯 Booking destination:', packageDestination);
-    console.log('🎯 Package name:', packageName);
 
     // Skip if same destination + package (guard against spurious re-renders)
     if (currentDestinationRef.current === packageDestination &&
         currentPackageNameRef.current === packageName) {
-      console.log('⏭️ Same destination and package, skipping fetch');
       return;
     }
 
@@ -839,7 +799,6 @@ const BookingCustomizer = ({
 
   const handleSaveCustomization = async () => {
     if (!booking || !booking._id) {
-      console.error('❌ No booking ID available');
       setError('Cannot save: No booking ID found');
       return;
     }
@@ -856,12 +815,6 @@ const BookingCustomizer = ({
       const deductions         = removedOriginal.reduce((sum, inc) => sum + (inc.price || 0), 0);
       const netAdditionalPrice = additionalPrice - deductions;
       
-      console.log('💰 Customization pricing:', {
-        additionalPrice,
-        deductions,
-        netAdditionalPrice,
-        checkedCount: checkedInclusions.length,
-      });
       
       const response = await fetch(`${API_BASE_URL}/api/bookings/${booking._id}/customization`, {
         method: 'PATCH',
@@ -875,7 +828,6 @@ const BookingCustomizer = ({
       if (!response.ok) throw new Error('Failed to save customization');
       
       const updatedBooking = await response.json();
-      console.log('✅ Customization saved:', updatedBooking);
       
       if (onUpdate) {
         // ✅ Preserve the original populated packageId so the destination check
@@ -899,7 +851,6 @@ const BookingCustomizer = ({
       setHasUnsavedChanges(false);
       
     } catch (error) {
-      console.error('❌ Error saving customization:', error);
       setError(`Failed to save: ${error.message}`);
     } finally {
       setIsSaving(false);
@@ -962,7 +913,6 @@ const BookingCustomizer = ({
   };
 
   const resetCustomization = async () => {
-    console.log('🔄 Resetting customization to original');
     
     if (!booking) return;
 
@@ -990,7 +940,6 @@ const BookingCustomizer = ({
       [];
     
     if (originalInclusions.length === 0) {
-      console.warn('⚠️ No original inclusions found');
       return;
     }
     
@@ -1101,7 +1050,6 @@ const BookingCustomizer = ({
       }
       setIsEditingBookingDetails(false);
     } catch (err) {
-      console.error('❌ Error saving booking details:', err);
       setError(`Failed to save booking details: ${err.message}`);
     } finally {
       setIsSavingBookingDetails(false);

@@ -231,7 +231,6 @@ const OtherServices = ({ setAuthPage }) => {
         setServices(transformedServices);
       }
     } catch (error) {
-      console.error('Error fetching services:', error);
     } finally {
       setLoading(false);
     }
@@ -512,7 +511,6 @@ const OtherServices = ({ setAuthPage }) => {
         throw new Error(result.message || 'Failed to submit booking');
       }
     } catch (error) {
-      console.error("Booking Error", error);
       toast.error("Failed to submit booking. Please try again.", "Error");
     }
   };
@@ -593,7 +591,6 @@ const OtherServices = ({ setAuthPage }) => {
             throw new Error(result.message || 'Failed to submit inquiry');
           }
         } catch (error) {
-          console.error('Error submitting inquiry:', error);
           toast.error(`Error: ${error.message || 'Failed to submit inquiry'}. Please try again.`, "Error");
         }
       },

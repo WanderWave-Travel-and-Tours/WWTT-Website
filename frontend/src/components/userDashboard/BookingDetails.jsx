@@ -220,7 +220,6 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         setIsPayingBalance(false);
                     }
                 } catch (error) {
-                    console.error('Error creating balance payment:', error);
                     showErrorToast('Failed to process payment. Please try again.');
                     setIsPayingBalance(false);
                 }
@@ -266,7 +265,6 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         setPayingInitialType(null);
                     }
                 } catch (error) {
-                    console.error('Error creating initial payment:', error);
                     showErrorToast('Failed to process payment. Please try again.');
                     setIsPayingInitial(false);
                     setPayingInitialType(null);
@@ -308,15 +306,6 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
     const handleSavePassenger = async () => {
         // 🐛 DEBUG: Check what API_BASE_URL actually is
-        console.log('');
-        console.log('🔍 ==================== API DEBUG ====================');
-        console.log('🌐 API_BASE_URL:', API_BASE_URL);
-        console.log('🔧 VITE_API_BASE_URL from .env:', import.meta.env.VITE_API_BASE_URL);
-        console.log('📍 Environment MODE:', import.meta.env.MODE);
-        console.log('📍 Is DEV?:', import.meta.env.DEV);
-        console.log('📍 Is PROD?:', import.meta.env.PROD);
-        console.log('====================================================');
-        console.log('');
 
         if (!passengerFormData) {
             showErrorToast('No data to save');
@@ -361,14 +350,6 @@ const BookingDetails = ({ booking, onUpdate }) => {
             };
 
             // 🐛 DEBUG: Show what we're about to send
-            console.log('');
-            console.log('🚀 ==================== API REQUEST ====================');
-            console.log('📍 Full URL:', `${API_BASE_URL}/api/bookings/${booking._id}`);
-            console.log('🆔 Booking ID:', booking._id);
-            console.log('👤 Passenger #:', editingPassenger);
-            console.log('📦 Updating fields:', Object.keys(passengerFormData));
-            console.log('======================================================');
-            console.log('');
 
             // ✅ Make the API call
             const url = `${API_BASE_URL}/api/bookings/${booking._id}`;
@@ -385,38 +366,17 @@ const BookingDetails = ({ booking, onUpdate }) => {
             });
 
             // 🐛 DEBUG: Log response details
-            console.log('');
-            console.log('📡 ==================== API RESPONSE ====================');
-            console.log('📡 Status Code:', response.status);
-            console.log('📡 Status Text:', response.statusText);
-            console.log('📡 Response OK?:', response.ok);
-            console.log('📡 Content-Type:', response.headers.get('content-type'));
-            console.log('=======================================================');
-            console.log('');
 
             // ✅ Check if response is HTML (404 error page)
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('text/html')) {
                 const htmlText = await response.text();
-                console.error('');
-                console.error('❌ ==================== ERROR ====================');
-                console.error('❌ Received HTML instead of JSON!');
-                console.error('❌ This means the backend route does not exist');
-                console.error('❌ Response preview:', htmlText.substring(0, 200));
-                console.error('==================================================');
-                console.error('');
                 
                 throw new Error('🚨 Route not found! Backend is returning 404 HTML page instead of JSON. Check: 1) Backend server is running, 2) Route is registered in server.js, 3) Correct URL/port');
             }
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('');
-                console.error('❌ ==================== ERROR ====================');
-                console.error('❌ Response Status:', response.status);
-                console.error('❌ Error Text:', errorText);
-                console.error('==================================================');
-                console.error('');
                 
                 // Try to parse as JSON for better error message
                 try {
@@ -429,17 +389,11 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
             const data = await response.json();
             
-            console.log('');
-            console.log('✅ ==================== SUCCESS ====================');
-            console.log('✅ Response:', data);
-            console.log('===================================================');
-            console.log('');
 
             if (!data.success) {
                 throw new Error(data.message || 'Failed to update passenger');
             }
 
-            console.log('✅ Passenger updated successfully!');
 
             // Update parent with the booking from response
             if (onUpdate && data.booking) {
@@ -453,12 +407,6 @@ const BookingDetails = ({ booking, onUpdate }) => {
             showSuccessToast('Passenger details updated successfully!');
 
         } catch (error) {
-            console.error('');
-            console.error('❌ ==================== CATCH ERROR ====================');
-            console.error('❌ Error Message:', error.message);
-            console.error('❌ Error Stack:', error.stack);
-            console.error('=======================================================');
-            console.error('');
             
             // More helpful error messages based on error type
             let errorMessage = 'Failed to update passenger details';

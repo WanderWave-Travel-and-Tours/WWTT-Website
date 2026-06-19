@@ -111,7 +111,6 @@ function TourPackagesContent({ currentUser: propCurrentUser = null }) {
           setError('Failed to load tours.');
         }
       } catch (err) {
-        console.error('Error fetching tours:', err);
         setError('Unable to connect. Please try again.');
       } finally {
         setLoading(false);

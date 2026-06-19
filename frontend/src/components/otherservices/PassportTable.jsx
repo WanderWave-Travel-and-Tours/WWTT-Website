@@ -31,7 +31,6 @@ const PassportTable = ({ onSelectPassport }) => {
         setError("No active passport service found in the database.");
       }
     } catch (err) {
-      console.error("Error fetching passport data:", err);
       setError("Failed to load passport information.");
     } finally {
       setLoading(false);

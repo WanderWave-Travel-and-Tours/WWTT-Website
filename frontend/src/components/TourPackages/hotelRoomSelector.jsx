@@ -19,13 +19,8 @@ const shuffleArray = (array) => {
 const getAllCategoryImages = (hotels) => {
   const allImages = [];
   
-  console.log('🏨 Getting images for hotels:', hotels);
-  console.log('📊 Total hotels to process:', hotels.length);
   
   hotels.forEach((hotel, idx) => {
-    console.log(`\n--- Hotel ${idx} ---`);
-    console.log('Full hotel object:', hotel);
-    console.log('Hotel keys:', Object.keys(hotel));
     
     // Try multiple possible image field names
     const possibleImageFields = [
@@ -43,18 +38,15 @@ const getAllCategoryImages = (hotels) => {
     // Check each possible field
     for (const field of possibleImageFields) {
       if (hotel[field]) {
-        console.log(`  ✅ Found ${field}:`, hotel[field]);
         
         // If it's an array
         if (Array.isArray(hotel[field]) && hotel[field].length > 0) {
-          console.log(`    Adding ${hotel[field].length} images from ${field}`);
           allImages.push(...hotel[field]);
           foundImages = true;
           break;
         }
         // If it's a single string/URL
         else if (typeof hotel[field] === 'string') {
-          console.log(`    Adding single image from ${field}`);
           allImages.push(hotel[field]);
           foundImages = true;
           break;
@@ -63,22 +55,17 @@ const getAllCategoryImages = (hotels) => {
     }
     
     if (!foundImages) {
-      console.log(`  ⚠️ No images found for hotel: ${hotel.hotelName || hotel.name || 'Unknown'}`);
     }
   });
   
-  console.log('\n📸 Total images collected:', allImages.length);
-  console.log('Images array:', allImages);
   
   // If no images found, use placeholder
   if (allImages.length === 0) {
-    console.log('⚠️ No images found, using placeholder');
     return ['https://placehold.co/800x600?text=No+Image'];
   }
   
   // Randomize the images
   const shuffled = shuffleArray(allImages);
-  console.log('🔀 Images shuffled, returning:', shuffled.length, 'images');
   return shuffled;
 };
 

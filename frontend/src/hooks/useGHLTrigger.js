@@ -200,12 +200,10 @@ export function useGHLTrigger({
     if (hasTriggeredRef.current || !enabled) return;
     hasTriggeredRef.current = true;
 
-    console.log('🚀 Triggering GHL Form Modal...');
 
     try {
       createGHLModal();
     } catch (err) {
-      console.error('GHL Trigger error:', err);
     }
   };
 

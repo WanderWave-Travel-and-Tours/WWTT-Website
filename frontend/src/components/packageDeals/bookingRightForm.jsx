@@ -173,7 +173,6 @@ const BookingRightForm = ({
         const data = await response.json();
         setUserIpAddress(data.ip);
       } catch (error) {
-        console.error('❌ Error fetching IP:', error);
         setUserIpAddress('unknown');
       }
     };
@@ -190,7 +189,6 @@ const BookingRightForm = ({
 
   } catch (error) {
     // ✅ Safe handling: Kung 404 o walang endpoint, default to false (OTC button hidden)
-    console.warn('OTC access endpoint not available (404). Hiding OTC button.');
     setHasOTCAccess(false);
     setCheckingOTCAccess(false);
   }
@@ -453,7 +451,6 @@ if (savedState.formData.appliedPromo) {
           }
         }
       } catch (error) {
-        console.error('❌ Error:', error);
       } finally {
         setLoadingHotelData(false);
       }
@@ -764,7 +761,6 @@ const handleApplyPromo = async () => {
             return;
           }
         } catch (_) {
-          console.warn('⚠️ Voucher DB pre-check failed (non-fatal):', _);
         }
       }
 
@@ -890,10 +886,6 @@ const handleApplyPromo = async () => {
         toast.error(errorMsg);
       }
     } catch (error) {
-      console.error('❌ ============ ERROR CAUGHT ============');
-      console.error('Error details:', error);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
       
       setPromoError('Failed to validate promo code');
       setAppliedPromo(null);
@@ -1157,13 +1149,6 @@ const handleNextPassenger = async (e) => {
     const correctPrice = getTimerAwarePrice();
     const basePriceForComparison = pkg.price || 0;
     
-    console.log('🔍 ===== PRICE DEBUG =====');
-    console.log('Timer Expired:', timerExpired);
-    console.log('Base Package Price:', basePriceForComparison);
-    console.log('Correct Price to Save:', correctPrice);
-    console.log('Package Total:', packageTotal);
-    console.log('Final Package Total:', finalPackageTotal);
-    console.log('========================');
 
     // ✅ FIX: Always use pkg._id || pkg.id so packageId is never null
     const resolvedPackageId = pkg._id || pkg.id || null;
@@ -1331,7 +1316,7 @@ const handleNextPassenger = async (e) => {
           paymentType: paymentType || 'full',
           totalAmount: finalTotalAmount || 0,
         }),
-      }).catch(err => console.warn('BookingCount record failed (non-fatal):', err));
+      }).catch(() => {});
       // ─────────────────────────────────────────────────────────────
 
       toast.success('Booking saved! Preparing payment link...');
@@ -1358,7 +1343,7 @@ const handleNextPassenger = async (e) => {
           endDate: endDateFormatted,
           pax: quantities.adult,
           paymentType: paymentType === 'partial' ? 'Partial Payment' : 'Full Payment', // ✅ FIXED: Send readable string to GHL
-        }).catch(err => console.warn('⚠️ GHL abandoned webhook failed (non-fatal):', err.message));
+        }).catch(() => {});
 
         setShowModal(false);
         setConfirmModal({
@@ -1382,11 +1367,9 @@ const handleNextPassenger = async (e) => {
       throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
     }
   } catch (error) {
-    console.error('Booking/Payment Error:', error);
     const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
     
     if (error.response?.data?.error) {
-      console.error("Payment API Error Details:", error.response.data.error);
     }
     
     toast.error(errorMessage);

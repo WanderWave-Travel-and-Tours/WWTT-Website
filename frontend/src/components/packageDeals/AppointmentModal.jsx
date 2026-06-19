@@ -140,7 +140,6 @@ const AppointmentModal = ({
         status: 'pending'
       };
 
-      console.log('Submitting Walk-in Booking Data:', bookingData);
 
       const response = await axios.post('https://wanderwaveph.onrender.com/api/bookings', {
         bookingData: JSON.stringify(bookingData)
@@ -169,7 +168,6 @@ const AppointmentModal = ({
         throw new Error(response.data.message || 'Failed to create appointment');
       }
     } catch (error) {
-      console.error('Walk-in Appointment Error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to create appointment. Please try again.';
       toast.error(errorMessage, 'Appointment Failed');
     } finally {

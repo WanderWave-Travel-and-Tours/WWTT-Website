@@ -19,11 +19,9 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
         if (Array.isArray(res.data)) {
           setPsaDocs(res.data);
         } else {
-          console.error("API returned non-array data:", res.data);
           setPsaDocs([]);
         }
       } catch (error) {
-        console.error("Error fetching PSA documents:", error);
       } finally {
         setLoading(false);
       }

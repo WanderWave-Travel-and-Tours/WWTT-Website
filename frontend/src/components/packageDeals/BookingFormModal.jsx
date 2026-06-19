@@ -579,7 +579,6 @@ const BookingFormModal = ({
 
       // ✅ STEP 1: Wake up Render server (free tier sleeps after inactivity)
       // Ping first so server is warm before the actual booking request
-      console.log('Waking up server...');
       toast.info('Connecting to server, please wait...');
       try {
         await axios.get(pingUrl, { timeout: 25000 });
@@ -588,7 +587,6 @@ const BookingFormModal = ({
       }
 
       // ✅ STEP 2: CREATE BOOKING with long timeout + 1 retry on network/timeout errors
-      console.log('Creating booking as PENDING...');
 
       const postBooking = () => axios.post(bookingUrl, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -604,7 +602,6 @@ const BookingFormModal = ({
           firstErr.message?.includes('timeout') ||
           firstErr.message?.includes('Network Error');
         if (isRetryable) {
-          console.warn('First attempt failed, retrying once...');
           toast.info('Server is starting up, retrying...');
           await new Promise(r => setTimeout(r, 4000));
           bookingRes = await postBooking();
@@ -623,7 +620,6 @@ const BookingFormModal = ({
         throw new Error('Booking was created but no booking ID was returned. Please contact support.');
       }
 
-      console.log('✅ Booking created (pending) → ID:', bookingId);
 
       // ✅ STEP 3: CREATE PAYMENT CHECKOUT SESSION
       const amountToPay = paymentType === 'full' ? finalAmount : partialAmount;
@@ -645,7 +641,6 @@ const BookingFormModal = ({
       }
 
     } catch (error) {
-      console.error('Booking/Payment creation error:', error);
       toast.error(error.response?.data?.message || error.message || 'Failed to create booking');
     } finally {
       setLocalLoading(false);

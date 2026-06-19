@@ -207,7 +207,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             }
 
         } catch (error) {
-            console.error('Resend OTP fetch error:', error);
             const msg = 'Network error. Could not connect to the server.';
             setOtpError(msg);
             toast.error(msg, 'Connection Error');
@@ -270,7 +269,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             }
 
         } catch (error) {
-            console.error('Signup fetch error:', error);
             const msg = 'Network error. Could not connect to the server.';
             setErrorMessage(msg);
             toast.error(msg, 'Network Error');
@@ -325,7 +323,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             }
 
         } catch (error) {
-            console.error('OTP verification fetch error:', error);
             const msg = 'Network error. Could not connect to the server.';
             setOtpError(msg);
             toast.error(msg, 'Connection Error');

@@ -141,7 +141,6 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
           setIsFavorited(data.isFavorite);
         }
       } catch (err) {
-        console.error('Error checking tour favorite status:', err);
       }
     };
 
@@ -184,7 +183,6 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
         }
       }
     } catch (err) {
-      console.error('Error toggling tour wishlist:', err);
     } finally {
       setFavoriteLoading(false);
     }

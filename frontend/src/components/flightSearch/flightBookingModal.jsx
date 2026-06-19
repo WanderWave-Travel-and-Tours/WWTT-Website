@@ -139,7 +139,6 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
       estimatedPrice: totalPrice, flightDetails, passengers: allPassengers,
     };
 
-    console.log("Submitting Booking Data:", JSON.stringify(bookingData, null, 2));
 
     try {
       const res = await axios.post('https://wanderwaveph.onrender.com/api/inquiries', bookingData, {
@@ -152,7 +151,6 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
         toast.error(res.data.message || 'Unable to process your booking request. Please try again.', 'Booking Failed');
       }
     } catch (error) {
-      console.error("Booking Error:", error);
       const msg = error.response?.data?.message || error.message || "Unknown error";
       toast.error(`Failed to submit booking request. ${msg}`, 'Error Occurred', 6000);
     } finally {

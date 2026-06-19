@@ -97,7 +97,6 @@ const ServiceCustomizationModal = ({
 
         setAvailableTransfers(filteredTransfers);
       } catch (err) {
-        console.error('ServiceCustomizationModal: failed to load add-ons', err);
       } finally {
         setLoadingAddOns(false);
       }

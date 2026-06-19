@@ -28,7 +28,6 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
       try {
         const token = localStorage.getItem('wanderwave_token');
         if (!token) { setLoading(false); return; }
-        console.log('📥 Fetching wishlist items for dropdown...');
 
         // cache: 'no-store' prevents 304 stale responses
         const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
@@ -40,14 +39,12 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
         if (!response.ok) throw new Error('Failed to fetch wishlist');
 
         const result = await response.json();
-        console.log('✅ Wishlist items:', result);
 
         if (result.status === 'ok' && result.data) {
           // Server now returns packageDetails + itemType directly — no extra fetching needed
           setWishlistItems(result.data);
         }
       } catch (err) {
-        console.error('❌ Error fetching wishlist:', err);
       } finally {
         setLoading(false);
       }
@@ -81,7 +78,6 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
 
     try {
       const token = localStorage.getItem('wanderwave_token');
-      console.log('🗑️ Removing from wishlist:', packageId);
 
       const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
         method: 'POST',
@@ -99,11 +95,9 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
       if (!response.ok) throw new Error('Failed to remove from wishlist');
 
       const result = await response.json();
-      console.log('✅ Remove success:', result);
 
       setWishlistItems(prev => prev.filter(item => item.promo_id !== packageId));
 
-      console.log('📢 Dispatching wishlist update events...');
       window.dispatchEvent(new Event('wishlistUpdated'));
       window.dispatchEvent(new CustomEvent('favoriteRemoved', {
         detail: { packageId }
@@ -112,7 +106,6 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
       if (onWishlistUpdate) onWishlistUpdate();
 
     } catch (err) {
-      console.error('❌ Error removing from wishlist:', err);
     } finally {
       setRemovingId(null);
     }
@@ -160,7 +153,6 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
   // VIEW ALL FAVORITES
   // ============================================================
   const handleViewAll = () => {
-    console.log('🎯 Navigating to Favorites view...');
     onClose();
     navigate('/packages?filter=favorites');
     setTimeout(() => {

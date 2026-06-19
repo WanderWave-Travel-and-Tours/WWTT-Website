@@ -84,7 +84,6 @@ const UploadedDocumentsView = ({ documents, isLoading }) => {
                 throw new Error('Invalid response from server');
             }
         } catch (error) {
-            console.error('Error getting signed URL:', error);
             alert('Failed to access document. Please try again.');
             return null;
         } finally {

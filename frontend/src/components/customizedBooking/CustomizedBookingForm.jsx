@@ -152,7 +152,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
         });
         setAllDestinations([...seen.values()].sort());
       } catch (err) {
-        console.error('Failed to load destinations:', err);
       }
     };
     fetchAllDestinations();
@@ -231,7 +230,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
         return valid;
       });
     } catch (err) {
-      console.error('Failed to load services:', err);
     } finally {
       setFetchingServices(false);
     }
