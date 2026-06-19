@@ -770,12 +770,12 @@ function PackageDealsContent() {
       }
       
       const result = await response.json();
-      
+
       // Update with server response
       if (result.data && result.data.favorites) {
         setFavorites(result.data.favorites);
       }
-      
+
       const successMessage = result.action === 'removed'
         ? 'Removed from wishlist' 
         : 'Added to wishlist!';
