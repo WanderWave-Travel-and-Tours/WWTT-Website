@@ -16,6 +16,10 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
 
+// Render (and most cloud hosts) sit behind a reverse proxy that sets X-Forwarded-For.
+// Without this, express-rate-limit throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+app.set('trust proxy', 1);
+
 // ====================== CRITICAL: WEBHOOK SETUP FIRST ======================
 
 // 1. PayMongo Webhook — RAW body, must be registered BEFORE cors() and express.json()
