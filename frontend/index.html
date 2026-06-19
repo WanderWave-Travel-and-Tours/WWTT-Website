@@ -5,6 +5,31 @@
     <link rel="icon" type="image/png" href="/LOGO-3D.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WanderWave Travel & Tours</title>
+    <meta name="description" content="WanderWave Travel & Tours — your trusted partner for unforgettable travel packages, flights, and tour experiences across the Philippines and beyond." />
+
+    <!-- Preconnect to critical third-party origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://storage.googleapis.com" crossorigin />
+
+    <!-- Google Fonts — all families in ONE non-blocking request -->
+    <link rel="preload" as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript>
+      <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+    </noscript>
+
+    <!-- Font Awesome — non-blocking -->
+    <link rel="preload" as="style"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript>
+      <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
@@ -20,12 +45,12 @@
       }
     </style>
 
-    <!-- GHL / LeadConnector Chat Widget -->
-    <script 
-  src="https://beta.leadconnectorhq.com/loader.js"  
-  data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js" 
- data-widget-id="690c1313fbca0477c893e2b0"   > 
- </script>
+    <!-- GHL / LeadConnector Chat Widget — deferred so it doesn't block paint -->
+    <script defer
+      src="https://beta.leadconnectorhq.com/loader.js"
+      data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js"
+      data-widget-id="690c1313fbca0477c893e2b0">
+    </script>
 
     <!--
       Strategy:

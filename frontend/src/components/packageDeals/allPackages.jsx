@@ -1,11 +1,13 @@
 // src/components/PackageDeals/allPackages.jsx - COMPLETE CODE
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import PackageCard from './packageCard';
 import CurrencyModal from './CurrencyModal';
-import PromoSection from './promoSection';
 import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, LogIn, ArrowUpNarrowWide, ArrowDownNarrowWide, Map } from 'lucide-react';
 import './allPackages.css';
+
+// PromoSection fetches its own data and lives below the main package grid
+const PromoSection = lazy(() => import('./promoSection'));
 
 function AllPackages({
   packages,
@@ -212,7 +214,9 @@ function AllPackages({
           overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
         }}>
-          <PromoSection onBookNow={onPromoBookNow} />
+          <Suspense fallback={null}>
+            <PromoSection onBookNow={onPromoBookNow} />
+          </Suspense>
         </div>
       )}
 

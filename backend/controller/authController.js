@@ -1,10 +1,14 @@
 // backend/controller/authController.js
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const axios = require('axios');
-const nodemailer = require('nodemailer'); 
-const crypto = require('crypto'); 
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const path = require('path');
+
+const USER_JWT_SECRET = process.env.USER_JWT_SECRET || process.env.JWT_SECRET || 'wanderwaveph_user25';
+const USER_JWT_EXPIRES_IN = '7d';
 
 // 🎯 IMPORT ACTIVITY LOGGER
 const { 
@@ -687,9 +691,12 @@ const verifyOtp = async (req, res) => {
 
         console.log('✅ User registered and verified successfully:', email);
 
+        const token = jwt.sign({ id: savedUser._id }, USER_JWT_SECRET, { expiresIn: USER_JWT_EXPIRES_IN });
+
         return res.status(201).json({
             success: true,
             message: 'Account verified successfully!',
+            token,
             user: {
                 id: savedUser._id,
                 fullName: savedUser.fullName,
@@ -859,15 +866,18 @@ const login = async (req, res) => {
 
         console.log('✅ User logged in successfully:', email);
 
+        const token = jwt.sign({ id: user._id }, USER_JWT_SECRET, { expiresIn: USER_JWT_EXPIRES_IN });
+
         return res.json({
             success: true,
             message: 'Login successful!',
-            user: { 
-                _id: user._id, 
-                id: user._id, 
-                fullName: user.fullName, 
-                email: user.email, 
-                username: user.username, 
+            token,
+            user: {
+                _id: user._id,
+                id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                username: user.username,
                 role: user.role || 'user'
             }
         });

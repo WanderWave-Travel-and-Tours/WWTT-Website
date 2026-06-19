@@ -1,5 +1,26 @@
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* Override Font Awesome's default font-display to swap so icons don't block text rendering */
+@font-face {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-solid-900.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-regular-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Font Awesome 6 Brands';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-brands-400.woff2') format('woff2');
+}
 
 :root {
   --primary-orange: #fc9c1b;
@@ -14,6 +35,18 @@
   --total-header-height: 130px;
   --gray-100: #f5f5f5;
   --orange-light-bg: #fef3e3;
+}
+
+.ww-route-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e0e0e0;
+  border-top-color: #fc9c1b;
+  border-radius: 50%;
+  animation: ww-spin 0.7s linear infinite;
+}
+@keyframes ww-spin {
+  to { transform: rotate(360deg); }
 }
 
 * {

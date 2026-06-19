@@ -12,7 +12,7 @@ function Footer() {
           
           {/* About Section */}
           <div className="footer-about">
-            <img src={logoUrl} alt="Wanderwave Travel & Tours" className="footer-logo" />
+            <img src={logoUrl} alt="Wanderwave Travel & Tours" className="footer-logo" width="260" height="130" />
             <p>
               Your trusted partner in creating unforgettable travel experiences across the Philippines and beyond.
             </p>

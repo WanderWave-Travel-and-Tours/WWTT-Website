@@ -64,16 +64,23 @@ const Users = () => {
         return filterStatus === status ? 'uf-active-navy' : '';
     };
 
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('adminToken');
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+    };
+
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await fetch(API_URL);
-            
+            const response = await fetch(API_URL, {
+                headers: getAuthHeaders()
+            });
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: response.statusText }));
                 throw new Error(errorData.message || 'Failed to fetch users');
             }
-            
+
             const data = await response.json();
             setUsers(data);
             setError(null);
@@ -108,6 +115,7 @@ const Users = () => {
         try {
             const response = await fetch(`${API_URL}/archive/${id}`, {
                 method: 'PUT',
+                headers: getAuthHeaders()
             });
 
             if (response.ok) {

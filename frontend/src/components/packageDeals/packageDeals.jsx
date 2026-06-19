@@ -1,18 +1,19 @@
 // src/components/PackageDeals/packageDeals.jsx - COMPLETE CODE WITH DISCOUNT EXPIRATION SUPPORT
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BrowseCategory from './browseCategory';
 import AllPackages from './allPackages';
-import PackageBooking from './packageBooking';
 import './packageDeals.css';
-import PromoSection from './promoSection';
+
+// Lazy-load booking flow — 200+ KiB of form components only needed after "Book Now"
+const PackageBooking = lazy(() => import('./packageBooking'));
 import CurrencyModal from './CurrencyModal';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
-import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 import { usePageTracker } from '../../hooks/usePageTracker';
 import WanderLoader from '../loading/WanderLoader';
+import { preFetchPackages } from '../../utils/packagesCache.js';
 
 // ============================================================
 // INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
@@ -45,7 +46,6 @@ function PackageDealsContent() {
 
   const [currency, setCurrency] = useState('PHP');        
   const exchangeRate = 58;
-  const [feedbackTrigger, setFeedbackTrigger] = useState(0);
 
 
 
@@ -517,13 +517,12 @@ function PackageDealsContent() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('https://wanderwaveph.onrender.com/api/packages/with-tours'); 
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // Reuse the pre-fetch started in main.jsx — avoids a duplicate network request
+        const result = await preFetchPackages();
+
+        if (!result) {
+          throw new Error('Failed to load packages');
         }
-        
-        const result = await response.json();
         
         if (result.status === 'ok') {
           const data = result.data;
@@ -676,7 +675,11 @@ function PackageDealsContent() {
   }
   
   if (currentView === 'booking' && selectedPackageForBooking) {
-    return <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} currency={currency} exchangeRate={exchangeRate} currentUser={currentUser} />;
+    return (
+      <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="ww-route-spinner" /></div>}>
+        <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} currency={currency} exchangeRate={exchangeRate} currentUser={currentUser} />
+      </Suspense>
+    );
   }
 
   const selectedCategory = mostVisitedCategories.find(c => c.id === selectedFilter);
@@ -883,8 +886,6 @@ function PackageDealsContent() {
       </section>
 
       <MascotGif onClick={openGHLChat} />
-
-      <FeedbackWidget triggerOpen={feedbackTrigger} />
 
       <div className="section-divider-orange">
         {/* Airplane — absolutely positioned above the navy bar, no extra height */}
