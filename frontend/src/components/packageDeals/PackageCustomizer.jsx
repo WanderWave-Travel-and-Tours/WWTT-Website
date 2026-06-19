@@ -235,7 +235,6 @@ const PackageCustomizer = ({
       currentDestinationRef.current = destKey;
 
     } catch (err) {
-      console.error('❌ Error fetching seller rates:', err);
       setError(err.message);
       setAvailableActivities([]);
       setFilteredActivities([]);

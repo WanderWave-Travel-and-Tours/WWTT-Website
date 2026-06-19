@@ -92,7 +92,6 @@ const PackageBookingWrapper = () => {
 
   useEffect(() => {
     if (!pkg) {
-      console.error('No package data found for code:', code);
       const timer = setTimeout(() => {
         navigate('/packages', { replace: true });
       }, 2000);
@@ -142,8 +141,6 @@ const PackageBookingWrapper = () => {
     image: pkg.image || 'https://default-image-url.jpg'
   };
 
-  console.log('Rendering PackageBooking with code:', code);
-  console.log('Package data:', transformedPkg);
 
   return <PackageBooking pkg={transformedPkg} />;
 };
@@ -251,7 +248,6 @@ function MainLayout() {
         const userData = JSON.parse(savedUser);
         setCurrentUser(userData);
       } catch (error) {
-        console.error('Error parsing saved user data:', error);
         localStorage.removeItem('wanderwave_user');
       }
     }
@@ -285,15 +281,12 @@ function MainLayout() {
         }
 
         const result = await response.json();
-        console.log('✅ Wishlist data:', result);
         
         if (result.status === 'ok' && result.data) {
           const count = result.data.length;
-          console.log(`❤️ Wishlist count: ${count}`);
           setWishlistCount(count);
         }
       } catch (err) {
-        console.error('❌ Error fetching wishlist count:', err);
         setWishlistCount(0);
       }
     };
@@ -301,7 +294,6 @@ function MainLayout() {
     fetchWishlistCount();
 
     const handleWishlistUpdate = () => {
-      console.log('🔄 Wishlist updated, refreshing count...');
       fetchWishlistCount();
     };
 
@@ -330,7 +322,6 @@ function MainLayout() {
         );
         setIsTranslateReady(true);
       } catch (error) {
-        console.error('Translation initialization error:', error);
       }
     };
 
@@ -353,7 +344,7 @@ function MainLayout() {
       script = document.createElement('script');
       script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
       script.async = true;
-      script.onerror = () => console.error('Failed to load Google Translate');
+      script.onerror = () => {};
       document.body.appendChild(script);
     }, 5000);
 
@@ -418,13 +409,11 @@ function MainLayout() {
   // ============================================================
   const handleWishlistClick = (e) => {
     e.stopPropagation();
-    console.log('❤️ Wishlist button clicked!');
     setIsWishlistDropdownOpen(!isWishlistDropdownOpen);
     setIsTranslateOpen(false); // Close translate dropdown if open
   };
 
   const handleWishlistUpdate = () => {
-    console.log('🔄 Wishlist updated from dropdown');
     // Refresh count will be handled by the global event listener
   };
 
@@ -503,7 +492,6 @@ function MainLayout() {
         onClose={() => setIsCustomBookingOpen(false)}
         onSuccess={(booking) => {
           setIsCustomBookingOpen(false);
-          console.log('Custom booking submitted:', booking);
         }}
       />
       

@@ -90,7 +90,6 @@ function PackageBooking({
           setUserIpAddress(data.ip);
         }
       } catch (error) {
-        console.error('❌ Error fetching IP:', error);
         if (isMounted.current) {
           setUserIpAddress('unknown');
         }

@@ -436,14 +436,12 @@ const TourBookingFormModal = ({
       const pingUrl     = baseUrl.endsWith('/api') ? baseUrl.replace(/\/api$/, '')         : baseUrl;
 
       // ✅ STEP 1: Wake up Render server (same as BookingFormModal)
-      console.log('Waking up server...');
       toast.info('Connecting to server, please wait...');
       try {
         await axios.get(pingUrl, { timeout: 25000 });
       } catch (_) {}
 
       // ✅ STEP 2: CREATE TOUR BOOKING (PENDING) with retry (same as BookingFormModal)
-      console.log('Creating tour booking as PENDING...');
 
       const postBooking = () => axios.post(bookingUrl, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -459,7 +457,6 @@ const TourBookingFormModal = ({
           firstErr.message?.includes('timeout') ||
           firstErr.message?.includes('Network Error');
         if (isRetryable) {
-          console.warn('First attempt failed, retrying once...');
           toast.info('Server is starting up, retrying...');
           await new Promise(r => setTimeout(r, 4000));
           bookingRes = await postBooking();
@@ -478,7 +475,6 @@ const TourBookingFormModal = ({
         throw new Error('Tour booking was created but no booking ID was returned. Please contact support.');
       }
 
-      console.log('✅ Tour booking created (pending) → ID:', bookingId);
 
       // ✅ STEP 3: CREATE PAYMENT CHECKOUT SESSION
       const amountToPay = paymentType === 'full' ? finalAmount : partialAmount;
@@ -510,9 +506,7 @@ const TourBookingFormModal = ({
           pax: fullBookingData.pax?.adult || totalPassengers,
           paymentType: paymentType === 'full' ? 'Full Payment' : 'Partial Payment',
         }, { timeout: 10000 });
-        console.log('✅ Abandoned tour booking tracking fired for ID:', bookingId);
       } catch (abandonedErr) {
-        console.warn('⚠️ Abandoned tour booking tracking failed (non-fatal):', abandonedErr.message);
       }
 
       // ✅ STEP 5: REDIRECT TO PAYMENT
@@ -524,7 +518,6 @@ const TourBookingFormModal = ({
       window.location.href = checkoutUrl;
 
     } catch (error) {
-      console.error('Tour Booking/Payment creation error:', error);
       toast.error(error.response?.data?.message || error.message || 'Failed to create tour booking');
     } finally {
       setLocalLoading(false);

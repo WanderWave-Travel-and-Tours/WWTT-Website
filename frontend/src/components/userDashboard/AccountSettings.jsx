@@ -114,7 +114,6 @@ const AccountSettings = ({ user, onNavigateBack }) => {
                 toast.error(result.message || "Failed to update profile");
             }
         } catch (error) {
-            console.error("Update Profile Error:", error);
             toast.error("Connection error to server. Please try again.");
         }
     };
@@ -203,7 +202,6 @@ const AccountSettings = ({ user, onNavigateBack }) => {
                 toast.error(result.message || "Failed to update password");
             }
         } catch (error) {
-            console.error("Password Update Error:", error);
             toast.error("Connection error to server. Please try again.");
         }
     };

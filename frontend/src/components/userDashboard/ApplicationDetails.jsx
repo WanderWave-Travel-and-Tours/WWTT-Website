@@ -121,7 +121,6 @@ const ApplicationDetails = ({
                         toast.error(data.message || 'Failed to cancel booking.', 'Cancellation Failed');
                     }
                 } catch (error) {
-                    console.error('Error cancelling booking:', error);
                     toast.error('Failed to cancel booking. Please try again.', 'Error');
                 } finally {
                     setIsCancelling(false);

@@ -176,7 +176,6 @@ const UserDashboardInner = ({ user, onLogout }) => {
             }
 
         } catch (error) {
-            console.error('Error fetching user data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -200,7 +199,6 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 setUploadedDocuments([]);
             }
         } catch (error) {
-            console.error('Error fetching uploaded documents:', error);
             setUploadedDocuments([]);
         } finally {
             setIsLoadingDocuments(false);
@@ -236,7 +234,6 @@ const UserDashboardInner = ({ user, onLogout }) => {
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await fetchUserData();
                 } catch (error) {
-                    console.error('Payment verification failed:', error);
                 } finally {
                     setIsLoading(false);
                 }
@@ -252,7 +249,6 @@ const UserDashboardInner = ({ user, onLogout }) => {
                     const response = await axios.get(`https://wanderwaveph.onrender.com/api/visas/${selectedInquiry.visaId}`);
                     if (response.data) setVisaDetails(response.data);
                 } catch (error) {
-                    console.error('Error fetching visa details:', error);
                     setVisaDetails(null);
                 }
             } else {
@@ -315,7 +311,6 @@ const UserDashboardInner = ({ user, onLogout }) => {
                         setIsLoading(false);
                     }
                 } catch (error) {
-                    console.error('Payment error:', error);
                     toast.error('Something went wrong. Please try again later.', 'Payment Error');
                     setIsLoading(false);
                 }
@@ -325,7 +320,6 @@ const UserDashboardInner = ({ user, onLogout }) => {
 
     // ✅ NEW: Handler for booking updates (passenger edits, customizations)
     const handleBookingUpdate = async (updatedBooking) => {
-        console.log('📝 Booking updated:', updatedBooking);
         
     // ✅ FIXED: Preserve inquiryType and populated packageId.
     // Without this, ApplicationDetails loses the BOOKING type after save,
@@ -416,7 +410,6 @@ const UserDashboardInner = ({ user, onLogout }) => {
         await fetchUploadedDocuments(selectedInquiry._id);   // refresh
 
     } catch (error) {
-        console.error('Upload error:', error);
         toast.error(error.message || 'Failed to upload documents. Please try again.');
     } finally {
         setIsUploading(false);

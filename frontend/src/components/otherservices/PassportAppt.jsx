@@ -39,7 +39,6 @@ const PassportAppt = () => {
                 setPassportData(res.data.data[0]);
             }
         } catch (error) {
-            console.error("Error fetching passport data:", error);
         } finally {
             setLoading(false);
         }
@@ -55,7 +54,6 @@ const PassportAppt = () => {
                 fetchPassportData();
             }
         } catch (error) {
-            console.error("Error initializing:", error);
             alert('Error initializing passport data');
         }
     };
@@ -83,7 +81,6 @@ const PassportAppt = () => {
                 setShowEditModal(false);
             }
         } catch (error) {
-            console.error("Error updating:", error);
             alert('Error updating passport data');
         }
     };

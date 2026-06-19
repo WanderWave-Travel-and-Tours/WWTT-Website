@@ -19,11 +19,9 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
         if (Array.isArray(res.data)) {
           setCenomarDocs(res.data);
         } else {
-          console.error("API returned non-array data:", res.data);
           setCenomarDocs([]);
         }
       } catch (error) {
-        console.error("Error fetching CENOMAR documents:", error);
       } finally {
         setLoading(false);
       }

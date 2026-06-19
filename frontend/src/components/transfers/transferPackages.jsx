@@ -46,16 +46,13 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
       const userJSON = localStorage.getItem('wanderwave_user');
       const isUserLoggedIn = !!userJSON;
 
-      console.log('👤 [Transfers] Checking login status:', isUserLoggedIn ? 'LOGGED IN' : 'NOT LOGGED IN');
 
       if (userJSON) {
         try {
           const user = JSON.parse(userJSON);
-          console.log('✅ [Transfers] User data:', { id: user._id, name: user.fullName, email: user.email });
           setCurrentUser(user);
           setIsLoggedIn(true);
         } catch (err) {
-          console.error('❌ [Transfers] Error parsing user data:', err);
           localStorage.removeItem('wanderwave_user');
           setCurrentUser(null);
           setIsLoggedIn(false);
@@ -66,7 +63,6 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
           setCurrentUser(currentUserProp);
           setIsLoggedIn(true);
         } else {
-          console.log('❌ [Transfers] No user data in localStorage');
           setCurrentUser(null);
           setIsLoggedIn(false);
         }
@@ -77,7 +73,6 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
 
     // Keep in sync if user logs in/out in another tab
     const handleStorageChange = () => {
-      console.log('📦 [Transfers] Storage changed — rechecking login status');
       checkLoginStatus();
     };
 
@@ -105,7 +100,6 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
           setError('Failed to load transfer listings.');
         }
       } catch (err) {
-        console.error('Error fetching transfers:', err);
         setError('Unable to connect. Please try again.');
       } finally {
         setLoading(false);
@@ -148,11 +142,9 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
         const result = await response.json();
         if (result.status === 'ok' && result.data) {
           const favoriteIds = result.data.map(fav => fav.promo_id);
-          console.log('❤️ Transfer favorite IDs:', favoriteIds);
           setUserFavorites(favoriteIds);
         }
       } catch (err) {
-        console.error('❌ Error fetching transfer favorites:', err);
       }
     };
 
@@ -236,7 +228,6 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
       if (!response.ok) throw new Error('Failed to update wishlist');
 
       const result = await response.json();
-      console.log('✅ Wishlist toggle result:', result);
 
       // Sync with server response if available
       if (result.data && result.data.favorites) {
@@ -257,7 +248,6 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
         }));
       }
     } catch (err) {
-      console.error('❌ Error toggling transfer favorite:', err);
       // Revert optimistic update on error
       setUserFavorites(previousState);
       toast.error('Failed to update wishlist. Please try again.', 'Error', 3000);

@@ -25,9 +25,7 @@ const PaymentSuccess = () => {
           headers: { 'Content-Type': 'application/json' },
         });
         const data = await res.json();
-        console.log('✅ Safety-net confirm-by-booking result:', data);
       } catch (err) {
-        console.error('Safety-net booking confirmation failed (non-fatal):', err);
       }
     };
 
@@ -46,9 +44,7 @@ const PaymentSuccess = () => {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
-        console.log('✅ User session restored:', parsedUser.email);
       } catch (error) {
-        console.error('Failed to parse user data:', error);
       }
     }
 
@@ -92,7 +88,6 @@ const PaymentSuccess = () => {
         }
 
         if (attempt < MAX_RETRIES) {
-          console.log(`⏳ Booking not ready yet (attempt ${attempt}) – retrying...`);
           await new Promise(r => setTimeout(r, RETRY_DELAY));
           return tryFetch(attempt + 1);
         }
@@ -101,7 +96,6 @@ const PaymentSuccess = () => {
           await new Promise(r => setTimeout(r, RETRY_DELAY));
           return tryFetch(attempt + 1);
         }
-        console.error('All fetch attempts failed');
       }
       return null;
     };
@@ -216,7 +210,6 @@ const PaymentSuccess = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching inquiry:', error);
     } finally {
       setLoading(false);
     }
@@ -242,10 +235,8 @@ const PaymentSuccess = () => {
           const destData = await destRes.json();
           if (destData.success && destData.payload) {
             destinationPayload = destData.payload;
-            console.log('✅ Destination payload fetched:', Object.keys(destinationPayload));
           }
         } catch (destErr) {
-          console.warn('⚠️ Could not fetch destination payload (non-fatal):', destErr);
         }
       }
 
@@ -343,9 +334,7 @@ const PaymentSuccess = () => {
         })
       });
 
-      console.log(`✅ Webhook triggered: ${eventName}`);
     } catch (err) {
-      console.error('Webhook error:', err);
     }
   };
 

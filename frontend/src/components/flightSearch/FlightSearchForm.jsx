@@ -68,7 +68,6 @@ const FlightSearchForm = ({
       try {
         setRecentSearches(JSON.parse(saved));
       } catch (e) {
-        console.error('Error loading recent searches:', e);
       }
     }
   }, []);

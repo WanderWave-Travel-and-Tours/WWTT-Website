@@ -220,7 +220,6 @@ const HotelCustomizer = ({
         setError(`No hotels found for ${location}.`);
       }
     } catch (err) {
-      console.error('❌ Error fetching hotel rooms:', err);
       setError('Failed to load hotel options. Please try again.');
       fetchedLocationRef.current = '';
     } finally {
@@ -287,7 +286,6 @@ const HotelCustomizer = ({
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      console.log('✅ Hotel selection saved:', data);
 
       setSaveSuccess(true);
       setHasUnsavedChanges(false);
@@ -304,7 +302,6 @@ const HotelCustomizer = ({
 
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      console.error('❌ Error saving hotel selection:', err);
       setError(`Failed to save: ${err.message}`);
     } finally {
       setIsSaving(false);

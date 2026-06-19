@@ -164,7 +164,6 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
           }
         }
       } catch (err) {
-        console.error('Hotel data fetch error (tour):', err);
       } finally {
         setLoadingHotelData(false);
       }
@@ -292,14 +291,6 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
     const rooms = Math.ceil(basePax / 4);
     const pricePerNight = getHotelPricePerNight(selectedRoomType.type);
     // 🔍 DEBUG — remove after confirming values are correct
-    console.log('[HotelTotal Debug]', {
-      roomType: selectedRoomType.type,
-      pricePerNight,
-      durationNights,
-      basePax,
-      rooms,
-      total: pricePerNight * durationNights * rooms,
-    });
     return pricePerNight * durationNights * rooms;
   };
 
@@ -486,7 +477,6 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
   // ✅ Same as bookingRightForm — shows user-friendly category name in toast
   const handleRoomTypeChange = (roomType) => {
     // 🔍 DEBUG — log exact type string from API so we can confirm matching
-    console.log('[handleRoomTypeChange] selected roomType object:', roomType);
     setSelectedRoomType(roomType);
     const rawType = roomType.type || '';
     const displayName =

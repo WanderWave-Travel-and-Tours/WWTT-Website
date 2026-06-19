@@ -29,7 +29,6 @@ const Payment = () => {
     setIsProcessing(true);
 
     try {
-      console.log('💳 Creating payment for booking:', bookingData._id);
       
       const response = await fetch('https://wanderwaveph.onrender.com/api/payment/create-intent', {
         method: 'POST',
@@ -44,17 +43,14 @@ const Payment = () => {
 
       const data = await response.json();
 
-      console.log('🔥 Payment response:', data);
 
       if (data.success) {
-        console.log('✅ Redirecting to:', data.checkoutUrl);
         window.location.href = data.checkoutUrl;
       } else {
         throw new Error(data.message || 'Payment creation failed');
       }
 
     } catch (error) {
-      console.error('❌ Payment error:', error);
       toast.error(error.message || "Failed to process payment. Please try again.");
       setIsProcessing(false);
     }

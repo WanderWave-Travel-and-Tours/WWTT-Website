@@ -902,7 +902,6 @@ const buildRateFirstAssignments = (strictPool, destinationPool, inclusions, sign
   const usedDestPool = generalRates.length === 0;
   if (usedDestPool) generalRates = generalFilter(destinationPool);
   if (generalRates.length === 0) {
-    console.warn('[matcher] ⚠ No general rates found in pool — activity inclusions will not be priced');
     return new Map();
   }
 
@@ -925,7 +924,6 @@ const buildRateFirstAssignments = (strictPool, destinationPool, inclusions, sign
     );
 
   if (eligible.length === 0) {
-    console.warn('[matcher] ⚠ No eligible general inclusions (all are meta/accommodation/RT)');
     return new Map();
   }
 
@@ -1003,15 +1001,9 @@ export const matchInclusionsWithPrices = (
   const { strictPool, destinationPool } = buildStage1Pool(sellerRates, signals);
 
   // ── Diagnostics (all destinations) ───────────────────────────────────────
-  console.group(`[matcher] ${destination} — "${pkgTitle}"`);
-  console.log('signals     :', JSON.stringify(signals));
-  console.log('sellerRates :', sellerRates.length, '| destPool:', destinationPool.length, '| strictPool:', strictPool.length);
   if (strictPool.length > 0) {
-    console.log('strictPool  :', strictPool.map(r => `${r.activity} (${r.destination})`).join(' | '));
   } else {
-    console.warn('⚠ strictPool is EMPTY — check destination spelling, duration, or qualifier');
   }
-  console.log('inclusions  :', inclusions);
   // ─────────────────────────────────────────────────────────────────────────
 
   const rateFirstMap = buildRateFirstAssignments(
@@ -1059,67 +1051,53 @@ export const matchInclusionsWithPrices = (
   const matched = inclusions.map((inclusion, idx) => {
 
     if (destinationPool.length === 0) {
-      console.warn(`  [${idx}] NO MATCH — destinationPool empty:`, inclusion);
       return noMatch(idx, inclusion);
     }
 
     if (isNoMatchInclusion(inclusion)) {
-      console.log(`  [${idx}] blacklisted (meta):`, inclusion);
       return noMatch(idx, inclusion);
     }
 
     if (isRoundtripInclusion(inclusion)) {
       if (!destinationSupports(signals.destination, 'rt')) {
-        console.log(`  [${idx}] RT not supported for dest:`, inclusion);
         return noMatch(idx, inclusion);
       }
       if (rtRateUsed) {
-        console.log(`  [${idx}] RT already assigned to another inclusion — skipping:`, inclusion);
         return noMatch(idx, inclusion);
       }
       const rate = findRtPudoRate(strictPool, destinationPool, signals);
       if (!rate) {
-        console.warn(`  [${idx}] RT NO MATCH — no RT rate found:`, inclusion);
         return noMatch(idx, inclusion);
       }
       rtRateUsed = true;
       matchCount++;
-      console.log(`  [${idx}] ✓ RT →`, rate.activity, rate.destination, '₱' + rate.sellingPrice);
       return buildResult(idx, inclusion, rate);
     }
 
     if (isAccommodationInclusion(inclusion)) {
       if (!destinationSupports(signals.destination, 'accommodation')) {
-        console.log(`  [${idx}] Accommodation not supported for dest:`, inclusion);
         return noMatch(idx, inclusion);
       }
       if (accomRateUsed) {
-        console.log(`  [${idx}] Accommodation already assigned to another inclusion — skipping:`, inclusion);
         return noMatch(idx, inclusion);
       }
       const rate = findAccommodationRate(strictPool, destinationPool, signals, inclusion);
       if (!rate) {
-        console.warn(`  [${idx}] ACCOMMODATION NO MATCH — no rate found:`, inclusion);
         return noMatch(idx, inclusion);
       }
       accomRateUsed = true;
       matchCount++;
-      console.log(`  [${idx}] ✓ Accommodation →`, rate.activity, rate.destination, '₱' + rate.sellingPrice);
       return buildResult(idx, inclusion, rate);
     }
 
     const assignedRate = rateFirstMap.get(idx);
     if (!assignedRate) {
-      console.warn(`  [${idx}] GENERAL NO MATCH — scored below threshold:`, inclusion);
       return noMatch(idx, inclusion);
     }
     matchCount++;
-    console.log(`  [${idx}] ✓ General →`, assignedRate.activity, assignedRate.destination, '₱' + assignedRate.sellingPrice);
     return buildResult(idx, inclusion, assignedRate);
   });
 
-  console.log(`matched: ${matchCount} / ${inclusions.length}`);
-  console.groupEnd();
 
   return { matched, matchCount };
 };

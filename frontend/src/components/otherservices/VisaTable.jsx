@@ -19,11 +19,9 @@ const VisaTable = ({ onSelectVisa }) => {
         if (Array.isArray(res.data)) {
           setVisas(res.data);
         } else {
-          console.error("API returned non-array data:", res.data);
           setVisas([]);
         }
       } catch (error) {
-        console.error("Error fetching visas:", error);
       } finally {
         setLoading(false);
       }

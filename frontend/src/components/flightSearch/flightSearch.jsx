@@ -149,7 +149,6 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
             setDestinationSearchTerm(displayName);
           }
         } catch (error) {
-          console.error("Auto-search destination error:", error);
         }
       };
       searchDestination();
@@ -186,7 +185,6 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
         else if (field === "multi-city") setMultiCitySuggestions(airports);
       }
     } catch (error) {
-      console.error("Airport search error:", error);
       if (field === "origin") setOriginSuggestions([]);
       else if (field === "destination") setDestinationSuggestions([]);
       else if (field === "multi-city") setMultiCitySuggestions([]);
@@ -375,7 +373,6 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
         setError("No return flights found for the selected date.");
       }
     } catch (err) {
-      console.error(err);
       setError("Failed to load return flights. Please try again.");
     } finally {
       setLoading(false);
@@ -534,7 +531,6 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
         setError("No flights found for this date/route.");
       }
     } catch (err) {
-      console.error(err);
       setError("Search Failed. Please try again or check your server.");
     } finally {
       setLoading(false);

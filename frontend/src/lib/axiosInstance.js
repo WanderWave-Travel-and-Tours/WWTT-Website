@@ -48,7 +48,6 @@ api.interceptors.response.use(
             try {
                 response.data = await decrypt(response.data);
             } catch (err) {
-                console.error('[axiosInstance] Decryption failed:', err.message);
                 // Reject so the caller knows something is wrong, not silently
                 // return bad data
                 return Promise.reject(
