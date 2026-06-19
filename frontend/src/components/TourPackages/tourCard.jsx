@@ -130,8 +130,11 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
 
     const checkFavoriteStatus = async () => {
       try {
+        const token = localStorage.getItem('wanderwave_token');
+        if (!token) return;
         const res = await fetch(
-          `https://wanderwaveph.onrender.com/api/favorites/${currentUser._id}/${tour._id}`
+          `https://wanderwaveph.onrender.com/api/favorites/check/${tour._id}`,
+          { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
         if (data.status === 'ok') {
@@ -156,12 +159,15 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
 
     setFavoriteLoading(true);
     try {
+      const token = localStorage.getItem('wanderwave_token');
       const res = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({
           promo_id: tour._id,
-          user_id: currentUser._id,
           package_title: tour.title,
           package_location: tour.destination,
         }),
@@ -169,10 +175,9 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
       const data = await res.json();
 
       if (data.status === 'ok') {
-        setIsFavorited(data.action === 'added');
-        // Notify navbar / WishlistDropdown to refresh count
+        setIsFavorited(data.isFavorited);
         window.dispatchEvent(new Event('wishlistUpdated'));
-        if (data.action === 'removed') {
+        if (!data.isFavorited) {
           window.dispatchEvent(new CustomEvent('favoriteRemoved', {
             detail: { packageId: tour._id }
           }));

@@ -120,12 +120,14 @@ function PackageDealsContent() {
       }
 
       try {
-        const userId = currentUser._id;
+        const token = localStorage.getItem('wanderwave_token');
+        if (!token) { setFavorites([]); return; }
 
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites/${userId}`, {
+        const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -134,7 +136,7 @@ function PackageDealsContent() {
         }
 
         const result = await response.json();
-        
+
         if (result.status === 'ok' && result.data) {
           const favoriteIds = result.data.map(fav => fav.promo_id);
           setFavorites(favoriteIds);
@@ -651,13 +653,7 @@ function PackageDealsContent() {
     return () => clearTimeout(timer);
   }, [shouldScrollToPackages]);
 
-  if (loading) {
-    return (
-      <>
-        <WanderLoader loading={loading} text="LOADING TOUR PACKAGES" subtitle="Finding the best deals for you" />
-      </>
-    );
-  }
+  // Don't block render during loading — AllPackages shows skeleton cards instead
 
   if (error) {
     return (
@@ -741,27 +737,27 @@ function PackageDealsContent() {
     }
     
     try {
-      const userId = currentUser._id;
+      const token = localStorage.getItem('wanderwave_token');
       const isCurrentlyFavorite = favorites.includes(packageId);
 
       // Optimistic UI update
       const previousState = [...favorites];
-      setFavorites(prev => 
+      setFavorites(prev =>
         isCurrentlyFavorite
           ? prev.filter(fav => fav !== packageId)
           : [...prev, packageId]
       );
-      
-      const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
+
+      const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           promo_id: packageId,
-          user_id: userId,
           package_title: packageName,
-          package_location: packageLocation
+          package_location: packageLocation,
         }),
       });
 
@@ -856,9 +852,10 @@ function PackageDealsContent() {
 
       <section className="top-section-bg">
         <div className="content-container">
-          <AllPackages 
+          <AllPackages
             packages={filteredPackages}
-            categoryName={headerTitle} 
+            isLoading={loading}
+            categoryName={headerTitle}
             favorites={favorites}
             onToggleFavorite={toggleFavorite} 
             onBookNow={handleBookNow}

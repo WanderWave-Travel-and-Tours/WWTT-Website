@@ -134,12 +134,12 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
       }
 
       try {
-        const userId = currentUser._id;
-        console.log('📥 Fetching transfer favorites for user:', userId);
+        const token = localStorage.getItem('wanderwave_token');
+        if (!token) { setUserFavorites([]); return; }
 
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites/${userId}`, {
+        const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
 
@@ -170,8 +170,10 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
 
     const handleWishlistUpdated = () => {
       if (!currentUser) return;
-      // Re-fetch to stay in sync
-      fetch(`https://wanderwaveph.onrender.com/api/favorites/${currentUser._id}`, {
+      const token = localStorage.getItem('wanderwave_token');
+      if (!token) return;
+      fetch('https://wanderwaveph.onrender.com/api/favorites', {
+        headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
       })
         .then(r => r.json())
@@ -216,11 +218,14 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
     }
 
     try {
+      const token = localStorage.getItem('wanderwave_token');
       const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({
-          user_id: currentUser._id,
           promo_id: transferId,
           package_name: transfer.title,
           package_location: transfer.packageDestination,

@@ -269,13 +269,14 @@ function MainLayout() {
       }
 
       try {
-        const userId = currentUser._id;
-        console.log('📊 Fetching wishlist count for user:', userId);
+        const token = localStorage.getItem('wanderwave_token');
+        if (!token) { setWishlistCount(0); return; }
 
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites/${userId}`, {
+        const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -320,7 +321,7 @@ function MainLayout() {
     window.googleTranslateElementInit = function() {
       try {
         new window.google.translate.TranslateElement(
-          { 
+          {
             pageLanguage: 'en',
             includedLanguages: 'en,tl,zh-CN,zh-TW,ja,ko,es,fr,de,it,pt,ru,ar,hi,th,vi,id,ms,nl,pl,tr,bn',
             autoDisplay: false
@@ -333,58 +334,33 @@ function MainLayout() {
       }
     };
 
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-    script.async = true;
-    script.defer = true;
-    
-    script.onerror = () => {
-      console.error('Failed to load Google Translate');
-    };
-
-    document.body.appendChild(script);
-
     const style = document.createElement('style');
     style.innerHTML = `
-      .goog-te-banner-frame.skiptranslate {
-        display: none !important;
-      }
-      body {
-        top: 0 !important;
-        position: static !important;
-      }
-      #google_translate_element {
-        display: none !important;
-      }
-      .goog-te-gadget-icon {
-        display: none !important;
-      }
-      .goog-te-gadget-simple {
-        background-color: transparent !important;
-        border: none !important;
-      }
-      .goog-logo-link {
-        display: none !important;
-      }
-      .goog-te-gadget {
-        color: transparent !important;
-        font-size: 0 !important;
-      }
-      .goog-text-highlight {
-        background-color: transparent !important;
-        box-shadow: none !important;
-      }
+      .goog-te-banner-frame.skiptranslate { display: none !important; }
+      body { top: 0 !important; position: static !important; }
+      #google_translate_element { display: none !important; }
+      .goog-te-gadget-icon { display: none !important; }
+      .goog-te-gadget-simple { background-color: transparent !important; border: none !important; }
+      .goog-logo-link { display: none !important; }
+      .goog-te-gadget { color: transparent !important; font-size: 0 !important; }
+      .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
     `;
     document.head.appendChild(style);
 
+    let script;
+    // Delay Google Translate by 5s — keeps the main thread clear during critical paint window
+    const timer = setTimeout(() => {
+      script = document.createElement('script');
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      script.onerror = () => console.error('Failed to load Google Translate');
+      document.body.appendChild(script);
+    }, 5000);
+
     return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-      if (style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
+      clearTimeout(timer);
+      if (script?.parentNode) script.parentNode.removeChild(script);
+      if (style.parentNode) style.parentNode.removeChild(style);
     };
   }, []);
 

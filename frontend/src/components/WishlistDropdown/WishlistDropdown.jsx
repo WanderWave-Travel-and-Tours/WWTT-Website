@@ -26,13 +26,14 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
       setActiveFilter('all');
       setLoading(true);
       try {
-        const userId = currentUser._id;
+        const token = localStorage.getItem('wanderwave_token');
+        if (!token) { setLoading(false); return; }
         console.log('📥 Fetching wishlist items for dropdown...');
 
         // cache: 'no-store' prevents 304 stale responses
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites/${userId}`, {
+        const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
 
@@ -79,15 +80,17 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
     setRemovingId(packageId);
 
     try {
-      const userId = currentUser._id;
+      const token = localStorage.getItem('wanderwave_token');
       console.log('🗑️ Removing from wishlist:', packageId);
 
       const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({
           promo_id: packageId,
-          user_id: userId,
           package_title: packageName,
           package_location: packageLocation
         }),
