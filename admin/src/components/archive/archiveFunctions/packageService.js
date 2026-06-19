@@ -1,8 +1,13 @@
 const API_URL = 'https://wanderwaveph.onrender.com/api/packages';
 
+const getAdminHeaders = () => {
+  const token = localStorage.getItem('adminToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const fetchArchivedPackages = async () => {
   try {
-    const response = await fetch(`${API_URL}/archived-list`);
+    const response = await fetch(`${API_URL}/admin/archived-list`, { headers: getAdminHeaders() });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const result = await response.json();

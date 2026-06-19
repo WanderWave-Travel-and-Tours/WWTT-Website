@@ -285,7 +285,10 @@ const EditHotel = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const destResponse = await fetch(`${API_BASE_URL}/api/packages/all`);
+                const token = localStorage.getItem('adminToken');
+                const destResponse = await fetch(`${API_BASE_URL}/api/packages/admin/all`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
                 const destData = await destResponse.json();
                 
                 if (destData.status === 'ok' && Array.isArray(destData.data)) {

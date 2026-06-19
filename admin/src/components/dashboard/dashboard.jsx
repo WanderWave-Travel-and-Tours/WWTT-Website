@@ -126,7 +126,7 @@ const Dashboard = () => {
         pageViewsResult,
       ] = await Promise.allSettled([
         fetch(`${API}/api/admin/bookings`),
-        fetch(`${API}/api/packages/all`),
+        fetch(`${API}/api/packages/admin/all`, { headers: { Authorization: `Bearer ${localStorage.getItem('adminToken') || ''}` } }),
         fetch(`${API}/api/blogs`),
         fetch(`${API}/api/promos`),
         fetch(`${API}/api/testimonials`),

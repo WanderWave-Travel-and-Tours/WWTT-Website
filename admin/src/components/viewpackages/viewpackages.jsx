@@ -41,6 +41,10 @@ const ViewPackages = () => {
     });
 
     const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/packages';
+    const getAdminHeaders = () => {
+        const token = localStorage.getItem('adminToken');
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    };
 
     // ✅ Toggle Function
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -48,7 +52,7 @@ const ViewPackages = () => {
     const fetchPackages = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/all`);
+            const response = await fetch(`${API_BASE_URL}/admin/all`, { headers: getAdminHeaders() });
             const result = await response.json();
             if (result.status === 'ok') {
                 const packagesWithDate = result.data.map(pkg => ({
