@@ -6,6 +6,7 @@
 
 .user-login-wrapper {
     min-height: 100vh;
+    min-height: 100dvh; /* Use dynamic viewport height where supported (mobile browser chrome aware) */
     width: 100%;
     display: flex;
     align-items: center;
@@ -19,6 +20,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     position: relative;
     overflow-x: hidden;
+    overflow-y: auto; /* FIX: allow vertical scrolling so tall forms (e.g. signup) are never cut off */
 }
 
 /* Dark Overlay */
@@ -48,6 +50,7 @@
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
     background-color: white;
     transition: all 0.3s ease-in-out;
+    margin: auto; /* FIX: keeps container centered while still allowing it to scroll into view if taller than viewport */
 }
 
 /* --- Slideshow Section --- */
@@ -400,10 +403,17 @@
 /* --- RESPONSIVE (Kept existing styles below this line) --- */
 
 @media (max-width: 900px) {
+    .user-login-wrapper {
+        align-items: flex-start; /* FIX: don't force vertical centering when content is taller than the screen, otherwise the top/bottom gets clipped */
+        padding-top: 30px;
+        padding-bottom: 30px;
+    }
+
     .user-login-container {
         grid-template-columns: 1fr; 
         max-width: 480px; 
         min-height: auto;
+        margin: 0 auto; /* FIX: explicit horizontal centering now that wrapper no longer centers vertically */
     }
     
     .slideshow-panel {
@@ -486,13 +496,13 @@
 @media (max-height: 600px) {
     .user-login-wrapper {
         padding: 10px;
-        align-items: center;
+        align-items: flex-start; /* FIX: was 'center', which re-clipped tall content on short screens (e.g. mobile landscape) */
     }
     
     .user-login-container {
-        grid-template-columns: 1fr 1fr;
         max-width: 750px;
-        min-height: 300px;
+        min-height: auto; /* FIX: was forcing 300px min-height combined with centering, contributing to clipping on short/narrow screens */
+        margin: 0 auto;
     }
 
     .slideshow-panel {
@@ -515,6 +525,18 @@
     .recaptcha-wrapper {
         transform: scale(0.75);
         margin: 10px 0;
+    }
+}
+
+/* Only force the 2-column layout in short-viewport mode when there's also enough width for it (e.g. landscape tablets/desktops); on narrow short screens (mobile landscape) keep the single-column stacked layout from the max-width: 900px rule above so nothing gets squeezed or cut off. */
+@media (max-height: 600px) and (min-width: 901px) {
+    .user-login-wrapper {
+        align-items: center;
+    }
+
+    .user-login-container {
+        grid-template-columns: 1fr 1fr;
+        min-height: 300px;
     }
 }
 

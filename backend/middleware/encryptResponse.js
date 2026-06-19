@@ -13,11 +13,15 @@
  */
 const { encrypt } = require('../utils/payloadCrypto');
 
+// Paths whose responses must never be encrypted (webhooks, health checks, etc.)
+const SKIP_PATHS = ['/api/payment/webhook'];
+
 module.exports = function encryptResponse(req, res, next) {
     const originalJson = res.json.bind(res);
 
     res.json = function encryptedJson(body) {
-        // Skip: explicitly opted out
+        // Skip: webhook routes or explicitly opted out
+        if (SKIP_PATHS.some(p => req.path.startsWith(p))) return originalJson(body);
         if (res.locals.skipEncrypt) return originalJson(body);
 
         // Skip: nothing to encrypt

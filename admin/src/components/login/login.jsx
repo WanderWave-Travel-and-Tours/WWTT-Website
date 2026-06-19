@@ -206,11 +206,13 @@ const Login = () => {
 
                             {/* ✅ Centered reCAPTCHA */}
                             <div className="recaptcha-wrapper">
-                                <ReCAPTCHA
-                                    ref={recaptchaRef}
-                                    sitekey={RECAPTCHA_SITE_KEY}
-                                    onChange={(token) => setRecaptchaToken(token)}
-                                />
+                                <div className="recaptcha-inner">
+                                    <ReCAPTCHA
+                                        ref={recaptchaRef}
+                                        sitekey={RECAPTCHA_SITE_KEY}
+                                        onChange={(token) => setRecaptchaToken(token)}
+                                    />
+                                </div>
                             </div>
 
                             <button 
