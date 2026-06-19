@@ -1,30 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Menu, X, Globe, AlertCircle, Heart } from 'lucide-react';
 import axios from 'axios';
-import './App.css'; 
+import './App.css';
 import torightGif from '../../backend/assets/toright.gif';
 
 // --- TOAST IMPORTS ---
-import { ToastProvider } from './components/toast/ToastManager'; 
+import { ToastProvider } from './components/toast/ToastManager';
 
-// --- IMPORTS ---
-import FlightSearch from './components/flightSearch/flightSearch.jsx';
-import PackageDeals from './components/packageDeals/packageDeals.jsx';
-import PackageBooking from './components/packageDeals/packageBooking.jsx';
+// Always-visible layout pieces (small, needed on every page)
 import Footer from './components/footer/footer.jsx';
-import OtherServices from './components/otherservices/otherservices.jsx';
-import UserAuth from './components/userLogin/userLogin.jsx'; 
-import Payment from './components/payment/payment.jsx';
-import PaymentSuccess from './components/payment/paymentSuccess.jsx';
-import UserDashboard from './components/userDashboard/userDashboard.jsx';
 import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
-import TourPackages from './components/TourPackages/tourPackages.jsx';
-import TransferPackages from './components/transfers/transferPackages.jsx';
-import CustomizedBookingForm from './components/customizedBooking/CustomizedBookingForm.jsx';
-
-// --- NEW FEEDBACK COMPONENT ---
 import FeedbackWidget from './components/FeedbackWidget/FeedbackWidget.jsx';
+
+// --- ROUTE COMPONENTS — lazy-loaded so each route gets its own chunk ---
+const FlightSearch        = lazy(() => import('./components/flightSearch/flightSearch.jsx'));
+const PackageDeals        = lazy(() => import('./components/packageDeals/packageDeals.jsx'));
+const PackageBooking      = lazy(() => import('./components/packageDeals/packageBooking.jsx'));
+const OtherServices       = lazy(() => import('./components/otherservices/otherservices.jsx'));
+const UserAuth            = lazy(() => import('./components/userLogin/userLogin.jsx'));
+const Payment             = lazy(() => import('./components/payment/payment.jsx'));
+const PaymentSuccess      = lazy(() => import('./components/payment/paymentSuccess.jsx'));
+const UserDashboard       = lazy(() => import('./components/userDashboard/userDashboard.jsx'));
+const TourPackages        = lazy(() => import('./components/TourPackages/tourPackages.jsx'));
+const TransferPackages    = lazy(() => import('./components/transfers/transferPackages.jsx'));
+const CustomizedBookingForm = lazy(() => import('./components/customizedBooking/CustomizedBookingForm.jsx'));
 
 // --- NEW COMPONENT: 404 Page Not Found (Styled) ---
 const NotFound = () => {
@@ -426,6 +426,7 @@ function MainLayout() {
     setCurrentUser(null);
     setWishlistCount(0);
     localStorage.removeItem('wanderwave_user');
+    localStorage.removeItem('wanderwave_token');
     navigate('/login');
   };
 
@@ -747,36 +748,35 @@ function MainLayout() {
       )}
 
       <main className="main-content">
-        <Routes>
-          <Route path="/login" element={<div>Login</div>} />
-          <Route path="/flights" element={<FlightSearch />} />
-          <Route path="/packages" element={<PackageDeals />} />
-          <Route path="/packages/:code" element={<PackageBookingWrapper />} />
-          <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
-          {/* ✅ TOURS ROUTE — para mag-redirect ng tama mula sa Tour Arrangements */}
-          <Route path="/tours" element={<TourPackages />} />
-          {/* ✅ TRANSFERS ROUTE — Tourist Transfers from Seller Rates */}
-          <Route path="/transfers" element={<TransferPackages />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/help" element={<Help />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              currentUser ? (
-                <UserDashboard user={currentUser} onLogout={handleLogout} />
-              ) : (
-                <div style={{ padding: '2rem', textAlign: 'center' }}>
-                  <h2>Please log in to access dashboard</h2>
-                  <button onClick={() => navigate('/login')}>Login</button>
-                </div>
-              )
-            } 
-          />
-          {/* ✅ CATCH-ALL ROUTE PARA SA 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="ww-route-spinner" /></div>}>
+          <Routes>
+            <Route path="/login" element={<div>Login</div>} />
+            <Route path="/flights" element={<FlightSearch />} />
+            <Route path="/packages" element={<PackageDeals />} />
+            <Route path="/packages/:code" element={<PackageBookingWrapper />} />
+            <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
+            <Route path="/tours" element={<TourPackages />} />
+            <Route path="/transfers" element={<TransferPackages />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route
+              path="/dashboard"
+              element={
+                currentUser ? (
+                  <UserDashboard user={currentUser} onLogout={handleLogout} />
+                ) : (
+                  <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <h2>Please log in to access dashboard</h2>
+                    <button onClick={() => navigate('/login')}>Login</button>
+                  </div>
+                )
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
 
       {/* ⭐ FLOATING FEEDBACK BUTTON - ADDED HERE */}

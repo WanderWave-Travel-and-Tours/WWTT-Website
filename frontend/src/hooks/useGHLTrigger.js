@@ -54,7 +54,6 @@ function createGHLModal() {
     const style = document.createElement('style');
     style.id = 'ghl-modal-styles';
     style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
       @keyframes ghlFadeIn  { from { opacity: 0 } to { opacity: 1 } }
       @keyframes ghlFadeOut { from { opacity: 1 } to { opacity: 0 } }
       @keyframes ghlSlideUp { from { transform: translateY(40px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }

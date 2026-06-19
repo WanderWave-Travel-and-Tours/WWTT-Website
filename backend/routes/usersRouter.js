@@ -1,52 +1,52 @@
 const router = require('express').Router();
-const User = require('../models/user'); 
+const User = require('../models/user');
+const authMiddleware = require('../middleware/auth');
+const verifyUserJWT = require('../middleware/verifyUserJWT');
+const { authLimiter } = require('../middleware/rateLimiters');
 
-// 🎯 IMPORT ACTIVITY LOGGER
-const { 
+const {
     logCreate,
     logUpdate,
     logDelete,
     logActivity,
-    getIpAddress, 
-    getUserAgent 
+    getIpAddress,
+    getUserAgent
 } = require('../utils/activityLogger');
 
 // ============================================================
-// ADD NEW USER WITH ACTIVITY LOGGING
+// ADD NEW USER (ADMIN ONLY)
 // ============================================================
-router.post('/add', async (req, res) => {
+router.post('/add', authMiddleware, async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
         const newUser = new User({
             fullName: req.body.fullName,
             email: req.body.email,
             username: req.body.username,
-            password: req.body.password, 
+            password: req.body.password,
             role: req.body.role || 'user',
             isActive: true,
             isArchive: "No"
         });
 
         const savedUser = await newUser.save();
-        
+
         const { password, ...other } = savedUser._doc;
 
-        // 🎯 LOG USER CREATION
         await logCreate(req, 'Users', `${savedUser.fullName} (${savedUser.email})`);
-        
+
         console.log('✅ User created successfully:', savedUser.email);
-        
-        res.status(201).json({ 
-            status: "ok", 
-            message: "User created successfully!", 
-            data: other 
+
+        res.status(201).json({
+            status: "ok",
+            message: "User created successfully!",
+            data: other
         });
 
     } catch (err) {
         console.error('❌ User creation error:', err);
 
-        // 🎯 LOG CREATION ERROR
         await logActivity({
             action: 'CREATE',
             module: 'Users',
@@ -64,28 +64,29 @@ router.post('/add', async (req, res) => {
         });
 
         if (err.code === 11000) {
-            return res.status(400).json({ 
-                status: "error", 
-                message: "Email already exists." 
+            return res.status(400).json({
+                status: "error",
+                message: "Email already exists."
             });
         }
 
-        res.status(500).json({ 
-            status: "error", 
-            message: err.message 
+        res.status(500).json({
+            status: "error",
+            message: err.message
         });
     }
 });
 
 // ============================================================
-// GET ALL ACTIVE USERS (NOT ARCHIVED)
+// GET ALL ACTIVE USERS — ADMIN ONLY, FIELD-RESTRICTED
+// FIX 2: Added authMiddleware + explicit field selection
 // ============================================================
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
     try {
         const users = await User.find({ isArchive: { $ne: "Yes" } })
-            .select('-password')
+            .select('fullName email role isActive createdAt')
             .sort({ createdAt: -1 });
-        
+
         res.status(200).json(users);
     } catch (err) {
         console.error('❌ Fetch users error:', err);
@@ -94,35 +95,34 @@ router.get('/', async (req, res) => {
 });
 
 // ============================================================
-// ARCHIVE USER WITH ACTIVITY LOGGING
+// ARCHIVE USER — ADMIN ONLY
 // ============================================================
-router.put('/archive/:id', async (req, res) => {
+router.put('/archive/:id', authMiddleware, async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
         const user = await User.findById(req.params.id);
 
         if (!user) {
-            return res.status(404).json({ 
-                status: "error", 
-                message: "User not found." 
+            return res.status(404).json({
+                status: "error",
+                message: "User not found."
             });
         }
 
         const userName = user.fullName;
         const userEmail = user.email;
 
-        const archivedUser = await User.findByIdAndUpdate(
-            req.params.id, 
-            { isArchive: "Yes" }, 
+        await User.findByIdAndUpdate(
+            req.params.id,
+            { isArchive: "Yes" },
             { new: true }
         );
 
-        // 🎯 LOG USER ARCHIVE
         await logActivity({
             action: 'ARCHIVE',
             module: 'Users',
-            user: 'Admin',
+            user: req.adminEmail || 'Admin',
             severity: 'WARNING',
             description: `User archived: ${userName} (${userEmail})`,
             ipAddress: getIpAddress(req),
@@ -134,27 +134,24 @@ router.put('/archive/:id', async (req, res) => {
                 duration: `${Date.now() - startTime}ms`,
                 recordId: req.params.id,
                 recordTitle: userName,
-                changes: {
-                    isArchive: { from: 'No', to: 'Yes' }
-                }
+                changes: { isArchive: { from: 'No', to: 'Yes' } }
             }
         });
 
         console.log('✅ User archived:', userEmail);
-        
-        res.status(200).json({ 
-            status: "ok", 
-            message: "User archived successfully." 
+
+        res.status(200).json({
+            status: "ok",
+            message: "User archived successfully."
         });
 
     } catch (err) {
         console.error('❌ Archive user error:', err);
 
-        // 🎯 LOG ARCHIVE ERROR
         await logActivity({
             action: 'ARCHIVE',
             module: 'Users',
-            user: 'Admin',
+            user: req.adminEmail || 'Admin',
             severity: 'ERROR',
             description: `Failed to archive user: ${err.message}`,
             ipAddress: getIpAddress(req),
@@ -168,26 +165,26 @@ router.put('/archive/:id', async (req, res) => {
             }
         });
 
-        res.status(500).json({ 
-            status: "error", 
-            message: err.message 
+        res.status(500).json({
+            status: "error",
+            message: err.message
         });
     }
 });
 
 // ============================================================
-// DELETE USER PERMANENTLY WITH ACTIVITY LOGGING
+// DELETE USER PERMANENTLY — ADMIN ONLY
 // ============================================================
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
         const user = await User.findById(req.params.id);
 
         if (!user) {
-            return res.status(404).json({ 
-                status: "error", 
-                message: "User not found." 
+            return res.status(404).json({
+                status: "error",
+                message: "User not found."
             });
         }
 
@@ -196,24 +193,22 @@ router.delete('/:id', async (req, res) => {
 
         await User.findByIdAndDelete(req.params.id);
 
-        // 🎯 LOG USER DELETION
         await logDelete(req, 'Users', req.params.id, `${userName} (${userEmail})`);
 
         console.log('✅ User deleted permanently:', userEmail);
-        
-        res.status(200).json({ 
-            status: "ok", 
-            message: "User deleted successfully." 
+
+        res.status(200).json({
+            status: "ok",
+            message: "User deleted successfully."
         });
 
     } catch (err) {
         console.error('❌ Delete user error:', err);
 
-        // 🎯 LOG DELETE ERROR
         await logActivity({
             action: 'DELETE',
             module: 'Users',
-            user: 'Admin',
+            user: req.adminEmail || 'Admin',
             severity: 'ERROR',
             description: `Failed to delete user: ${err.message}`,
             ipAddress: getIpAddress(req),
@@ -232,80 +227,142 @@ router.delete('/:id', async (req, res) => {
 });
 
 // ============================================================
-// UPDATE USER PROFILE WITH ACTIVITY LOGGING
+// UPDATE OWN PROFILE — USER SELF-SERVICE (JWT required)
+// FIX 4: No :id param; identity derived from verified JWT
 // ============================================================
-router.put('/update-profile/:id', async (req, res) => {
+router.put('/update-profile', verifyUserJWT, async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
-        const userId = req.params.id;
-        
-        if (userId === "undefined" || !userId) {
-            return res.status(400).json({ 
-                status: "error", 
-                message: "Invalid User ID provided." 
-            });
-        }
+        const userId = req.user._id;
 
-        const { fullName, email, username, isArchive } = req.body;
+        const { fullName, email, username } = req.body;
 
-        // Get old user data for comparison
         const oldUser = await User.findById(userId);
-
         if (!oldUser) {
-            return res.status(404).json({ 
-                status: "error", 
-                message: "User not found." 
+            return res.status(404).json({
+                status: "error",
+                message: "User not found."
             });
         }
 
-        // Track changes
         const changes = {};
-        if (fullName && fullName !== oldUser.fullName) {
-            changes.fullName = { from: oldUser.fullName, to: fullName };
-        }
-        if (email && email !== oldUser.email) {
-            changes.email = { from: oldUser.email, to: email };
-        }
-        if (username && username !== oldUser.username) {
-            changes.username = { from: oldUser.username, to: username };
-        }
-        if (isArchive && isArchive !== oldUser.isArchive) {
-            changes.isArchive = { from: oldUser.isArchive, to: isArchive };
-        }
-        
+        if (fullName && fullName !== oldUser.fullName) changes.fullName = { from: oldUser.fullName, to: fullName };
+        if (email && email !== oldUser.email) changes.email = { from: oldUser.email, to: email };
+        if (username && username !== oldUser.username) changes.username = { from: oldUser.username, to: username };
+
         const updatedUser = await User.findByIdAndUpdate(
             userId,
-            { fullName, email, username, isArchive }, 
+            { fullName, email, username },
             { new: true, runValidators: true }
         ).select('-password');
 
-        // 🎯 LOG PROFILE UPDATE
         if (Object.keys(changes).length > 0) {
             await logUpdate(
-                req, 
-                'Users', 
-                userId, 
-                `${updatedUser.fullName} (${updatedUser.email})`, 
+                req,
+                'Users',
+                userId.toString(),
+                `${updatedUser.fullName} (${updatedUser.email})`,
                 changes
             );
         }
 
         console.log('✅ User profile updated:', updatedUser.email);
 
-        res.status(200).json({ 
-            status: "ok", 
-            data: updatedUser 
+        res.status(200).json({
+            status: "ok",
+            data: updatedUser
         });
 
     } catch (err) {
         console.error('❌ Update profile error:', err);
 
-        // 🎯 LOG UPDATE ERROR
         await logActivity({
             action: 'UPDATE',
             module: 'Users',
-            user: 'Admin',
+            user: req.user?.email || 'Unknown',
+            severity: 'ERROR',
+            description: `Failed to update user profile: ${err.message}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 500,
+                duration: `${Date.now() - startTime}ms`
+            }
+        });
+
+        res.status(500).json({
+            status: "error",
+            message: "Database error: " + err.message
+        });
+    }
+});
+
+// ============================================================
+// UPDATE ANY USER PROFILE — ADMIN ONLY (e.g., archive restore)
+// FIX 4: Separated from user self-update; admin-auth required
+// ============================================================
+router.put('/update-profile/:id', authMiddleware, async (req, res) => {
+    const startTime = Date.now();
+
+    try {
+        const userId = req.params.id;
+
+        if (userId === "undefined" || !userId) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid User ID provided."
+            });
+        }
+
+        const { fullName, email, username, isArchive } = req.body;
+
+        const oldUser = await User.findById(userId);
+        if (!oldUser) {
+            return res.status(404).json({
+                status: "error",
+                message: "User not found."
+            });
+        }
+
+        const changes = {};
+        if (fullName && fullName !== oldUser.fullName) changes.fullName = { from: oldUser.fullName, to: fullName };
+        if (email && email !== oldUser.email) changes.email = { from: oldUser.email, to: email };
+        if (username && username !== oldUser.username) changes.username = { from: oldUser.username, to: username };
+        if (isArchive && isArchive !== oldUser.isArchive) changes.isArchive = { from: oldUser.isArchive, to: isArchive };
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { fullName, email, username, isArchive },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (Object.keys(changes).length > 0) {
+            await logUpdate(
+                req,
+                'Users',
+                userId,
+                `${updatedUser.fullName} (${updatedUser.email})`,
+                changes
+            );
+        }
+
+        console.log('✅ User profile updated (admin):', updatedUser.email);
+
+        res.status(200).json({
+            status: "ok",
+            data: updatedUser
+        });
+
+    } catch (err) {
+        console.error('❌ Update profile error:', err);
+
+        await logActivity({
+            action: 'UPDATE',
+            module: 'Users',
+            user: req.adminEmail || 'Admin',
             severity: 'ERROR',
             description: `Failed to update user profile: ${err.message}`,
             ipAddress: getIpAddress(req),
@@ -319,34 +376,37 @@ router.put('/update-profile/:id', async (req, res) => {
             }
         });
 
-        res.status(500).json({ 
-            status: "error", 
-            message: "Database error: " + err.message 
+        res.status(500).json({
+            status: "error",
+            message: "Database error: " + err.message
         });
     }
 });
 
 // ============================================================
-// UPDATE USER PASSWORD WITH ACTIVITY LOGGING
+// UPDATE OWN PASSWORD — USER SELF-SERVICE
+// FIX 1: No :id param; identity derived exclusively from JWT.
+// Rate-limited. Requires currentPassword verification.
 // ============================================================
-router.put('/update-password/:id', async (req, res) => {
+router.put('/update-password', authLimiter, verifyUserJWT, async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
         const { currentPassword, newPassword } = req.body;
-        const user = await User.findById(req.params.id).select('+password');
+
+        // Derive user from JWT — never from params or body
+        const user = await User.findById(req.user._id).select('+password');
 
         if (!user) {
-            return res.status(404).json({ 
-                status: "error", 
-                message: "User not found" 
+            return res.status(404).json({
+                status: "error",
+                message: "User not found"
             });
         }
 
         const isMatch = await user.comparePassword(currentPassword);
-        
+
         if (!isMatch) {
-            // 🎯 LOG FAILED PASSWORD UPDATE
             await logActivity({
                 action: 'UPDATE',
                 module: 'Users',
@@ -359,22 +419,22 @@ router.put('/update-password/:id', async (req, res) => {
                 details: {
                     method: req.method,
                     endpoint: req.originalUrl,
-                    statusCode: 400,
+                    statusCode: 401,
                     duration: `${Date.now() - startTime}ms`,
                     recordId: user._id.toString()
                 }
             });
 
-            return res.status(400).json({ 
-                status: "error", 
-                message: "Incorrect current password." 
+            return res.status(401).json({
+                status: "error",
+                message: "Incorrect current password."
             });
         }
 
+        // Assign new password — the pre-save hook will hash it
         user.password = newPassword;
         await user.save();
 
-        // 🎯 LOG SUCCESSFUL PASSWORD UPDATE
         await logActivity({
             action: 'UPDATE',
             module: 'Users',
@@ -396,19 +456,18 @@ router.put('/update-password/:id', async (req, res) => {
 
         console.log('✅ User password updated:', user.email);
 
-        res.status(200).json({ 
-            status: "ok", 
-            message: "Password updated successfully!" 
+        res.status(200).json({
+            status: "ok",
+            message: "Password updated successfully!"
         });
 
     } catch (err) {
         console.error('❌ Password update error:', err);
 
-        // 🎯 LOG PASSWORD UPDATE ERROR
         await logActivity({
             action: 'UPDATE',
             module: 'Users',
-            user: 'System',
+            user: req.user?.email || 'Unknown',
             severity: 'ERROR',
             description: `Failed to update user password: ${err.message}`,
             ipAddress: getIpAddress(req),
@@ -417,43 +476,44 @@ router.put('/update-password/:id', async (req, res) => {
                 method: req.method,
                 endpoint: req.originalUrl,
                 statusCode: 500,
-                duration: `${Date.now() - startTime}ms`,
-                recordId: req.params.id
+                duration: `${Date.now() - startTime}ms`
             }
         });
 
-        res.status(500).json({ 
-            status: "error", 
-            message: err.message 
+        res.status(500).json({
+            status: "error",
+            message: err.message
         });
     }
 });
 
 // ============================================================
-// GET ARCHIVED USERS
+// GET ARCHIVED USERS — ADMIN ONLY
 // ============================================================
-router.get('/archived', async (req, res) => {
+router.get('/archived', authMiddleware, async (req, res) => {
     try {
         const archivedUsers = await User.find({ isArchive: "Yes" })
-            .select('-password')
+            .select('fullName email role isActive isArchive createdAt')
             .sort({ createdAt: -1 });
-        
+
         res.status(200).json(archivedUsers);
     } catch (err) {
         console.error('❌ Fetch archived users error:', err);
-        res.status(500).json({ 
-            status: "error", 
-            message: err.message 
+        res.status(500).json({
+            status: "error",
+            message: err.message
         });
     }
 });
 
 // ============================================================
-// GET ALL USERS (INCLUDING ARCHIVED)
+// GET ALL USERS INCLUDING ARCHIVED — ADMIN ONLY
 // ============================================================
-router.get('/all-with-archived', async (req, res) => {
+router.get('/all-with-archived', authMiddleware, async (req, res) => {
     try {
-        const users = await User.find({}).select('-password');
+        const users = await User.find({})
+            .select('fullName email role isActive isArchive createdAt');
+
         res.status(200).json(users);
     } catch (err) {
         console.error('❌ Fetch all users error:', err);
@@ -462,39 +522,32 @@ router.get('/all-with-archived', async (req, res) => {
 });
 
 // ============================================================
-// CHECK IF EMAIL EXISTS
+// CHECK IF EMAIL EXISTS (public — used during signup flow)
 // ============================================================
 router.get('/check-email', async (req, res) => {
     try {
         const email = req.query.email;
-        
+
         if (!email) {
-            return res.status(400).json({ 
-                status: "error", 
-                message: "Email parameter is required." 
+            return res.status(400).json({
+                status: "error",
+                message: "Email parameter is required."
             });
         }
 
-        const user = await User.findOne({ email: email });
+        const user = await User.findOne({ email: email }).select('email');
 
         if (user) {
-            return res.status(200).json({ 
-                status: "ok", 
-                exists: true, 
-                data: user 
-            });
-        } else {
-            return res.status(200).json({ 
-                status: "ok", 
-                exists: false, 
-                message: "Email not found." 
-            });
+            return res.status(200).json({ status: "ok", exists: true });
         }
+
+        return res.status(200).json({ status: "ok", exists: false, message: "Email not found." });
+
     } catch (err) {
         console.error("Error checking email:", err);
-        res.status(500).json({ 
-            status: "error", 
-            message: err.message 
+        res.status(500).json({
+            status: "error",
+            message: err.message
         });
     }
 });

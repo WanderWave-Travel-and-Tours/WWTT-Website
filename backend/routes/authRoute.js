@@ -1,12 +1,11 @@
-// In backend/routes/authRoute.js
 const express = require('express');
-// Ensure resendOtp is imported
-const { signup, login, verifyOtp, resendOtp } = require('../controller/authController'); 
+const { signup, login, verifyOtp, resendOtp } = require('../controller/authController');
+const { authLimiter } = require('../middleware/rateLimiters');
 const router = express.Router();
 
 router.post('/signup', signup);
-router.post('/login', login);
-router.post('/verify-otp', verifyOtp); 
-router.post('/resend-otp', resendOtp); // The new resend endpoint
+router.post('/login', authLimiter, login);
+router.post('/verify-otp', verifyOtp);
+router.post('/resend-otp', resendOtp);
 
 module.exports = router;

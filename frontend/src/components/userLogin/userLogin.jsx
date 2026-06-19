@@ -309,10 +309,13 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 setTempEmailForVerification('');
                 resetForm();
                 
-                // Trigger success and Navigate
                 if (data.user && onLoginSuccess) {
+                    localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
+                    if (data.token) {
+                        localStorage.setItem('wanderwave_token', data.token);
+                    }
                     onLoginSuccess(data.user);
-                    navigate('/dashboard'); // FIX: Ensure navigation happens
+                    navigate('/dashboard');
                 }
 
             } else {
@@ -361,13 +364,14 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
             if (res.ok) {
                 toast.success(data.message || 'Welcome back!', 'Login Successful');
-                
+
                 if (data.user && onLoginSuccess) {
                     localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
+                    if (data.token) {
+                        localStorage.setItem('wanderwave_token', data.token);
+                    }
                     onLoginSuccess(data.user);
-                    // FIX: Explicitly navigate to dashboard
-                    // NOTE: Check if your route is '/dashboard' or '/user-dashboard'
-                    navigate('/dashboard'); 
+                    navigate('/dashboard');
                 }
             } else {
                 const msg = data.message || 'Login failed. Please check your credentials.';

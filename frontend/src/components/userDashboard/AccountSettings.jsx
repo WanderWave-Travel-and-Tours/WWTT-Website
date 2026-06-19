@@ -84,12 +84,21 @@ const AccountSettings = ({ user, onNavigateBack }) => {
 
     // Step B: Execution (API Call - called by Modal)
     const performUpdateProfile = async () => {
-        setIsModalOpen(false); // Close modal first
+        setIsModalOpen(false);
+
+        const token = localStorage.getItem('wanderwave_token');
+        if (!token) {
+            toast.error("Session expired. Please log in again.");
+            return;
+        }
 
         try {
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/users/update-profile/${user.id}`, {
+            const response = await fetch('https://wanderwaveph.onrender.com/api/users/update-profile', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     fullName: formData.fullName,
                     email: formData.email,
@@ -159,12 +168,22 @@ const AccountSettings = ({ user, onNavigateBack }) => {
 
     // Step B: Execution (API Call - called by Modal)
     const performChangePassword = async () => {
-        setIsModalOpen(false); // Close modal first
+        setIsModalOpen(false);
+
+        const token = localStorage.getItem('wanderwave_token');
+        if (!token) {
+            toast.error("Session expired. Please log in again.");
+            return;
+        }
 
         try {
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/users/update-password/${user.id}`, {
+            // FIX 1: Static route — no :id in URL. Identity comes from server-verified JWT.
+            const response = await fetch('https://wanderwaveph.onrender.com/api/users/update-password', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     currentPassword: formData.currentPassword,
                     newPassword: formData.newPassword
@@ -174,11 +193,11 @@ const AccountSettings = ({ user, onNavigateBack }) => {
 
             if (result.status === "ok") {
                 toast.success("Password updated successfully");
-                setFormData(prev => ({ 
-                    ...prev, 
-                    currentPassword: '', 
-                    newPassword: '', 
-                    confirmPassword: '' 
+                setFormData(prev => ({
+                    ...prev,
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
                 }));
             } else {
                 toast.error(result.message || "Failed to update password");

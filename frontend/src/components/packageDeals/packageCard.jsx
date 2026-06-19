@@ -283,15 +283,22 @@ const usePackageTimerExpired = (packageId) => {
       setTimerReady(true);
     };
 
-    // ✅ Fetch IP then check timer — same source of truth as booking page
-    fetch('https://api.ipify.org?format=json')
-      .then(res => res.json())
-      .then(data => checkTimer(data.ip))
-      .catch(() => {
-        // If IP fetch fails, default to non-expired (show discount price)
-        setTimerExpired(false);
-        setTimerReady(true);
-      });
+    // ✅ Fetch IP then check timer — reuse session cache to avoid per-card requests
+    const cachedIp = sessionStorage.getItem('ww_visitor_ip');
+    if (cachedIp) {
+      checkTimer(cachedIp);
+    } else {
+      fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => {
+          if (data.ip) sessionStorage.setItem('ww_visitor_ip', data.ip);
+          checkTimer(data.ip || 'unknown');
+        })
+        .catch(() => {
+          setTimerExpired(false);
+          setTimerReady(true);
+        });
+    }
   }, [packageId]);
 
   return { timerExpired, timerReady };
@@ -415,10 +422,12 @@ function PackageCard({
       </button>
 
       <div className="card-image">
-        <img 
-          src={getImageUrl(pkg.image)} 
-          alt={pkg.name} 
+        <img
+          src={getImageUrl(pkg.image)}
+          alt={pkg.name}
           className="image-content"
+          width="800"
+          height="400"
           onError={(e) => {
             e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available';
           }}
