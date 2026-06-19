@@ -26,7 +26,8 @@
 }
 
 .footer-about .footer-logo {
-  height: 130px;
+  height: 110px;
+  width: auto;
   margin-bottom: 20px;
 }
 
@@ -127,7 +128,8 @@
   }
   
   .footer-about .footer-logo {
-    height: 120px;
+    height: 90px;
+    width: auto;
   }
   
   .footer-about p,

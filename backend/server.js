@@ -157,8 +157,9 @@ const transferRoute             = require('./routes/transferBookingRoute');     
 const transferBookingOrderRoute = require('./routes/transferBookingOrderRoute'); // Customer transfer bookings
 const customizedBookingRoute    = require('./routes/Customizedbookingroute');    // ✅ ADDED: Customized booking wizard
 const locationRoute             = require('./routes/locationRoute');           // ← ADD
-const activityLogRoutes         = require('./routes/activityLogRoute');         // ✅ ADDED: Activity Logs
-const feedbackRoutes            = require('./routes/feedbackRoutes');             // ✅ ADDED: Feedback
+const activityLogRoutes         = require('./routes/activityLogRoute');
+const feedbackRoutes            = require('./routes/feedbackRoutes');
+const favoriteRoutes            = require('./routes/favoriteRoute');
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -329,8 +330,9 @@ app.use('/api/transfers', transferRoute);                     // Transfer listin
 app.use('/api/transfer-bookings', transferBookingOrderRoute); // Customer transfer bookings
 app.use('/api/locations',         locationRoute);                              // ← ADD
 app.use('/api/customized-bookings', customizedBookingRoute); // ✅ ADDED: Customized booking wizard
-app.use('/api/activity-logs', activityLogRoutes);           // ✅ ADDED: Activity Logs
-app.use('/api/feedback', feedbackRoutes);                   // ✅ ADDED: Feedback
+app.use('/api/activity-logs', activityLogRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/favorites', favoriteRoutes);
 // ✅ Single mount — transferBookingRoute duplicate removed
 
 
@@ -602,237 +604,7 @@ app.get('/api/admin/statistics', async (req, res) => {
   }
 });
 
-// ============================================================
-// ⭐ FAVORITES / WISHLIST ROUTES
-// ============================================================
-
-// GET USER WISHLIST — handles packages, tours, and transfers
-app.get('/api/favorites/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const user = await User.findById(userId).select('favorites');
-    if (!user) {
-      return res.status(404).json({ status: 'error', message: 'User not found' });
-    }
-
-    const favoriteIds = user.favorites || [];
-
-    // Fetch matching packages, tours, and transfers in parallel
-    const PackageModel = require('./models/package');
-    const Tour = require('./models/tour');
-    // NOTE: Verify this model path matches your actual Transfer model filename
-    let Transfer;
-    try {
-      Transfer = require('./models/transfer');
-    } catch (e) {
-      console.warn('⚠️ Transfer model not found at ./models/transfer — transfer wishlist items will be skipped.');
-      Transfer = null;
-    }
-
-    const queries = [
-      PackageModel.find({ _id: { $in: favoriteIds } })
-        .select('_id title name destination location price image duration soloPaxPrice multiplePaxPrice inclusions rating reviews package_code')
-        .lean(),
-      Tour.find({ _id: { $in: favoriteIds } })
-        .select('_id title destination price image duration tourType minPax category inclusions')
-        .lean(),
-    ];
-
-    if (Transfer) {
-      queries.push(
-        Transfer.find({ _id: { $in: favoriteIds } })
-          .select('_id title packageDestination imageUrl oneWayPrice roundtripPrice oneWayMarkup roundtripMarkup category pax maxPax capacity')
-          .lean()
-      );
-    }
-
-    const results = await Promise.all(queries);
-    const [packages, tours, transfers = []] = results;
-
-    // Build a lookup map: id → { doc, type }
-    const lookup = {};
-    packages.forEach(pkg => {
-      lookup[pkg._id.toString()] = { doc: pkg, type: 'package' };
-    });
-    tours.forEach(tour => {
-      lookup[tour._id.toString()] = { doc: tour, type: 'tour' };
-    });
-    transfers.forEach(transfer => {
-      lookup[transfer._id.toString()] = { doc: transfer, type: 'transfer' };
-    });
-
-    // Preserve favorites order, skip IDs that resolved to nothing
-    const wishlistItems = favoriteIds
-      .map(id => {
-        const entry = lookup[id.toString()];
-        if (!entry) return null;
-        const { doc, type } = entry;
-
-        // Resolve location field per type
-        let location;
-        if (type === 'transfer') {
-          location = doc.packageDestination || 'Unknown';
-        } else {
-          location = doc.destination || doc.location || 'Unknown';
-        }
-
-        return {
-          promo_id: doc._id.toString(),
-          package_title: doc.title || doc.name || 'Untitled',
-          package_location: location,
-          itemType: type,
-          packageDetails: doc,
-        };
-      })
-      .filter(Boolean);
-
-    console.log(`✅ Wishlist fetched → ${wishlistItems.length} items for user ${userId} (packages: ${packages.length}, tours: ${tours.length}, transfers: ${transfers.length})`);
-
-    res.status(200).json({ status: 'ok', data: wishlistItems });
-
-  } catch (error) {
-    console.error('❌ Error fetching wishlist:', error);
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-});
-
-// CHECK IF A SPECIFIC ITEM IS IN USER'S FAVORITES (used by tourCard & packageCard)
-app.get('/api/favorites/:userId/:itemId', async (req, res) => {
-  try {
-    const { userId, itemId } = req.params;
-
-    const user = await User.findById(userId).select('favorites');
-    if (!user) {
-      return res.status(404).json({ status: 'error', message: 'User not found' });
-    }
-
-    const isFavorite = (user.favorites || []).some(id => id.toString() === itemId);
-
-    res.status(200).json({ status: 'ok', isFavorite });
-
-  } catch (error) {
-    console.error('❌ Error checking favorite status:', error);
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-});
-
-// ==============================================
-// FAVORITES / WISHLIST - FIXED (matches current frontend)
-// ==============================================
-app.post('/api/favorites', async (req, res) => {
-  try {
-    const { promo_id, user_id, package_title, package_location } = req.body;
-
-    // Accept either "promo_id" or "packageId"
-    const packageId = promo_id || req.body.packageId;
-    const userId    = user_id    || req.body.userId;
-
-    if (!userId || !packageId) {
-      return res.status(400).json({ 
-        status: 'error', 
-        message: 'userId and packageId (or promo_id / user_id) are required' 
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: 'error', message: 'User not found' });
-    }
-
-    const isFavorited = user.favorites && 
-      user.favorites.some(id => id.toString() === packageId);
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      isFavorited 
-        ? { $pull: { favorites: packageId } }
-        : { $addToSet: { favorites: packageId } },
-      { new: true }
-    );
-
-    console.log(`✅ Wishlist toggle success → ${isFavorited ? 'REMOVED' : 'ADDED'} ${packageId} for user ${userId}`);
-
-    // Optional: return extra info for WishlistDropdown
-    res.status(200).json({
-      status: 'ok',
-      isFavorited: !isFavorited,
-      data: updatedUser.favorites,
-      package_title: package_title,
-      package_location: package_location
-    });
-
-  } catch (error) {
-    console.error('❌ Toggle favorite error:', error);
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-});
-
-app.delete('/api/favorites/:userId/remove', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { packageId } = req.body;
-
-    if (!packageId) {
-      return res.status(400).json({ status: 'error', message: 'packageId is required' });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $pull: { favorites: packageId } },
-      { new: true }
-    ).select('favorites');
-
-    if (!user) {
-      return res.status(404).json({ status: 'error', message: 'User not found' });
-    }
-
-    console.log(`✅ Removed package ${packageId} from favorites for user ${userId}`);
-    res.status(200).json({ status: 'ok', data: user.favorites });
-  } catch (error) {
-    console.error('❌ Error removing favorite:', error);
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-});
-
-app.post('/api/favorites/:userId/toggle', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { packageId } = req.body;
-
-    if (!packageId) {
-      return res.status(400).json({ status: 'error', message: 'packageId is required' });
-    }
-
-    const user = await User.findById(userId).select('favorites');
-
-    if (!user) {
-      return res.status(404).json({ status: 'error', message: 'User not found' });
-    }
-
-    const isFavorited = user.favorites && user.favorites.map(String).includes(String(packageId));
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      isFavorited
-        ? { $pull: { favorites: packageId } }
-        : { $addToSet: { favorites: packageId } },
-      { new: true }
-    ).select('favorites');
-
-    const action = isFavorited ? 'removed from' : 'added to';
-    console.log(`✅ Package ${packageId} ${action} favorites for user ${userId}`);
-
-    res.status(200).json({
-      status: 'ok',
-      isFavorited: !isFavorited,
-      data: updatedUser.favorites,
-    });
-  } catch (error) {
-    console.error('❌ Error toggling favorite:', error);
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-});
+// ⭐ FAVORITES — see routes/favoriteRoute.js (JWT-protected, userId from token)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCIAL MEDIA REDIRECT ROUTES

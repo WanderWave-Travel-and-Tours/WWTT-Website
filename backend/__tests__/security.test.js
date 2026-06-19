@@ -12,6 +12,14 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
+// Mock axios to prevent real reCAPTCHA network calls during tests.
+// Google always returns success:false for test tokens anyway, but network I/O
+// makes tests slow and non-deterministic (timeouts, DNS failures, etc.).
+jest.mock('axios', () => ({
+    post: jest.fn().mockResolvedValue({ data: { success: false } }),
+    get: jest.fn().mockResolvedValue({ data: {} }),
+}));
+
 // ── inline test app (mirrors server.js without actually listening) ──
 const express = require('express');
 const usersRouter = require('../routes/usersRouter');

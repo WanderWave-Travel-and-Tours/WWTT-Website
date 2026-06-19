@@ -304,12 +304,13 @@ const usePackageTimerExpired = (packageId) => {
   return { timerExpired, timerReady };
 };
 
-function PackageCard({ 
-  package: pkg, 
-  isFavorite, 
-  onToggleFavorite, 
-  onBookNow, 
-  currency = 'PHP', 
+function PackageCard({
+  package: pkg,
+  isFirst = false,
+  isFavorite,
+  onToggleFavorite,
+  onBookNow,
+  currency = 'PHP',
   exchangeRate = 58, 
   isLoggedIn, 
   onLoginRequired 
@@ -428,6 +429,9 @@ function PackageCard({
           className="image-content"
           width="800"
           height="400"
+          fetchpriority={isFirst ? 'high' : 'auto'}
+          loading={isFirst ? 'eager' : 'lazy'}
+          decoding={isFirst ? 'sync' : 'async'}
           onError={(e) => {
             e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available';
           }}

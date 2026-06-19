@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'; // Import Link para sa internal navigat
 import './footer.css';
 
 function Footer() {
-  const logoUrl = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png";
+  const logoUrl = "https://assets.cdn.filesafe.space/yTzQYPFRZAWXGWiXtIt2/media/6908324368dfc28e2e9db60a.png";
 
   return (
     <footer className="site-footer">
@@ -12,7 +12,7 @@ function Footer() {
           
           {/* About Section */}
           <div className="footer-about">
-            <img src={logoUrl} alt="Wanderwave Travel & Tours" className="footer-logo" width="260" height="130" />
+            <img src={logoUrl} alt="Wanderwave Travel & Tours" className="footer-logo" height="110" />
             <p>
               Your trusted partner in creating unforgettable travel experiences across the Philippines and beyond.
             </p>

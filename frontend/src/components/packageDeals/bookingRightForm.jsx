@@ -1629,8 +1629,22 @@ const handleNextPassenger = async (e) => {
       )}
 
       {!loadingHotelData && (!hotelData || !hotelData.roomTypes || hotelData.roomTypes.length === 0) && (
-        <div style={{padding:'1rem', background:'#fee2e2', borderRadius:'8px', marginBottom:'1rem', fontSize:'0.85rem'}}>
-          ⚠️ No room types available for {pkg.destination || pkg.location || 'this destination'}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '12px 16px',
+          background: '#fffbeb',
+          border: '1px solid #fcd34d',
+          borderLeft: '4px solid #f59e0b',
+          borderRadius: '8px',
+          marginBottom: '1rem',
+          fontSize: '0.85rem',
+          color: '#92400e',
+          fontWeight: '500',
+        }}>
+          <span style={{fontSize:'1rem'}}>⚠️</span>
+          <span>No room types available for <strong>{pkg.destination || pkg.location || 'this destination'}</strong>. Hotel accommodation is not included in this package.</span>
         </div>
       )}
 

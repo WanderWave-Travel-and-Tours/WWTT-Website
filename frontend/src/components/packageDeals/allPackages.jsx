@@ -11,6 +11,7 @@ const PromoSection = lazy(() => import('./promoSection'));
 
 function AllPackages({
   packages,
+  isLoading = false,
   categoryName,
   favorites,
   onToggleFavorite,
@@ -28,7 +29,7 @@ function AllPackages({
   selectedDestinations,
   setSelectedDestinations,
   allLocations,
-  isLoggedIn, 
+  isLoggedIn,
   onLoginRequired,
   currency = 'PHP',
   exchangeRate = 58,
@@ -412,7 +413,20 @@ function AllPackages({
             {/* ============================================================ */}
             {/* SHOW LOGIN PROMPT IF NOT LOGGED IN AND FAVORITES TAB SELECTED */}
             {/* ============================================================ */}
-            {showLoginPrompt ? (
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="pkg-skeleton-card">
+                  <div className="pkg-skeleton-img" />
+                  <div className="pkg-skeleton-body">
+                    <div className="pkg-skeleton-line pkg-skeleton-title" />
+                    <div className="pkg-skeleton-line pkg-skeleton-sub" />
+                    <div className="pkg-skeleton-line pkg-skeleton-short" />
+                    <div className="pkg-skeleton-price" />
+                    <div className="pkg-skeleton-btn" />
+                  </div>
+                </div>
+              ))
+            ) : showLoginPrompt ? (
               <div className="login-required-message" style={{
                 gridColumn: '1 / -1',
                 display: 'flex',
@@ -482,10 +496,11 @@ function AllPackages({
                 </button>
               </div>
             ) : currentPackages.length > 0 ? (
-              currentPackages.map(pkg => (
+              currentPackages.map((pkg, index) => (
                 <PackageCard
                   key={pkg.id}
                   package={pkg}
+                  isFirst={index === 0}
                   isFavorite={favorites.includes(pkg.id)}
                   onToggleFavorite={onToggleFavorite}
                   onBookNow={onBookNow}
