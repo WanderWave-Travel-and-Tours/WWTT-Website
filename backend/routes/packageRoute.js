@@ -6,6 +6,19 @@ const multer = require('multer');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const authMiddleware = require('../middleware/auth');
+
+// Fields that must NEVER leave the server in a public response.
+// sellerPrice / markup / markupType are internal cost data — exposing them
+// leaks margin info to competitors and customers.
+const PUBLIC_SELECT = '-sellerPrice -markup -markupType -imagePublicId -isArchive -archivedAt -__v';
+
+// Strip sensitive keys from a plain object (used when .select() isn't available,
+// e.g. after .toObject() in /with-tours and /search mapping).
+function publicFields(obj) {
+    const { sellerPrice, markup, markupType, imagePublicId, isArchive, archivedAt, __v, ...rest } = obj;
+    return rest;
+}
 
 // 1. CLOUDINARY CONFIG
 cloudinary.config({
@@ -325,8 +338,13 @@ router.post('/:id/archive', async (req, res) => {
     }
 });
 
-// 4. FETCH ALL ACTIVE
-router.get('/all', async (req, res) => {
+// ============================================================
+// ADMIN-ONLY ROUTES — full data including sellerPrice/markup
+// Must come BEFORE the public /:id catch-all
+// ============================================================
+
+// ADMIN: all active packages (full fields)
+router.get('/admin/all', authMiddleware, async (req, res) => {
     try {
         const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
         res.status(200).json({ status: 'ok', data: packages });
@@ -335,14 +353,49 @@ router.get('/all', async (req, res) => {
     }
 });
 
-// 5. FETCH ARCHIVED
-router.get('/archived-list', async (req, res) => {
+// ADMIN: archived packages (full fields)
+router.get('/admin/archived-list', authMiddleware, async (req, res) => {
     try {
         const archived = await Package.find({ isArchive: 'Yes' }).sort({ _id: -1 });
-        console.log(`📦 Found ${archived.length} archived packages`);
         res.status(200).json({ status: 'ok', data: archived });
     } catch (error) {
-        console.error('❌ Error fetching archived packages:', error);
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// ADMIN: single package by id (full fields)
+router.get('/admin/:id', authMiddleware, async (req, res) => {
+    try {
+        const pkg = await Package.findById(req.params.id);
+        if (!pkg) return res.status(404).json({ status: 'error', error: 'Package not found.' });
+        res.status(200).json({ status: 'ok', data: pkg });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: 'Failed to retrieve package data.' });
+    }
+});
+
+// ============================================================
+// PUBLIC ROUTES — sensitive pricing fields stripped
+// ============================================================
+
+// 4. FETCH ALL ACTIVE (public — no cost data)
+router.get('/all', async (req, res) => {
+    try {
+        const packages = await Package.find({ isArchive: 'No' })
+            .select(PUBLIC_SELECT)
+            .sort({ _id: -1 });
+        res.status(200).json({ status: 'ok', data: packages });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.' });
+    }
+});
+
+// 5. FETCH ARCHIVED (admin-only in practice; keep auth for safety)
+router.get('/archived-list', authMiddleware, async (req, res) => {
+    try {
+        const archived = await Package.find({ isArchive: 'Yes' }).sort({ _id: -1 });
+        res.status(200).json({ status: 'ok', data: archived });
+    } catch (error) {
         res.status(500).json({ status: 'error', error: error.message });
     }
 });
@@ -387,7 +440,7 @@ router.get('/with-tours', async (req, res) => {
             }
 
             return {
-                ...pkg.toObject(),
+                ...publicFields(pkg.toObject()),
                 hasTours: matchedTours.length > 0,
                 tourCount: matchedTours.length,
                 matchedTours: matchedTours.map((t) => ({
@@ -447,8 +500,7 @@ router.get('/search', async (req, res) => {
         // Even when soloPaxPrice or multiplePaxPrice are set on the record,
         // the landing page always shows the base computed price.
         const results = packages.map((pkg) => {
-            const obj = pkg.toObject();
-
+            const obj = publicFields(pkg.toObject());
             return {
                 ...obj,
                 displayPrice: obj.price,
@@ -466,10 +518,10 @@ router.get('/search', async (req, res) => {
     }
 });
 
-// 8. FETCH SINGLE PACKAGE (Generic ID routes should be last)
+// 8. FETCH SINGLE PACKAGE — public, no cost data (Generic ID routes must be last)
 router.get('/:id', async (req, res) => {
     try {
-        const pkg = await Package.findById(req.params.id);
+        const pkg = await Package.findById(req.params.id).select(PUBLIC_SELECT);
         if (!pkg) return res.status(404).json({ status: 'error', error: 'Package not found.' });
         res.status(200).json({ status: 'ok', data: pkg });
     } catch (error) {

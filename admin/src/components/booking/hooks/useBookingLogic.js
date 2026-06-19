@@ -12,6 +12,10 @@ import {
 } from '../utils/bookingUtils';
 
 const API_BASE = 'https://wanderwaveph.onrender.com';
+const getAdminHeaders = () => {
+  const token = localStorage.getItem('adminToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export const useBookingLogic = (isOpen, onClose) => {
   const toast = useToast();
@@ -185,7 +189,7 @@ export const useBookingLogic = (isOpen, onClose) => {
     if (!isOpen) return;
     const fetchPackages = async () => {
       try {
-        const res  = await fetch(`${API_BASE}/api/packages/all`);
+        const res  = await fetch(`${API_BASE}/api/packages/admin/all`, { headers: getAdminHeaders() });
         const data = await res.json();
         if (data.status === 'ok' || data.success) {
           const pkgList = data.data || data;

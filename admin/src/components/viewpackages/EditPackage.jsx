@@ -142,6 +142,10 @@ const EditPackage = () => {
   const [otherTourTypeValue, setOtherTourTypeValue] = useState('');
 
   const API_BASE_URL = "https://wanderwaveph.onrender.com/api/packages";
+  const getAdminHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -315,7 +319,7 @@ const EditPackage = () => {
 
     const fetchPackageData = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/${packageId}`);
+        const response = await fetch(`${API_BASE_URL}/admin/${packageId}`, { headers: getAdminHeaders() });
         const result = await response.json();
 
         if (result.status === "ok") {

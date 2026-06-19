@@ -4,6 +4,11 @@ import './BookingDetailModal.css';
 import VoucherPreviewModal from './VoucherPreviewModal';
 import OrderSlipModal from './OrderSlipModal';
 
+const getAdminHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -154,18 +159,18 @@ const generateVoucherData = async (booking) => {
 
         if (packageId) {
             try {
-                const pkgRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/${packageId}`);
+                const pkgRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/admin/${packageId}`, { headers: getAdminHeaders() });
                 if (pkgRes.ok) {
                     const pkgJson = await pkgRes.json();
                     packageData = pkgJson.data || pkgJson;
                 }
-            } catch (e) { console.warn('Package fetch failed:', e); }
+            } catch (e) { /* silent */ }
         }
 
         // Fallback: search by packageName if needed
         if (!packageData && fullBooking.packageName) {
             try {
-                const allRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/all`);
+                const allRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/admin/all`, { headers: getAdminHeaders() });
                 if (allRes.ok) {
                     const allPkgs = await allRes.json();
                     const found = (allPkgs.data || allPkgs).find(p => 
