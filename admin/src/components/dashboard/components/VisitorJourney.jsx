@@ -31,18 +31,20 @@ const STAGE_CONFIG = {
 };
 
 const PAGE_LABELS = {
-  packages: 'Package Deals',
-  booking:  'Booking',
-  flights:  'Flights',
-  services: 'Services',
-  tours:    'Tours',
+  packages:     'Package Deals',
+  booking:      'Booking',
+  flights:      'Flights',
+  services:     'Services',
+  tours:        'Tours',
+  transfers:    'Transfers',
+  'tour-booking': 'Tour Booking',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function deriveStage(view) {
   if (view.stage && STAGE_ORDER.includes(view.stage)) return view.stage;
   const { page, packageId } = view;
-  if (page === 'booking') return packageId ? 'consideration' : 'intent';
+  if (page === 'booking' || page === 'tour-booking') return packageId ? 'consideration' : 'intent';
   if (page === 'packages' || page === 'tours') return 'interest';
   return 'awareness';
 }

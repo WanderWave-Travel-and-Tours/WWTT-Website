@@ -693,8 +693,10 @@ const Dashboard = () => {
 
   const handleResetViewToBookRate = async () => {
     try {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch("https://wanderwaveph.onrender.com/api/page-views/booking-counts/reset", {
         method: "DELETE",
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) {

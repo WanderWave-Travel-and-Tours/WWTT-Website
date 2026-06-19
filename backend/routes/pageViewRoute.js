@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const { PageView, BookingCount } = require('../models/PageView');
 const Booking = require('../models/booking');
+const auth = require('../middleware/auth');
 
 // ===================================================================
 // HELPER — generates a stable visitorId from the client's real IP.
@@ -35,7 +36,7 @@ function determineStage(page, path, label, packageId) {
   if (page === 'packages' || page === 'tours') {
     return 'interest';
   }
-  if (page === 'flights' || page === 'services') {
+  if (page === 'flights' || page === 'services' || page === 'transfers') {
     return 'awareness';
   }
   return 'awareness';
@@ -62,7 +63,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const validPages = ['packages', 'booking', 'flights', 'services', 'tours'];
+    const validPages = ['packages', 'booking', 'flights', 'services', 'tours', 'transfers', 'tour-booking'];
     if (!validPages.includes(page)) {
       return res.status(400).json({
         status: 'error',
@@ -407,8 +408,9 @@ router.get('/stats', async (req, res) => {
 // ===================================================================
 // GET /api/page-views
 // Raw list — optional ?page=booking&limit=100 filter
+// Protected: admin only (returns raw IP addresses and visitor data)
 // ===================================================================
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const { page, limit = 100 } = req.query;
     const filter = page ? { page } : {};
@@ -436,9 +438,9 @@ router.get('/', async (req, res) => {
 // ===================================================================
 // GET /api/page-views/visitor/:visitorId
 // Returns the FULL page history for a single visitor.
-// Useful for drilling down into one person's journey.
+// Protected: admin only (returns full journey history per visitor)
 // ===================================================================
-router.get('/visitor/:visitorId', async (req, res) => {
+router.get('/visitor/:visitorId', auth, async (req, res) => {
   try {
     const { visitorId } = req.params;
 
@@ -500,8 +502,9 @@ router.post('/booking-count', async (req, res) => {
 // ===================================================================
 // DELETE /api/page-views/booking-counts/reset
 // Resets the View-to-Book Rate by wiping ALL BookingCount records.
+// Protected: admin only
 // ===================================================================
-router.delete('/booking-counts/reset', async (req, res) => {
+router.delete('/booking-counts/reset', auth, async (req, res) => {
   try {
     const result = await BookingCount.deleteMany({});
 
