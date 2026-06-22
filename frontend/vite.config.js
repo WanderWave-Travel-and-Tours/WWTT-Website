@@ -1,5 +1,79 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import JavaScriptObfuscator from 'javascript-obfuscator'
+
+// ---------------------------------------------------------------------------
+// Anti-tamper / anti-debugging — injected into the PRODUCTION build only and
+// OBFUSCATED so it cannot be casually read or bypassed. Behaviour:
+//   - Runs ONLY on the live domain (wanderwaveph.com). Never on localhost or
+//     preview builds, so the team's own DevTools testing is unaffected.
+//   - Team self-bypass: run  localStorage.setItem('ww_dev','1')  once in a
+//     trusted browser to disable all checks on that device.
+//   - When DevTools is detected (via debugger-timing), it repeatedly hits a
+//     `debugger` statement (pause-in-debugging) and HIDES the chat widget.
+// NOTE: This is deterrence, not real security — a skilled attacker can disable
+// breakpoints and walk around it. The genuine protections remain httpOnly
+// cookies, server-side validation, and the CSP above.
+// ---------------------------------------------------------------------------
+const ANTI_TAMPER_SRC = `
+(function () {
+  var host = location.hostname;
+  if (host !== 'wanderwaveph.com' && host !== 'www.wanderwaveph.com') return;
+  try { if (localStorage.getItem('ww_dev') === '1') return; } catch (e) {}
+
+  var tripped = false;
+  function hideChat() {
+    try {
+      var el = document.querySelector('chat-widget');
+      if (el) {
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+      }
+    } catch (e) {}
+  }
+  function trip() { if (tripped) return; tripped = true; hideChat(); }
+
+  function check() {
+    var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+    (function () { debugger; })();
+    var t1 = (window.performance && performance.now) ? performance.now() : Date.now();
+    if (t1 - t0 > 120) trip();
+  }
+  setInterval(check, 800);
+  setInterval(function () { if (tripped) hideChat(); }, 500);
+})();
+`;
+
+const antiTamperPlugin = () => {
+  let obfuscated = '';
+  try {
+    obfuscated = JavaScriptObfuscator.obfuscate(ANTI_TAMPER_SRC, {
+      compact: true,
+      controlFlowFlattening: true,
+      controlFlowFlatteningThreshold: 0.75,
+      selfDefending: true,
+      stringArray: true,
+      stringArrayEncoding: ['base64'],
+      stringArrayThreshold: 1,
+      identifierNamesGenerator: 'hexadecimal',
+      numbersToExpressions: true,
+      simplify: true,
+      transformObjectKeys: true,
+    }).getObfuscatedCode();
+  } catch (e) {
+    console.warn('[anti-tamper] obfuscation skipped:', e.message);
+    obfuscated = '';
+  }
+
+  return {
+    name: 'inject-anti-tamper',
+    apply: 'build',
+    transformIndexHtml(html) {
+      if (!obfuscated) return html;
+      return html.replace('</head>', `  <script>${obfuscated}</script>\n  </head>`);
+    },
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Content-Security-Policy — injected into the PRODUCTION build only.
@@ -42,7 +116,7 @@ const cspPlugin = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), cspPlugin()],
+  plugins: [react(), cspPlugin(), antiTamperPlugin()],
   base: '/',
   server: {
     port: 3000,
