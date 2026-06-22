@@ -88,8 +88,7 @@ const Login = () => {
             const data = await response.json();
 
             if (data.status === 'ok') {
-                localStorage.setItem('adminToken', data.token); 
-                localStorage.setItem('adminData', JSON.stringify(data.data)); 
+                localStorage.setItem('adminData', JSON.stringify(data.data));
                 
                 console.log('🔑 Admin logged in:', {
                     email: data.data.email,

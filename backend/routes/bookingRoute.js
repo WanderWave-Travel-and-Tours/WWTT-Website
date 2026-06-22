@@ -16,7 +16,7 @@ const authMiddleware = require('../middleware/auth');
 const verifyUserJWT = require('../middleware/verifyUserJWT');
 
 // Fields that must never appear in customer-facing responses
-const INTERNAL_FIELDS = ['sellerPrice', 'markup', 'markupType', 'checkoutSessionId', 'createdByEmail'];
+const INTERNAL_FIELDS = ['sellerPrice', 'markup', 'markupType', 'checkoutSessionId', 'createdByEmail', 'createdByType', '__v'];
 function stripInternal(obj) {
   const out = { ...obj };
   INTERNAL_FIELDS.forEach(f => delete out[f]);

@@ -17,9 +17,15 @@ window.fetch = async function decryptingFetch(input, init) {
     const url = typeof input === 'string' ? input : input?.url;
     const isApiCall = url?.includes('/api/');
 
+    // Inject credentials for same-origin API calls so the HttpOnly
+    // adminToken cookie is sent automatically — no token in localStorage needed.
+    const apiInit = isApiCall
+        ? { ...init, credentials: init?.credentials ?? 'include' }
+        : init;
+
     let response;
     try {
-        response = await _nativeFetch(input, init);
+        response = await _nativeFetch(input, apiInit);
     } catch (networkErr) {
         console.error('[fetch] ❌ NETWORK ERROR for', url, '—', networkErr.message);
         throw networkErr;
