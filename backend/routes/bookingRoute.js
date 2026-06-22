@@ -75,6 +75,7 @@ router.get('/user/:email', verifyUserJWT, async (req, res) => {
   if (req.user.email.toLowerCase() !== req.params.email.toLowerCase()) {
     return res.status(403).json({ success: false, message: 'Access denied.' });
   }
+  res.locals.skipEncrypt = true;
   try {
     const { email } = req.params;
     const bookings = await Booking.find({ email: email })
@@ -392,6 +393,7 @@ router.post('/:id/archive', authMiddleware, async (req, res) => {
 // ⚠️ Must be declared BEFORE router.get('/:id')
 // ============================================
 router.get('/check-voucher-usage', async (req, res) => {
+  res.locals.skipEncrypt = true;
   try {
     const { email, promoCode } = req.query;
 
@@ -446,6 +448,7 @@ router.get('/check-voucher-usage', async (req, res) => {
 //    "destination-payload" as an ObjectId for the :id param.
 // ============================================
 router.get('/:id/destination-payload', async (req, res) => {
+  res.locals.skipEncrypt = true;
   try {
     const booking = await Booking.findById(req.params.id).lean();
     if (!booking) {
@@ -601,6 +604,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 });
 
 router.post('/', upload.any(), async (req, res) => {
+  res.locals.skipEncrypt = true;
   try {
     let bookingData;
     
@@ -2028,6 +2032,7 @@ router.patch('/:id/details', authMiddleware, async (req, res) => {
 // PATCH /:id/hotel — UPDATE HOTEL SELECTION FROM USER DASHBOARD
 // ─────────────────────────────────────────────────────────────
 router.patch('/:id/hotel', verifyUserJWT, async (req, res) => {
+  res.locals.skipEncrypt = true;
   try {
     const { id } = req.params;
     const { selectedRoomType, hotelName, numberOfRooms } = req.body;
@@ -2105,6 +2110,7 @@ router.patch('/:id/hotel', verifyUserJWT, async (req, res) => {
 // POST /abandoned — ABANDONED BOOKING + GHL WEBHOOK
 // ============================================
 router.post('/abandoned', async (req, res) => {
+  res.locals.skipEncrypt = true;
   try {
     const {
       existingBookingId,
