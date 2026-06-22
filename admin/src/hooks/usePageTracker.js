@@ -87,10 +87,9 @@ export function usePageTracker({ page, path, label = '', packageId = null, packa
           if (!startTimeRef.current) {
             startTimeRef.current = Date.now();
           }
-          console.log(`📍 Tracking: [${page}] viewId=${data.viewId} unique=${data.unique}`);
         }
-      } catch (err) {
-        console.warn('⚠️ usePageTracker: failed to log view', err);
+      } catch {
+        // silently ignore tracking errors
       }
     }
 
@@ -121,8 +120,6 @@ export function usePageTracker({ page, path, label = '', packageId = null, packa
         }).catch(() => {});
       }
 
-      console.log(`🛑 Stop sent: [${page}] viewId=${viewId} time=${timeOnPageSeconds}s`);
-
       // Clear viewId so we don't double-send stop signals.
       // startTimeRef is intentionally kept so accumulated time carries over on resume.
       viewIdRef.current = null;
@@ -141,11 +138,9 @@ export function usePageTracker({ page, path, label = '', packageId = null, packa
           method:  'PATCH',
           headers: { 'Content-Type': 'application/json' },
         }).catch(() => {});
-        console.log(`▶️  Resume sent: [${page}] viewId=${viewId}`);
       } else {
         // viewId was cleared by sendStop — re-call trackView to recover it.
         // The backend dedup will return the existing viewId for this session.
-        console.log(`🔄 Re-tracking after tab resume: [${page}]`);
         trackView();
       }
     }
