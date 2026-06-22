@@ -196,10 +196,18 @@ router.post('/login', async (req, res) => {
 
         console.log(`✅ Admin login successful: ${admin.email}${isMainAdmin ? ' [MAIN ADMIN]' : ''}`);
 
-        res.json({ 
-            status: "ok", 
+        // Set token in HttpOnly cookie so XSS cannot read it from JS
+        res.cookie('adminToken', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 8 * 60 * 60 * 1000
+        });
+
+        res.json({
+            status: "ok",
             message: "Login Success!",
-            token: token, 
+            token: token,
             data: {
                 id: admin._id,
                 username: admin.username,
@@ -270,6 +278,9 @@ router.post('/logout', authMiddleware, async (req, res) => {
                 duration: `${Date.now() - startTime}ms`
             }
         });
+
+        // Clear the HttpOnly cookie
+        res.clearCookie('adminToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
 
         console.log('✅ Admin logged out:', adminEmail);
 

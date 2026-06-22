@@ -81,6 +81,7 @@ const Login = () => {
             const response = await fetch('https://wanderwaveph.onrender.com/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ email, password, recaptchaToken }),
             });
 

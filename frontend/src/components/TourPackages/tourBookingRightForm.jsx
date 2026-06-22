@@ -631,10 +631,6 @@ const handleRemoveFlight = () => {
         email:    passengers[0].email,
         message:  '',
         primaryContact: { fullName: `${passengers[0].firstName} ${passengers[0].lastName}`, email: passengers[0].email },
-        // No hotel fields for tours
-        sellerPrice:  pkg.sellerPrice || correctPrice,
-        markup:       pkg.markup || 0,
-        price:        correctPrice,
         isCustomized: false,
         customizedInclusions: [],
         passengers: passengers.map(p => ({
