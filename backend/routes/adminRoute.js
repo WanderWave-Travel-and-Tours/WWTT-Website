@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const sanitize = require('mongo-sanitize');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimiters');
 const express = require('express');
 const ActivityLog = require('../models/ActivityLog');
 const TokenBlacklist = require('../models/TokenBlacklist');
@@ -78,7 +79,7 @@ const isMainAdmin = (req, res, next) => {
 // PUBLIC ROUTES (NO AUTH REQUIRED)
 // ============================================================
 
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
     const startTime = Date.now();
     const email = sanitize(req.body.email);
     const password = sanitize(req.body.password);
