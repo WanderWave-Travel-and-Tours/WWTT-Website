@@ -25,7 +25,22 @@ app.set('trust proxy', 1);
 // 1. PayMongo Webhook — RAW body, must be registered BEFORE cors() and express.json()
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
-// 2. CORS — after webhook so it doesn't interfere with PayMongo's raw requests
+// 2. Security headers — applied to every response before CORS and routing.
+app.use((req, res, next) => {
+  // Prevent browsers from MIME-sniffing the content type
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Deny embedding this site in iframes (clickjacking protection)
+  res.setHeader('X-Frame-Options', 'DENY');
+  // Enable XSS auditor in older browsers
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Limit referrer information sent to third parties
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Restrict access to sensitive browser features
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+// CORS — after webhook so it doesn't interfere with PayMongo's raw requests
 const corsOptions = {
   origin: [
     'https://wanderwaveph.com',
