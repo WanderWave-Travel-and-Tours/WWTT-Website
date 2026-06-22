@@ -678,6 +678,13 @@ router.post('/', upload.any(), async (req, res) => {
       serverPerPaxPrice = pkg.price;
     }
 
+    // Apply 10% timer-expired penalty when the client reports the countdown elapsed.
+    // The client flag is trusted here because the penalty only ever INCREASES the
+    // price — there is no way for a customer to gain a lower fare by faking it.
+    if (bookingData.timerExpiredAtBooking === true) {
+      serverPerPaxPrice = Math.round(serverPerPaxPrice * 1.10);
+    }
+
     const serverPackageTotal    = serverPerPaxPrice * totalPax;
     // Floor all additive/subtractive adjustments at 0 so a crafted negative
     // discount cannot reduce the total below the correct base amount.
