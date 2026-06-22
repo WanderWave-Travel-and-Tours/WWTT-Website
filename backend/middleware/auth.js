@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/admin');
+const TokenBlacklist = require('../models/TokenBlacklist');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wanderwaveph_admin25';
 
@@ -9,7 +10,7 @@ module.exports = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
         message: 'No token provided. Authorization denied.',
         requiresAuth: true
@@ -21,6 +22,16 @@ module.exports = async (req, res, next) => {
 
     // ✅ VERIFY TOKEN
     const decoded = jwt.verify(token, JWT_SECRET);
+
+    // ✅ REJECT REVOKED TOKENS (logout blacklist)
+    const isRevoked = await TokenBlacklist.exists({ token });
+    if (isRevoked) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token has been revoked. Please login again.',
+        requiresAuth: true
+      });
+    }
 
     // ✅ FIND ADMIN
     const admin = await Admin.findById(decoded.id).select('-password');
