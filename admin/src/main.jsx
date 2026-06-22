@@ -17,10 +17,23 @@ window.fetch = async function decryptingFetch(input, init) {
     const url = typeof input === 'string' ? input : input?.url;
     const isApiCall = url?.includes('/api/');
 
-    // Inject credentials for same-origin API calls so the HttpOnly
-    // adminToken cookie is sent automatically — no token in localStorage needed.
+    // For API calls: inject credentials (cookie) and replace any bogus
+    // "Bearer null" / "Bearer undefined" tokens with the real sessionStorage token.
+    // This centralises auth for all 18+ fetch call sites without touching each file.
     const apiInit = isApiCall
-        ? { ...init, credentials: init?.credentials ?? 'include' }
+        ? (() => {
+            const sessionToken = sessionStorage.getItem('adminToken');
+            const existingHeaders = init?.headers || {};
+            const existingAuth = (existingHeaders['Authorization'] || existingHeaders['authorization'] || '').trim();
+            const isBogusAuth = /^Bearer (null|undefined)$/.test(existingAuth);
+            const headers = {
+                ...existingHeaders,
+                ...(sessionToken && (!existingAuth || isBogusAuth)
+                    ? { 'Authorization': `Bearer ${sessionToken}` }
+                    : {}),
+            };
+            return { ...init, credentials: init?.credentials ?? 'include', headers };
+        })()
         : init;
 
     let response;
