@@ -69,7 +69,7 @@ const ViewServices = () => {
     }, [toast]);
 
     useEffect(() => {
-        const isLoggedIn = localStorage.getItem('adminToken');
+        const isLoggedIn = sessionStorage.getItem('adminToken');
         if (!isLoggedIn) {
             navigate('/');
         } else {

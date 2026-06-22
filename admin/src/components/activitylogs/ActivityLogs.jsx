@@ -65,7 +65,7 @@ const ActivityLogs = () => {
 
     // Check authentication
     useEffect(() => {
-        const token = localStorage.getItem('adminToken');
+        const token = sessionStorage.getItem('adminToken');
         if (!token) {
             navigate('/admin');
         }

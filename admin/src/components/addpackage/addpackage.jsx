@@ -627,8 +627,8 @@ const AddPackage = () => {
                 method: "POST",
                 body: formData,
                 headers: {
-                    ...(localStorage.getItem('adminToken') && { 
-                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}` 
+                    ...(sessionStorage.getItem('adminToken') && { 
+                        'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}` 
                     })
                 }
             });

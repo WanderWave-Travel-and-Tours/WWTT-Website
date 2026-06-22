@@ -111,7 +111,7 @@ const AddAdminModal = ({ isOpen, onClose, onAdminAdded }) => {
   const performSubmit = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('adminToken'); 
+      const token = sessionStorage.getItem('adminToken'); 
       const username = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
       
       const adminData = {

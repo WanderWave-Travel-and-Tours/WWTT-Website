@@ -60,7 +60,7 @@ useEffect(() => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const isLoggedIn = localStorage.getItem('adminToken');
+            const isLoggedIn = sessionStorage.getItem('adminToken');
             if (!isLoggedIn) { navigate('/'); return; }
             if (!packageId) return;
             try {
