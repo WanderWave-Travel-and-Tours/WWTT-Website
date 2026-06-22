@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { PageView, BookingCount } = require('../models/PageView');
 const Booking = require('../models/booking');
 const auth = require('../middleware/auth');
+const { telemetryLimiter } = require('../middleware/rateLimiters');
 
 // ===================================================================
 // HELPER — generates a stable visitorId from the client's real IP.
@@ -52,7 +53,7 @@ function determineStage(page, path, label, packageId) {
 // Body: { page, path, label?, packageId?, packageName?,
 //         visitorIp?, sessionId, email? }
 // ===================================================================
-router.post('/', async (req, res) => {
+router.post('/', telemetryLimiter, async (req, res) => {
   try {
     const { page, path, label, packageId, packageName, sessionId, email } = req.body;
 
@@ -149,7 +150,7 @@ router.post('/', async (req, res) => {
 // Body: { timeOnPageSeconds? }
 // ===================================================================
 // sendBeacon (tab-close) uses POST; manual fetch fallback uses PATCH — accept both
-router.route('/:id/stop').patch(stopView).post(stopView);
+router.route('/:id/stop').patch(telemetryLimiter, stopView).post(telemetryLimiter, stopView);
 async function stopView(req, res) {
   try {
     const { id } = req.params;
@@ -189,7 +190,7 @@ async function stopView(req, res) {
 // Clears stoppedHere/stoppedAt so the visitor shows as active again.
 // ===================================================================
 // sendBeacon uses POST; fetch uses PATCH — accept both
-router.route('/:id/resume').patch(resumeView).post(resumeView);
+router.route('/:id/resume').patch(telemetryLimiter, resumeView).post(telemetryLimiter, resumeView);
 async function resumeView(req, res) {
   try {
     const { id } = req.params;
@@ -472,7 +473,7 @@ router.get('/visitor/:visitorId', auth, async (req, res) => {
 // Records a confirmed booking from BookingFormModal.
 // Body: { packageId?, packageName?, paxCount?, paymentType?, totalAmount? }
 // ===================================================================
-router.post('/booking-count', async (req, res) => {
+router.post('/booking-count', telemetryLimiter, async (req, res) => {
   try {
     const { packageId, packageName, paxCount, paymentType, totalAmount, bookingId } = req.body;
 

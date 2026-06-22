@@ -26,4 +26,20 @@ const apiLimiter = rateLimit({
     },
 });
 
-module.exports = { authLimiter, apiLimiter };
+// Telemetry limiter — stricter quota for open, high-frequency beacon endpoints
+// (POST /api/page-views, /:id/stop, /:id/resume, /booking-count).
+// These routes are unauthenticated and fire automatically in the browser, making
+// them the most attractive target for volumetric flood attacks. The tighter cap
+// prevents resource exhaustion without blocking legitimate browsing sessions.
+const telemetryLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: 'Too many requests from this IP. Please try again after 15 minutes.',
+    },
+});
+
+module.exports = { authLimiter, apiLimiter, telemetryLimiter };

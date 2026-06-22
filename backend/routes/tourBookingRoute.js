@@ -6,6 +6,7 @@ const path       = require('path');
 const fs         = require('fs');
 const axios      = require('axios');
 const TourBooking = require('../models/tourBooking');
+const Package     = require('../models/package');
 
 // ── Multer setup ─────────────────────────────────────────────────────────────
 const uploadDir = path.join(__dirname, '../uploads');
@@ -74,6 +75,87 @@ router.post('/', upload.any(), async (req, res) => {
     const isManual = !data.tourId && !data.packageId;
     const bookingSource = data.bookingSource || (isManual ? 'walkin' : 'online');
     console.log(`   Booking type: ${bookingSource} | isManual: ${isManual}`);
+
+    // ===== BOUNDARY CHECKS — Issue #2: Negative Value Injection =====
+    const _paxT = data.pax || {};
+    const tourTotalPax =
+      (Number(_paxT.adult) || 0) +
+      (Number(_paxT.children) || 0) +
+      (Number(_paxT.infants) || 0);
+
+    if (tourTotalPax <= 0) {
+      return res.status(400).json({ success: false, message: 'Booking must include at least one passenger.' });
+    }
+
+    if (data.paymentType === 'partial') {
+      const _tia = parseFloat(data.initialPaymentAmount);
+      if (!_tia || _tia <= 0) {
+        return res.status(400).json({ success: false, message: 'initialPaymentAmount must be greater than zero.' });
+      }
+    }
+
+    // ===== SERVER-SIDE PRICE COMPUTATION — Issue #1: Price Manipulation =====
+    if (data.packageId) {
+      const pkg = await Package.findById(data.packageId);
+      if (!pkg) {
+        return res.status(400).json({ success: false, message: 'Package not found.' });
+      }
+
+      let serverPerPaxPrice;
+      if (tourTotalPax === 1 && pkg.soloPaxPrice != null) {
+        serverPerPaxPrice = pkg.soloPaxPrice;
+      } else if (tourTotalPax > 1 && pkg.multiplePaxPrice != null) {
+        serverPerPaxPrice = pkg.multiplePaxPrice;
+      } else {
+        serverPerPaxPrice = pkg.price;
+      }
+
+      const serverPackageTotal = serverPerPaxPrice * tourTotalPax;
+      const discountAmount     = Math.max(0, parseFloat(data.discountAmount) || 0);
+      const airfareTotal       = Math.max(0, parseFloat(data.airfareTotal) || 0);
+      const computedTotal      = serverPackageTotal + airfareTotal - discountAmount;
+
+      if (computedTotal <= 0) {
+        return res.status(400).json({ success: false, message: 'Computed booking total must be greater than zero.' });
+      }
+
+      data.sellerPrice          = pkg.sellerPrice;
+      data.markup               = pkg.markup;
+      data.price                = serverPerPaxPrice;
+      data.packagePrice         = serverPerPaxPrice;
+      data.originalPackagePrice = serverPerPaxPrice;
+      data.packageTotal         = serverPackageTotal;
+      data.finalPackageTotal    = serverPackageTotal - discountAmount;
+      data.airfareTotal         = airfareTotal;
+      data.discountAmount       = discountAmount;
+      data.totalAmount          = computedTotal;
+
+      if (data.paymentType === 'partial') {
+        const _tia = parseFloat(data.initialPaymentAmount);
+        if (_tia >= computedTotal) {
+          return res.status(400).json({ success: false, message: 'initialPaymentAmount must be less than totalAmount for partial payment.' });
+        }
+        data.remainingBalance = computedTotal - _tia;
+      } else {
+        data.initialPaymentAmount = computedTotal;
+        data.remainingBalance     = 0;
+      }
+
+      console.log(`   ✅ Server-computed price — perPax: ${serverPerPaxPrice}, total: ${computedTotal}`);
+    } else {
+      // Walk-in — admin-supplied total; enforce non-negative boundary.
+      const clientTotal = parseFloat(data.totalAmount);
+      if (!clientTotal || clientTotal <= 0) {
+        return res.status(400).json({ success: false, message: 'totalAmount must be greater than zero.' });
+      }
+      if (data.paymentType === 'partial') {
+        const _tia = parseFloat(data.initialPaymentAmount);
+        if (!_tia || _tia <= 0 || _tia >= clientTotal) {
+          return res.status(400).json({ success: false, message: 'initialPaymentAmount must be between zero and totalAmount.' });
+        }
+        data.remainingBalance = clientTotal - _tia;
+      }
+    }
 
     const tourBooking = new TourBooking({
       tourId:          data.tourId    || null,

@@ -618,42 +618,98 @@ router.post('/', upload.any(), async (req, res) => {
     createdByEmail: bookingData.createdByEmail || (bookingData.isWalkin ? 'houston@wanderwaveph.com' : bookingData.email),
   };
 
-  // ✅ PRICE VALIDATION
+  // ===== BOUNDARY CHECKS — Issue #2: Negative Value Injection =====
+  // Reject any request where critical quantity fields are zero or negative.
+  // An attacker sending matching negative numbers (e.g. totalAmount: -500,
+  // initialPaymentAmount: -500) satisfies amountPaid >= totalAmount and flips
+  // status to FULLY PAID. Hard-stopping here closes that vector entirely.
+  const _pax = bookingData.pax || {};
+  const totalPax =
+    (Number(_pax.adult) || 0) +
+    (Number(_pax.children) || 0) +
+    (Number(_pax.infants) || 0);
+
+  if (totalPax <= 0) {
+    return res.status(400).json({ success: false, message: 'Booking must include at least one passenger.' });
+  }
+
+  if (bookingData.paymentType === 'partial') {
+    const _ia = parseFloat(bookingData.initialPaymentAmount);
+    if (!_ia || _ia <= 0) {
+      return res.status(400).json({ success: false, message: 'initialPaymentAmount must be greater than zero.' });
+    }
+  }
+
+  // ===== SERVER-SIDE PRICE COMPUTATION — Issue #1: Price Manipulation =====
+  // The client is no longer trusted for any price figure. The authoritative
+  // per-pax rate is fetched directly from the Package document and every price
+  // field on bookingData is overwritten before the Booking document is built.
   if (bookingData.packageId) {
-    try {
-      const pkg = await Package.findById(bookingData.packageId);
-      
-      if (pkg) {
-        const basePrice = pkg.price;
-        const markupPrice = Math.round(basePrice * 1.10);
-        const submittedPrice = bookingData.price;
-        
-        console.log('🔍 ===== BACKEND PRICE VALIDATION =====');
-        console.log('Package Base Price:', basePrice);
-        console.log('Markup Price (10%):', markupPrice);
-        console.log('Submitted Price:', submittedPrice);
-        console.log('Timer Expired:', bookingData.timerExpiredAtBooking);
-        console.log('Price Type:', bookingData.priceType);
-        console.log('Is Customized:', bookingData.isCustomized);
-        console.log('====================================');
-        
-        const isValidPrice = 
-          Math.abs(submittedPrice - basePrice) < 100 ||
-          Math.abs(submittedPrice - markupPrice) < 100 ||
-          bookingData.isCustomized;
-        
-        if (!isValidPrice) {
-          console.warn('⚠️ Price validation warning:', {
-            expected: `${basePrice} (discounted) or ${markupPrice} (markup)`,
-            received: submittedPrice,
-            difference: Math.abs(submittedPrice - basePrice)
-          });
-        } else {
-          console.log('✅ Price validation passed');
-        }
+    const pkg = await Package.findById(bookingData.packageId);
+    if (!pkg) {
+      return res.status(400).json({ success: false, message: 'Package not found.' });
+    }
+
+    // Authoritative per-pax price: prefer admin-set solo/group overrides; fall
+    // back to the markup-inclusive price computed by the Package pre-save hook.
+    let serverPerPaxPrice;
+    if (totalPax === 1 && pkg.soloPaxPrice != null) {
+      serverPerPaxPrice = pkg.soloPaxPrice;
+    } else if (totalPax > 1 && pkg.multiplePaxPrice != null) {
+      serverPerPaxPrice = pkg.multiplePaxPrice;
+    } else {
+      serverPerPaxPrice = pkg.price;
+    }
+
+    const serverPackageTotal    = serverPerPaxPrice * totalPax;
+    // Floor all additive/subtractive adjustments at 0 so a crafted negative
+    // discount cannot reduce the total below the correct base amount.
+    const discountAmount        = Math.max(0, parseFloat(bookingData.discountAmount) || 0);
+    const customizationExtra    = Math.max(0, parseFloat(bookingData.customizationAdditionalPrice) || 0);
+    const airfareTotal          = Math.max(0, parseFloat(bookingData.airfareTotal) || 0);
+    const computedTotal         = serverPackageTotal + customizationExtra + airfareTotal - discountAmount;
+
+    if (computedTotal <= 0) {
+      return res.status(400).json({ success: false, message: 'Computed booking total must be greater than zero.' });
+    }
+
+    // Overwrite every client-supplied price field with server-authoritative values.
+    bookingData.sellerPrice                  = pkg.sellerPrice;
+    bookingData.markup                       = pkg.markup;
+    bookingData.price                        = serverPerPaxPrice;
+    bookingData.originalPackagePrice         = serverPerPaxPrice;
+    bookingData.packageTotal                 = serverPackageTotal;
+    bookingData.finalPackageTotal            = serverPackageTotal - discountAmount;
+    bookingData.customizationAdditionalPrice = customizationExtra;
+    bookingData.airfareTotal                 = airfareTotal;
+    bookingData.discountAmount               = discountAmount;
+    bookingData.totalAmount                  = computedTotal;
+
+    if (bookingData.paymentType === 'partial') {
+      const _ia = parseFloat(bookingData.initialPaymentAmount);
+      if (_ia >= computedTotal) {
+        return res.status(400).json({ success: false, message: 'initialPaymentAmount must be less than totalAmount for partial payment.' });
       }
-    } catch (priceValidationError) {
-      console.error('⚠️ Price validation error (non-fatal):', priceValidationError);
+      bookingData.remainingBalance = computedTotal - _ia;
+    } else {
+      bookingData.initialPaymentAmount = computedTotal;
+      bookingData.remainingBalance     = 0;
+    }
+
+    console.log(`✅ Server-computed price — perPax: ${serverPerPaxPrice}, packageTotal: ${serverPackageTotal}, computedTotal: ${computedTotal}`);
+  } else {
+    // Walk-in / manual booking — no package reference. The admin supplies the
+    // total directly, but it must still pass the non-negative boundary check.
+    const clientTotal = parseFloat(bookingData.totalAmount);
+    if (!clientTotal || clientTotal <= 0) {
+      return res.status(400).json({ success: false, message: 'totalAmount must be greater than zero.' });
+    }
+    if (bookingData.paymentType === 'partial') {
+      const _ia = parseFloat(bookingData.initialPaymentAmount);
+      if (!_ia || _ia <= 0 || _ia >= clientTotal) {
+        return res.status(400).json({ success: false, message: 'initialPaymentAmount must be between zero and totalAmount.' });
+      }
+      bookingData.remainingBalance = clientTotal - _ia;
     }
   }
 
