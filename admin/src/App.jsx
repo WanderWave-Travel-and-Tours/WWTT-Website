@@ -469,11 +469,16 @@ const ProtectedRoute = ({ children }) => {
     let retryTimeout = null;
 
     const verifyToken = async () => {
+      const token = sessionStorage.getItem('adminToken');
+
+      if (!token) {
+        if (isMounted) setAuthState('unauthenticated');
+        return;
+      }
+
       try {
         // Use fetch (not axios) so the global decrypting wrapper in main.jsx
         // auto-decrypts the encrypted verify response before we read it.
-        // credentials: 'include' is injected automatically by the main.jsx interceptor
-        // so the HttpOnly adminToken cookie is sent — no localStorage token needed.
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -481,15 +486,17 @@ const ProtectedRoute = ({ children }) => {
         try {
           response = await fetch('https://wanderwaveph.onrender.com/api/admin/verify', {
             method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
             signal: controller.signal,
           });
         } finally {
           clearTimeout(timeoutId);
         }
 
-        // 401/403 = definitive auth rejection → clear session data, block access.
+        // 401/403 = definitive auth rejection → clear session, block access.
         if (response.status === 401 || response.status === 403) {
           console.error(`❌ Auth rejected (HTTP ${response.status}) - clearing session`);
+          sessionStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
           return;
@@ -510,6 +517,7 @@ const ProtectedRoute = ({ children }) => {
         if (data.status === 'ok') {
           if (isMounted) setAuthState('authenticated');
         } else {
+          sessionStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
         }
