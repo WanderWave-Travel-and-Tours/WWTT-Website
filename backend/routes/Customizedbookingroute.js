@@ -89,17 +89,25 @@ function buildServices(body) {
 router.post('/', async (req, res) => {
   console.log('\n🟡 [POST /api/customized-bookings] New customized booking');
 
-  try {
-    // Parse if the body was sent as a JSON string (FormData fallback)
-    let body = req.body;
-    if (typeof body.bookingData === 'string') {
-      try { body = JSON.parse(body.bookingData); } catch (_) {}
-    }
+  // Parse early so we can derive the lock key before entering the critical section
+  let body = req.body;
+  if (typeof body.bookingData === 'string') {
+    try { body = JSON.parse(body.bookingData); } catch (_) {}
+  }
 
+  if (!body.email) {
+    return res.status(400).json({ success: false, message: 'email is required.' });
+  }
+
+  // Acquire a per-email mutex so concurrent submissions from the same requester
+  // are serialised and cannot both slip past validation before either write commits.
+  const mutex = getBookingMutex(body.email.toLowerCase());
+  const release = await mutex.acquire();
+
+  try {
     // ── Required field validation ───────────────────────────────────────────
     if (!body.destination) return res.status(400).json({ success: false, message: 'destination is required.' });
     if (!body.fullName)    return res.status(400).json({ success: false, message: 'fullName is required.' });
-    if (!body.email)       return res.status(400).json({ success: false, message: 'email is required.' });
 
     const { builtTours, builtTransfers } = buildServices(body);
 
@@ -182,6 +190,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: `Validation failed: ${msgs}` });
     }
     return res.status(500).json({ success: false, message: 'Server error.', error: err.message });
+  } finally {
+    release();
   }
 });
 
