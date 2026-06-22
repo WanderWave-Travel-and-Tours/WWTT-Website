@@ -148,7 +148,9 @@ router.post('/', async (req, res) => {
 //
 // Body: { timeOnPageSeconds? }
 // ===================================================================
-router.patch('/:id/stop', async (req, res) => {
+// sendBeacon (tab-close) uses POST; manual fetch fallback uses PATCH — accept both
+router.route('/:id/stop').patch(stopView).post(stopView);
+async function stopView(req, res) {
   try {
     const { id } = req.params;
     const { timeOnPageSeconds } = req.body;
@@ -179,14 +181,16 @@ router.patch('/:id/stop', async (req, res) => {
       error: err.message,
     });
   }
-});
+}
 
 // ===================================================================
 // PATCH /api/page-views/:id/resume
 // Called when a visitor returns to the tab (visibilitychange → visible).
 // Clears stoppedHere/stoppedAt so the visitor shows as active again.
 // ===================================================================
-router.patch('/:id/resume', async (req, res) => {
+// sendBeacon uses POST; fetch uses PATCH — accept both
+router.route('/:id/resume').patch(resumeView).post(resumeView);
+async function resumeView(req, res) {
   try {
     const { id } = req.params;
 
@@ -211,7 +215,7 @@ router.patch('/:id/resume', async (req, res) => {
       error: err.message,
     });
   }
-});
+}
 
 // ===================================================================
 // GET /api/page-views/stats
