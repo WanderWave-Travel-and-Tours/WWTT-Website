@@ -1212,12 +1212,7 @@ const handleNextPassenger = async (e) => {
       selectedRoomType: selectedRoomType ? selectedRoomType.type : null,
       hotelName: selectedRoomType ? selectedRoomType.hotelName : null,
       numberOfRooms: numberOfRooms,
-      
-      // ✅ FIXED - All price fields use correct timer-aware price
-      sellerPrice: correctPrice, 
-      markup: timerExpired ? Math.round(basePriceForComparison * 0.10) : 0, 
-      price: correctPrice, // ✅ CRITICAL FIX - This is what gets saved to DB
-      
+
       isCustomized: customizationData ? true : false,
       customizedInclusions: customizationData ? customizationData.inclusions.map(inc => ({
         id: inc.id,

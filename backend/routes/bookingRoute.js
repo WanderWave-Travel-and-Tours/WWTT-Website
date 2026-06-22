@@ -3,15 +3,25 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const axios = require('axios'); // ✅ Added for GHL webhook calls
+const axios = require('axios');
 const Booking = require('../models/booking');
 const User = require('../models/user');
 const Promo = require('../models/promo');
 const Package = require('../models/package');
-const Destination = require('../models/destination'); // ✅ Import Destination model for GHL personalization
+const Destination = require('../models/destination');
 const ActivityLog = require('../models/ActivityLog');
 const { BookingCount } = require('../models/PageView');
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
+const authMiddleware = require('../middleware/auth');
+const verifyUserJWT = require('../middleware/verifyUserJWT');
+
+// Fields that must never appear in customer-facing responses
+const INTERNAL_FIELDS = ['sellerPrice', 'markup', 'markupType', 'checkoutSessionId', 'createdByEmail'];
+function stripInternal(obj) {
+  const out = { ...obj };
+  INTERNAL_FIELDS.forEach(f => delete out[f]);
+  return out;
+}
  
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -61,7 +71,10 @@ const generateTempPassword = () => {
   return `Wander_${numbers}${randomSpecialChar}`;
 };
 
-router.get('/user/:email', async (req, res) => {
+router.get('/user/:email', verifyUserJWT, async (req, res) => {
+  if (req.user.email.toLowerCase() !== req.params.email.toLowerCase()) {
+    return res.status(403).json({ success: false, message: 'Access denied.' });
+  }
   try {
     const { email } = req.params;
     const bookings = await Booking.find({ email: email })
@@ -106,7 +119,7 @@ router.get('/user/:email', async (req, res) => {
     res.json({
       success: true,
       count: enriched.length,
-      data: enriched
+      data: enriched.map(b => stripInternal(b))
     });
   } catch (error) {
     console.error('❌ Error fetching user bookings:', error);
@@ -118,7 +131,7 @@ router.get('/user/:email', async (req, res) => {
 });
 
 
-router.get('/stats/summary', async (req, res) => {
+router.get('/stats/summary', authMiddleware, async (req, res) => {
   try {
     const bookings = await Booking.find();
 
@@ -147,7 +160,7 @@ router.get('/stats/summary', async (req, res) => {
   }
 });
 
-router.get('/init-archive', async (req, res) => {
+router.get('/init-archive', authMiddleware, async (req, res) => {
     try {
         const result = await Booking.updateMany(
             { isArchive: { $exists: false } },
@@ -165,7 +178,7 @@ router.get('/init-archive', async (req, res) => {
 // ============================================
 // GET /backfill-itinerary
 // ============================================
-router.get('/backfill-itinerary', async (req, res) => {
+router.get('/backfill-itinerary', authMiddleware, async (req, res) => {
   try {
     const bookings = await Booking.find({ itinerary: { $size: 0 } }).lean();
     console.log(`🔧 Backfill: found ${bookings.length} booking(s) with empty itinerary`);
@@ -247,7 +260,7 @@ router.get('/backfill-itinerary', async (req, res) => {
 
 
 
-router.get('/active', async (req, res) => {
+router.get('/active', authMiddleware, async (req, res) => {
     try {
         const bookings = await Booking.find({ isArchive: 'No' })
             .populate('packageId', 'destination title')
@@ -290,7 +303,7 @@ router.get('/active', async (req, res) => {
     }
 });
 
-router.get('/archived', async (req, res) => {
+router.get('/archived', authMiddleware, async (req, res) => {
     try {
         const archived = await Booking.find({ isArchive: 'Yes' }).sort({ createdAt: -1 });
         res.json({
@@ -307,7 +320,7 @@ router.get('/archived', async (req, res) => {
     }
 });
 
-router.post('/:id/archive', async (req, res) => {
+router.post('/:id/archive', authMiddleware, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
         if (!booking) return res.status(404).json({ status: "error", message: "Booking not found" });
@@ -484,7 +497,7 @@ router.get('/:id/destination-payload', async (req, res) => {
 // ⚠️ Must be declared BEFORE router.get('/:id') to avoid Express
 //    treating "confirm" as an ObjectId for the :id param.
 // ============================================
-router.put('/:id/confirm', async (req, res) => {
+router.put('/:id/confirm', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { userEmail, adminId } = req.body;
@@ -558,7 +571,7 @@ router.put('/:id/confirm', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
       .populate('packageId')
@@ -653,9 +666,9 @@ router.post('/', upload.any(), async (req, res) => {
     // Authoritative per-pax price: prefer admin-set solo/group overrides; fall
     // back to the markup-inclusive price computed by the Package pre-save hook.
     let serverPerPaxPrice;
-    if (totalPax === 1 && pkg.soloPaxPrice != null) {
+    if (totalPax === 1 && pkg.soloPaxPrice != null && pkg.soloPaxPrice > 0) {
       serverPerPaxPrice = pkg.soloPaxPrice;
-    } else if (totalPax > 1 && pkg.multiplePaxPrice != null) {
+    } else if (totalPax > 1 && pkg.multiplePaxPrice != null && pkg.multiplePaxPrice > 0) {
       serverPerPaxPrice = pkg.multiplePaxPrice;
     } else {
       serverPerPaxPrice = pkg.price;
@@ -1254,12 +1267,12 @@ router.post('/', upload.any(), async (req, res) => {
 
     res.json({
       success: true,
-      message: bookingData.isWalkin 
-        ? 'Walk-in appointment created successfully.' 
+      message: bookingData.isWalkin
+        ? 'Walk-in appointment created successfully.'
         : 'Booking saved successfully. Proceed to payment link generation.',
       isNewUser: isNewUser,
       bookingId: newBooking._id,
-      data: newBooking,
+      data: stripInternal(newBooking.toObject()),
     });
 
   } catch (error) {
@@ -1285,16 +1298,16 @@ router.post('/', upload.any(), async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { 
-      status, 
-      email, 
-      referenceNumber, 
-      isArchive, 
+    const {
+      status,
+      email,
+      referenceNumber,
+      isArchive,
       isCustomized,
       startDate,
-      endDate 
+      endDate
     } = req.query;
 
     let filter = {};
@@ -1338,7 +1351,7 @@ router.get('/', async (req, res) => {
 // ============================================
 // GET CUSTOMIZATION STATISTICS
 // ============================================
-router.get('/stats/customization', async (req, res) => {
+router.get('/stats/customization', authMiddleware, async (req, res) => {
   try {
     const totalBookings = await Booking.countDocuments({ isArchive: 'No' });
     const customizedBookings = await Booking.countDocuments({ 
@@ -1413,7 +1426,7 @@ router.get('/stats/customization', async (req, res) => {
   }
 });
 
-router.post('/:id/cancel', async (req, res) => {
+router.post('/:id/cancel', authMiddleware, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
     
@@ -1475,7 +1488,7 @@ router.post('/:id/cancel', async (req, res) => {
   }
 });
 
-router.post('/:id/confirm-payment', async (req, res) => {
+router.post('/:id/confirm-payment', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { paymentId } = req.body;
@@ -1555,7 +1568,7 @@ router.post('/:id/confirm-payment', async (req, res) => {
   }
 });
 
-router.post('/:id/create-balance-payment', async (req, res) => {
+router.post('/:id/create-balance-payment', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -1614,7 +1627,7 @@ router.post('/:id/create-balance-payment', async (req, res) => {
   }
 });
 
-router.put('/:id/confirm-balance-payment', async (req, res) => {
+router.put('/:id/confirm-balance-payment', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { paymentId } = req.body;
@@ -1686,7 +1699,7 @@ router.put('/:id/confirm-balance-payment', async (req, res) => {
   }
 });
 
-router.get('/pending-balance/all', async (req, res) => {
+router.get('/pending-balance/all', authMiddleware, async (req, res) => {
   try {
     const bookings = await Booking.find({
       paymentType: 'partial',
@@ -1723,7 +1736,7 @@ router.get('/pending-balance/all', async (req, res) => {
   }
 });
 
-router.patch('/:id/customization', async (req, res) => {
+router.patch('/:id/customization', authMiddleware, async (req, res) => {
   try {
     const { customizedInclusions, customizationAdditionalPrice } = req.body;
 
@@ -1856,13 +1869,21 @@ router.patch('/:id/customization', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
-    Object.assign(booking, req.body);
+    // Whitelist of fields an admin is permitted to overwrite
+    const ALLOWED_UPDATE_FIELDS = [
+      'status', 'paymentStatus', 'notes', 'appointmentDate', 'appointmentTime',
+      'hotelName', 'selectedRoomType', 'numberOfRooms', 'startDate', 'endDate',
+      'duration', 'pax', 'packageName', 'isArchive'
+    ];
+    ALLOWED_UPDATE_FIELDS.forEach(f => {
+      if (req.body[f] !== undefined) booking[f] = req.body[f];
+    });
     booking.updatedAt = new Date();
     await booking.save();
 
@@ -1875,7 +1896,7 @@ router.put('/:id', async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // PATCH /:id/details — UPDATE BOOKING DETAILS
 // ─────────────────────────────────────────────────────────────
-router.patch('/:id/details', async (req, res) => {
+router.patch('/:id/details', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -2006,13 +2027,22 @@ router.patch('/:id/details', async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // PATCH /:id/hotel — UPDATE HOTEL SELECTION FROM USER DASHBOARD
 // ─────────────────────────────────────────────────────────────
-router.patch('/:id/hotel', async (req, res) => {
+router.patch('/:id/hotel', verifyUserJWT, async (req, res) => {
   try {
     const { id } = req.params;
     const { selectedRoomType, hotelName, numberOfRooms } = req.body;
 
     if (!selectedRoomType) {
       return res.status(400).json({ status: 'error', error: 'selectedRoomType is required' });
+    }
+
+    // Verify booking ownership before allowing update
+    const existing = await Booking.findById(id).select('email').lean();
+    if (!existing) {
+      return res.status(404).json({ status: 'error', error: 'Booking not found' });
+    }
+    if (existing.email.toLowerCase() !== req.user.email.toLowerCase()) {
+      return res.status(403).json({ status: 'error', error: 'Access denied.' });
     }
 
     const updateData = {

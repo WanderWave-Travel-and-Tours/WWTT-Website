@@ -52,6 +52,8 @@ app.use((req, res, next) => {
 });
 
 // 3. Normal middleware — after webhook and CORS
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

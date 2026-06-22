@@ -17,8 +17,8 @@ module.exports = async (req, res, next) => {
       });
     }
 
-    // ✅ EXTRACT TOKEN
-    const token = authHeader.split(' ')[1];
+    // ✅ EXTRACT TOKEN — prefer HttpOnly cookie, fall back to Bearer header
+    const token = req.cookies?.adminToken || authHeader.split(' ')[1];
 
     // ✅ VERIFY TOKEN
     const decoded = jwt.verify(token, JWT_SECRET);

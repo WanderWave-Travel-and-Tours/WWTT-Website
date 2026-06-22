@@ -456,11 +456,6 @@ const BookingFormModal = ({
         packageName: pkg.name || pkg.title || pkg.packageName,
         packageId: resolvedPackageId,
 
-        // ✅ REQUIRED MONGOOSE FIELDS (were missing → caused 500)
-        sellerPrice: pkg.sellerPrice || 0,
-        markup: pkg.markup || 0,
-        price: finalPackageTotal,
-
         fullName: passengers[0]?.firstName + " " + (passengers[0]?.lastName || ''),
         email: passengers[0]?.email,
 
