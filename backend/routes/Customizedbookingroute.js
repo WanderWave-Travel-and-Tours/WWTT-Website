@@ -6,9 +6,23 @@
 //   const customizedBookingRoute = require('./routes/customizedBookingRoute');
 //   app.use('/api/customized-bookings', customizedBookingRoute);
 // ─────────────────────────────────────────────────────────────────────────────
-const express          = require('express');
-const router           = express.Router();
-const CustomizedBooking = require('../models/Customizedbooking'); // ✅ FIXED: was './models/...' (wrong path for a file inside routes/)
+const express           = require('express');
+const router            = express.Router();
+const { Mutex }         = require('async-mutex');
+const CustomizedBooking = require('../models/Customizedbooking');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-email booking lock — prevents concurrent duplicate submissions from the
+// same requester from both passing validation before either write commits.
+// ─────────────────────────────────────────────────────────────────────────────
+const bookingMutexes = new Map();
+
+function getBookingMutex(key) {
+  if (!bookingMutexes.has(key)) {
+    bookingMutexes.set(key, new Mutex());
+  }
+  return bookingMutexes.get(key);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
