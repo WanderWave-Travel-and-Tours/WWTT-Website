@@ -1,14 +1,16 @@
 const router = require('express').Router();
-const AdminModel = require('../models/admin'); 
+const AdminModel = require('../models/admin');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const sanitize = require('mongo-sanitize');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/auth');
 const express = require('express');
 const ActivityLog = require('../models/ActivityLog');
+const TokenBlacklist = require('../models/TokenBlacklist');
 
 // 🎯 IMPORT ACTIVITY LOGGER
 const { 
@@ -23,15 +25,33 @@ const JWT_SECRET = process.env.JWT_SECRET || 'wanderwaveph_admin25';
 // ============================================================
 // MULTER CONFIGURATION
 // ============================================================
+const ALLOWED_LOGO_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const LOGO_MIME_TO_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
+
+const logoFileFilter = (req, file, cb) => {
+    if (ALLOWED_LOGO_MIMETYPES.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only JPEG, PNG, and WebP images are allowed for the business logo.'), false);
+    }
+};
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/'); 
+        cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+        // Extension derived from verified MIME type — never from client-supplied filename
+        const ext = LOGO_MIME_TO_EXT[file.mimetype] || '.jpg';
+        cb(null, crypto.randomUUID() + ext);
     }
 });
-const upload = multer({ storage: storage });
+
+const upload = multer({
+    storage,
+    fileFilter: logoFileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 // ============================================================
 // ENSURE EXPORTS DIRECTORY EXISTS
@@ -219,10 +239,20 @@ router.post('/login', async (req, res) => {
 
 router.post('/logout', authMiddleware, async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
         const adminEmail = req.user.email;
         const adminId = req.user._id;
+
+        // Revoke the token so it cannot be replayed after logout
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.decode(token);
+        if (decoded && decoded.exp) {
+            await TokenBlacklist.create({
+                token,
+                expiresAt: new Date(decoded.exp * 1000)
+            }).catch(() => {});
+        }
 
         await logActivity({
             action: 'LOGOUT',
@@ -267,9 +297,9 @@ router.post('/logout', authMiddleware, async (req, res) => {
             }
         });
 
-        res.status(500).json({ 
-            status: "error", 
-            message: "Logout failed." 
+        res.status(500).json({
+            status: "error",
+            message: "Logout failed."
         });
     }
 });
