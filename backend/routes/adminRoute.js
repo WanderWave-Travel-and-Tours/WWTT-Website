@@ -253,8 +253,9 @@ router.post('/logout', authMiddleware, async (req, res) => {
         const adminEmail = req.user.email;
         const adminId = req.user._id;
 
-        // Revoke the token so it cannot be replayed after logout
-        const token = req.headers.authorization.split(' ')[1];
+        // Revoke the token so it cannot be replayed after logout.
+        // Read from cookie first (new flow), fall back to Authorization header (legacy).
+        const token = req.cookies?.adminToken || req.headers.authorization?.split(' ')[1];
         const decoded = jwt.decode(token);
         if (decoded && decoded.exp) {
             await TokenBlacklist.create({

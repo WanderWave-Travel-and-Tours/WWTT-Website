@@ -239,14 +239,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     setIsLoggingOut(true);
     try {
       const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-      const adminToken = localStorage.getItem('adminToken');
 
+      // credentials: 'include' is injected by the main.jsx interceptor,
+      // so the HttpOnly cookie is sent and the server can blacklist it.
       await fetch('https://wanderwaveph.onrender.com/api/admin/logout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(adminToken && { 'Authorization': `Bearer ${adminToken}` })
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: adminData.email || 'admin@wanderwave.com',
           adminId: adminData.id || null
@@ -255,7 +253,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
       setIsLoggingOut(false);
       navigate('/admin');
