@@ -4,6 +4,7 @@ import Sidebar from "../sidebar/sidebar";
 import { useToast } from "../toast/ToastManager";
 import useAutoDraft from "../../hooks/useAutoDraft";
 import RestoreDraftModal from "../../components/RestoreDraftModal/RestoreDraftModal";
+import DOMPurify from "dompurify";
 
 // Modals - FLAT IMPORT (same folder)
 import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
@@ -523,9 +524,9 @@ const AddBlog = () => {
             By {blogDetails.author || "Admin"} • {blogDetails.category}
           </p>
 
-          <div 
+          <div
             className="blog-content-renderer"
-            dangerouslySetInnerHTML={{ __html: blogDetails.content }} 
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blogDetails.content) }}
           />
         </div>
       </div>
