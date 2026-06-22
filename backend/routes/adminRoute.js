@@ -200,8 +200,8 @@ router.post('/login', authLimiter, async (req, res) => {
         // Set token in HttpOnly cookie so XSS cannot read it from JS
         res.cookie('adminToken', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            secure: true,
+            sameSite: 'none',
             maxAge: 8 * 60 * 60 * 1000
         });
 
@@ -282,7 +282,7 @@ router.post('/logout', authMiddleware, async (req, res) => {
         });
 
         // Clear the HttpOnly cookie
-        res.clearCookie('adminToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
+        res.clearCookie('adminToken', { httpOnly: true, secure: true, sameSite: 'none' });
 
         console.log('✅ Admin logged out:', adminEmail);
 
