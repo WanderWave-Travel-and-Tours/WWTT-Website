@@ -104,7 +104,10 @@ function encrypt(payload) {
     if (!_sessionKey) initSession();
     const iv     = crypto.randomBytes(IV_BYTES);
     const cipher = crypto.createCipheriv(ALGORITHM, _sessionKey, iv);
-    const plain  = JSON.stringify(minifyKeys(payload));
+    // Normalize through JSON first so ObjectIds, Dates, Buffers etc. become
+    // plain primitives — identical to what res.json() would have sent unencrypted.
+    const normalized = JSON.parse(JSON.stringify(payload));
+    const plain  = JSON.stringify(minifyKeys(normalized));
     const enc    = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
     return {
         p:  enc.toString('base64'),
