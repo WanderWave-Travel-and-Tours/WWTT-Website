@@ -359,9 +359,17 @@ router.get('/settings', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/update-settings', authMiddleware, upload.single('businessLogo'), async (req, res) => {
+router.put('/update-settings', authMiddleware, async (req, res) => {
     const startTime = Date.now();
-    
+
+    const multerErr = await new Promise((resolve) => {
+        upload.single('businessLogo')(req, res, (err) => resolve(err || null));
+    });
+
+    if (multerErr) {
+        return res.status(400).json({ status: 'error', message: multerErr.message });
+    }
+
     try {
         const { businessName, businessAddress } = req.body;
         const admin = req.user;
