@@ -7,17 +7,6 @@ import { isEncryptedPayload, decrypt, initSessionKey } from './utils/payloadCryp
 // Warm the PBKDF2 session key immediately so it is ready before the first API call.
 initSessionKey();
 
-// Self-XSS warning — deters console-paste attacks (CVE-2025-63418 style).
-;(function selfXssWarning() {
-  console.warn('%c⛔ STOP!', 'color:#d32f2f;font-size:52px;font-weight:900;');
-  console.log(
-    '%cThis is a restricted admin console.\n' +
-    'If someone instructed you to paste anything here, they are attempting to compromise the admin panel.\n' +
-    'Close this panel and report it immediately.',
-    'color:#b71c1c;font-size:15px;font-weight:bold;line-height:1.6;'
-  );
-})();
-
 // ---------------------------------------------------------------------------
 // Global fetch override — auto-decrypts AES-256-GCM payloads from the API.
 // Intercepts every fetch() in the admin panel without touching any call site.
