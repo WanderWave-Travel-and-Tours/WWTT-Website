@@ -477,43 +477,57 @@ const ProtectedRoute = ({ children }) => {
       }
 
       try {
-        const response = await axios.get('https://wanderwaveph.onrender.com/api/admin/verify', {
-          headers: { 'Authorization': `Bearer ${token}` },
-          // ✅ FIX: Increased to 30s to accommodate Render cold starts
-          //         (Render free tier can take 30-50s to wake up).
-          timeout: 30000,
-        });
+        // Use fetch (not axios) so the global decrypting wrapper in main.jsx
+        // auto-decrypts the encrypted verify response before we read it.
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        if (response.data.status === 'ok') {
+        let response;
+        try {
+          response = await fetch('https://wanderwaveph.onrender.com/api/admin/verify', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        // 401/403 = definitive auth rejection → clear token, block access.
+        if (response.status === 401 || response.status === 403) {
+          console.error(`❌ Auth rejected (HTTP ${response.status}) - clearing token`);
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminData');
+          if (isMounted) setAuthState('unauthenticated');
+          return;
+        }
+
+        // 5xx / non-ok = server issue, NOT auth failure → retry after 5s.
+        if (!response.ok) {
+          console.warn(`⚠️ Verify failed (HTTP ${response.status}) - server may be waking up. Retrying in 5s...`);
+          if (isMounted) setAuthState('loading');
+          retryTimeout = setTimeout(() => {
+            if (isMounted) verifyToken();
+          }, 5000);
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'ok') {
           if (isMounted) setAuthState('authenticated');
         } else {
-          // Server responded but returned a non-ok body (shouldn't normally happen)
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
         }
       } catch (error) {
-        const status = error.response?.status;
-
-        // ✅ FIX: Only remove the token on definitive auth rejections.
-        // 401 = token invalid or expired       → clear token, block access.
-        // 403 = account inactive               → clear token, block access.
-        // Network error / timeout / 500 / etc  → server issue, NOT auth failure.
-        if (status === 401 || status === 403) {
-          console.error(`❌ Auth rejected (HTTP ${status}) - clearing token`);
-          localStorage.removeItem('adminToken');
-          localStorage.removeItem('adminData');
-          if (isMounted) setAuthState('unauthenticated');
-        } else {
-          // ✅ FIX 2: Server is waking up (cold start) or network blip.
-          //           Stay on loading screen and retry after 5 seconds.
-          //           Do NOT show unauthorized — the token is still valid.
-          console.warn(`⚠️ Verify failed (${error.message}) - server may be waking up. Retrying in 5s...`);
-          if (isMounted) setAuthState('loading');
-          retryTimeout = setTimeout(() => {
-            if (isMounted) verifyToken();
-          }, 5000);
-        }
+        // Network error or abort (timeout) → server may be waking up, retry.
+        console.warn(`⚠️ Verify failed (${error.message}) - server may be waking up. Retrying in 5s...`);
+        if (isMounted) setAuthState('loading');
+        retryTimeout = setTimeout(() => {
+          if (isMounted) verifyToken();
+        }, 5000);
       }
     };
 
