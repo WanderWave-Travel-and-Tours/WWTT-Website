@@ -88,7 +88,7 @@ const ViewAdmin = () => {
   const fetchAdmins = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = sessionStorage.getItem('adminToken');
       const response = await fetch('https://wanderwaveph.onrender.com/api/admin/list', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -116,7 +116,7 @@ const ViewAdmin = () => {
   // Actual logic for deleting/archiving an admin
   const performDeleteAdmin = async (adminId, adminEmail) => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = sessionStorage.getItem('adminToken');
       const response = await fetch(`https://wanderwaveph.onrender.com/api/admin/delete/${adminId}`, {
         method: 'DELETE',
         headers: {

@@ -143,7 +143,7 @@ const EditPackage = () => {
 
   const API_BASE_URL = "https://wanderwaveph.onrender.com/api/packages";
   const getAdminHeaders = () => {
-    const token = localStorage.getItem('adminToken');
+    const token = sessionStorage.getItem('adminToken');
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 

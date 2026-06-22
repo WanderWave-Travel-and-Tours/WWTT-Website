@@ -65,7 +65,7 @@ const Users = () => {
     };
 
     const getAuthHeaders = () => {
-        const token = localStorage.getItem('adminToken');
+        const token = sessionStorage.getItem('adminToken');
         return token ? { 'Authorization': `Bearer ${token}` } : {};
     };
 

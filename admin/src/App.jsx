@@ -188,7 +188,7 @@ axios.interceptors.response.use(
 
     if ((error.response?.status === 401 || error.response?.data?.requiresAuth) && !isRedirecting) {
       isRedirecting = true;
-      localStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
       window.location.href = '/admin/';
     }

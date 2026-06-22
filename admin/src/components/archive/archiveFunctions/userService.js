@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_URL = 'https://wanderwaveph.onrender.com/api/users';
 
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('adminToken');
+    const token = sessionStorage.getItem('adminToken');
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

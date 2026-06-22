@@ -237,7 +237,7 @@ const AddHotel = () => {
   const fetchDestinations = async () => {
     try {
         setLoading(true);
-        const token = localStorage.getItem('adminToken');
+        const token = sessionStorage.getItem('adminToken');
         const response = await fetch(`${API_BASE_URL}/api/packages/admin/all`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         });

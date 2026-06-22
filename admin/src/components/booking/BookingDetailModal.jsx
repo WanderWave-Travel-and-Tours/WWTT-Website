@@ -5,7 +5,7 @@ import VoucherPreviewModal from './VoucherPreviewModal';
 import OrderSlipModal from './OrderSlipModal';
 
 const getAdminHeaders = () => {
-    const token = localStorage.getItem('adminToken');
+    const token = sessionStorage.getItem('adminToken');
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

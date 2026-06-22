@@ -13,7 +13,7 @@ import {
 
 const API_BASE = 'https://wanderwaveph.onrender.com';
 const getAdminHeaders = () => {
-  const token = localStorage.getItem('adminToken');
+  const token = sessionStorage.getItem('adminToken');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

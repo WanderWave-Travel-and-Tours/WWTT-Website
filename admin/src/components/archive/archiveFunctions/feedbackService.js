@@ -15,7 +15,7 @@ export const fetchArchivedFeedbacks = async () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}`
       }
     });
 
@@ -73,7 +73,7 @@ export const restoreFeedback = async (feedbackId) => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}`
       }
     });
 
