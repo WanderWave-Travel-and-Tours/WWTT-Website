@@ -47,10 +47,6 @@ const EXPAND_MAP = {
 const CLIENT_KEY_HEX = import.meta.env.VITE_PAYLOAD_CLIENT_KEY;
 const API_BASE       = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
 
-console.log('[crypto/fe] MODULE LOADED');
-console.log('[crypto/fe] VITE_PAYLOAD_CLIENT_KEY present?', !!CLIENT_KEY_HEX, '| length:', CLIENT_KEY_HEX?.length);
-console.log('[crypto/fe] API_BASE:', API_BASE);
-
 function hexToBytes(hex) {
     const b = new Uint8Array(hex.length / 2);
     for (let i = 0; i < hex.length; i += 2) b[i / 2] = parseInt(hex.slice(i, i + 2), 16);
@@ -79,23 +75,9 @@ async function deriveFromHint(saltHex, iter) {
 let _keyPromise = null;
 
 async function fetchAndDeriveKey() {
-    const url = `${API_BASE}/api/crypto/session-hint`;
-    console.log('[crypto/fe] Fetching session hint:', url);
-    try {
-        const res  = await fetch(url);
-        console.log('[crypto/fe] session-hint status:', res.status);
-        if (!res.ok) {
-            const text = await res.text();
-            console.error('[crypto/fe] ❌ session-hint error:', text);
-            throw new Error(`session-hint ${res.status}`);
-        }
-        const hint = await res.json();
-        console.log('[crypto/fe] hint salt:', hint.salt?.slice(0, 8) + '...', '| iter:', hint.iter);
-        return deriveFromHint(hint.salt, hint.iter ?? 300_000);
-    } catch (err) {
-        console.error('[crypto/fe] ❌ fetchAndDeriveKey FAILED:', err.message);
-        throw err;
-    }
+    const res  = await fetch(`${API_BASE}/api/crypto/session-hint`);
+    const hint = await res.json();
+    return deriveFromHint(hint.salt, hint.iter ?? 300_000);
 }
 
 // Call early (e.g. from main.jsx) to warm the key before any API calls land
