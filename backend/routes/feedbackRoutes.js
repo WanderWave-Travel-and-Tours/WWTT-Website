@@ -2,6 +2,15 @@ const express = require('express');
 const router = express.Router();
 const Feedback = require('../models/Feedback');
 const ActivityLog = require('../models/ActivityLog');
+const { feedbackLimiter } = require('../middleware/rateLimiters');
+
+// Server-side input ceilings. The frontend enforces these via maxLength / file-size
+// checks, but a direct API call bypasses the UI entirely, so we re-validate here.
+const MAX_NAME_LENGTH = 100;
+const MAX_MESSAGE_LENGTH = 1000;
+const VALID_CATEGORIES = ['bug', 'suggestion', 'general'];
+// A 5MB image is ~6.8MB once base64-encoded; cap the encoded string a bit above that.
+const MAX_SCREENSHOT_CHARS = 7 * 1024 * 1024;
 
 // ============================================
 // HELPER FUNCTION: Create Activity Log
@@ -73,7 +82,7 @@ const createActivityLog = async (action, description, details, req, severity = '
 // ============================================
 // POST - Submit New Feedback
 // ============================================
-router.post('/', async (req, res) => {
+router.post('/', feedbackLimiter, async (req, res) => {
   try {
     const { category, message, name, rating, screenshot, technicalData, email } = req.body;
 
@@ -81,12 +90,32 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Category and message are required' });
     }
 
+    // Re-validate everything server-side — the UI limits are bypassable via direct API calls.
+    if (!VALID_CATEGORIES.includes(category)) {
+      return res.status(400).json({ success: false, message: 'Invalid feedback category' });
+    }
+    if (typeof message !== 'string' || message.trim().length === 0 || message.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({ success: false, message: `Message must be between 1 and ${MAX_MESSAGE_LENGTH} characters` });
+    }
+    if (name && (typeof name !== 'string' || name.length > MAX_NAME_LENGTH)) {
+      return res.status(400).json({ success: false, message: `Name must be at most ${MAX_NAME_LENGTH} characters` });
+    }
+    const numericRating = Number(rating) || 0;
+    if (numericRating < 0 || numericRating > 5) {
+      return res.status(400).json({ success: false, message: 'Rating must be between 0 and 5' });
+    }
+    if (screenshot != null) {
+      if (typeof screenshot !== 'string' || screenshot.length > MAX_SCREENSHOT_CHARS) {
+        return res.status(400).json({ success: false, message: 'Screenshot is invalid or too large' });
+      }
+    }
+
     const newFeedback = new Feedback({
       category,
       message: message.trim(),
       name: name?.trim() || 'Anonymous',
-      email: email || '', 
-      rating: rating || 0,
+      email: email || '',
+      rating: numericRating,
       screenshot: screenshot || null,
       technicalData: {
         url: technicalData?.url || '',
