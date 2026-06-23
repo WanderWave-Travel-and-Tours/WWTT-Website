@@ -476,7 +476,7 @@ router.get('/with-tours', async (req, res) => {
 // ============================================================
 router.get('/search', async (req, res) => {
     try {
-        const { destination, duration, pax } = req.query;
+        const { destination, duration, pax, category } = req.query;
         const paxNum = parseInt(pax) || 1;
 
         if (!destination) {
@@ -494,6 +494,20 @@ router.get('/search', async (req, res) => {
             query.duration = { $regex: duration.trim(), $options: 'i' };
         }
 
+        // ✅ Optional: filter by category (Local / International).
+        // The 'Internation' regex intentionally matches BOTH 'International'
+        // and the legacy 'Internation Tour' enum value (typo kept for back-compat).
+        if (category && category.trim() !== '') {
+            const cat = category.trim().toLowerCase();
+            if (cat.startsWith('inter')) {
+                query.category = { $regex: 'Internation', $options: 'i' };
+            } else if (cat.startsWith('local')) {
+                query.category = { $regex: '^Local$', $options: 'i' };
+            } else {
+                query.category = { $regex: category.trim(), $options: 'i' };
+            }
+        }
+
         const packages = await Package.find(query).sort({ _id: -1 });
 
         // ✅ displayPrice always equals pkg.price.
@@ -508,12 +522,53 @@ router.get('/search', async (req, res) => {
             };
         });
 
-        console.log(`🔍 /search — destination: "${destination}", duration: "${duration}", pax: ${paxNum} → ${results.length} result(s)`);
+        console.log(`🔍 /search — destination: "${destination}", duration: "${duration}", pax: ${paxNum}, category: "${category || 'any'}" → ${results.length} result(s)`);
 
         res.status(200).json({ status: 'ok', data: results });
 
     } catch (error) {
         console.error('❌ Error in /search:', error);
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// ============================================================
+// ✅ DISTINCT DESTINATIONS ENDPOINT
+// GET /api/packages/destinations?category=International
+//
+// Returns the list of distinct destinations across all active
+// packages, optionally filtered by category. Used by the funnel
+// booking form to populate the destination grid with REAL
+// destinations that actually have packages — so International
+// destinations are no longer hard-coded and always match.
+// ============================================================
+router.get('/destinations', async (req, res) => {
+    try {
+        const { category } = req.query;
+        const query = { isArchive: 'No' };
+
+        if (category && category.trim() !== '') {
+            const cat = category.trim().toLowerCase();
+            if (cat.startsWith('inter')) {
+                query.category = { $regex: 'Internation', $options: 'i' };
+            } else if (cat.startsWith('local')) {
+                query.category = { $regex: '^Local$', $options: 'i' };
+            } else {
+                query.category = { $regex: category.trim(), $options: 'i' };
+            }
+        }
+
+        const destinations = await Package.distinct('destination', query);
+        const cleaned = destinations
+            .filter((d) => d && d.trim() !== '')
+            .map((d) => d.trim())
+            .sort((a, b) => a.localeCompare(b));
+
+        console.log(`📍 /destinations — category: "${category || 'all'}" → ${cleaned.length} destination(s)`);
+        res.status(200).json({ status: 'ok', data: cleaned });
+
+    } catch (error) {
+        console.error('❌ Error in /destinations:', error);
         res.status(500).json({ status: 'error', error: error.message });
     }
 });
