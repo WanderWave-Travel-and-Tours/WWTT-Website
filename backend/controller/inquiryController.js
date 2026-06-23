@@ -3,6 +3,8 @@ const Service = require('../models/service');
 const User = require('../models/user');
 const Payment = require('../models/payment');
 const CENOMAR = require('../models/cenomar');
+const Visa = require('../models/visa');
+const PSA = require('../models/psa');
 const ActivityLog = require('../models/ActivityLog'); // ✅ ACTIVITY LOG IMPORT
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
 const mongoose = require('mongoose');
@@ -52,7 +54,40 @@ const findCorrectPrice = async (serviceName, cenomarDocument) => {
     }
     return 0;
 };
- 
+
+// 🔐 SECURITY: Resolve the authoritative price for catalog-based services directly from
+// the database, ignoring whatever the client claims in estimatedPrice. Visa / PSA /
+// CENOMAR / Service all have fixed catalog prices keyed by their reference id, so a
+// customer can no longer submit estimatedPrice:1 and pay ₱1. Flight bookings and general
+// inquiries have no fixed catalog price (the figure is a live quote), so those fall back
+// to the client estimate — there is no DB record to recompute them from.
+const resolveAuthoritativeInquiryPrice = async ({ serviceId, visaId, psaId, cenomarId, serviceName, cenomarDocument }) => {
+  try {
+    if (visaId) {
+      const v = await Visa.findById(visaId).lean();
+      if (v && v.price != null) { const n = parseFloat(v.price); if (n > 0) return n; }
+    }
+    if (psaId) {
+      const p = await PSA.findById(psaId).lean();
+      if (p && p.price != null) { const n = parseFloat(p.price); if (n > 0) return n; }
+    }
+    if (cenomarId) {
+      const c = await CENOMAR.findById(cenomarId).lean();
+      if (c && c.price != null) { const n = parseFloat(c.price); if (n > 0) return n; }
+    }
+    if (serviceId) {
+      const s = await Service.findById(serviceId).lean();
+      if (s && s.price != null) { const n = parseFloat(s.price); if (n > 0) return n; }
+    }
+    // Name-based fallback (CENOMAR / PSA document-type matching)
+    const byName = await findCorrectPrice(serviceName, cenomarDocument);
+    if (byName && byName > 0) return byName;
+  } catch (error) {
+    console.error('❌ resolveAuthoritativeInquiryPrice error:', error.message);
+  }
+  return null;
+};
+
 const createInquiry = async (req, res) => {
   try {
     console.log('🔥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
@@ -82,15 +117,26 @@ const createInquiry = async (req, res) => {
       adminId     // ✅ FOR ACTIVITY LOG
     } = req.body;
  
-    // --- [START] SMART PRICE FIX FOR FRONTEND SUBMISSIONS ---
+    // --- [START] SERVER-SIDE AUTHORITATIVE PRICE (anti price-manipulation) ---
+    // Never trust the client estimatedPrice for catalog services. If a reference id
+    // resolves to a DB-backed price, that value wins and any client figure is discarded.
     let finalPrice = parseFloat(estimatedPrice) || 0;
-   
-    if (finalPrice === 0) {
-        console.log("⚠️ Price is 0. Attempting to auto-fix based on Service Name...");
+
+    const authoritativePrice = await resolveAuthoritativeInquiryPrice({
+        serviceId, visaId, psaId, cenomarId, serviceName, cenomarDocument
+    });
+
+    if (authoritativePrice != null && authoritativePrice > 0) {
+        if (authoritativePrice !== finalPrice) {
+            console.warn(`⚠️ Inquiry price override — client sent ₱${finalPrice}, server authoritative ₱${authoritativePrice}`);
+        }
+        finalPrice = authoritativePrice;
+    } else if (finalPrice === 0) {
+        console.log("⚠️ Price is 0 and no catalog match. Attempting name-based auto-fix...");
         finalPrice = await findCorrectPrice(serviceName, cenomarDocument);
         console.log(`✅ Price Auto-Fixed to: ${finalPrice}`);
     }
-    // --- [END] SMART PRICE FIX ---
+    // --- [END] SERVER-SIDE AUTHORITATIVE PRICE ---
  
     console.log('🔍 PASSENGERS TYPE:', typeof passengers);
     console.log('🔍 PASSENGERS IS ARRAY?:', Array.isArray(passengers));

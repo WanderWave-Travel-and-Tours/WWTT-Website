@@ -7,6 +7,7 @@ const fs         = require('fs');
 const axios      = require('axios');
 const TourBooking = require('../models/tourBooking');
 const Package     = require('../models/package');
+const { sendTourBookingToGHL } = require('../utils/ghlService');
 
 // ── Multer setup ─────────────────────────────────────────────────────────────
 const uploadDir = path.join(__dirname, '../uploads');
@@ -203,6 +204,11 @@ router.post('/', upload.any(), async (req, res) => {
     console.log('   Saving tour booking to DB...');
     await tourBooking.save();
     console.log(`   ✅ Saved! ID: ${tourBooking._id} | Package: ${tourBooking.packageName} | Source: ${bookingSource}`);
+
+    // Fire the booking automation webhook — fire-and-forget, never blocks the response
+    sendTourBookingToGHL(tourBooking).catch((err) =>
+      console.error('⚠️ GHL tour booking webhook failed (non-fatal):', err.message)
+    );
 
     res.status(201).json({
       success:   true,
