@@ -3,6 +3,7 @@ const express  = require('express');
 const router   = express.Router();
 const multer   = require('multer');
 const Transfer = require('../models/transfer');
+const authMiddleware = require('../middleware/auth');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cloudinary – loaded lazily so a missing config does NOT crash the route file.
@@ -90,7 +91,7 @@ const destroyFromCloudinary = async (publicId) => {
 // Create a new transfer listing (from AddTransfer form)
 // Body: multipart/form-data
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     const {
       title,
@@ -229,7 +230,7 @@ router.get('/:id', async (req, res) => {
 // PATCH /api/transfers/:id
 // Update a transfer listing
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id', upload.single('image'), async (req, res) => {
+router.patch('/:id', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     const transfer = await Transfer.findById(req.params.id);
     if (!transfer) {
@@ -289,7 +290,7 @@ router.patch('/:id', upload.single('image'), async (req, res) => {
 // PATCH /api/transfers/archive/:id
 // Archive a transfer listing (soft delete — sets isArchive to 'Yes')
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/archive/:id', async (req, res) => {
+router.patch('/archive/:id', authMiddleware, async (req, res) => {
   try {
     const transfer = await Transfer.findById(req.params.id);
     if (!transfer) {
@@ -314,7 +315,7 @@ router.patch('/archive/:id', async (req, res) => {
 // PATCH /api/transfers/:id/toggle
 // Toggle active / inactive status
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id/toggle', async (req, res) => {
+router.patch('/:id/toggle', authMiddleware, async (req, res) => {
   try {
     const transfer = await Transfer.findById(req.params.id);
     if (!transfer) {
@@ -339,7 +340,7 @@ router.patch('/:id/toggle', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/transfers/:id  (admin only – hard delete)
 // ─────────────────────────────────────────────────────────────────────────────
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const transfer = await Transfer.findByIdAndDelete(req.params.id);
     if (!transfer) {
