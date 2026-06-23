@@ -17,6 +17,11 @@ import JavaScriptObfuscator from 'javascript-obfuscator'
 // ---------------------------------------------------------------------------
 const ANTI_TAMPER_SRC = `
 (function () {
+  // Master switch — set to true to re-enable the debugger-pause / chat-hide
+  // behaviour. Currently DISABLED so opening DevTools no longer pauses.
+  var ENABLED = false;
+  if (!ENABLED) return;
+
   var host = location.hostname;
   if (host !== 'wanderwaveph.com' && host !== 'www.wanderwaveph.com') return;
   try { if (localStorage.getItem('ww_dev') === '1') return; } catch (e) {}
