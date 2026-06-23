@@ -6,17 +6,17 @@
 
 .bfm-overlay {
   position: fixed;
-  top: 0;
+  top: 115px;  /* matches actual navbar height — modal sits below the header instead of hiding under it */
   left: 0;
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 99999;
-  padding: 20px;
+  padding: 16px 20px 20px 20px;
   animation: bfmFadeIn 0.2s ease-out;
   /* ✅ Fixed: overflow hidden so the overlay never intercepts mouse-wheel scroll events.
      The inner .bfm-form is the sole scrollable container — scroll works anywhere in the modal. */
@@ -37,12 +37,13 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   height: auto;
-  /* Max height = viewport minus top/bottom padding (20px each) */
-  max-height: calc(100vh - 40px);
+  /* Max height = viewport minus the navbar offset (115px) + overlay padding/clearance */
+  max-height: calc(100vh - 175px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+  margin: 0 auto;
 }
 
 @keyframes bfmSlideUp {
@@ -1235,12 +1236,13 @@
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .bfm-overlay {
-    padding: 130px 16px 16px 16px;
+    top: 100px;
+    padding: 12px 16px;
   }
 
   .bfm-modal-card {
     max-width: 600px;
-    max-height: calc(100vh - 160px);
+    max-height: calc(100vh - 115px);
   }
 
   .bfm-payment-options {
@@ -1258,6 +1260,7 @@
 
 @media (max-width: 640px) {
   .bfm-overlay {
+    top: 0; /* mobile uses a full-height bottom-sheet, not the desktop navbar offset */
     padding: 0;
     align-items: flex-end;
     overflow: hidden; /* ✅ Keep hidden on mobile too — inner form scrolls */

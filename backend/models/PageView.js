@@ -10,7 +10,7 @@ const pageViewSchema = new mongoose.Schema(
     page: {
       type: String,
       required: true,
-      enum: ['packages', 'booking', 'flights', 'services', 'tours'],
+      enum: ['packages', 'booking', 'flights', 'services', 'tours', 'tour-booking', 'transfers', 'transfer-booking'],
       index: true,
     },
     path: {
