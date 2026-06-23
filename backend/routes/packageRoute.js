@@ -379,8 +379,12 @@ router.get('/admin/:id', authMiddleware, async (req, res) => {
 // ============================================================
 
 // 4. FETCH ALL ACTIVE (public — no cost data)
+// skipEncrypt: static GHL HTML sections (travel deals, booking form) cannot
+// run AES-GCM decryption. React frontend checks isEncryptedPayload() first
+// and passes plain JSON through unchanged, so this is safe for both clients.
 router.get('/all', async (req, res) => {
     try {
+        res.locals.skipEncrypt = true;
         const packages = await Package.find({ isArchive: 'No' })
             .select(PUBLIC_SELECT)
             .sort({ _id: -1 });
