@@ -12,7 +12,9 @@
       "Bash(node -c models/PageView.js)",
       "Bash(awk '/\\\\.bfm-overlay[ ,{]/,/^}/' TourPackages/TourBookingFormModal.css)",
       "Bash(awk '/\\\\.bfm-modal-card[ ,{]/,/^}/' TourPackages/TourBookingFormModal.css)",
-      "Read(//c/Users/hhsarmiento/Desktop/**)"
+      "Read(//c/Users/hhsarmiento/Desktop/**)",
+      "Bash(node _ww_embed_form.js)",
+      "Bash(node -c routes/packageRoute.js)"
     ],
     "additionalDirectories": [
       "c:\\Users\\hhsarmiento\\Desktop"

@@ -536,36 +536,49 @@ router.get('/search', async (req, res) => {
 // ✅ DISTINCT DESTINATIONS ENDPOINT
 // GET /api/packages/destinations?category=International
 //
-// Returns the list of distinct destinations across all active
-// packages, optionally filtered by category. Used by the funnel
-// booking form to populate the destination grid with REAL
-// destinations that actually have packages — so International
-// destinations are no longer hard-coded and always match.
+// Returns distinct destinations across all active packages,
+// optionally filtered by category, each with a representative
+// image taken from a real package in that destination. Used by
+// the funnel booking form so the International destination grid
+// is 100% data-driven (no hard-coded names or photos).
+//
+// Response: { status:'ok', data:[ { name, image, count }, ... ] }
 // ============================================================
 router.get('/destinations', async (req, res) => {
     try {
         const { category } = req.query;
-        const query = { isArchive: 'No' };
+        const match = { isArchive: 'No' };
 
         if (category && category.trim() !== '') {
             const cat = category.trim().toLowerCase();
             if (cat.startsWith('inter')) {
-                query.category = { $regex: 'Internation', $options: 'i' };
+                match.category = { $regex: 'Internation', $options: 'i' };
             } else if (cat.startsWith('local')) {
-                query.category = { $regex: '^Local$', $options: 'i' };
+                match.category = { $regex: '^Local$', $options: 'i' };
             } else {
-                query.category = { $regex: category.trim(), $options: 'i' };
+                match.category = { $regex: category.trim(), $options: 'i' };
             }
         }
 
-        const destinations = await Package.distinct('destination', query);
-        const cleaned = destinations
-            .filter((d) => d && d.trim() !== '')
-            .map((d) => d.trim())
-            .sort((a, b) => a.localeCompare(b));
+        // Group by trimmed destination; take the newest package's image as the
+        // representative photo. Skip docs with a blank destination.
+        const grouped = await Package.aggregate([
+            { $match: match },
+            { $sort: { _id: -1 } },
+            {
+                $group: {
+                    _id: { $trim: { input: { $ifNull: ['$destination', ''] } } },
+                    image: { $first: '$image' },
+                    count: { $sum: 1 }
+                }
+            },
+            { $match: { _id: { $ne: '' } } },
+            { $project: { _id: 0, name: '$_id', image: 1, count: 1 } },
+            { $sort: { name: 1 } }
+        ]);
 
-        console.log(`📍 /destinations — category: "${category || 'all'}" → ${cleaned.length} destination(s)`);
-        res.status(200).json({ status: 'ok', data: cleaned });
+        console.log(`📍 /destinations — category: "${category || 'all'}" → ${grouped.length} destination(s)`);
+        res.status(200).json({ status: 'ok', data: grouped });
 
     } catch (error) {
         console.error('❌ Error in /destinations:', error);
