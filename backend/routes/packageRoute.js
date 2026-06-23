@@ -541,12 +541,11 @@ router.get('/search', async (req, res) => {
 // GET /api/packages/destinations?category=International
 //
 // Returns distinct destinations across all active packages,
-// optionally filtered by category, each with a representative
-// image taken from a real package in that destination. Used by
-// the funnel booking form so the International destination grid
+// optionally filtered by category, with package counts. Used by
+// the funnel booking form's International destination grid.
 // is 100% data-driven (no hard-coded names or photos).
 //
-// Response: { status:'ok', data:[ { name, image, count }, ... ] }
+// Response: { status:'ok', data:[ { name, count }, ... ] }
 // ============================================================
 router.get('/destinations', async (req, res) => {
     try {
@@ -567,20 +566,13 @@ router.get('/destinations', async (req, res) => {
             }
         }
 
-        // Group by trimmed destination; take the newest package's image as the
-        // representative photo. Skip docs with a blank destination.
+        // Group by trimmed destination, count packages. Skip docs with a blank destination.
+        // Images are intentionally excluded — the form uses its own curated photos.
         const grouped = await Package.aggregate([
             { $match: match },
-            { $sort: { _id: -1 } },
-            {
-                $group: {
-                    _id: { $trim: { input: { $ifNull: ['$destination', ''] } } },
-                    image: { $first: '$image' },
-                    count: { $sum: 1 }
-                }
-            },
+            { $group: { _id: { $trim: { input: { $ifNull: ['$destination', ''] } } }, count: { $sum: 1 } } },
             { $match: { _id: { $ne: '' } } },
-            { $project: { _id: 0, name: '$_id', image: 1, count: 1 } },
+            { $project: { _id: 0, name: '$_id', count: 1 } },
             { $sort: { name: 1 } }
         ]);
 
