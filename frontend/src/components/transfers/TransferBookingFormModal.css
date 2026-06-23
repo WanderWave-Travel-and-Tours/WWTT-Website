@@ -1298,19 +1298,18 @@
 
 @media (max-width: 640px) {
   .tbfm-overlay {
-    top: 100px;
-    padding: 8px 0 0 0;
+    top: 0; /* full-screen on mobile, matches package & tour booking modals */
+    padding: 0;
     align-items: flex-start;
   }
 
   .tbfm-modal-card {
-    border-radius: 12px 12px 0 0;
+    border-radius: 0;
     width: 100%;
     max-width: 100%;
-    /* use dvh where supported, fall back to vh; subtract overlay top + padding */
-    max-height: calc(100dvh - 108px);
-    max-height: calc(100vh - 108px);
-    margin-top: 0;
+    margin: 0;
+    max-height: 100vh;
+    max-height: 100dvh;
   }
 
   .tbfm-form-body {
