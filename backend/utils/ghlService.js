@@ -379,17 +379,22 @@ const sendDestinationToGHL = async (destination) => {
 };
 
 // ============================================================
-// ✅ NEW: Send Transfer Booking data to GHL
+// ✅ Shared "booking automation" webhook
 //
-// Fires every time a TransferBookingOrder is created (both customer
-// and sales/admin bookings). Sends the complete booking payload to
-// the dedicated transfer booking webhook.
+// This is the single GHL automation (a.k.a. the "inquiry automation")
+// that fires for EVERY booking type: transfer, tour, and customized.
+// All three booking flows post to this same workflow trigger URL so the
+// automation handles every new booking uniformly.
 //
 // Webhook URL: https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176
 // ============================================================
-const GHL_TRANSFER_BOOKING_WEBHOOK_URL =
+const GHL_BOOKING_WEBHOOK_URL =
+  process.env.GHL_BOOKING_WEBHOOK_URL ||
   process.env.GHL_TRANSFER_BOOKING_WEBHOOK_URL ||
   'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176';
+
+// Backward-compat alias — transfer booking previously used this name.
+const GHL_TRANSFER_BOOKING_WEBHOOK_URL = GHL_BOOKING_WEBHOOK_URL;
 
 const sendTransferBookingToGHL = async (booking) => {
   const fullName   = booking.fullName || '';
@@ -496,10 +501,263 @@ const sendTransferBookingToGHL = async (booking) => {
   return result;
 };
 
+// ============================================================
+// ✅ NEW: Send Tour Booking data to GHL
+//
+// Fires every time a TourBooking is created (online, walk-in, and
+// sales/admin bookings). Posts to the shared booking automation webhook.
+// ============================================================
+const sendTourBookingToGHL = async (booking) => {
+  const b = booking || {};
+  const fullName  = b.fullName || b.primaryContact?.fullName || '';
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const paxAdult    = b.pax?.adult    || 0;
+  const paxChild    = b.pax?.children  || 0;
+  const paxInfant   = b.pax?.infants   || 0;
+  const paxTotal    = paxAdult + paxChild + paxInfant;
+
+  const passengersFormatted = Array.isArray(b.passengers) && b.passengers.length > 0
+    ? b.passengers
+        .map((p, i) => `Passenger ${i + 1}: ${p.firstName || ''} ${p.lastName || ''}`.trim())
+        .join('\n')
+    : '';
+
+  const totalAmount = b.totalAmount || 0;
+
+  const data = {
+    // ── Meta ──────────────────────────────────────────────────
+    type:      'TOUR_BOOKING',
+    event:     'tour_booking_created',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    // ── Booking identity ──────────────────────────────────────
+    bookingId:     b._id ? b._id.toString() : '',
+    booking_id:    b._id ? b._id.toString() : '',
+    bookingType:   b.bookingType   || 'tour',
+    bookingSource: b.bookingSource || 'online',
+    createdByType: b.createdByType || 'user',
+    status:        b.status        || 'pending',
+    paymentStatus: b.paymentStatus || 'pending',
+    isArchive:     b.isArchive     || 'No',
+
+    // ── Tour listing ──────────────────────────────────────────
+    tourId:       b.tourId    ? b.tourId.toString()    : '',
+    packageId:    b.packageId ? b.packageId.toString() : '',
+    packageName:  b.packageName || '',
+    package_name: b.packageName || '',
+    service:      b.packageName || '',
+    serviceName:  b.packageName || '',
+
+    // ── Schedule ─────────────────────────────────────────────
+    startDate:    b.startDate || '',
+    start_date:   b.startDate || '',
+    travel_start: b.startDate || '',
+    endDate:      b.endDate   || '',
+    end_date:     b.endDate   || '',
+    travel_end:   b.endDate   || '',
+    travel_dates: `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
+    duration:     b.duration  || '',
+
+    // ── Contact details ───────────────────────────────────────
+    fullName,
+    name:        fullName,
+    first_name:  firstName,
+    last_name:   lastName,
+    email:       b.email || b.primaryContact?.email || '',
+    phone:       b.phone || '',
+    message:     b.message || '',
+
+    // ── Passengers ────────────────────────────────────────────
+    passengerCount:  paxTotal,
+    passenger_count: paxTotal,
+    pax:             paxTotal,
+    pax_adult:       paxAdult,
+    pax_child:       paxChild,
+    pax_infant:      paxInfant,
+    pax_total:       paxTotal,
+    passengers_list: passengersFormatted,
+
+    // ── Pricing ───────────────────────────────────────────────
+    packagePrice:   b.packagePrice   || 0,
+    package_price:  b.packagePrice   || 0,
+    discountAmount: b.discountAmount || 0,
+    discount_amount:b.discountAmount || 0,
+    airfareTotal:   b.airfareTotal   || 0,
+    airfare_total:  b.airfareTotal   || 0,
+    includesAirfare: b.includesAirfare ? 'Yes' : 'No',
+    includes_airfare:b.includesAirfare ? 'Yes' : 'No',
+    totalAmount:    totalAmount,
+    total_amount:   totalAmount,
+    totalAmountFormatted: `₱${(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    // ── Payment ───────────────────────────────────────────────
+    paymentType:           b.paymentType          || 'full',
+    payment_type:          b.paymentType          || 'full',
+    initialPaymentAmount:  b.initialPaymentAmount || 0,
+    initial_payment_amount:b.initialPaymentAmount || 0,
+    remainingBalance:      b.remainingBalance      || 0,
+    remaining_balance:     b.remainingBalance      || 0,
+
+    // ── Promo ─────────────────────────────────────────────────
+    promoCode:  b.promoCode || '',
+    promo_code: b.promoCode || '',
+
+    // ── Booking date ──────────────────────────────────────────
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+  };
+
+  console.log('📤 Sending TOUR_BOOKING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_BOOKING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('❌ Failed to send tour booking to GHL:', result.error);
+  } else {
+    console.log(`✅ Tour booking "${b._id}" synced to GHL successfully.`);
+  }
+
+  return result;
+};
+
+// ============================================================
+// ✅ NEW: Send Customized Booking data to GHL
+//
+// Fires every time a CustomizedBooking is created (customer and
+// sales/admin). A custom booking bundles multiple tours and/or
+// transfers, so we send a readable summary plus the raw arrays.
+// Posts to the shared booking automation webhook.
+// ============================================================
+const sendCustomBookingToGHL = async (booking) => {
+  const b = booking || {};
+  const fullName  = b.fullName || '';
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const tours     = Array.isArray(b.tours)     ? b.tours     : [];
+  const transfers = Array.isArray(b.transfers) ? b.transfers : [];
+
+  const toursFormatted = tours
+    .map((t, i) => {
+      const date = t.scheduledDate ? ` (${t.scheduledDate})` : '';
+      return `${i + 1}. ${t.title || 'Tour'}${date} — ${t.paxCount || 1} pax — ₱${(t.subtotal || 0).toLocaleString('en-PH')}`;
+    })
+    .join('\n');
+
+  const transfersFormatted = transfers
+    .map((tr, i) => {
+      const route = [tr.pickupLocation, tr.dropoffLocation].filter(Boolean).join(' → ');
+      const date  = tr.travelDate ? ` (${tr.travelDate})` : '';
+      return `${i + 1}. ${tr.title || 'Transfer'} [${tr.transferType || 'oneway'}]${route ? ' ' + route : ''}${date} — ₱${(tr.subtotal || 0).toLocaleString('en-PH')}`;
+    })
+    .join('\n');
+
+  const totalAmount = b.totalAmount || 0;
+
+  const data = {
+    // ── Meta ──────────────────────────────────────────────────
+    type:      'CUSTOM_BOOKING',
+    event:     'custom_booking_created',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    // ── Booking identity ──────────────────────────────────────
+    bookingId:       b._id ? b._id.toString() : '',
+    booking_id:      b._id ? b._id.toString() : '',
+    referenceNumber: b.referenceNumber || '',
+    reference_number:b.referenceNumber || '',
+    bookingType:     b.bookingType   || 'customized',
+    createdByType:   b.createdByType || 'customer',
+    status:          b.status        || 'pending',
+    paymentStatus:   b.paymentStatus || 'pending',
+    isArchive:       b.isArchive     || 'No',
+
+    // ── Trip overview ─────────────────────────────────────────
+    destination:  b.destination || '',
+    service:      `Custom Trip — ${b.destination || ''}`.trim(),
+    serviceName:  `Custom Trip — ${b.destination || ''}`.trim(),
+    travelDate:   b.travelDate || '',
+    travel_date:  b.travelDate || '',
+    returnDate:   b.returnDate || '',
+    return_date:  b.returnDate || '',
+    travel_dates: `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
+
+    // ── Contact details ───────────────────────────────────────
+    fullName,
+    name:        fullName,
+    first_name:  firstName,
+    last_name:   lastName,
+    email:       b.email || '',
+    phone:       b.phone || '',
+    message:     b.message || '',
+    notes:       b.notes   || '',
+
+    // ── Passengers ────────────────────────────────────────────
+    passengerCount:  b.paxCount || 1,
+    passenger_count: b.paxCount || 1,
+    pax:             b.paxCount || 1,
+
+    // ── Services (summary + raw) ──────────────────────────────
+    tours_count:        tours.length,
+    transfers_count:    transfers.length,
+    tours_summary:      toursFormatted,
+    transfers_summary:  transfersFormatted,
+    tours_raw:          JSON.stringify(tours),
+    transfers_raw:      JSON.stringify(transfers),
+
+    // ── Pricing ───────────────────────────────────────────────
+    toursTotal:     b.toursTotal     || 0,
+    tours_total:    b.toursTotal     || 0,
+    transfersTotal: b.transfersTotal || 0,
+    transfers_total:b.transfersTotal || 0,
+    totalAmount:    totalAmount,
+    total_amount:   totalAmount,
+    totalAmountFormatted: `₱${(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    // ── Payment ───────────────────────────────────────────────
+    currency:              b.currency             || 'PHP',
+    paymentType:           b.paymentType          || 'full',
+    payment_type:          b.paymentType          || 'full',
+    initialPaymentAmount:  b.initialPaymentAmount || 0,
+    initial_payment_amount:b.initialPaymentAmount || 0,
+    remainingBalance:      b.remainingBalance      || 0,
+    remaining_balance:     b.remainingBalance      || 0,
+
+    // ── Promo ─────────────────────────────────────────────────
+    promoCode:  b.promoCode || '',
+    promo_code: b.promoCode || '',
+
+    // ── Booking date ──────────────────────────────────────────
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+  };
+
+  console.log('📤 Sending CUSTOM_BOOKING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_BOOKING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('❌ Failed to send custom booking to GHL:', result.error);
+  } else {
+    console.log(`✅ Custom booking "${b._id}" synced to GHL successfully.`);
+  }
+
+  return result;
+};
+
 module.exports = {
   sendNewUserToGHL,
   sendInquiryToGHL,
   sendBookingConfirmationToGHL,
   sendDestinationToGHL,
   sendTransferBookingToGHL, // ✅ New export
+  sendTourBookingToGHL,     // ✅ New export
+  sendCustomBookingToGHL,   // ✅ New export
 };

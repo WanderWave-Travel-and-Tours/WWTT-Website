@@ -10,6 +10,7 @@ const express           = require('express');
 const router            = express.Router();
 const { Mutex }         = require('async-mutex');
 const CustomizedBooking = require('../models/Customizedbooking');
+const { sendCustomBookingToGHL } = require('../utils/ghlService');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-email booking lock — prevents concurrent duplicate submissions from the
@@ -174,6 +175,11 @@ router.post('/', async (req, res) => {
 
     await booking.save();
     console.log(`✅ Customized booking saved: ${booking._id} | ref: ${booking.referenceNumber}`);
+
+    // Fire the booking automation webhook — fire-and-forget, never blocks the response
+    sendCustomBookingToGHL(booking).catch((err) =>
+      console.error('⚠️ GHL custom booking webhook failed (non-fatal):', err.message)
+    );
 
     return res.status(201).json({
       success:         true,

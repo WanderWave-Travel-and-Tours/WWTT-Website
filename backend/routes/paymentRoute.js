@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const crypto = require('crypto');
 const Booking = require('../models/booking');
 const TourBooking = require('../models/tourBooking'); // ✅ FIX: needed for tour payment webhook
 const TransferBooking = require('../models/transferBooking'); // ✅ needed for transfer payment webhook
@@ -12,8 +13,60 @@ const paymentController = require('../controller/paymentController');
 const { sendBookingConfirmationToGHL } = require('../utils/ghlService');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
+const PAYMONGO_WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET;
 // ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
+
+// 🔐 SECURITY: Verify the PayMongo webhook signature against the RAW request body.
+// Without this, anyone can POST a forged "checkout_session.payment.paid" event and
+// mark any booking as fully paid for free. Fail-closed: if the secret is missing or
+// the signature does not match, the webhook is rejected. Legitimate payments still
+// confirm via the /confirm-by-booking and /confirm-by-session safety nets, which
+// verify the session status directly with PayMongo's API.
+//
+// PayMongo sends:  Paymongo-Signature: t=<unix_ts>,te=<test_sig>,li=<live_sig>
+// Signed payload:  `${t}.${rawBody}`  →  HMAC-SHA256 with the webhook signing secret.
+const verifyPaymongoSignature = (req) => {
+  if (!PAYMONGO_WEBHOOK_SECRET) {
+    return { ok: false, reason: 'PAYMONGO_WEBHOOK_SECRET is not configured on the server' };
+  }
+
+  const header = req.headers['paymongo-signature'];
+  if (!header || typeof header !== 'string') {
+    return { ok: false, reason: 'Missing Paymongo-Signature header' };
+  }
+
+  // The verified bytes MUST be the exact raw body PayMongo signed.
+  const rawBody = Buffer.isBuffer(req.body)
+    ? req.body.toString('utf8')
+    : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
+
+  const parts = {};
+  header.split(',').forEach((kv) => {
+    const idx = kv.indexOf('=');
+    if (idx > -1) parts[kv.slice(0, idx).trim()] = kv.slice(idx + 1).trim();
+  });
+
+  const t = parts.t;
+  // Prefer the live signature; fall back to the test signature for sandbox events.
+  const provided = parts.li || parts.te;
+  if (!t || !provided) {
+    return { ok: false, reason: 'Malformed Paymongo-Signature header' };
+  }
+
+  const expected = crypto
+    .createHmac('sha256', PAYMONGO_WEBHOOK_SECRET)
+    .update(`${t}.${rawBody}`)
+    .digest('hex');
+
+  const a = Buffer.from(expected, 'utf8');
+  const b = Buffer.from(provided, 'utf8');
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return { ok: false, reason: 'Signature mismatch' };
+  }
+
+  return { ok: true };
+};
 
 // ✅ Helper: Notify GHL that payment is confirmed — updates Payment Status to "Paid"
 // This allows the GHL abandoned booking workflow If/Else condition to evaluate correctly
@@ -66,6 +119,13 @@ router.post('/create-balance-intent', paymentController.createBalanceCheckoutSes
 // ✅ UPDATED WEBHOOK - Handle both checkout sessions and payment links
 router.post('/webhook', async (req, res) => {
   try {
+    // 🔐 SECURITY: Verify the signature BEFORE parsing or trusting any payload.
+    const sig = verifyPaymongoSignature(req);
+    if (!sig.ok) {
+      console.error('❌ Webhook signature verification failed:', sig.reason);
+      return res.status(401).json({ received: false, error: 'Invalid webhook signature' });
+    }
+
     // ✅ FIX: Parse raw body if it's a Buffer (when express.raw() middleware is used)
     let body = req.body;
     if (Buffer.isBuffer(body)) {

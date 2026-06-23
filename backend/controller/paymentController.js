@@ -183,7 +183,23 @@ const createBookingPaymentIntent = async (req, res) => {
       status: booking.status
     });
 
-    const amountToPay = paymentAmount || booking.totalAmount;
+    // 🔐 SECURITY: Validate the client-supplied paymentAmount. It may never exceed the
+    // server-computed booking.totalAmount (no overcharge) and must be positive. The
+    // booking total itself is already computed server-side at creation, so the only
+    // remaining client influence here is the partial-deposit size, which we clamp.
+    const serverTotal = Math.max(0, Number(booking.totalAmount) || 0);
+    let amountToPay = paymentAmount != null ? parseFloat(paymentAmount) : serverTotal;
+
+    if (!Number.isFinite(amountToPay) || amountToPay <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment amount'
+      });
+    }
+    if (amountToPay > serverTotal) {
+      amountToPay = serverTotal; // never charge more than the authoritative total
+    }
+
     const amountInCentavos = Math.round(amountToPay * 100);
     
     const isPartial = paymentType === 'partial';
@@ -403,12 +419,12 @@ const createBalanceCheckoutSession = async (req, res) => {
     console.log('BALANCE PAYMENT CHECKOUT SESSION START');
     console.log('=======================================');
 
-    const { bookingId, amount } = req.body;
+    const { bookingId } = req.body;
 
-    if (!bookingId || !amount) {
+    if (!bookingId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: bookingId and amount'
+        message: 'Missing required field: bookingId'
       });
     }
 
@@ -432,6 +448,19 @@ const createBalanceCheckoutSession = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Booking is already fully paid'
+      });
+    }
+
+    // 🔐 SECURITY: The balance amount is taken from the server-stored remainingBalance,
+    // NOT from the request body. The webhook clears the entire balance regardless of the
+    // amount actually charged, so trusting a client-supplied amount would let a customer
+    // pay ₱1 to wipe out a ₱50,000 balance. remainingBalance is the single source of truth.
+    const amount = Math.max(0, Number(booking.remainingBalance) || 0);
+
+    if (amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No outstanding balance to pay for this booking'
       });
     }
 

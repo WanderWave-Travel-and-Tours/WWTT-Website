@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const MongoRateLimitStore = require('./MongoRateLimitStore');
 
 const AUTH_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const AUTH_MAX_ATTEMPTS = 5;
@@ -52,6 +53,9 @@ const feedbackLimiter = rateLimit({
     max: 5,
     standardHeaders: true,
     legacyHeaders: false,
+    // Shared MongoDB counter so the cap of 5 holds across ALL server instances,
+    // not 5-per-instance like the default in-memory store would give on Render.
+    store: new MongoRateLimitStore(),
     message: {
         success: false,
         message: 'Too many feedback submissions from this IP. Please try again later.',
