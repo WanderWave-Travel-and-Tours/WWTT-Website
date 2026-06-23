@@ -7,6 +7,7 @@ const fs         = require('fs');
 const axios      = require('axios');
 const TourBooking = require('../models/tourBooking');
 const Package     = require('../models/package');
+const authMiddleware = require('../middleware/auth');
 const { sendTourBookingToGHL } = require('../utils/ghlService');
 
 // ── Multer setup ─────────────────────────────────────────────────────────────
@@ -231,7 +232,7 @@ router.post('/', upload.any(), async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/tour-bookings
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   console.log('\n🔵 [GET /api/tour-bookings] Fetching all tour bookings');
   console.log('   Query params:', req.query);
   try {
@@ -270,7 +271,7 @@ router.get('/', async (req, res) => {
 // GET /api/tour-bookings/archived
 // ⚠️ MUST be defined BEFORE /:id
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/archived', async (req, res) => {
+router.get('/archived', authMiddleware, async (req, res) => {
   console.log('\n🔵 [GET /api/tour-bookings/archived] Fetching archived bookings');
   try {
     const archivedBookings = await TourBooking.find({ isArchive: 'Yes' })
@@ -292,7 +293,7 @@ router.get('/archived', async (req, res) => {
 // PUT /api/tour-bookings/archive/:id
 // ⚠️ MUST be defined BEFORE /:id to avoid "archive" being treated as an ObjectId
 // ─────────────────────────────────────────────────────────────────────────────
-router.put('/archive/:id', async (req, res) => {
+router.put('/archive/:id', authMiddleware, async (req, res) => {
   console.log(`\n🟠 [PUT /api/tour-bookings/archive/${req.params.id}] Archiving booking`);
   try {
     const booking = await TourBooking.findByIdAndUpdate(
@@ -322,7 +323,7 @@ router.put('/archive/:id', async (req, res) => {
 // PUT /api/tour-bookings/restore/:id
 // ⚠️ MUST be defined BEFORE /:id
 // ─────────────────────────────────────────────────────────────────────────────
-router.put('/restore/:id', async (req, res) => {
+router.put('/restore/:id', authMiddleware, async (req, res) => {
   console.log(`\n🟠 [PUT /api/tour-bookings/restore/${req.params.id}] Restoring booking`);
   try {
     const booking = await TourBooking.findByIdAndUpdate(
@@ -370,7 +371,7 @@ router.get('/:id', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/tour-bookings/:id/status
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', authMiddleware, async (req, res) => {
   console.log(`\n🟡 [PATCH /api/tour-bookings/${req.params.id}/status] Status update`);
   console.log('   Requested status:', req.body.status);
   try {
@@ -405,7 +406,7 @@ router.patch('/:id/status', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/tour-bookings/:id/payment
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id/payment', async (req, res) => {
+router.patch('/:id/payment', authMiddleware, async (req, res) => {
   console.log(`\n🟡 [PATCH /api/tour-bookings/${req.params.id}/payment] Payment update`);
   console.log('   Payload:', req.body);
   try {
@@ -435,7 +436,7 @@ router.patch('/:id/payment', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/tour-bookings/:id  (admin full edit — from EditTourBooking)
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', authMiddleware, async (req, res) => {
   console.log(`\n🟡 [PATCH /api/tour-bookings/${req.params.id}] Full booking update`);
   console.log('   Payload keys:', Object.keys(req.body));
   try {
@@ -517,7 +518,7 @@ router.patch('/:id', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/tour-bookings/:id  (admin only — hard delete)
 // ─────────────────────────────────────────────────────────────────────────────
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   console.log(`\n🔴 [DELETE /api/tour-bookings/${req.params.id}] Deleting booking`);
   try {
     const booking = await TourBooking.findByIdAndDelete(req.params.id);

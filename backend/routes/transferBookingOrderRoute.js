@@ -8,6 +8,8 @@
 const express              = require('express');
 const router               = express.Router();
 const TransferBookingOrder = require('../models/transferBookingOrder');
+const Transfer             = require('../models/transfer');
+const authMiddleware       = require('../middleware/auth');
 const { sendTransferBookingToGHL } = require('../utils/ghlService');
 const { syncLocations }            = require('../utils/syncLocations');       // ← ADD
 
@@ -70,6 +72,58 @@ router.post('/', async (req, res) => {
       if (!returnDate)    return res.status(400).json({ success: false, message: 'returnDate is required for roundtrip bookings.' });
     }
 
+    // 🔐 SECURITY: Server-side price resolution (anti price-manipulation).
+    // Customer bookings must reference a catalog transferId; the price is taken
+    // from the Transfer listing and ALL client-supplied price fields are ignored.
+    // Sales/admin bookings (createdByType === 'sales') may supply a manual price
+    // but it is still validated as a positive number.
+    const isSales = createdByType === 'sales';
+    const paxQty = Math.max(1, parseInt(passengerCount) || 1);
+
+    let resolvedOneWay    = parseFloat(oneWayPrice)    || 0;
+    let resolvedRoundtrip = parseFloat(roundtripPrice) || 0;
+    let resolvedSelling;
+    let resolvedTotal;
+
+    if (!isSales) {
+      // Customer path — price MUST come from the catalog.
+      if (!transferId) {
+        return res.status(400).json({ success: false, message: 'transferId is required.' });
+      }
+      const dbTransfer = await Transfer.findById(transferId).lean();
+      if (!dbTransfer) {
+        return res.status(400).json({ success: false, message: 'Transfer listing not found.' });
+      }
+      resolvedOneWay    = parseFloat(dbTransfer.oneWayPrice)    || 0;
+      resolvedRoundtrip = parseFloat(dbTransfer.roundtripPrice) || 0;
+      resolvedSelling   = type === 'roundtrip' ? resolvedRoundtrip : resolvedOneWay;
+      resolvedTotal     = resolvedSelling * paxQty;
+
+      if (resolvedTotal <= 0) {
+        return res.status(400).json({ success: false, message: 'Selected transfer has no valid price for this trip type.' });
+      }
+    } else {
+      // Sales path — admin-supplied total, but enforce non-negative boundary.
+      resolvedSelling = parseFloat(sellingPrice) || (type === 'roundtrip' ? resolvedRoundtrip : resolvedOneWay);
+      resolvedTotal   = parseFloat(totalAmount) || (resolvedSelling * paxQty);
+      if (resolvedTotal <= 0) {
+        return res.status(400).json({ success: false, message: 'totalAmount must be greater than zero.' });
+      }
+    }
+
+    // Compute payment split server-side from the authoritative total.
+    const resolvedPaymentType = paymentType === 'partial' ? 'partial' : 'full';
+    let resolvedInitial = resolvedTotal;
+    let resolvedRemaining = 0;
+    if (resolvedPaymentType === 'partial') {
+      const clientInitial = parseFloat(initialPaymentAmount) || 0;
+      // Clamp the deposit to (0, total). Fall back to 50% if the client value is invalid.
+      resolvedInitial = (clientInitial > 0 && clientInitial < resolvedTotal)
+        ? clientInitial
+        : Math.ceil(resolvedTotal * 0.5);
+      resolvedRemaining = resolvedTotal - resolvedInitial;
+    }
+
     // ── Build document with clean field separation ───────────────────────────
     const booking = new TransferBookingOrder({
       transferId:      transferId || null,
@@ -96,17 +150,17 @@ router.post('/', async (req, res) => {
       email,
       phone:           phone   || '',
       message:         message || '',
-      passengerCount:  parseInt(passengerCount) || 1,
+      passengerCount:  paxQty,
 
-      oneWayPrice:    parseFloat(oneWayPrice)    || 0,
-      roundtripPrice: parseFloat(roundtripPrice) || 0,
-      sellingPrice:   parseFloat(sellingPrice)   || 0,
-      totalAmount:    parseFloat(totalAmount)    || 0,
+      oneWayPrice:    resolvedOneWay,
+      roundtripPrice: resolvedRoundtrip,
+      sellingPrice:   resolvedSelling,
+      totalAmount:    resolvedTotal,
 
       currency:             currency             || 'PHP',
-      paymentType:          paymentType          || 'full',
-      initialPaymentAmount: parseFloat(initialPaymentAmount) || 0,
-      remainingBalance:     parseFloat(remainingBalance)     || 0,
+      paymentType:          resolvedPaymentType,
+      initialPaymentAmount: resolvedInitial,
+      remainingBalance:     resolvedRemaining,
 
       promoCode:    promoCode    || null,
       supplierName: supplierName || '',
@@ -158,7 +212,7 @@ sendTransferBookingToGHL(booking).catch((err) =>
 // GET /api/transfer-bookings
 // List all transfer bookings (admin)
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const { email, status, transferType, createdByType, page = 1, limit = 50 } = req.query;
 
@@ -212,7 +266,7 @@ router.get('/:id', async (req, res) => {
 // fullName, email, travelDate, transferType, …) the full-edit path runs and
 // updates every provided field. Otherwise the lightweight toggle path runs.
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', authMiddleware, async (req, res) => {
   try {
     const booking = await TransferBookingOrder.findById(req.params.id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
@@ -340,7 +394,7 @@ router.patch('/:id', async (req, res) => {
 // PATCH /api/transfer-bookings/:id/status
 // Update booking status (confirm, cancel, etc.)
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', authMiddleware, async (req, res) => {
   try {
     const { status, paymentStatus } = req.body;
     const booking = await TransferBookingOrder.findById(req.params.id);
@@ -362,7 +416,7 @@ router.patch('/:id/status', async (req, res) => {
 // Archive a transfer booking — sets isArchive to 'Yes' so it is hidden
 // from the main dashboard (frontend filters out isArchive === 'Yes').
 // ─────────────────────────────────────────────────────────────────────────────
-router.put('/archive/:id', async (req, res) => {
+router.put('/archive/:id', authMiddleware, async (req, res) => {
   try {
     const booking = await TransferBookingOrder.findById(req.params.id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });

@@ -10,6 +10,9 @@ const express           = require('express');
 const router            = express.Router();
 const { Mutex }         = require('async-mutex');
 const CustomizedBooking = require('../models/Customizedbooking');
+const Tour              = require('../models/tour');
+const Transfer          = require('../models/transfer');
+const authMiddleware    = require('../middleware/auth');
 const { sendCustomBookingToGHL } = require('../utils/ghlService');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,6 +86,95 @@ function buildServices(body) {
   return { builtTours, builtTransfers };
 }
 
+// 🔐 SECURITY: Catalog-backed builder for CUSTOMER submissions.
+// buildServices() trusts the client-supplied per-item price, which lets an attacker
+// send { tourId, price: 1, paxCount: 1 } and create a real ₱1 booking (the top-level
+// totalAmount is recomputed, but it sums these poisoned subtotals). This version
+// resolves every price from the Tour / Transfer catalog using the item id and
+// discards whatever price the client sent. Each item MUST carry a valid id.
+//
+// Returns { builtTours, builtTransfers } on success, or { error } with a message.
+async function buildServicesSecure(body) {
+  const tours     = Array.isArray(body.tours)     ? body.tours     : [];
+  const transfers = Array.isArray(body.transfers) ? body.transfers : [];
+
+  const builtTours = [];
+  for (const t of tours) {
+    if (!t.tourId) {
+      return { error: 'Each tour must reference a valid tourId.' };
+    }
+    const dbTour = await Tour.findById(t.tourId).lean();
+    if (!dbTour) {
+      return { error: `Tour not found: ${t.tourId}` };
+    }
+
+    const paxCount = parseInt(t.paxCount) || 1;
+    if (paxCount <= 0) {
+      return { error: 'Tour paxCount must be a positive value.' };
+    }
+
+    // Authoritative price straight from the catalog — client price is ignored.
+    const price = parseNum(dbTour.price);
+    builtTours.push({
+      tourId:        dbTour._id.toString(),
+      title:         dbTour.title       || t.title       || '',
+      destination:   dbTour.destination || t.destination || '',
+      duration:      dbTour.duration    || t.duration    || '',
+      category:      dbTour.category    || t.category    || '',
+      imageUrl:      dbTour.image       || dbTour.imageUrl || t.imageUrl || null,
+      price,
+      sellerPrice:   parseNum(dbTour.sellerPrice),
+      paxCount,
+      subtotal:      price * paxCount,
+      scheduledDate: t.scheduledDate || '',
+    });
+  }
+
+  const builtTransfers = [];
+  for (const tr of transfers) {
+    if (!tr.transferId) {
+      return { error: 'Each transfer must reference a valid transferId.' };
+    }
+    const dbTransfer = await Transfer.findById(tr.transferId).lean();
+    if (!dbTransfer) {
+      return { error: `Transfer not found: ${tr.transferId}` };
+    }
+
+    const passengerCount = parseInt(tr.passengerCount) || 1;
+    if (passengerCount <= 0) {
+      return { error: 'Transfer passengerCount must be a positive value.' };
+    }
+
+    // Authoritative prices straight from the catalog — client prices are ignored.
+    const oneWayPrice    = parseNum(dbTransfer.oneWayPrice);
+    const roundtripPrice = parseNum(dbTransfer.roundtripPrice);
+    const transferType   = tr.transferType === 'roundtrip' ? 'roundtrip' : 'oneway';
+    const selectedPrice  = transferType === 'roundtrip' ? roundtripPrice : oneWayPrice;
+
+    builtTransfers.push({
+      transferId:      dbTransfer._id.toString(),
+      title:           dbTransfer.title    || tr.title    || '',
+      category:        dbTransfer.category || tr.category || '',
+      imageUrl:        dbTransfer.imageUrl || tr.imageUrl || null,
+      transferType,
+      oneWayPrice,
+      roundtripPrice,
+      selectedPrice,
+      subtotal:        selectedPrice * passengerCount,
+      travelDate:      tr.travelDate      || '',
+      returnDate:      tr.returnDate      || '',
+      arrivalTime:     tr.arrivalTime     || '',
+      departureTime:   tr.departureTime   || '',
+      pickupLocation:  tr.pickupLocation  || '',
+      dropoffLocation: tr.dropoffLocation || '',
+      message:         tr.message         || '',
+      passengerCount,
+    });
+  }
+
+  return { builtTours, builtTransfers };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/customized-bookings
 // Create a new customized booking (submitted from Step 4 of the wizard).
@@ -110,18 +202,17 @@ router.post('/', async (req, res) => {
     if (!body.destination) return res.status(400).json({ success: false, message: 'destination is required.' });
     if (!body.fullName)    return res.status(400).json({ success: false, message: 'fullName is required.' });
 
-    const { builtTours, builtTransfers } = buildServices(body);
-
-    // Boundary guard: reject negative or zero prices on individual items
-    for (const t of builtTours) {
-      if (t.price < 0 || t.paxCount <= 0) {
-        return res.status(400).json({ success: false, message: 'Tour price and paxCount must be positive values.' });
-      }
+    // 🔐 SECURITY: Resolve all item prices from the catalog (Tour/Transfer) by id.
+    // The client-supplied per-item price is ignored entirely, closing the ₱1-booking
+    // price-manipulation vector. Each item must reference a valid catalog id.
+    const built = await buildServicesSecure(body);
+    if (built.error) {
+      return res.status(400).json({ success: false, message: built.error });
     }
-    for (const tr of builtTransfers) {
-      if (tr.selectedPrice < 0 || tr.passengerCount <= 0) {
-        return res.status(400).json({ success: false, message: 'Transfer price and passengerCount must be positive values.' });
-      }
+    const { builtTours, builtTransfers } = built;
+
+    if (builtTours.length === 0 && builtTransfers.length === 0) {
+      return res.status(400).json({ success: false, message: 'Booking must include at least one tour or transfer.' });
     }
 
     const toursTotal     = builtTours.reduce((s, t) => s + t.subtotal, 0);
@@ -205,7 +296,7 @@ router.post('/', async (req, res) => {
 // GET /api/customized-bookings
 // List all customized bookings (admin).
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const { email, status, destination, page = 1, limit = 50 } = req.query;
     const filter = { isArchive: { $ne: 'Yes' } };
@@ -238,7 +329,7 @@ router.get('/', async (req, res) => {
 // GET /api/customized-bookings/archived
 // ✅ NEW: List all archived customized bookings (isArchive === 'Yes').
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/archived', async (req, res) => {
+router.get('/archived', authMiddleware, async (req, res) => {
   try {
     const data = await CustomizedBooking.find({ isArchive: 'Yes' })
       .sort({ updatedAt: -1 })
@@ -273,7 +364,7 @@ router.get('/:id', async (req, res) => {
 // Full update — used by EditCustomBooking admin page.
 // Accepts all top-level fields plus tours[] and transfers[] arrays.
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', authMiddleware, async (req, res) => {
   console.log(`\n🟡 [PATCH /api/customized-bookings/${req.params.id}] Updating booking`);
 
   try {
@@ -344,7 +435,7 @@ router.patch('/:id', async (req, res) => {
 // PATCH /api/customized-bookings/:id/status
 // Update booking status and/or payment status.
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', authMiddleware, async (req, res) => {
   try {
     const { status, paymentStatus } = req.body;
     const booking = await CustomizedBooking.findById(req.params.id);
@@ -373,7 +464,7 @@ router.patch('/:id/status', async (req, res) => {
 // PATCH /api/customized-bookings/:id/archive
 // Soft-delete (archive) a booking.
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id/archive', async (req, res) => {
+router.patch('/:id/archive', authMiddleware, async (req, res) => {
   try {
     const booking = await CustomizedBooking.findByIdAndUpdate(
       req.params.id,
@@ -391,7 +482,7 @@ router.patch('/:id/archive', async (req, res) => {
 // PATCH /api/customized-bookings/:id/unarchive
 // Restore a previously archived booking back to the active list.
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id/unarchive', async (req, res) => {
+router.patch('/:id/unarchive', authMiddleware, async (req, res) => {
   try {
     const booking = await CustomizedBooking.findByIdAndUpdate(
       req.params.id,
@@ -410,7 +501,7 @@ router.patch('/:id/unarchive', async (req, res) => {
 // DELETE /api/customized-bookings/:id
 // Hard delete (admin only).
 // ─────────────────────────────────────────────────────────────────────────────
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const booking = await CustomizedBooking.findByIdAndDelete(req.params.id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
