@@ -7,6 +7,7 @@ const fs         = require('fs');
 const axios      = require('axios');
 const TourBooking = require('../models/tourBooking');
 const Package     = require('../models/package');
+const Tour        = require('../models/tour');
 const authMiddleware = require('../middleware/auth');
 const { sendTourBookingToGHL } = require('../utils/ghlService');
 
@@ -97,10 +98,15 @@ router.post('/', upload.any(), async (req, res) => {
     }
 
     // ===== SERVER-SIDE PRICE COMPUTATION — Issue #1: Price Manipulation =====
-    if (data.packageId) {
-      const pkg = await Package.findById(data.packageId);
+    // Tour listings live in the `Tour` collection (served via /api/tours/all),
+    // so resolve the catalog price from the Tour model — NOT the Package model
+    // (different collection). The frontend sends the Tour _id as both tourId and
+    // packageId, so accept either.
+    const catalogTourId = data.tourId || data.packageId;
+    if (catalogTourId) {
+      const pkg = await Tour.findById(catalogTourId);
       if (!pkg) {
-        return res.status(400).json({ success: false, message: 'Package not found.' });
+        return res.status(400).json({ success: false, message: 'Tour not found.' });
       }
 
       let serverPerPaxPrice;

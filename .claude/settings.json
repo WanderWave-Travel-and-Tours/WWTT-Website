@@ -4,9 +4,11 @@
       "Bash(node -c utils/ghlService.js)",
       "Bash(node -c routes/tourBookingRoute.js)",
       "Bash(node -c routes/Customizedbookingroute.js)",
-      "Bash(node -c routes/paymentRoute.js)",
-      "Bash(node -c controller/paymentController.js)",
-      "Bash(node -c controller/inquiryController.js)"
+      "Bash(node -e \"require\\('./routes/tourBookingRoute.js'\\); console.log\\('tour OK'\\)\")",
+      "Bash(node -e \"require\\('./routes/transferBookingOrderRoute.js'\\); console.log\\('transfer OK'\\)\")",
+      "Bash(node -e \"require\\('./routes/Customizedbookingroute.js'\\); console.log\\('custom OK'\\)\")",
+      "Bash(git check-ignore *)",
+      "Bash(node -e ' *)"
     ]
   }
 }
