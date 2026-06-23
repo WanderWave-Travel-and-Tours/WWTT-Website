@@ -421,6 +421,8 @@ const sendTransferBookingToGHL = async (booking) => {
     // ── Transfer listing ──────────────────────────────────────
     transferId:      booking.transferId ? booking.transferId.toString() : '',
     activityName:    booking.activityName    || '',
+    transferName:    booking.activityName    || '',
+    transfer_name:   booking.activityName    || '',
     destination:     booking.destination     || '',
     category:        booking.category        || '',
     supplierName:    booking.supplierName    || '',
@@ -549,6 +551,8 @@ const sendTourBookingToGHL = async (booking) => {
     packageId:    b.packageId ? b.packageId.toString() : '',
     packageName:  b.packageName || '',
     package_name: b.packageName || '',
+    tourName:     b.packageName || '',
+    tour_name:    b.packageName || '',
     service:      b.packageName || '',
     serviceName:  b.packageName || '',
 
