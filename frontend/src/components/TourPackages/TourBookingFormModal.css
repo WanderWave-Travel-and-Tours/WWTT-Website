@@ -211,10 +211,12 @@
 
 /* --- Scrollable Form Area --- */
 .bfm-form-wrapper {
-  flex: 1; 
-  overflow-y: auto; 
-  overscroll-behavior: contain; 
-  padding: 20px 24px;
+  flex: 1 1 auto;
+  min-height: 0; /* critical in a flex column so this child actually scrolls */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 20px 24px 0 24px;
   background: #f8fafc;
 }
 
@@ -422,11 +424,10 @@
 
 /* --- Form (the <form> tag itself) --- */
 .bfm-form {
-  flex: 1;
-  overflow-y: scroll; /* ✅ 'scroll' keeps scrollbar always visible so scroll activates anywhere in the element */
-  overscroll-behavior: contain;
-  /* ✅ Ensures the scroll container captures wheel events even when cursor is over child elements */
-  -webkit-overflow-scrolling: touch;
+  /* Plain block — the single scroll container is .bfm-form-wrapper, so the
+     sticky .bfm-actions footer pins correctly (matches the package modal). */
+  display: flex;
+  flex-direction: column;
 }
 
 .bfm-form::-webkit-scrollbar {
@@ -1185,12 +1186,17 @@
 
 /* --- Footer Actions (sticky bottom) --- */
 .bfm-actions {
+  position: sticky;
+  bottom: 0;
   display: flex;
   gap: 10px;
+  /* negative side margins cancel the wrapper's 24px padding so the bar spans full width */
+  margin: 16px -24px 0 -24px;
   padding: 14px 24px 16px 24px;
   border-top: 1px solid #e2e8f0;
-  background: #fff;
-  flex-shrink: 0;
+  background: #f8fafc;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+  z-index: 5;
 }
 
 .bfm-back-btn, .bfm-submit-btn {
@@ -1260,20 +1266,21 @@
 
 @media (max-width: 640px) {
   .bfm-overlay {
-    top: 0; /* mobile uses a full-height bottom-sheet, not the desktop navbar offset */
+    top: 0; /* full-screen on mobile, no navbar offset */
     padding: 0;
-    align-items: flex-end;
+    align-items: flex-start;
     overflow: hidden; /* ✅ Keep hidden on mobile too — inner form scrolls */
   }
 
   .bfm-modal-card {
-    border-radius: 16px 16px 0 0;
+    border-radius: 0;
     width: 100%;
-    height: auto;
-    /* Leave room for mobile navbar (~110px) at top */
-    max-height: calc(100vh - 110px);
+    min-height: 100%;
     max-width: 100%;
-    flex-shrink: 0;
+    margin: 0;
+    /* Full height — form-wrapper scrolls inside, sticky footer stays visible */
+    max-height: 100vh;
+    max-height: 100dvh;
   }
 
   .bfm-modal-header {
@@ -1296,13 +1303,14 @@
   }
 
   .bfm-form-wrapper {
-    padding: 16px;
-    padding-bottom: 40px;
+    padding: 16px 16px 0 16px;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   /* Single Column Form on Mobile */
   .bfm-form-grid {
-    grid-template-columns: 1fr; 
+    grid-template-columns: 1fr;
     gap: 10px;
   }
 
@@ -1394,6 +1402,8 @@
   .bfm-actions {
     flex-direction: column-reverse;
     gap: 10px;
+    margin: 16px -16px 0 -16px;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px;
   }
 
   .bfm-back-btn, .bfm-submit-btn {

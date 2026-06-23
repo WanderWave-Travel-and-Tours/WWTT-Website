@@ -6,22 +6,20 @@
 
 .bfm-overlay {
   position: fixed;
-  inset: 0;
+  top: 115px;  /* matches navbar height — modal sits below the header instead of hiding under it */
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 99999;
-  padding: 20px;
-  /* ✅ FIX: overflow-y scroll on overlay allows mouse wheel to scroll
-     the entire modal. touch-action ensures mobile swipe also works.
-     The overlay is fixed/full-viewport so it always receives pointer
-     events regardless of parent overflow:hidden. */
-  overflow-y: scroll;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
+  padding: 16px 20px 20px 20px;
+  /* Card scrolls internally (form-wrapper); overlay stays fixed so the
+     sticky footer / confirm button is always visible. */
+  overflow: hidden;
   animation: bfmFadeIn 0.2s ease-out;
 }
 
@@ -38,14 +36,13 @@
   position: relative;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  /* ✅ FIX: Give the card a max-height tied to the viewport so the
-     form-wrapper can scroll inside. The overlay itself stays scrollable
-     as a fallback on very small screens. */
-  max-height: calc(100vh - 40px);
+  /* Card height is capped to the space below the navbar; the inner
+     .bfm-form-wrapper scrolls and the .bfm-actions footer stays pinned. */
+  max-height: calc(100vh - 175px);
   display: flex;
   flex-direction: column;
-  /* ✅ FIX: auto margins centre the card inside the flex column */
-  margin: auto;
+  overflow: hidden;
+  margin: 0 auto;
 }
 
 @keyframes bfmSlideUp {
@@ -213,13 +210,14 @@
 
 /* --- Scrollable Form Area --- */
 .bfm-form-wrapper {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0; /* critical in a flex column so this child actually scrolls */
   /* ✅ FIX: Give the form wrapper its own scroll context so mouse wheel
      events are captured anywhere inside the modal, not just on the overlay edges. */
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding: 20px 24px;
+  padding: 20px 24px 0 24px;
   background: #f8fafc;
   /* Scrollbar styling */
   scrollbar-width: thin;
@@ -904,13 +902,19 @@
   color: #ea580c;
 }
 
-/* --- Footer Actions --- */
+/* --- Footer Actions (sticky so CONFIRM BOOKING is always visible) --- */
 .bfm-actions {
+  position: sticky;
+  bottom: 0;
   display: flex;
   gap: 10px;
-  margin-top: 20px;
-  padding-top: 16px;
+  /* negative side margins cancel the wrapper's 24px padding so the bar spans full width */
+  margin: 16px -24px 0 -24px;
+  padding: 14px 24px 16px 24px;
   border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+  z-index: 5;
 }
 
 .bfm-back-btn, .bfm-submit-btn {
@@ -956,11 +960,13 @@
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .bfm-overlay {
-    padding: 16px;
+    top: 100px;
+    padding: 12px 16px;
   }
 
   .bfm-modal-card {
     max-width: 600px;
+    max-height: calc(100vh - 115px);
   }
 
   .bfm-payment-options {
@@ -982,6 +988,7 @@
 
 @media (max-width: 640px) {
   .bfm-overlay {
+    top: 0; /* full-screen on mobile, no navbar offset */
     padding: 0;
     align-items: flex-start;
   }
@@ -991,9 +998,10 @@
     width: 100%;
     min-height: 100%;
     max-width: 100%;
-    margin-top: 0;
+    margin: 0;
     /* ✅ FIX: On mobile, full height — form-wrapper scrolls inside */
     max-height: 100vh;
+    max-height: 100dvh;
   }
 
   .bfm-modal-header {
@@ -1018,10 +1026,10 @@
   }
 
   .bfm-form-wrapper {
-    padding: 16px;
-    padding-bottom: 40px;
+    padding: 16px 16px 0 16px;
     /* On mobile the card is full-height so the wrapper fills and scrolls */
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   /* Single Column Form on Mobile */
@@ -1063,6 +1071,8 @@
   .bfm-actions {
     flex-direction: column-reverse;
     gap: 10px;
+    margin: 16px -16px 0 -16px;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px;
   }
 
   .bfm-back-btn, .bfm-submit-btn {
