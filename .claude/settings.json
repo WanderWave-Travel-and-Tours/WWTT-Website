@@ -14,7 +14,10 @@
       "Bash(awk '/\\\\.bfm-modal-card[ ,{]/,/^}/' TourPackages/TourBookingFormModal.css)",
       "Read(//c/Users/hhsarmiento/Desktop/**)",
       "Bash(node _ww_embed_form.js)",
-      "Bash(node -c routes/packageRoute.js)"
+      "Bash(node -c routes/packageRoute.js)",
+      "Bash(curl -s -m 60 \"https://wanderwaveph.onrender.com/api/packages/all\")",
+      "Bash(curl -s -m 60 -o /dev/null -w \"%{http_code} | size=%{size_download} bytes\\\\n\" \"https://wanderwaveph.onrender.com/api/packages/all\")",
+      "Bash(curl -s -m 60 \"https://wanderwaveph.onrender.com/api/packages/destinations?category=International\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\hhsarmiento\\Desktop"

@@ -476,6 +476,10 @@ router.get('/with-tours', async (req, res) => {
 // ============================================================
 router.get('/search', async (req, res) => {
     try {
+        // Public funnel endpoint consumed by static GHL custom-code (no decryption
+        // there) — return plain JSON. Only the React app decrypts; it never calls /search.
+        res.locals.skipEncrypt = true;
+
         const { destination, duration, pax, category } = req.query;
         const paxNum = parseInt(pax) || 1;
 
@@ -546,6 +550,9 @@ router.get('/search', async (req, res) => {
 // ============================================================
 router.get('/destinations', async (req, res) => {
     try {
+        // Public funnel endpoint consumed by static GHL custom-code — return plain JSON.
+        res.locals.skipEncrypt = true;
+
         const { category } = req.query;
         const match = { isArchive: 'No' };
 
