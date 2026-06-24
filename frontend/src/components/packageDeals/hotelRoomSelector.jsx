@@ -291,8 +291,8 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   // Standard / Budget hotels are covered by the base package price.
   const getPerNightRate = (roomType) => {
     const t = (roomType || '').toUpperCase();
-    if (t.includes('5')) return 2500;
-    if (t.includes('4')) return 1660;
+    if (t.includes('5') || t.includes('PREMIUM') || t.includes('LUXURY') || t.includes('DELUXE')) return 2500;
+    if (t.includes('4') || t.includes('MID') || t.includes('SUPERIOR')) return 1660;
     return 0; // Standard / Budget — no additional charge
   };
 
@@ -420,8 +420,11 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
 
           const categoryName = getCategoryDisplayName(roomType);
 
+          // ✅ Compute hotel cost for this category for card display
+          const categoryHotelTotal = getCategoryHotelTotal(roomType, group);
+
           return (
-            <div 
+            <div
               key={roomType}
               className={`hrs-card hrs-category-card ${isSelected ? 'hrs-selected' : ''}`}
               onClick={() => handleCategorySelect(roomType, group.hotels[0])}
@@ -441,10 +444,18 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
                       {group.hotels.length} partner hotel{group.hotels.length !== 1 ? 's' : ''} available
                     </span>
                   </div>
-
                 </div>
-                <div className="hrs-category-right" style={{flexDirection: 'column', alignItems: 'flex-end'}}>
-                  {isSelected && <div className="hrs-badge-selected">✓ SELECTED</div>}
+
+                {/* ✅ Price column — always rendered, no layout shift on select */}
+                <div className="hrs-category-right">
+                  <span className="hrs-price-tier-label">Price</span>
+                  {categoryHotelTotal === 0 ? (
+                    <span className="hrs-price-included-text">Included<br />in package</span>
+                  ) : (
+                    <span className="hrs-price-upgrade-text">
+                      +₱{categoryHotelTotal.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
 

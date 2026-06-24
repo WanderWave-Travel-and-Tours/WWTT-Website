@@ -677,9 +677,34 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 2px;
   flex-shrink: 0;
   white-space: nowrap;
+  min-width: 80px;
+}
+
+/* ✅ Price label + value on each hotel tier card */
+.hrs-price-tier-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.hrs-price-included-text {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #10b981;
+  text-align: right;
+  line-height: 1.3;
+}
+
+.hrs-price-upgrade-text {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fc9c1b;
+  text-align: right;
 }
 
 .hrs-price-display {
