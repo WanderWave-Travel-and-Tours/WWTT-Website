@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from 'axios';
+import api from '../../lib/axiosInstance';
 import { ChevronRight, ChevronDown, FileText, ClipboardList, AlertCircle, RefreshCw } from "lucide-react";
 import "./PassportTable.css";
 
@@ -21,7 +21,7 @@ const PassportTable = ({ onSelectPassport }) => {
 
   const fetchPassportData = async () => {
     try {
-      const res = await axios.get('https://wanderwaveph.onrender.com/api/passports');
+      const res = await api.get('/api/passports');
       
       if (res.data.success && res.data.data.length > 0) {
         setAllPassports(res.data.data);

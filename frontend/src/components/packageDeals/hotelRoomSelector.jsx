@@ -177,10 +177,11 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
           {/* ENHANCED GALLERY SECTION */}
           <div className="hrs-gallery-section">
             <div className="hrs-main-stage">
-              <img 
-                src={safeImages[activeImgIndex]} 
-                alt="Hotel Sample View" 
+              <img
+                src={safeImages[activeImgIndex]}
+                alt="Hotel Sample View"
                 className="hrs-main-img"
+                onError={(e) => { e.target.src = 'https://placehold.co/800x600/1e293b/94a3b8?text=Hotel+Image'; }}
               />
               
               {/* ✨ NAVIGATION ARROWS */}
@@ -218,6 +219,7 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
                   alt={`Hotel view ${idx + 1}`}
                   className={`hrs-side-thumb ${idx === activeImgIndex ? 'hrs-active' : ''}`}
                   onClick={() => setActiveImgIndex(idx)}
+                  onError={(e) => { e.target.src = 'https://placehold.co/120x80/1e293b/94a3b8?text=Hotel'; }}
                 />
               ))}
             </div>

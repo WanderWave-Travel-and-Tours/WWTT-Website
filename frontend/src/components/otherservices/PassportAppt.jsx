@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../sidebar/sidebar';
-import axios from 'axios';
+import api from '../../lib/axiosInstance';
 import { 
   Plus, BookOpen, Calendar, CheckCircle, RotateCcw, 
   Edit2, Trash2, Save, X, FileText, List, Settings 
@@ -34,7 +34,7 @@ const PassportAppt = () => {
 
     const fetchPassportData = async () => {
         try {
-            const res = await axios.get('https://wanderwaveph.onrender.com/api/passports');
+            const res = await api.get('/api/passports');
             if (res.data.success && res.data.data.length > 0) {
                 setPassportData(res.data.data[0]);
             }
@@ -48,7 +48,7 @@ const PassportAppt = () => {
         if (!window.confirm('Initialize default passport data? This will only work if no data exists.')) return;
         
         try {
-            const res = await axios.post('https://wanderwaveph.onrender.com/api/passports/initialize');
+            const res = await api.post('/api/passports/initialize');
             if (res.data.success) {
                 alert('Passport data initialized successfully!');
                 fetchPassportData();
@@ -71,8 +71,8 @@ const PassportAppt = () => {
         if (!editData) return;
 
         try {
-            const res = await axios.put(
-                `https://wanderwaveph.onrender.com/api/passports/${editData._id}`, 
+            const res = await api.put(
+                `/api/passports/${editData._id}`,
                 editData
             );
             if (res.data.success) {

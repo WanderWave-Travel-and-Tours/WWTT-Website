@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from 'axios';
+import api from '../../lib/axiosInstance';
 import { ChevronRight, ChevronDown, FileText, Download, ClipboardList } from "lucide-react";
 import "./VisaTable.css";
 import { useToast } from "../toast/ToastManager";
@@ -14,7 +14,7 @@ const VisaTable = ({ onSelectVisa }) => {
   useEffect(() => {
     const fetchVisas = async () => {
       try {
-        const res = await axios.get('https://wanderwaveph.onrender.com/api/visas');
+        const res = await api.get('/api/visas');
         
         if (Array.isArray(res.data)) {
           setVisas(res.data);
