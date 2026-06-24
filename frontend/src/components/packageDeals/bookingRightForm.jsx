@@ -1114,16 +1114,24 @@ const getTimerAwarePrice = () => {
 
 const handleNextPassenger = async (e) => {
   e.preventDefault();
-  
+
   const currentPassengerData = passengers[passengerStep - 1];
-  
-  if (bookingWithAirfare && requiresID && !currentPassengerData.idFile) {
-    toast.error('Please upload a valid ID for this passenger');
+
+  if (passengerStep === 1) {
+    const age = parseInt(currentPassengerData.age);
+    if (!currentPassengerData.dateOfBirth || isNaN(age) || age < 18) {
+      toast.error('The primary passenger must be at least 18 years old to proceed.');
+      return;
+    }
+  }
+
+  if (passengerStep === 1 && bookingWithAirfare && requiresID && !currentPassengerData.idFile) {
+    toast.error('Please upload a valid ID for the primary passenger');
     return;
   }
-  
-  if (bookingWithAirfare && requiresPassport && !currentPassengerData.passportFile) {
-    toast.error('Please upload a valid passport for this passenger');
+
+  if (passengerStep === 1 && bookingWithAirfare && requiresPassport && !currentPassengerData.passportFile) {
+    toast.error('Please upload a valid passport for the primary passenger');
     return;
   }
 

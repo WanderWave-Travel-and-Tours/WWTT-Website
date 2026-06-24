@@ -81,14 +81,14 @@ const PassportTable = ({ onSelectPassport }) => {
   };
 
   if (loading) {
-    return <div className="passport-list-container"><p style={{padding:'40px', textAlign:'center'}}>Loading Live Passport Information...</p></div>;
+    return <div className="passport-list-container"><p className="passport-loading-text">Loading Live Passport Information...</p></div>;
   }
 
   if (error || !activePassport) {
     return (
       <div className="passport-list-container">
-        <div style={{textAlign:'center', padding:'40px', color:'#ef4444', background:'#fef2f2', borderRadius:'12px', border:'1px solid #fee2e2'}}>
-            <AlertCircle size={32} style={{marginBottom:'10px'}}/>
+        <div className="passport-error-box">
+            <AlertCircle size={32} className="passport-error-icon"/>
             <h3>Service Unavailable</h3>
             <p>{error || "Please initialize passport data in the admin panel first."}</p>
         </div>
@@ -105,25 +105,15 @@ const PassportTable = ({ onSelectPassport }) => {
         </p>
       </div>
 
-      {/* --- NEW: TABS SELECTION FOR PASSPORT TYPES --- */}
-      <div className="passport-type-tabs" style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+      {/* --- TABS SELECTION FOR PASSPORT TYPES --- */}
+      <div className="passport-type-tabs">
         {allPassports.map((ppt) => (
           <button
             key={ppt._id}
             onClick={() => handleTypeSelect(ppt)}
-            style={{
-              padding: '10px 16px',
-              borderRadius: '8px',
-              border: activePassport._id === ppt._id ? '2px solid #fc9c1b' : '1px solid #e2e8f0',
-              background: activePassport._id === ppt._id ? '#fff7ed' : 'white',
-              color: activePassport._id === ppt._id ? '#c2410c' : '#64748b',
-              fontWeight: activePassport._id === ppt._id ? '700' : '500',
-              cursor: 'pointer',
-              fontSize: '14px',
-              transition: 'all 0.2s'
-            }}
+            className={`passport-type-tab${activePassport._id === ppt._id ? ' active' : ''}`}
           >
-            {ppt.serviceType || ppt.serviceName} 
+            {ppt.serviceType || ppt.serviceName}
           </button>
         ))}
       </div>
@@ -143,7 +133,7 @@ const PassportTable = ({ onSelectPassport }) => {
                     Service Fee: ₱{activePassport.price?.toLocaleString()}
                   </span>
                   {activePassport.processingTime && (
-                     <span style={{fontSize:'12px', color:'#64748b', display:'block', marginTop:'4px'}}>
+                     <span className="passport-processing-time">
                         ⏱️ {activePassport.processingTime}
                      </span>
                   )}
@@ -179,7 +169,7 @@ const PassportTable = ({ onSelectPassport }) => {
                     <div className="passport-accordion-content">
                       {activePassport.requirements?.map((reqSection, idx) => (
                         <div key={idx}>
-                           <h5 style={{margin:'0 0 10px 0', color:'#0f172a'}}>{reqSection.title}</h5>
+                           <h5 className="passport-req-section-title">{reqSection.title}</h5>
                            <ul className="requirements-list-simple">
                              {reqSection.items?.map((req, i) => (
                                <li key={i} className="requirement-simple-item"><span className="req-checkbox">☑️</span>{req}</li>
