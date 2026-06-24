@@ -335,10 +335,36 @@
   font-weight: 700;
 }
 
-.bfm-primary-contact-label { 
-  font-size: 0.7rem; 
-  color: #f97316; 
-  font-weight: 700; 
+.bfm-primary-contact-label {
+  font-size: 0.7rem;
+  color: #f97316;
+  font-weight: 700;
+}
+
+.bfm-optional-badge {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.bfm-optional-note {
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0 0 12px 0;
+}
+
+.bfm-age-hint {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-left: 4px;
 }
 
 .bfm-form-grid {

@@ -16,11 +16,23 @@
   justify-content: space-between;
   align-items: flex-start; /* Aligns text and button to top */
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
-  background: transparent;
-  color: inherit;
-  padding: 0 0 1rem 0;
+  padding: 1.5rem 1.75rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0a203b 0%, #001b3e 100%);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(10, 32, 59, 0.25);
+}
+
+.psa-list-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, #fc9c1b 0%, #e88a0a 100%);
 }
 
 .psa-header-text {
@@ -28,16 +40,16 @@
 }
 
 .psa-list-title {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 800;
-  color: #0a203b;
-  margin: 0 0 0.5rem;
-  letter-spacing: normal;
+  color: #ffffff;
+  margin: 0 0 0.4rem;
+  letter-spacing: 0.3px;
 }
 
 .psa-list-subtitle {
-  font-size: 1rem;
-  color: #666;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.72);
   margin: 0;
   font-weight: 400;
   opacity: 1;
@@ -45,7 +57,7 @@
 
 /* CLOSE BUTTON STYLES */
 .psa-close-modal-btn {
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.12);
   border: none;
   width: 40px;
   height: 40px;
@@ -53,15 +65,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-left: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .psa-close-modal-btn:hover {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: #fc9c1b;
+  color: #ffffff;
   transform: rotate(90deg);
 }
 

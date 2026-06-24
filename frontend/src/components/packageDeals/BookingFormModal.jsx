@@ -400,6 +400,7 @@ const BookingFormModal = ({
 
   // Check if this is the last passenger (payment options should show)
   const isLastPassenger = passengerStep === totalPassengers;
+  const isPrimaryPassenger = passengerStep === 1;
   const finalAmount = selectedFlight ? totalAmount : finalPackageTotal;
   
   // Dynamic percentage based on airfare
@@ -772,17 +773,26 @@ const BookingFormModal = ({
           <form className="bfm-form" onSubmit={handleFormSubmit}>
             <div className="bfm-form-section-header">
               <span className="bfm-passenger-badge">Passenger {passengerStep}</span>
-              {passengerStep === 1 && <span className="bfm-primary-contact-label">Primary Contact</span>}
+              {isPrimaryPassenger
+                ? <span className="bfm-primary-contact-label">Primary Contact</span>
+                : <span className="bfm-optional-badge">Details Optional</span>
+              }
             </div>
+
+            {!isPrimaryPassenger && (
+              <p className="bfm-optional-note">
+                Additional passenger details are optional. You may fill them in now or skip to continue.
+              </p>
+            )}
 
             {/* FORM GRID - Responsive via CSS */}
             <div className="bfm-form-grid">
-              
+
               <div className="bfm-form-group">
-                <label>First Name <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="text" 
+                <label>First Name {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
+                <input
+                  required={isPrimaryPassenger}
+                  type="text"
                   value={currentPassenger.firstName}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'firstName', e.target.value)}
                   placeholder="Juan"
@@ -790,9 +800,9 @@ const BookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Last Name <span className="bfm-required">*</span></label>
-                <input 
-                  required 
+                <label>Last Name {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
+                <input
+                  required={isPrimaryPassenger}
                   type="text"
                   value={currentPassenger.lastName}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'lastName', e.target.value)}
@@ -801,9 +811,9 @@ const BookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Email Address <span className="bfm-required">*</span></label>
-                <input 
-                  required 
+                <label>Email Address {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
+                <input
+                  required={isPrimaryPassenger}
                   type="email"
                   value={currentPassenger.email}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'email', e.target.value)}
@@ -812,9 +822,9 @@ const BookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Phone Number <span className="bfm-required">*</span></label>
-                <input 
-                  required 
+                <label>Phone Number {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
+                <input
+                  required={isPrimaryPassenger}
                   type="tel"
                   value={currentPassenger.phone}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'phone', e.target.value)}
@@ -824,20 +834,23 @@ const BookingFormModal = ({
 
               {/* ✅ CUSTOM DATE PICKER - WITH AUTO AGE CALCULATION */}
               <div className="bfm-form-group">
-                <label>Date of Birth <span className="bfm-required">*</span></label>
+                <label>
+                  Date of Birth {isPrimaryPassenger && <span className="bfm-required">*</span>}
+                  {isPrimaryPassenger && <span className="bfm-age-hint">(Must be 18+)</span>}
+                </label>
                 <CustomDatePicker
                   value={currentPassenger.dateOfBirth}
                   onChange={(e) => handleDateOfBirthChange(passengerStep - 1, e.target.value)}
                   maxDate={new Date().toISOString().split('T')[0]}
-                  required
+                  required={isPrimaryPassenger}
                   placeholder="Select birth date"
                 />
               </div>
 
               <div className="bfm-form-group">
-                <label>Age <span className="bfm-required">*</span></label>
-                <input 
-                  required 
+                <label>Age {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
+                <input
+                  required={isPrimaryPassenger}
                   type="number"
                   value={currentPassenger.age}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)}
@@ -850,9 +863,9 @@ const BookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Gender <span className="bfm-required">*</span></label>
+                <label>Gender {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <select
-                  required
+                  required={isPrimaryPassenger}
                   value={currentPassenger.gender}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'gender', e.target.value)}
                 >
@@ -864,9 +877,9 @@ const BookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Nationality <span className="bfm-required">*</span></label>
-                <input 
-                  required 
+                <label>Nationality {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
+                <input
+                  required={isPrimaryPassenger}
                   type="text"
                   value={currentPassenger.nationality}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'nationality', e.target.value)}
@@ -875,9 +888,9 @@ const BookingFormModal = ({
               </div>
 
               <div className="bfm-form-group bfm-full-width">
-                <label>Complete Address <span className="bfm-required">*</span></label>
-                <input 
-                  required 
+                <label>Complete Address {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
+                <input
+                  required={isPrimaryPassenger}
                   type="text"
                   value={currentPassenger.address}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'address', e.target.value)}
@@ -889,7 +902,7 @@ const BookingFormModal = ({
               {bookingWithAirfare && requiresID && (
                 <div className="bfm-form-group bfm-full-width">
                   <label>
-                    Upload Valid ID <span className="bfm-required">*</span>
+                    Upload Valid ID {isPrimaryPassenger && <span className="bfm-required">*</span>}
                     <span className="bfm-upload-hint">
                       (Driver's License, UMID, SSS, Postal ID, etc.)
                     </span>
@@ -932,7 +945,7 @@ const BookingFormModal = ({
               {bookingWithAirfare && requiresPassport && (
                 <div className="bfm-form-group bfm-full-width">
                   <label>
-                    Upload Passport <span className="bfm-required">*</span>
+                    Upload Passport {isPrimaryPassenger && <span className="bfm-required">*</span>}
                     <span className="bfm-upload-hint">
                       (Bio-data page with photo)
                     </span>
