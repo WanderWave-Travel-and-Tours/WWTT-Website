@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from 'axios';
+import api from '../../lib/axiosInstance';
 import { ChevronRight, ChevronDown, FileText, Download, ClipboardList, FileCheck, X } from "lucide-react";
 import "./CenomarTable.css";
 import { useToast } from "../toast/ToastManager";
@@ -14,7 +14,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
   useEffect(() => {
     const fetchCENOMARDocuments = async () => {
       try {
-        const res = await axios.get('https://wanderwaveph.onrender.com/api/cenomar');
+        const res = await api.get('/api/cenomar');
         
         if (Array.isArray(res.data)) {
           setCenomarDocs(res.data);

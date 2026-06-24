@@ -18,7 +18,8 @@
       "Bash(curl -s -m 60 \"https://wanderwaveph.onrender.com/api/packages/all\")",
       "Bash(curl -s -m 60 -o /dev/null -w \"%{http_code} | size=%{size_download} bytes\\\\n\" \"https://wanderwaveph.onrender.com/api/packages/all\")",
       "Bash(curl -s -m 60 \"https://wanderwaveph.onrender.com/api/packages/destinations?category=International\")",
-      "PowerShell(node \"C:\\\\Users\\\\HHSARM~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hhsarmiento-Desktop-WWTT-Website\\\\0caef1bd-cdfa-49d5-bc1b-367cd54b77e2\\\\scratchpad\\\\activateServices.js\")"
+      "PowerShell(node \"C:\\\\Users\\\\HHSARM~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hhsarmiento-Desktop-WWTT-Website\\\\0caef1bd-cdfa-49d5-bc1b-367cd54b77e2\\\\scratchpad\\\\activateServices.js\")",
+      "Bash(npm run *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\hhsarmiento\\Desktop"
