@@ -1,6 +1,6 @@
 // src/components/Transfers/TransferBookingFormModal.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../lib/axiosInstance';
 import {
   X, CheckCircle, Wallet, CreditCard,
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Car,
@@ -295,7 +295,7 @@ const TransferBookingFormModal = ({
         transferId:      transfer._id || null,
         activityName:    transfer.activity || transfer.activityName || transfer.name || transfer.title || '',
         supplierName:    transfer.supplierName || '',
-        destination:     transfer.destination  || '',
+        destination:     transfer.packageDestination || '',
         pax:             transfer.pax          || '',
         transferType,
         travelDate,
@@ -777,7 +777,7 @@ const TransferBookingFormModal = ({
       <CustomConfirmModal
         isOpen={showConfirmModal}
         title="Confirm Your Transfer Booking"
-        message={`Are you sure you want to book ${transfer.activity}? You will be redirected to the payment page.`}
+        message={`Are you sure you want to book ${transfer.title || transfer.activityName || transfer.activity}? You will be redirected to the payment page.`}
         onConfirm={handleConfirmBooking}
         onCancel={() => setShowConfirmModal(false)}
         type="primary"

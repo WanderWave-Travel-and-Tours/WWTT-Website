@@ -23,6 +23,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import api from "../../lib/axiosInstance";
 import "./otherservices.css";
 import MascotGif from "../MascotGif/MascotGif";
 import VisaTable from "./VisaTable";
@@ -196,8 +197,8 @@ const OtherServices = ({ setAuthPage }) => {
 
   const fetchServices = async () => {
     try {
-      const response = await fetch('https://wanderwaveph.onrender.com/api/services');
-      const data = await response.json();
+      const response = await api.get('/api/services');
+      const data = response.data;
 
       if (data.success) {
         const transformedServices = data.data.map(service => {
@@ -492,13 +493,8 @@ const OtherServices = ({ setAuthPage }) => {
         }
       };
 
-      const response = await fetch('https://wanderwaveph.onrender.com/api/inquiries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inquiryData)
-      });
-
-      const result = await response.json();
+      const response = await api.post('/api/inquiries', inquiryData);
+      const result = response.data;
 
       if (result.success) {
         toast.success(
@@ -557,13 +553,8 @@ const OtherServices = ({ setAuthPage }) => {
             };
           }
 
-          const response = await fetch('https://wanderwaveph.onrender.com/api/inquiries', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(inquiryData)
-          });
-
-          const result = await response.json();
+          const response = await api.post('/api/inquiries', inquiryData);
+          const result = response.data;
 
           if (result.success) {
             toast.success(

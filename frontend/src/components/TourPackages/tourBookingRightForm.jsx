@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-import axios from 'axios';
+import axios from '../../lib/axiosInstance';
 import TourBookingFormModal from './TourBookingFormModal';
 import TourPreviewModal from './TourPreviewModal';
 import './tourBookingRightForm.css'; // ✅ Reuse same styles
