@@ -911,16 +911,16 @@ router.post('/', upload.any(), async (req, res) => {
           passengers.push(passenger);
       }
 
-      if (passengers.length !== totalExpectedPassengers) {
+      if (passengers.length === 0) {
           req.files?.forEach(file => {
             try {
               fs.unlinkSync(file.path);
             } catch (e) {}
           });
-          console.error(`❌ Invalid passenger count for regular booking: ${passengers.length} found, ${totalExpectedPassengers} expected`);
+          console.error(`❌ No passengers found for regular booking`);
           return res.status(400).json({
             success: false,
-            message: `Invalid number of passengers. Expected ${totalExpectedPassengers}, received ${passengers.length}. Please ensure all passenger fields are complete.`,
+            message: `No passenger details were received. Please complete the primary passenger details.`,
           });
       }
 

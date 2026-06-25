@@ -10,6 +10,34 @@ import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import './BookingLeftColumn.css';
 
+// ── Auto-fill activities only for specific day title types ───────────────────
+const getAutoFillActivities = (title) => {
+  const t = (title || '').toLowerCase();
+  if (/\b(arrival|arrive)\b/i.test(t)) return [
+    'Arrive at destination airport/port',
+    'Meet and greet with tour guide',
+    'Transfer to hotel',
+    'Hotel check-in',
+    'Rest and freshen up',
+    'Welcome dinner (if applicable)',
+  ];
+  if (/\bcheck[\s-]?in\b/i.test(t)) return [
+    'Arrive at accommodation',
+    'Hotel check-in and room assignment',
+    'Rest and freshen up',
+    'Orientation with tour guide',
+    'Free time to explore the vicinity',
+  ];
+  if (/\b(free\s+day|rest\s+day|leisure\s+day)\b/i.test(t)) return [
+    'Free and easy day at leisure',
+    'Optional activities at own expense',
+    'Explore the area at your own pace',
+    'Shopping or relaxation time',
+    'Return to hotel',
+  ];
+  return null;
+};
+
 // ✅ Unique accent color per duration — WanderWave branded
 const DURATION_COLORS = {
   '2D1N':  { top: '#d97706', text: '#d97706' },  // yellow orange
@@ -541,11 +569,19 @@ const BookingLeftColumn = ({
                   </div>
                   <div className={`blc-day-content ${isOpen ? 'open' : ''}`}>
                     <div className="blc-day-inner">
-                      <ul style={{ paddingLeft: '20px', margin: 0, color: '#475569', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                        {day.activities.map((act, i) => (
-                          <li key={i} style={{ marginBottom: '6px' }}>{act}</li>
-                        ))}
-                      </ul>
+                      {(() => {
+                        const autoFill = getAutoFillActivities(day.title);
+                        const activitiesToShow = autoFill
+                          ? autoFill
+                          : (day.activities || []).filter(a => a && a.trim());
+                        return activitiesToShow.length > 0 ? (
+                          <ul style={{ paddingLeft: '20px', margin: 0, color: '#475569', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                            {activitiesToShow.map((act, i) => (
+                              <li key={i} style={{ marginBottom: '6px' }}>{act}</li>
+                            ))}
+                          </ul>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -473,21 +473,19 @@ const BookingFormModal = ({
 
         pax: { adult: totalPassengers, children: 0, infants: 0 },
 
-        passengers: passengers
-          .filter((p, i) => i === 0 || p.firstName)
-          .map((p, i) => ({
-            passengerNumber: p.passengerNumber || i + 1,
-            firstName: p.firstName,
-            lastName: p.lastName,
-            email: p.email,
-            phone: p.phone,
-            dateOfBirth: p.dateOfBirth,
-            age: parseInt(p.age) || 0,
-            gender: p.gender || '',
-            address: p.address || '',
-            nationality: p.nationality || 'Filipino',
-            // DO NOT send File objects in JSON
-          })),
+        passengers: passengers.map((p, i) => ({
+          passengerNumber: p.passengerNumber || i + 1,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          phone: p.phone,
+          dateOfBirth: p.dateOfBirth,
+          age: parseInt(p.age) || 0,
+          gender: p.gender || '',
+          address: p.address || '',
+          nationality: p.nationality || 'Filipino',
+          // DO NOT send File objects in JSON
+        })),
 
         // ✅ Flight / airfare fields
         selectedFlight: selectedFlight || null,
