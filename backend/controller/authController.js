@@ -3,7 +3,6 @@ const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const path = require('path');
 
@@ -20,7 +19,7 @@ const {
     getUserAgent 
 } = require('../utils/activityLogger');
 
-const LOGO_PATH = path.join(__dirname, '..', 'assets', 'LOGOPIC.png');
+const GHL_OTP_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/175cba0c-4604-4d50-9818-2d407219f9ca';
 
 const unverifiedUsers = new Map();
 
@@ -49,46 +48,31 @@ const verifyRecaptcha = async (token) => {
 };
 
 // --------------------------------------------------------------------
-// NODEMAILER TRANSPORT AND EMAIL HELPER
+// GHL WEBHOOK - OTP EMAIL
 // --------------------------------------------------------------------
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, 
-    },
-    logger: true, 
-    debug: true
-});
-
-const sendEmail = async (to, subject, html) => {
-    console.log(`📧 Attempting to send email to: ${to} with subject: "${subject}"`);
+const sendOtpViaGHL = async (email, fullName, otp, otpDurationMinutes) => {
+    console.log(`📧 Sending OTP via GHL webhook to: ${email}`);
     try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.error("❌ Email configuration missing: EMAIL_USER or EMAIL_PASS not set in .env");
-            return false;
-        }
+        const response = await axios.post(GHL_OTP_WEBHOOK_URL, {
+            type: 'OTP_VERIFICATION',
+            event: 'otp_requested',
+            source: 'WanderWave',
+            email,
+            fullName,
+            first_name: fullName.split(' ')[0] || fullName,
+            otp,
+            otp_code: otp,
+            otp_expiry_minutes: otpDurationMinutes,
+            timestamp: new Date().toISOString(),
+        }, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 10000,
+        });
 
-        const mailOptions = {
-            from: `WanderWave Customer Service <${process.env.EMAIL_USER}>`, 
-            to, 
-            subject,
-            html,
-            attachments: [{
-                filename: 'LOGOPIC.png',
-                path: LOGO_PATH, 
-                cid: 'logo@wanderwave.com'
-            }]
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent successfully. Message ID: ${info.messageId}`);
-        return true; 
+        console.log(`✅ OTP webhook sent. Status: ${response.status}`);
+        return true;
     } catch (error) {
-        console.error("❌ Nodemailer Error:", error); 
-        if (error.code === 'ENOENT') {
-            console.error(`⚠️ Logo file not found at path: ${LOGO_PATH}`);
-        }
+        console.error('❌ GHL OTP Webhook Error:', error.response?.data || error.message);
         return false;
     }
 };
@@ -273,13 +257,12 @@ const generateAndSendOtp = async (email) => {
     const userData = unverifiedUsers.get(email);
     if (!userData) return { success: false, emailSent: false };
 
-    const otp = crypto.randomInt(100000, 999999).toString(); 
-    const otpExpires = Date.now() + OTP_DURATION_MINUTES * 60 * 1000; 
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpExpires = Date.now() + OTP_DURATION_MINUTES * 60 * 1000;
 
     unverifiedUsers.set(email, { ...userData, otp, otpExpires });
 
-    const emailBody = getOtpEmailHtml(userData.fullName, otp, OTP_DURATION_MINUTES);
-    const emailSent = await sendEmail(email, 'WanderWave - Verification Code', emailBody);
+    const emailSent = await sendOtpViaGHL(email, userData.fullName, otp, OTP_DURATION_MINUTES);
 
     return { success: true, emailSent };
 };
