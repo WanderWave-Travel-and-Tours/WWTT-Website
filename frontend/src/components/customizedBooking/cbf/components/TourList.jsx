@@ -19,9 +19,6 @@ export default function TourList({ tours, selected, onToggle, paxCount }) {
 
   return (
     <>
-      <p className="cbf-section-desc" style={{ marginBottom: '12px' }}>
-        Choose one or more tours — you'll set dates in the next step.
-      </p>
       <div className="cbf-service-list">
         {tours.map(tour => {
           const isSelected = selected.some(t => t._id === tour._id);

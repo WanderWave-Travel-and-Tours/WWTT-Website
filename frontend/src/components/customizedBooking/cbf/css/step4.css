@@ -5,6 +5,31 @@
    ============================================================= */
 
 /* ============================================================
+   CHANGE BUTTON (used in summary block headers)
+   ============================================================ */
+
+.cbf-change-type-btn {
+  margin-left: auto;
+  background: none;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cbf-change-type-btn:hover {
+  border-color: #fc9c1b;
+  color: #f97316;
+  background: #fff7ed;
+}
+
+/* ============================================================
    SUMMARY BLOCKS
    ============================================================ */
 

@@ -62,9 +62,8 @@
     grid-column: 1;
   }
 
-  /* Service type cards stacked */
-  .cbf-service-type-grid { grid-template-columns: 1fr; }
-  .cbf-yesno-grid        { grid-template-columns: 1fr; }
+  /* Tab switcher stays 2-col on mobile */
+  .cbf-tab-switcher { gap: 8px; }
 
   /* Service item: wrap on mobile */
   .cbf-service-item {
@@ -110,8 +109,9 @@
   .cbf-tt-price { font-size: 0.68rem; }
   .cbf-transfer-price-preview { font-size: 0.68rem; }
 
-  /* Footer stacks vertically */
-  .cbf-footer { flex-direction: column-reverse; gap: 10px; }
+  /* Footer stays column on mobile too */
+  .cbf-footer { padding: 12px 16px; }
+  .cbf-footer-actions { flex-direction: column-reverse; gap: 10px; }
 
   .cbf-back-btn,
   .cbf-next-btn,
