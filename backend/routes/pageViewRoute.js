@@ -92,7 +92,7 @@ router.post('/', telemetryLimiter, async (req, res) => {
           status: 'ok',
           message: 'Already recorded in this session',
           unique: false,
-          viewId: existingInSession._id,   // ← FIX: return existing id so stop/resume still works
+          viewId: existingInSession._id.toString(),
         });
       }
     }
@@ -129,7 +129,7 @@ router.post('/', telemetryLimiter, async (req, res) => {
       status: 'ok',
       message: 'Page view recorded',
       unique: true,
-      viewId: view._id,          // ← returned so frontend can PATCH stoppedHere later
+      viewId: view._id.toString(),
     });
   } catch (err) {
     console.error('❌ Error recording page view:', err);
