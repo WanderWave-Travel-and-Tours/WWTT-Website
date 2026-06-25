@@ -20,7 +20,9 @@ const {
     getUserAgent 
 } = require('../utils/activityLogger');
 
-const LOGO_PATH = path.join(__dirname, '..', 'assets', 'LOGOPIC.png'); 
+const LOGO_PATH = path.join(__dirname, '..', 'assets', 'LOGOPIC.png');
+
+const unverifiedUsers = new Map();
 
 // Helper function to verify reCAPTCHA
 const verifyRecaptcha = async (token) => {
