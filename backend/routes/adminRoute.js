@@ -201,7 +201,7 @@ router.post('/login', authLimiter, async (req, res) => {
         res.cookie('adminToken', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 8 * 60 * 60 * 1000
         });
 
@@ -282,7 +282,7 @@ router.post('/logout', authMiddleware, async (req, res) => {
         });
 
         // Clear the HttpOnly cookie
-        res.clearCookie('adminToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
+        res.clearCookie('adminToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' });
 
         console.log('✅ Admin logged out:', adminEmail);
 
