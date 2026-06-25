@@ -188,11 +188,11 @@ app.get('/', (req, res) => {
 
 // Image proxy — serves Cloudinary images through the backend so the cloud name
 // is never exposed to the browser. Not under /api/ so the rate limiter is bypassed.
-app.get('/img/*', async (req, res) => {
+app.get('/img/*path', async (req, res) => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   if (!cloudName) return res.status(503).send('Image service unavailable');
 
-  const imagePath = req.params[0];
+  const imagePath = Array.isArray(req.params.path) ? req.params.path.join('/') : req.params.path;
   const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/${imagePath}`;
 
   try {
