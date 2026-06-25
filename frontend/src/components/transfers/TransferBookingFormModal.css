@@ -1298,7 +1298,7 @@
 
 @media (max-width: 640px) {
   .tbfm-overlay {
-    top: 0; /* full-screen on mobile, matches package & tour booking modals */
+    top: var(--navbar-height); /* sit below the fixed navbar on mobile */
     padding: 0;
     align-items: flex-start;
   }
@@ -1308,8 +1308,8 @@
     width: 100%;
     max-width: 100%;
     margin: 0;
-    max-height: 100vh;
-    max-height: 100dvh;
+    max-height: calc(100vh - var(--navbar-height));
+    max-height: calc(100dvh - var(--navbar-height));
   }
 
   .tbfm-form-body {

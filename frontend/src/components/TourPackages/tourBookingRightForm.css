@@ -1,3 +1,14 @@
+/* --- Mobile: hide the redundant "Book Your Journey" header to reduce gap --- */
+@media (max-width: 640px) {
+  .brf-header {
+    display: none;
+  }
+  .brf-calendar-wrapper {
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+}
+
 /* --- Calendar Section - UPGRADED UI --- */
 
 .brf-disabled-date {

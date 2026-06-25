@@ -650,6 +650,21 @@ const OtherServices = ({ setAuthPage }) => {
               </button>
 
               <div className={`modal-requirements-col${mobileStep === "form" ? " mobile-info-hidden" : ""}`}>
+                {/* Mobile-only close button on info step */}
+                <button
+                  className="modal-info-close-btn"
+                  onClick={() => {
+                    setShowModal(false);
+                    setIsVisaService(false);
+                    setIsPSAService(false);
+                    setIsCENOMARService(false);
+                    setIsPassportService(false);
+                  }}
+                  aria-label="Close Modal"
+                >
+                  <X size={18} strokeWidth={3} />
+                </button>
+
                 <div className="modal-requirements-content">
                   <div
                     className="modal-header-image"
@@ -722,7 +737,7 @@ const OtherServices = ({ setAuthPage }) => {
               </div>
 
               <div className={`modal-form-col${mobileStep === "form" ? " mobile-form-active" : ""}`}>
-                {/* Mobile-only top bar: back left, close right */}
+                {/* Mobile-only top bar: back left, title center, close right */}
                 <div className="mobile-form-topbar">
                   <button
                     className="mobile-back-btn"
@@ -730,6 +745,7 @@ const OtherServices = ({ setAuthPage }) => {
                   >
                     ← Back
                   </button>
+                  <span className="mobile-topbar-label">Fill in Details</span>
                   <button
                     className="modal-close-btn mobile-topbar-close"
                     onClick={() => {
@@ -741,7 +757,7 @@ const OtherServices = ({ setAuthPage }) => {
                     }}
                     aria-label="Close Modal"
                   >
-                    <X size={20} strokeWidth={2.5} />
+                    <X size={18} strokeWidth={3} />
                   </button>
                 </div>
                 <UniversalInquiryForm
@@ -811,14 +827,7 @@ const OtherServices = ({ setAuthPage }) => {
             className="visa-countries-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close-btn"
-              onClick={() => setShowVisaCountries(false)}
-              aria-label="Close Visa Countries"
-            >
-              <X size={32} strokeWidth={3} />
-            </button>
-            <VisaTable onSelectVisa={handleSelectVisa} />
+            <VisaTable onSelectVisa={handleSelectVisa} onClose={() => setShowVisaCountries(false)} />
           </div>
         </div>
       )}
@@ -833,13 +842,6 @@ const OtherServices = ({ setAuthPage }) => {
             className="psa-documents-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close-btn"
-              onClick={() => setShowPSADocuments(false)}
-              aria-label="Close PSA Documents"
-            >
-              <X size={32} strokeWidth={3} />
-            </button>
             <PSATable
               onSelectPSA={handleSelectPSA}
               onClose={() => setShowPSADocuments(false)}
@@ -858,13 +860,6 @@ const OtherServices = ({ setAuthPage }) => {
             className="cenomar-documents-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close-btn"
-              onClick={() => setShowCENOMARDocuments(false)}
-              aria-label="Close CENOMAR Documents"
-            >
-              <X size={32} strokeWidth={3} />
-            </button>
             <CenomarTable
               onSelectCENOMAR={handleSelectCENOMAR}
               onClose={() => setShowCENOMARDocuments(false)}
@@ -883,14 +878,7 @@ const OtherServices = ({ setAuthPage }) => {
             className="passport-service-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close-btn"
-              onClick={() => setShowPassportService(false)}
-              aria-label="Close Passport Service"
-            >
-              <X size={32} strokeWidth={3} />
-            </button>
-            <PassportTable onSelectPassport={handlePassportSelect} />
+            <PassportTable onSelectPassport={handlePassportSelect} onClose={() => setShowPassportService(false)} />
           </div>
         </div>
       )}
