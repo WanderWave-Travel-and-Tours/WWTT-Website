@@ -746,7 +746,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                     </div>
 
                     {/* Form body */}
-                    <div className="mobile-form-body">
+                    <div className={`mobile-form-body ${isSignup ? 'mobile-form-body--signup' : 'mobile-form-body--login'}`}>
                         <div className={`form-transition-wrapper ${formSwitching ? 'form-switching' : ''}`}>
                             <div className="mobile-form-header">
                                 <p className="mobile-form-greeting">
