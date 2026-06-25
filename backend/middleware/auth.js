@@ -6,19 +6,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'wanderwaveph_admin25';
 
 module.exports = async (req, res, next) => {
   try {
-    // ✅ GET TOKEN FROM HEADER
+    // ✅ EXTRACT TOKEN — prefer HttpOnly cookie, fall back to Bearer header
     const authHeader = req.headers.authorization;
+    const token =
+      req.cookies?.adminToken ||
+      (authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'No token provided. Authorization denied.',
         requiresAuth: true
       });
     }
-
-    // ✅ EXTRACT TOKEN — prefer HttpOnly cookie, fall back to Bearer header
-    const token = req.cookies?.adminToken || authHeader.split(' ')[1];
 
     // ✅ VERIFY TOKEN
     const decoded = jwt.verify(token, JWT_SECRET);
