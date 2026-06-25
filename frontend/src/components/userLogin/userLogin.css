@@ -301,7 +301,7 @@
 /* Switch Link */
 .switch-page-text {
     text-align: center;
-    margin-top: 24px;
+    margin-top: 12px;
     color: #666;
     font-size: 0.9rem;
 }
@@ -835,20 +835,25 @@
         transform: translateY(-2px);
     }
 
-    /* ---- Mobile Form Screen (full screen, slides up) ---- */
+    /* ---- Mobile Form Screen (slides up from bottom, fits content) ---- */
     .mobile-form-screen {
         position: fixed;
-        inset: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
         z-index: 50;
         display: flex;
         flex-direction: column;
         background: #ffffff;
-        border-radius: 0;
+        border-radius: 20px 20px 0 0;
         transform: translateY(100%);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); /* expo ease-out — fast then floats to rest */
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         will-change: transform;
+        max-height: 100dvh;
+        padding-bottom: env(safe-area-inset-bottom, 16px);
     }
 
     .mobile-form-screen.visible {
@@ -913,7 +918,7 @@
 
     /* Form body below the strip */
     .mobile-form-body {
-        padding: 28px 28px 36px;
+        padding: 28px 28px 24px;
         display: flex;
         flex-direction: column;
     }
@@ -983,7 +988,7 @@
     .mobile-form-screen .recaptcha-wrapper {
         transform: none;
         transform-origin: center;
-        margin: 16px 0;
+        margin: 8px 0;
         display: flex;
         justify-content: center;
         overflow: hidden; /* clip if viewport narrower than recaptcha widget */
@@ -991,12 +996,13 @@
 
     /* Login button on mobile form */
     .mobile-form-screen .login-button {
-        margin-top: 8px;
+        margin-top: 0;
     }
 
     /* Switch link on mobile form */
     .mobile-form-screen .switch-page-text {
         color: #666;
+        margin-top: 12px;
     }
 
     .mobile-form-screen .switch-page-link {

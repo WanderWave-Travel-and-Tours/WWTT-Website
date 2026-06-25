@@ -536,17 +536,17 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 >
                     {isLoading ? 'Please wait...' : (isSignup ? 'Create Account' : 'Log In')}
                 </button>
-            </form>
 
-            <p className="switch-page-text">
-                {isSignup ? 'Already have an account?' : "Don't have an account?"}
-                <span
-                    className="switch-page-link"
-                    onClick={handleSwitchPage}
-                >
-                    {isSignup ? 'Log In' : 'Sign Up'}
-                </span>
-            </p>
+                <p className="switch-page-text">
+                    {isSignup ? 'Already have an account?' : "Don't have an account?"}
+                    <span
+                        className="switch-page-link"
+                        onClick={handleSwitchPage}
+                    >
+                        {isSignup ? 'Log In' : 'Sign Up'}
+                    </span>
+                </p>
+            </form>
         </>
     );
 
