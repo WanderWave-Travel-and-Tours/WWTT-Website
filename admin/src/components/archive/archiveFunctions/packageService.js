@@ -1,9 +1,6 @@
 const API_URL = 'https://wanderwaveph.onrender.com/api/packages';
 
-const getAdminHeaders = () => {
-  const token = sessionStorage.getItem('adminToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const getAdminHeaders = () => ({});
 
 export const fetchArchivedPackages = async () => {
   try {

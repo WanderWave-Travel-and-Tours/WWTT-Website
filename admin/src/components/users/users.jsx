@@ -64,10 +64,7 @@ const Users = () => {
         return filterStatus === status ? 'uf-active-navy' : '';
     };
 
-    const getAuthHeaders = () => {
-        const token = sessionStorage.getItem('adminToken');
-        return token ? { 'Authorization': `Bearer ${token}` } : {};
-    };
+    const getAuthHeaders = () => ({});
 
     const fetchUsers = async () => {
         setLoading(true);

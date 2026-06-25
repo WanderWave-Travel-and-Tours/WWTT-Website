@@ -237,10 +237,7 @@ const AddHotel = () => {
   const fetchDestinations = async () => {
     try {
         setLoading(true);
-        const token = sessionStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE_URL}/api/packages/admin/all`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const response = await fetch(`${API_BASE_URL}/api/packages/admin/all`);
         const data = await response.json();
         if (data.status === 'ok' && Array.isArray(data.data)) {
             const uniqueDestinations = [...new Set(

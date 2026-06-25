@@ -63,13 +63,6 @@ const ActivityLogs = () => {
     };
     // ------------------------------------
 
-    // Check authentication
-    useEffect(() => {
-        const token = sessionStorage.getItem('adminToken');
-        if (!token) {
-            navigate('/admin');
-        }
-    }, [navigate]);
 
     // Fetch activity logs on component mount
     useEffect(() => {

@@ -63,13 +63,7 @@ const FeedbackManagement = () => {
   // ============================================
   // API FUNCTIONS (WITH AUTH TOKEN)
   // ============================================
-  const getAuthHeaders = () => {
-    const token = sessionStorage.getItem('adminToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  };
+  const getAuthHeaders = () => ({ 'Content-Type': 'application/json' });
 
   const fetchFeedbacks = async () => {
     setLoading(true);

@@ -60,8 +60,6 @@ useEffect(() => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const isLoggedIn = sessionStorage.getItem('adminToken');
-            if (!isLoggedIn) { navigate('/'); return; }
             if (!packageId) return;
             try {
                 const res = await fetch(`${API_BASE_URL}/${packageId}`);

@@ -20,17 +20,9 @@ initSessionKey();
 const api = axios.create({
     baseURL: BASE_URL,
     timeout: 30_000,
+    withCredentials: true,
     headers: { 'Content-Type': 'application/json' },
 });
-
-api.interceptors.request.use(
-    (config) => {
-        const token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
-        if (token) config.headers.Authorization = `Bearer ${token}`;
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
 
 api.interceptors.response.use(
     async (response) => {
