@@ -943,7 +943,7 @@
   z-index: 5;
 }
 
-.bfm-back-btn, .bfm-submit-btn {
+.bfm-back-btn, .bfm-submit-btn, .bfm-book-now-btn {
   padding: 10px;
   border-radius: 8px;
   font-weight: 700;
@@ -976,6 +976,23 @@
 }
 
 .bfm-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bfm-book-now-btn {
+  flex: 1;
+  background: #16a34a;
+  color: white;
+}
+
+.bfm-book-now-btn:hover:not(:disabled) {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.bfm-book-now-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -1101,7 +1118,7 @@
     padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px;
   }
 
-  .bfm-back-btn, .bfm-submit-btn {
+  .bfm-back-btn, .bfm-submit-btn, .bfm-book-now-btn {
     width: 100%;
     padding: 12px;
   }
