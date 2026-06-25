@@ -982,14 +982,14 @@
 
 .bfm-book-now-btn {
   flex: 1;
-  background: #16a34a;
+  background: #001b3e;
   color: white;
 }
 
 .bfm-book-now-btn:hover:not(:disabled) {
-  background: #15803d;
+  background: #002a5e;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 27, 62, 0.3);
 }
 
 .bfm-book-now-btn:disabled {
