@@ -291,8 +291,9 @@ const BookingFormModal = ({
   handlePassengerChange, 
   handleFileUpload, 
   removeFile, 
-  handleNextPassenger, 
+  handleNextPassenger,
   handleBackPassenger,
+  handleSkipToPayment,
   // NEW: Payment option props
   paymentType,
   setPaymentType,
@@ -1126,25 +1127,43 @@ const BookingFormModal = ({
             {/* ACTION BUTTONS */}
             <div className="bfm-actions">
               {passengerStep > 1 && (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleBackPassenger}
                   className="bfm-back-btn"
                 >
                   Back
                 </button>
               )}
-              
-              <button 
-                type="submit" 
+
+              <button
+                type="submit"
                 disabled={localLoading || loading}
                 className="bfm-submit-btn"
-                style={{ flex: passengerStep === 1 ? '1' : '2' }}
+                style={{ flex: 1 }}
               >
-                {localLoading || loading ? 'PROCESSING...' : 
-                 passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 
+                {localLoading || loading ? 'PROCESSING...' :
+                 passengerStep === totalPassengers ? 'CONFIRM BOOKING' :
                  `NEXT: PASSENGER ${passengerStep + 1}`}
               </button>
+
+              {passengerStep < totalPassengers && handleSkipToPayment && (
+                <button
+                  type="button"
+                  disabled={localLoading || loading}
+                  className="bfm-book-now-btn"
+                  onClick={(e) => {
+                    const form = e.target.closest('form');
+                    if (form && !form.checkValidity()) {
+                      form.reportValidity();
+                      return;
+                    }
+                    handleSkipToPayment();
+                  }}
+                >
+                  Book Now
+                </button>
+              )}
             </div>
 
           </form>

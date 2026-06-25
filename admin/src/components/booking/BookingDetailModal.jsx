@@ -398,16 +398,19 @@ const generateVoucherData = async (booking) => {
                         </div>
 
                         {/* PASSENGER DETAILS */}
-                        {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
+                        {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (() => {
+                            const filledPassengers = selectedBooking.passengers.filter(p => p.firstName);
+                            if (filledPassengers.length === 0) return null;
+                            return (
                             <div className="cnm-card">
                                 <div className="cnm-card-header">
                                     <h3 className="cnm-card-title">Passenger Details</h3>
                                     <span className="cnm-badge cnm-badge-amber">
-                                        {selectedBooking.passengers.length} Passenger{selectedBooking.passengers.length !== 1 ? 's' : ''}
+                                        {filledPassengers.length} Passenger{filledPassengers.length !== 1 ? 's' : ''}
                                     </span>
                                 </div>
                                 <div className="cnm-passenger-list">
-                                    {selectedBooking.passengers.map((passenger, index) => (
+                                    {filledPassengers.map((passenger, index) => (
                                         <div key={index} className="cnm-passenger-card">
                                             <div className="cnm-passenger-header">
                                                 <div className="cnm-passenger-avatar">
@@ -456,7 +459,8 @@ const generateVoucherData = async (booking) => {
                                     ))}
                                 </div>
                             </div>
-                        )}
+                            );
+                        })()}
 
                         {/* ENHANCED PAYMENT DETAILS SECTION */}
                         <div className="cnm-payment-card">

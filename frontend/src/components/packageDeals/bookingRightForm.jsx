@@ -1140,6 +1140,8 @@ const handleNextPassenger = async (e) => {
     return;
   }
 
+  // fall-through → last step, proceed to submit
+
   setLoading(true);
   
   try {
@@ -1385,6 +1387,10 @@ const handleNextPassenger = async (e) => {
     if (passengerStep > 1) {
       setPassengerStep(prev => prev - 1);
     }
+  };
+
+  const handleSkipToPayment = () => {
+    setPassengerStep(totalPassengers);
   };
 
   return (
@@ -2173,6 +2179,7 @@ const handleNextPassenger = async (e) => {
         removeFile={removeFile}
         handleNextPassenger={handleNextPassenger}
         handleBackPassenger={handleBackPassenger}
+        handleSkipToPayment={handleSkipToPayment}
         loading={loading}
         currency={currency}                          
         exchangeRate={exchangeRate}                   
