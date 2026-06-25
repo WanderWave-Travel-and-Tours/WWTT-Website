@@ -17,6 +17,7 @@ import {
 } from './cbf/utils';
 
 import NightChargeModal    from './cbf/components/NightChargeModal';
+import CustomConfirmModal  from '../confirmationModal/CustomConfirmModal';
 import Step1BasicInfo      from './cbf/steps/Step1BasicInfo';
 import Step2SelectServices from './cbf/steps/Step2SelectServices';
 import Step3TourDates      from './cbf/steps/Step3TourDates';
@@ -42,7 +43,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
   // ── Step 1 – Basic Info ────────────────────────────────────────────────────
   const [info, setInfo] = useState({
-    destination: '', fullName: '', email: '', phone: '',
+    destination: '', fullName: '', email: '', phone: '', birthDate: '',
     travelDate: '', returnDate: '', paxCount: '', message: '',
   });
   const [infoErrors, setInfoErrors] = useState({});
@@ -63,6 +64,9 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
   // ── Payment ────────────────────────────────────────────────────────────────
   const [paymentType, setPaymentType] = useState('full');
+
+  // ── Confirmation modal ────────────────────────────────────────────────────
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // ── Night charge modal ─────────────────────────────────────────────────────
   const [nightChargeModal, setNightChargeModal] = useState(null);
@@ -90,7 +94,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (!isOpen) {
       setStep(1);
-      setInfo({ destination:'', fullName:'', email:'', phone:'', travelDate:'', returnDate:'', paxCount:'', message:'' });
+      setInfo({ destination:'', fullName:'', email:'', phone:'', birthDate:'', travelDate:'', returnDate:'', paxCount:'', message:'' });
       setInfoErrors({});
       setShowDestDropdown(false);
       setStep2InitialTab('tours');
@@ -268,10 +272,28 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
     const errs = {};
     if (!info.destination.trim()) errs.destination = 'Destination is required.';
     if (!info.fullName.trim())    errs.fullName    = 'Full name is required.';
+    else if (info.fullName.trim().length < 2) errs.fullName = 'Please enter your full name.';
     if (!info.email.trim())       errs.email       = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email)) errs.email = 'Enter a valid email.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email.trim())) errs.email = 'Enter a valid email address.';
+    if (info.phone.trim()) {
+      const stripped = info.phone.replace(/[\s\-().+]/g, '');
+      if (!/^(639\d{9}|09\d{9})$/.test(stripped))
+        errs.phone = 'Enter a valid PH number (e.g. 09XX XXX XXXX).';
+    }
+    if (!info.birthDate) {
+      errs.birthDate = 'Date of birth is required.';
+    } else {
+      const dob   = new Date(info.birthDate + 'T00:00:00');
+      const today = new Date();
+      const age   = today.getFullYear() - dob.getFullYear()
+        - (today.getMonth() < dob.getMonth()
+          || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate()) ? 1 : 0);
+      if (age < 18) errs.birthDate = 'You must be at least 18 years old to book.';
+    }
     if (!info.travelDate)         errs.travelDate  = 'Travel date is required.';
-    if (!info.paxCount || parseInt(info.paxCount) < 1) errs.paxCount = 'At least 1 passenger required.';
+    if (info.returnDate && info.travelDate && info.returnDate <= info.travelDate)
+      errs.returnDate = 'Return date must be after the travel date.';
+    if (!info.paxCount || parseInt(info.paxCount) < 1) errs.paxCount = 'At least 1 passenger is required.';
     setInfoErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -405,7 +427,8 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
         setDetailsMap({});
       }
       setSelectedTransfers([transfer]);
-      setTransferTypes({ [transfer._id]: 'oneway' });
+      // Preserve any type already set (e.g. user clicked RT before selecting)
+      setTransferTypes(current => ({ [transfer._id]: current[transfer._id] || 'oneway' }));
     }
   };
 
@@ -425,6 +448,14 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
         return `Next Transfer (${detailsIdx + 2}/${selectedTransfers.length})`;
       return 'Review Summary';
     }
+  };
+
+  // ─── Confirmation modal handlers ───────────────────────────────────────────
+  const openConfirmModal      = () => setShowConfirmModal(true);
+  const handleCancelConfirmation = () => setShowConfirmModal(false);
+  const handleConfirmBooking  = async () => {
+    setShowConfirmModal(false);
+    await handleSubmit();
   };
 
   // ─── Submit ────────────────────────────────────────────────────────────────
@@ -704,7 +735,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                 <button
                   type="button"
                   className="cbf-submit-btn"
-                  onClick={handleSubmit}
+                  onClick={openConfirmModal}
                   disabled={loading || (selectedTours.length === 0 && selectedTransfers.length === 0)}
                 >
                   {loading ? (
@@ -718,6 +749,16 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
       </div>
+
+      {/* Booking Confirmation Modal */}
+      <CustomConfirmModal
+        isOpen={showConfirmModal}
+        title="Confirm Your Booking"
+        message={`You're about to book a custom trip to ${info.destination} for ₱${fmt(paymentType === 'partial' ? partialAmount : grandTotal)}. ${paymentType === 'partial' ? '(50% down payment)' : '(full payment)'} You will be redirected to the payment page.`}
+        onConfirm={handleConfirmBooking}
+        onCancel={handleCancelConfirmation}
+        type="primary"
+      />
 
       {/* Night Charge Warning Modal */}
       {nightChargeModal && (

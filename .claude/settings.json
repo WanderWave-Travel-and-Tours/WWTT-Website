@@ -29,10 +29,18 @@
       "Bash(curl -s http://localhost:3002)",
       "PowerShell(Get-Process chrome -ErrorAction SilentlyContinue | Where-Object {$_.MainWindowTitle -ne \"\"} | Select-Object Id, MainWindowTitle, MainWindowHandle | Format-List)",
       "PowerShell(Get-Process chrome -ErrorAction SilentlyContinue | Where-Object {$_.MainWindowTitle -ne \"\"} | Select-Object Id, MainWindowTitle | Format-List)",
-      "Bash(npx playwright *)"
+      "Bash(npx playwright *)",
+      "Bash(npx vite *)",
+      "Bash(echo \"Started PID: $!\")",
+      "PowerShell(cd \"c:\\\\Users\\\\hhsarmiento\\\\Desktop\\\\WWTT-Website\\\\frontend\"; $env:BASE_URL=\"http://localhost:3004\"; $env:OUT_DIR=\"C:\\\\Users\\\\HHSARM~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hhsarmiento-Desktop-WWTT-Website\\\\8356b964-db2a-4429-af2a-ff42c3bc12eb\\\\scratchpad\"; node \"C:\\\\Users\\\\HHSARM~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hhsarmiento-Desktop-WWTT-Website\\\\8356b964-db2a-4429-af2a-ff42c3bc12eb\\\\scratchpad\\\\smoke.mjs\" 2>&1)",
+      "Bash(grep -v \"import\\\\|lazy\\\\|const\\\\|//\")",
+      "Bash(mkdir -p \"c:/Users/hhsarmiento/Desktop/WWTT-Website/.claude/skills/run-wwtt-website\")",
+      "Edit(/.claude/skills/run-wwtt-website/**)",
+      "Bash(node -e \"const p=require\\('c:/Users/hhsarmiento/Desktop/WWTT-Website/frontend/node_modules/playwright/package.json'\\); console.log\\('main:', p.main\\); console.log\\('exports keys:', Object.keys\\(p.exports||{}\\).slice\\(0,5\\)\\)\")"
     ],
     "additionalDirectories": [
-      "c:\\Users\\hhsarmiento\\Desktop"
+      "c:\\Users\\hhsarmiento\\Desktop",
+      "c:\\Users\\hhsarmiento\\Desktop\\WWTT-Website\\.claude\\skills"
     ]
   }
 }

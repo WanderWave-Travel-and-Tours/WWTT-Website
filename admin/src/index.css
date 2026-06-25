@@ -1,3 +1,12 @@
+/* Remove blue tap-flash on all interactive elements (Android Chrome, iOS Safari) */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+a, button, input, select, textarea, [role="button"], [tabindex] {
+    -webkit-tap-highlight-color: transparent;
+}
+
 :root {
     --sidebar-width: 260px;
     --primary-color: #001F3F;

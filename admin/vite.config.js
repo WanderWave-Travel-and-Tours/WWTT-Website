@@ -40,6 +40,7 @@ export default defineConfig({
   base: '/',
   server: {
     port: 3001,
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'https://wanderwaveph.onrender.com',

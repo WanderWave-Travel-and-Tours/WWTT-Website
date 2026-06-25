@@ -25,10 +25,16 @@ a:hover {
 body {
   margin: 0;
   padding: 0;
-  display: block; 
+  display: block;
   min-width: 320px;
   min-height: 100vh;
   background-color: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Remove blue tap-flash on all interactive elements (Android Chrome, iOS Safari) */
+a, button, input, select, textarea, [role="button"], [tabindex] {
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {

@@ -335,13 +335,24 @@ export default function Step4Summary({
               className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
               onClick={() => setPaymentType('partial')}
             >
-              <div className="bfm-payment-card-header">
-                <div className="bfm-payment-radio">
-                  <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
+              <div
+                className="bfm-payment-card-header"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: '8px', marginBottom: '12px', flexWrap: 'nowrap',
+                }}
+              >
+                <div
+                  className="bfm-pch-left"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}
+                >
+                  <div className="bfm-payment-radio">
+                    <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
+                  </div>
+                  <Wallet size={16} className="bfm-pif-icon" />
+                  <span className="bfm-pif-label">Partial Payment</span>
+                  <span className="bfm-flexible-badge">Flexible</span>
                 </div>
-                <Wallet size={16} className="bfm-pif-icon" />
-                <span className="bfm-pif-label">Partial Payment</span>
-                <span className="bfm-flexible-badge">Flexible</span>
               </div>
               <div className="bfm-payment-card-body">
                 <div className="bfm-payment-amount">

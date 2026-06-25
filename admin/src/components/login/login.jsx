@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useToast } from '../toast/ToastManager';
-import { Eye, EyeOff } from 'lucide-react'; // ✅ Add this import
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react'; // ✅ Add this import
 import './login.css';
 
 const Login = () => {
@@ -11,6 +11,8 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false); // ✅ Password toggle state
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    // MOBILE: controls whether the dark form panel is slid up
+    const [mobileFormVisible, setMobileFormVisible] = useState(false);
     const recaptchaRef = useRef(null);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
     const navigate = useNavigate();
@@ -230,6 +232,158 @@ const Login = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ============================================================
+                MOBILE layout  (≤ 900px)
+                Screen 1: Full-screen carousel with Sign In CTA
+                Screen 2: White form panel that slides up from the bottom
+                ============================================================ */}
+            <div className="mobile-splash">
+
+                {/* --- Screen 1: Carousel Splash --- */}
+                <div className={`mobile-carousel-screen ${mobileFormVisible ? 'slide-out' : ''}`}>
+                    {/* Destination slides */}
+                    {destinations.map((dest, index) => (
+                        <div
+                            key={index}
+                            className={`mobile-slide-item ${index === currentSlide ? 'active' : ''}`}
+                            style={{ backgroundImage: `url(${dest.image})` }}
+                        />
+                    ))}
+
+                    {/* Gradient overlay */}
+                    <div className="mobile-carousel-overlay" />
+
+                    {/* Bottom content */}
+                    <div className="mobile-carousel-content">
+                        <p className="mobile-slide-tagline">Manage. Control. Elevate!</p>
+                        <h2 className="mobile-slide-name">{destinations[currentSlide].name}</h2>
+                        <p className="mobile-slide-desc">{destinations[currentSlide].description}</p>
+
+                        {/* Dot indicators */}
+                        <div className="mobile-slide-indicators">
+                            {destinations.map((_, i) => (
+                                <button
+                                    key={i}
+                                    className={`mobile-indicator-dot ${currentSlide === i ? 'active-dot' : ''}`}
+                                    onClick={() => setCurrentSlide(i)}
+                                    aria-label={`Go to slide ${i + 1}`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* CTA Button */}
+                        <div className="mobile-cta-buttons">
+                            <button
+                                className="mobile-cta-signin"
+                                onClick={() => setMobileFormVisible(true)}
+                            >
+                                Admin Sign In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- Screen 2: Form Panel (slides up) --- */}
+                <div className={`mobile-form-screen ${mobileFormVisible ? 'visible' : ''}`}>
+
+                    {/* Mini carousel strip at the top */}
+                    <div className="mobile-form-carousel-strip">
+                        {destinations.map((dest, index) => (
+                            <div
+                                key={index}
+                                className={`mobile-form-strip-slide ${index === currentSlide ? 'active' : ''}`}
+                                style={{ backgroundImage: `url(${dest.image})` }}
+                            />
+                        ))}
+                        <div className="mobile-form-strip-overlay" />
+
+                        {/* Back button — returns to splash */}
+                        <button
+                            className="mobile-form-back-btn"
+                            onClick={() => setMobileFormVisible(false)}
+                            aria-label="Go back to home"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                    </div>
+
+                    {/* Form body */}
+                    <div className="mobile-form-body">
+                        <div className="mobile-form-header">
+                            <p className="mobile-form-greeting">Welcome Back</p>
+                            <h2 className="mobile-form-title">Admin Portal</h2>
+                            <p className="mobile-form-subtitle">Sign in to manage travel experiences</p>
+                        </div>
+
+                        <form onSubmit={handleLogin} className="login-form">
+                            <div className="input-group">
+                                <label htmlFor="mobile-email" className="input-label">Email Address</label>
+                                <input
+                                    id="mobile-email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email"
+                                    className="input-field"
+                                    required
+                                    autoComplete="email"
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <label htmlFor="mobile-password" className="input-label">Password</label>
+                                <div className="password-input-wrapper">
+                                    <input
+                                        id="mobile-password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Enter your password"
+                                        className="input-field password-field"
+                                        required
+                                        autoComplete="current-password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={togglePasswordVisibility}
+                                        className="password-toggle-btn"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* ✅ Centered reCAPTCHA */}
+                            <div className="recaptcha-wrapper">
+                                <div className="recaptcha-inner">
+                                    <ReCAPTCHA
+                                        ref={recaptchaRef}
+                                        sitekey={RECAPTCHA_SITE_KEY}
+                                        onChange={(token) => setRecaptchaToken(token)}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="login-button"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Logging in...' : 'Log In'}
+                            </button>
+                        </form>
+
+                        <p className="footer-text">
+                            © 2025 WanderWave Travel and Tours
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+            {/* END mobile-splash */}
+
         </div>
     );
 };
