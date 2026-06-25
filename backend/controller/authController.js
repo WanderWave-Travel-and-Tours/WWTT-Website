@@ -19,7 +19,7 @@ const {
     getUserAgent 
 } = require('../utils/activityLogger');
 
-const GHL_OTP_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/175cba0c-4604-4d50-9818-2d407219f9ca';
+const GHL_OTP_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/cd2ff764-4525-46a2-ad16-ec5e130966be';
 
 const unverifiedUsers = new Map();
 
