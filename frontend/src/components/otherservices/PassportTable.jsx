@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import api from '../../lib/axiosInstance';
-import { ChevronRight, ChevronDown, FileText, ClipboardList, AlertCircle, RefreshCw } from "lucide-react";
+import { ChevronRight, ChevronDown, FileText, ClipboardList, AlertCircle, X } from "lucide-react";
 import "./PassportTable.css";
 
-const PassportTable = ({ onSelectPassport }) => {
+const PassportTable = ({ onSelectPassport, onClose }) => {
   const [allPassports, setAllPassports] = useState([]); // Store all types here
   const [activePassport, setActivePassport] = useState(null); // Currently selected type
   const [loading, setLoading] = useState(true);
@@ -99,10 +99,15 @@ const PassportTable = ({ onSelectPassport }) => {
   return (
     <div className="passport-list-container">
       <div className="passport-list-header">
-        <h2 className="passport-list-title">Passport Appointment</h2>
-        <p className="passport-list-subtitle">
-          Book your Philippine passport appointment through WanderWave Travel and Tours
-        </p>
+        <div className="passport-header-text">
+          <h2 className="passport-list-title">Passport Appointment</h2>
+          <p className="passport-list-subtitle">
+            Book your Philippine passport appointment through WanderWave Travel and Tours
+          </p>
+        </div>
+        <button className="passport-close-modal-btn" onClick={onClose}>
+          <X size={24} />
+        </button>
       </div>
 
       {/* --- TABS SELECTION FOR PASSPORT TYPES --- */}

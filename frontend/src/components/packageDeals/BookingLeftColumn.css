@@ -553,3 +553,207 @@
     height: 75px;
   }
 }
+
+/* ── v2 inclusions — mobile: hide itinerary to match tour booking page layout ── */
+@media (max-width: 1024px) {
+  .blc-itinerary-section {
+    display: none;
+  }
+}
+
+/* ─── What's Included v2 (mirrors tourBookingLeftColumn) ─── */
+.blc-inclusions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.blc-inclusions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fff7ed 0%, #fff4e6 100%);
+  border: 1.5px solid #fed7aa;
+  border-radius: 12px;
+}
+
+.blc-inclusions-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blc-inclusions-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: #f97316;
+  border-radius: 2px;
+}
+
+.blc-inclusions-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #10b981;
+  background: #ecfdf5;
+  border: 1.5px solid #a7f3d0;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.blc-inclusions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.blc-inclusion-item-v2 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  transition: background 0.15s ease;
+}
+.blc-inclusion-item-v2:last-child { border-bottom: none; }
+.blc-inclusion-item-v2:not(.blc-inclusion-item--guide):hover { background: #fafbfc; }
+
+.blc-inclusion-item--guide {
+  background: linear-gradient(135deg, #fff7ed 0%, #fff4e6 100%) !important;
+  border-left: 4px solid #f97316 !important;
+  padding-left: 12px !important;
+}
+.blc-inclusion-item--guide:hover {
+  background: linear-gradient(135deg, #ffedd5 0%, #fff7ed 100%) !important;
+}
+
+.blc-incl-icon-col {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.blc-incl-circle {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: #f97316;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.blc-incl-circle--guide {
+  background: #f97316;
+}
+
+.blc-incl-text-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blc-incl-category-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: #f97316;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.blc-incl-main-title {
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.blc-incl-free-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #f97316;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.blc-inclusion-item--guide .blc-incl-category-label { color: #ea580c; font-weight: 800; }
+.blc-inclusion-item--guide .blc-incl-main-title     { color: #7c2d12; font-weight: 800; }
+.blc-inclusion-item--guide .blc-incl-circle         { background: #f97316; box-shadow: 0 2px 8px rgba(249,115,22,0.35); }
+
+.blc-incl-check-col {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+}
+
+.blc-inclusions-empty {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.9rem;
+  padding: 12px 0;
+  margin: 0;
+}
+
+.blc-see-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 16px;
+  background: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: 10px;
+  color: #f97316;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+.blc-see-more-btn:hover {
+  background: #ffedd5;
+  border-color: #f97316;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(249,115,22,0.15);
+}
+.blc-see-more-btn:focus { outline: none; }
+
+@media (max-width: 768px) {
+  .blc-incl-circle { width: 32px; height: 32px; min-width: 32px; }
+}
+
+@media (max-width: 480px) {
+  .blc-incl-circle { width: 30px; height: 30px; min-width: 30px; }
+  .blc-incl-main-title { font-size: 0.88rem; }
+}

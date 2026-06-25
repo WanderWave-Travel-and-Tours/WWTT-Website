@@ -152,6 +152,28 @@ app.use('/api/', (req, res, next) => {
 // Routes that must skip encryption (e.g. /api/crypto/session-hint) set res.locals.skipEncrypt = true.
 app.use(encryptResponse);
 
+// Rewrite Cloudinary URLs in every JSON response so browsers never see the cloud name.
+// This wrapper runs BEFORE encryptResponse (outer wrap = first called), so URL rewriting
+// happens on the plain data before encryption.
+function _replaceCloudinaryUrls(obj, proxyBase) {
+  if (typeof obj === 'string') {
+    return obj.replace(/https:\/\/res\.cloudinary\.com\/[^/]+\//g, `${proxyBase}/img/`);
+  }
+  if (Array.isArray(obj)) return obj.map(v => _replaceCloudinaryUrls(v, proxyBase));
+  if (obj && typeof obj === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) out[k] = _replaceCloudinaryUrls(v, proxyBase);
+    return out;
+  }
+  return obj;
+}
+app.use((req, res, next) => {
+  const _origJson = res.json.bind(res);
+  const proxyBase = `${req.protocol}://${req.get('host')}`;
+  res.json = function (body) { return _origJson(_replaceCloudinaryUrls(body, proxyBase)); };
+  next();
+});
+
 mongoose.connect(process.env.MONGODB_URI) 
     .then(() => console.log("✅ DATABASE CONNECTED!"))
     .catch((err) => {
@@ -162,6 +184,27 @@ mongoose.connect(process.env.MONGODB_URI)
     
 app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
+});
+
+// Image proxy — serves Cloudinary images through the backend so the cloud name
+// is never exposed to the browser. Not under /api/ so the rate limiter is bypassed.
+app.get('/img/*', async (req, res) => {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) return res.status(503).send('Image service unavailable');
+
+  const imagePath = req.params[0];
+  const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/${imagePath}`;
+
+  try {
+    const axios = require('axios');
+    const upstream = await axios.get(cloudinaryUrl, { responseType: 'stream', timeout: 15000 });
+    res.set('Content-Type', upstream.headers['content-type'] || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=86400');
+    upstream.data.pipe(res);
+  } catch (err) {
+    const status = err.response?.status || 502;
+    res.status(status).send('Image not found');
+  }
 });
 
 const flightRoutes = require('./routes/flightRoute');
@@ -732,8 +775,9 @@ if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html')))
   // ←←← UPDATED CATCH-ALL: app.get('*') — mas reliable para sa React + basename="/admin"
   app.get('/{*path}', (req, res) => {
     // Huwag i-serve ang index.html sa API, uploads, at social redirects
-    if (req.path.startsWith('/api/') || 
+    if (req.path.startsWith('/api/') ||
         req.path.startsWith('/uploads') ||
+        req.path.startsWith('/img') ||
         req.path.startsWith('/fb') ||      // social redirects
         req.path.startsWith('/ig') ||
         req.path.startsWith('/tiktok')) {

@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   MapPin, Calendar, Plane, Hotel,
   Utensils, Bus, Camera, Briefcase, ChevronDown, ChevronUp,
-  CheckSquare, CalendarDays, ChevronLeft, Settings, Clock
+  CheckSquare, CalendarDays, ChevronLeft, Settings, Clock,
+  User, BedDouble, UtensilsCrossed, Waves, TreePine, Landmark, Ticket, Tag, CheckCircle
 } from 'lucide-react';
 import PackageCustomizer from './PackageCustomizer';
 import { useToast } from '../toast/ToastManager';
@@ -215,6 +216,51 @@ const RubberStamp = ({ text }) => {
   );
 };
 
+// ── Inclusions v2 helpers (same as tourBookingLeftColumn) ────────────────────
+const isGuideItem = (text) =>
+  /\b(licensed\s+)?tour\s*guide\b|\bguide\b/i.test(text);
+
+const extractLeadingEmoji = (text) => {
+  const emojiRegex = /^((?:\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF]|\uD83E[\uDD00-\uDDFF]|[☀-➿]|[⌀-⏿]|[⬀-⯿])️?)+\s*/;
+  const match = text.match(emojiRegex);
+  if (!match) return { emoji: null, cleanText: text.trim() };
+  return { emoji: match[0].trim(), cleanText: text.slice(match[0].length).trim() };
+};
+
+const detectInclusionCategory = (text) => {
+  const lower = text.toLowerCase();
+  if (/\b(licensed\s+)?tour\s*guide\b|\bguide\b/i.test(lower))    return 'COMPLIMENTARY';
+  if (/\d{1,2}:\d{2}\s*(am|pm)|schedule|itinerary/i.test(lower))  return 'SCHEDULE';
+  if (/hotel|accommodation|accomodation|lodge|resort|inn|stay/i.test(lower)) return 'ACCOMMODATION';
+  if (/breakfast|lunch|dinner|meal|food|buffet|dining/i.test(lower)) return 'MEALS';
+  if (/flight|airfare|airline|air fare/i.test(lower))               return 'AIRFARE';
+  if (/transfer|transport|van|bus|pudo|round.?trip/i.test(lower))   return 'TRANSFER';
+  if (/beach|island hopping|shore|sidetrip/i.test(lower))           return 'BEACH SIDETRIP';
+  if (/safari|sanctuary|wildlife|reserve/i.test(lower))             return 'WILDLIFE SANCTUARY';
+  if (/town|city|heritage|culture|local|museum/i.test(lower))       return 'TOWN VISIT';
+  if (/entrance|admission|ticket|fee/i.test(lower))                 return 'ENTRANCE FEE';
+  if (/island|hopping|snorkel|diving|kayak|trekking|surfing|swimming|activity|activities/i.test(lower)) return 'ACTIVITY';
+  return 'INCLUSION';
+};
+
+const getCategoryIcon = (category) => {
+  const props = { size: 15, color: '#fff', strokeWidth: 2.2 };
+  switch (category) {
+    case 'COMPLIMENTARY':      return <User       {...props} />;
+    case 'SCHEDULE':           return <Clock      {...props} />;
+    case 'ACCOMMODATION':      return <BedDouble  {...props} />;
+    case 'MEALS':              return <UtensilsCrossed {...props} />;
+    case 'AIRFARE':            return <Plane      {...props} />;
+    case 'TRANSFER':           return <Bus        {...props} />;
+    case 'BEACH SIDETRIP':     return <Waves      {...props} />;
+    case 'WILDLIFE SANCTUARY': return <TreePine   {...props} />;
+    case 'TOWN VISIT':         return <Landmark   {...props} />;
+    case 'ENTRANCE FEE':       return <Ticket     {...props} />;
+    case 'ACTIVITY':           return <Camera     {...props} />;
+    default:                   return <Tag        {...props} />;
+  }
+};
+
 const BookingLeftColumn = ({
   pkg,
   currency = 'PHP',
@@ -247,6 +293,7 @@ const BookingLeftColumn = ({
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
   const [customizationData, setCustomizationData] = useState(null);
+  const [showAllInclusions, setShowAllInclusions] = useState(false);
 
   // ✅ FIXED: Use onGoBack prop if available (same-page view switch),
   //           fallback to navigate only if rendered standalone
@@ -353,6 +400,24 @@ const BookingLeftColumn = ({
     : 0;
 
   const { duration, restOfTitle } = parseTitleDuration(pkg.title || pkg.name);
+
+  // ── v2 inclusions (same logic as tourBookingLeftColumn) ──────────────────
+  const inclusions = pkg.inclusions || [];
+  const pkgNameLow = (pkg.name || pkg.title || '').toLowerCase();
+  const hasNoGuide = ['no guide','no tour guide','without guide','w/o guide'].some(kw =>
+    pkgNameLow.includes(kw) || inclusions.some(i => i.toLowerCase().includes(kw))
+  );
+  const hasGuideInInclusions = inclusions.some(item => isGuideItem(item));
+  let displayInclusions;
+  if (!hasNoGuide && !hasGuideInInclusions) {
+    displayInclusions = ['Licensed Tour Guide', ...inclusions];
+  } else if (!hasNoGuide && hasGuideInInclusions) {
+    const guideItems    = inclusions.filter(item => isGuideItem(item));
+    const nonGuideItems = inclusions.filter(item => !isGuideItem(item));
+    displayInclusions = [...guideItems, ...nonGuideItems];
+  } else {
+    displayInclusions = inclusions;
+  }
 
   return (
     <div className="blc-container">
@@ -531,29 +596,61 @@ const BookingLeftColumn = ({
       )}
 
       {!showCustomizer && (
-        <div className="blc-card">
-          <div className="blc-card-header" onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}>
-            <h3 className="blc-section-title">
-              <CheckSquare size={20} color="#10b981" /> What's Included
-            </h3>
-            <div className={`blc-chevron ${isIncludedExpanded ? 'rotated' : ''}`}>
-              <ChevronDown size={20} />
-            </div>
+        <div className="blc-inclusions-section">
+          <div className="blc-inclusions-header">
+            <h3 className="blc-inclusions-title">What's Included</h3>
+            {displayInclusions.length > 0 && (
+              <span className="blc-inclusions-badge">✓ {displayInclusions.length} items</span>
+            )}
           </div>
-          <div className={`blc-collapsible ${isIncludedExpanded ? 'open' : ''}`}>
-            <ul className="blc-list">
-              {pkg.inclusions?.map((item, idx) => (
-                <li key={idx} className="blc-list-item">
-                  <div style={{ minWidth: '20px', marginTop: '2px' }}><CheckSquare size={16} color="#10b981" /></div>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+
+          {displayInclusions.length > 0 ? (
+            <>
+              <ul className="blc-inclusions-list">
+                {(showAllInclusions ? displayInclusions : displayInclusions.slice(0, 5)).map((item, idx) => {
+                  const guide = isGuideItem(item);
+                  const category = detectInclusionCategory(item);
+                  const { cleanText } = extractLeadingEmoji(item);
+                  return (
+                    <li key={idx} className={`blc-inclusion-item-v2${guide ? ' blc-inclusion-item--guide' : ''}`}>
+                      <div className="blc-incl-icon-col">
+                        <div className={`blc-incl-circle${guide ? ' blc-incl-circle--guide' : ''}`}>
+                          {getCategoryIcon(category)}
+                        </div>
+                      </div>
+                      <div className="blc-incl-text-col">
+                        <span className="blc-incl-category-label">{category}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span className="blc-incl-main-title">{cleanText}</span>
+                          {guide && <span className="blc-incl-free-badge">FREE</span>}
+                        </div>
+                      </div>
+                      <div className="blc-incl-check-col">
+                        <CheckCircle size={18} color={guide ? '#f97316' : '#10b981'} strokeWidth={1.8} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {displayInclusions.length > 5 && (
+                <button
+                  className="blc-see-more-btn"
+                  onClick={() => setShowAllInclusions(prev => !prev)}
+                  type="button"
+                >
+                  {showAllInclusions
+                    ? '▲ See Less'
+                    : `▼ See ${displayInclusions.length - 5} More Item${displayInclusions.length - 5 > 1 ? 's' : ''}`}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="blc-inclusions-empty">No inclusions listed.</p>
+          )}
         </div>
       )}
 
-      <div>
+      <div className="blc-itinerary-section">
         <h3 className="blc-section-title" style={{ marginBottom: '24px' }}>
           <CalendarDays size={20} color="#f97316" /> Tour Itinerary
         </h3>

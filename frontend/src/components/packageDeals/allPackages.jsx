@@ -210,13 +210,7 @@ function AllPackages({
       </div>
 
       {onPromoBookNow && (
-        <div style={{ 
-          marginTop: '8px',
-          marginBottom: '8px',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
-        }}>
+        <div style={{ marginTop: '8px', marginBottom: '8px' }}>
           <Suspense fallback={null}>
             <PromoSection onBookNow={onPromoBookNow} />
           </Suspense>

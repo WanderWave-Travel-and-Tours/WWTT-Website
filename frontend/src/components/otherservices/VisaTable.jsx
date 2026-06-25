@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import api from '../../lib/axiosInstance';
-import { ChevronRight, ChevronDown, FileText, Download, ClipboardList } from "lucide-react";
+import { ChevronRight, ChevronDown, FileText, Download, ClipboardList, X } from "lucide-react";
 import "./VisaTable.css";
 import { useToast } from "../toast/ToastManager";
 
-const VisaTable = ({ onSelectVisa }) => {
+const VisaTable = ({ onSelectVisa, onClose }) => {
   const [visas, setVisas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedVisas, setExpandedVisas] = useState({});
@@ -66,6 +66,30 @@ const VisaTable = ({ onSelectVisa }) => {
     }
   };
 
+  const handleDownloadClick = async (e, fullUrl, label) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(fullUrl, { method: 'HEAD' });
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || contentType.includes('application/json')) {
+        toast.error(
+          'This file is currently unavailable. Please contact us directly for the latest forms.',
+          'File Not Found'
+        );
+        return;
+      }
+      window.open(fullUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      toast.error('Unable to reach the file. Please check your connection or contact us.', 'Error');
+    }
+  };
+
+  const truncateFilename = (name, maxLen = 35) => {
+    if (name.length <= maxLen) return name;
+    const ext = name.includes('.') ? '.' + name.split('.').pop() : '';
+    return name.slice(0, maxLen - ext.length - 3) + '...' + ext;
+  };
+
   if (loading) {
     return (
       <div className="visa-list-container">
@@ -77,10 +101,15 @@ const VisaTable = ({ onSelectVisa }) => {
   return (
     <div className="visa-list-container">
       <div className="visa-list-header">
-        <h2 className="visa-list-title">Visa Requirements</h2>
-        <p className="visa-list-subtitle">
-          This table shows all Visa Forms you can apply for.
-        </p>
+        <div className="visa-header-text">
+          <h2 className="visa-list-title">Visa Requirements</h2>
+          <p className="visa-list-subtitle">
+            This table shows all Visa Forms you can apply for.
+          </p>
+        </div>
+        <button className="visa-close-modal-btn" onClick={onClose}>
+          <X size={24} />
+        </button>
       </div>
 
       <div className="visa-list-wrapper">
@@ -196,26 +225,28 @@ const VisaTable = ({ onSelectVisa }) => {
                           {visa.downloadForms && Array.isArray(visa.downloadForms) && visa.downloadForms.length > 0 ? (
                             <ul className="visa-download-list">
                               {visa.downloadForms.map((form, index) => {
-                                // Handle both string and object formats
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
-                                
+                                const fullUrl = formUrl ? `https://wanderwaveph.onrender.com${formUrl}` : null;
+                                const shortLabel = truncateFilename(formLabel);
+
                                 return (
                                   <li key={index} className="visa-download-item">
                                     <span className="download-icon">📄</span>
-                                    {formUrl ? (
-                                      <a 
-                                        href={`https://wanderwaveph.onrender.com${formUrl}`}
-                                        download={formLabel}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="download-link"
-                                      >
-                                        {formLabel}
-                                      </a>
-                                    ) : (
-                                      <span>{formLabel}</span>
-                                    )}
+                                    <div className="download-file-info">
+                                      {fullUrl ? (
+                                        <a
+                                          href={fullUrl}
+                                          onClick={(e) => handleDownloadClick(e, fullUrl, formLabel)}
+                                          className="download-link"
+                                          title={formLabel}
+                                        >
+                                          {shortLabel}
+                                        </a>
+                                      ) : (
+                                        <span className="download-label" title={formLabel}>{shortLabel}</span>
+                                      )}
+                                    </div>
                                   </li>
                                 );
                               })}

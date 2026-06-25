@@ -36,7 +36,12 @@
       "Bash(grep -v \"import\\\\|lazy\\\\|const\\\\|//\")",
       "Bash(mkdir -p \"c:/Users/hhsarmiento/Desktop/WWTT-Website/.claude/skills/run-wwtt-website\")",
       "Edit(/.claude/skills/run-wwtt-website/**)",
-      "Bash(node -e \"const p=require\\('c:/Users/hhsarmiento/Desktop/WWTT-Website/frontend/node_modules/playwright/package.json'\\); console.log\\('main:', p.main\\); console.log\\('exports keys:', Object.keys\\(p.exports||{}\\).slice\\(0,5\\)\\)\")"
+      "Bash(node -e \"const p=require\\('c:/Users/hhsarmiento/Desktop/WWTT-Website/frontend/node_modules/playwright/package.json'\\); console.log\\('main:', p.main\\); console.log\\('exports keys:', Object.keys\\(p.exports||{}\\).slice\\(0,5\\)\\)\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Id 32396 -ErrorAction SilentlyContinue)",
+      "Bash(node .claude/skills/run-wwtt-website/driver.mjs screenshot /tmp/services-mobile.png \"http://localhost:3000/other-services\" --viewport 390x844)",
+      "Bash(node .claude/skills/run-wwtt-website/driver.mjs screenshot \"C:/Users/HHSARM~1/AppData/Local/Temp/claude/services-mobile.png\" \"http://localhost:3000/other-services\")",
+      "Bash(node -e \"console.log\\(process.versions.node\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\hhsarmiento\\Desktop",

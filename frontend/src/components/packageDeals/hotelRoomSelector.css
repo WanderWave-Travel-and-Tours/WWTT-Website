@@ -362,6 +362,25 @@
     flex-direction: row;
     height: 550px;
     overflow: hidden;
+    width: 100%;
+  }
+
+  .hrs-gallery-section {
+    flex: 0 0 62%;
+    width: 62%;
+    min-width: 0;
+    min-height: unset;
+  }
+
+  .hrs-info-section {
+    flex: 0 0 38%;
+    width: 38%;
+    min-width: 0;
+    overflow-y: auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
 }
 
@@ -540,10 +559,10 @@
 }
 
 @media (max-width: 640px) {
-  /* Overlay scrolls the whole modal — no height tricks needed */
+  /* Overlay starts below the fixed navbar so the header is never covered */
   .hrs-lightbox-overlay {
+    top: var(--navbar-height);
     padding: 0;
-    padding-top: 60px;
     align-items: flex-start;
     -webkit-overflow-scrolling: touch;
   }
@@ -764,23 +783,34 @@
 
 @media (max-width: 640px) {
   .hrs-category-right {
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-end;
     flex-wrap: wrap;
     justify-content: flex-end;
-    margin-top: 8px;
-    white-space: nowrap;
+    margin-top: 0;
+    white-space: normal;
+    min-width: 0;
+    max-width: 45%;
   }
-  
+
   .hrs-card-header {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: flex-start;
   }
-  
+
   .hrs-price-display {
     font-size: 0.9rem;
   }
-  
+
   .hrs-hotel-price {
     font-size: 0.75rem;
+  }
+
+  .hrs-price-included-text,
+  .hrs-price-upgrade-text {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.8rem;
+    text-align: right;
   }
 }
