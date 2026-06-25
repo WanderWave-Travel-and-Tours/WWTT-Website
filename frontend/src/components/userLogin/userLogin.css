@@ -331,18 +331,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 100; /* High z-index for modal */
+    z-index: 200;
+    padding: 20px;
 }
 
 .otp-modal {
     background: #ffffff;
-    padding: 30px;
-    border-radius: 16px;
+    padding: 30px 24px;
+    border-radius: 20px;
     box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
     width: 100%;
     max-width: 400px;
     text-align: center;
     animation: fadeIn 0.3s ease-out;
+    max-height: 90dvh;
+    overflow-y: auto;
 }
 
 .otp-modal-header {
@@ -370,8 +373,8 @@
 .otp-actions {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 25px;
+    gap: 8px;
+    margin-top: 16px;
 }
 
 .user-login-container.blur-background {
@@ -835,25 +838,20 @@
         transform: translateY(-2px);
     }
 
-    /* ---- Mobile Form Screen (slides up from bottom, fits content) ---- */
+    /* ---- Mobile Form Screen (full screen, slides up) ---- */
     .mobile-form-screen {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        top: auto;
+        inset: 0;
         z-index: 50;
         display: flex;
         flex-direction: column;
         background: #ffffff;
-        border-radius: 20px 20px 0 0;
+        border-radius: 0;
         transform: translateY(100%);
         transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         will-change: transform;
-        max-height: 100dvh;
-        padding-bottom: env(safe-area-inset-bottom, 16px);
     }
 
     .mobile-form-screen.visible {
@@ -861,12 +859,12 @@
         box-shadow: none;
     }
 
-    /* Mini carousel strip at top of form screen */
+    /* Mini carousel strip at top of form screen — fills all remaining space above the form */
     .mobile-form-carousel-strip {
         position: relative;
         width: 100%;
-        height: 260px;
-        flex-shrink: 0;
+        flex: 1;
+        min-height: 160px;
         overflow: hidden;
         border-radius: 0;
     }
@@ -916,11 +914,49 @@
         transform: scale(1.05);
     }
 
-    /* Form body below the strip */
+    /* Form body — natural height, no stretching */
     .mobile-form-body {
         padding: 28px 28px 24px;
         display: flex;
         flex-direction: column;
+        flex-shrink: 0;
+    }
+
+    /* Login: default top alignment */
+    .mobile-form-body--login {
+        justify-content: flex-start;
+    }
+
+    /* Signup: default top alignment */
+    .mobile-form-body--signup {
+        justify-content: flex-start;
+    }
+
+    /* Form transition wrapper fills full height so login-form + switch text use all space */
+    .mobile-form-screen .form-transition-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    /* Login form fills available space, pushing switch text down naturally */
+    .mobile-form-screen .login-form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    /* Switch text sits right below the button — no auto margin pushing it to screen bottom */
+    .mobile-form-screen .switch-page-text {
+        color: #666;
+        margin-top: 12px;
+        flex-shrink: 0;
+    }
+
+    /* Login button pushed to after all fields naturally */
+    .mobile-form-screen .login-button {
+        margin-top: 4px;
+        flex-shrink: 0;
     }
 
     /* Header inside form */
@@ -994,17 +1030,7 @@
         overflow: hidden; /* clip if viewport narrower than recaptcha widget */
     }
 
-    /* Login button on mobile form */
-    .mobile-form-screen .login-button {
-        margin-top: 0;
-    }
-
     /* Switch link on mobile form */
-    .mobile-form-screen .switch-page-text {
-        color: #666;
-        margin-top: 12px;
-    }
-
     .mobile-form-screen .switch-page-link {
         color: #ff9800;
     }
