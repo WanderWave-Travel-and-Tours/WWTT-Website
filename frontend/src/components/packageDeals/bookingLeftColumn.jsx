@@ -28,12 +28,18 @@ const getAutoFillActivities = (title) => {
     'Orientation with tour guide',
     'Free time to explore the vicinity',
   ];
-  if (/\b(free\s+day|rest\s+day|leisure\s+day)\b/i.test(t)) return [
+  if (/\b(free|leisure|rest\s+day)\b/i.test(t)) return [
     'Free and easy day at leisure',
     'Optional activities at own expense',
     'Explore the area at your own pace',
     'Shopping or relaxation time',
     'Return to hotel',
+  ];
+  if (/\b(check[\s-]?out|departure|depart|fly[\s-]?out)\b/i.test(t)) return [
+    'Hotel check-out',
+    'Last-minute souvenir shopping',
+    'Transfer to airport/terminal',
+    'Departure — end of tour',
   ];
   return null;
 };
