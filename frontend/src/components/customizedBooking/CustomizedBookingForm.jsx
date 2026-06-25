@@ -7,8 +7,6 @@ import {
 } from 'lucide-react';
 
 import './Customizedbookingform.css';
-import tourBg     from '../../../../backend/assets/tour.png';
-import transferBg from '../../../../backend/assets/transfer.png';
 
 import {
   API_BASE,
@@ -57,10 +55,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   const [availableTours,     setAvailableTours]     = useState([]);
   const [availableTransfers, setAvailableTransfers] = useState([]);
   const [fetchingServices,   setFetchingServices]   = useState(false);
-
-  const [firstChoice,  setFirstChoice]  = useState(null);   // null | 'tour' | 'transfer'
-  const [secondPhase,  setSecondPhase]  = useState(false);
-  const [addSecond,    setAddSecond]    = useState(null);    // null | true | false
+  const [step2InitialTab,    setStep2InitialTab]    = useState('tours');
 
   const [selectedTours,     setSelectedTours]     = useState([]);
   const [selectedTransfers, setSelectedTransfers] = useState([]);
@@ -98,7 +93,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       setInfo({ destination:'', fullName:'', email:'', phone:'', travelDate:'', returnDate:'', paxCount:'', message:'' });
       setInfoErrors({});
       setShowDestDropdown(false);
-      setFirstChoice(null); setSecondPhase(false); setAddSecond(null);
+      setStep2InitialTab('tours');
       setSelectedTours([]); setSelectedTransfers([]); setTransferTypes({});
       setTourDates({}); setTourDateIdx(0); setCurrentTourDate(''); setStep3Phase('tours');
       setDetailsIdx(0); setDetailsMap({});
@@ -288,11 +283,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   };
 
   // ─── Navigation helpers ────────────────────────────────────────────────────
-  const returnToStep2 = () => {
-    setSecondPhase(false);
-    setAddSecond(null);
-    setStep(2);
-  };
+  const returnToStep2 = () => setStep(2);
 
   const goNext = () => {
     if (step === 1) {
@@ -342,15 +333,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
   const goBack = () => {
     if (step === 2) {
-      if (firstChoice && secondPhase && addSecond === true) {
-        setAddSecond(null);
-      } else if (firstChoice && secondPhase) {
-        setSecondPhase(false); setAddSecond(null);
-      } else if (firstChoice) {
-        setFirstChoice(null);
-      } else {
-        setStep(1);
-      }
+      setStep(1);
     } else if (step === 3) {
       if (step3Phase === 'tours') {
         if (tourDateIdx > 0) {
@@ -402,9 +385,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       const remaining = selectedTours.filter(t => t._id !== tour._id);
       setSelectedTours(remaining);
       setTourDates(prev => { const n = {...prev}; delete n[tour._id]; return n; });
-      if (remaining.length === 0 && selectedTransfers.length === 0) {
-        setFirstChoice(null); setSecondPhase(false); setAddSecond(null);
-      }
     } else {
       setSelectedTours(prev => [...prev, tour]);
     }
@@ -413,18 +393,19 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   const toggleTransfer = (transfer) => {
     const isSelected = selectedTransfers.some(t => t._id === transfer._id);
     if (isSelected) {
-      const remaining = selectedTransfers.filter(t => t._id !== transfer._id);
-      setSelectedTransfers(remaining);
-      setTransferTypes(prev => { const n = {...prev}; delete n[transfer._id]; return n; });
-      setDetailsMap(prev   => { const n = {...prev}; delete n[transfer._id]; return n; });
-      if (remaining.length === 0 && selectedTours.length === 0) {
-        setFirstChoice(null); setSecondPhase(false); setAddSecond(null);
-      }
+      // Deselect
+      setSelectedTransfers([]);
+      setTransferTypes({});
+      setDetailsMap({});
     } else {
-      setSelectedTransfers(prev => [...prev, transfer]);
-      if (!transferTypes[transfer._id]) {
-        setTransferTypes(prev => ({ ...prev, [transfer._id]: 'oneway' }));
+      // Replace any existing transfer with the new one (only 1 allowed)
+      const prev = selectedTransfers[0];
+      if (prev) {
+        setTransferTypes({});
+        setDetailsMap({});
       }
+      setSelectedTransfers([transfer]);
+      setTransferTypes({ [transfer._id]: 'oneway' });
     }
   };
 
@@ -622,20 +603,13 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                 availableTours={availableTours}
                 availableTransfers={availableTransfers}
                 fetchingServices={fetchingServices}
-                firstChoice={firstChoice}
-                secondPhase={secondPhase}
-                addSecond={addSecond}
                 selectedTours={selectedTours}
                 selectedTransfers={selectedTransfers}
                 transferTypes={transferTypes}
                 tourDates={tourDates}
                 grandTotal={grandTotal}
                 pax={pax}
-                tourBg={tourBg}
-                transferBg={transferBg}
-                setFirstChoice={setFirstChoice}
-                setSecondPhase={setSecondPhase}
-                setAddSecond={setAddSecond}
+                initialTab={step2InitialTab}
                 toggleTour={toggleTour}
                 toggleTransfer={toggleTransfer}
                 setTransferType={setTransferType}
@@ -686,72 +660,61 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                 paymentType={paymentType}
                 setPaymentType={setPaymentType}
                 submitError={submitError}
-                onChangeTours={() => {
-                  setStep(2); setFirstChoice('tour'); setSecondPhase(false); setAddSecond(null);
-                }}
-                onChangeTransfers={() => {
-                  setStep(2); setFirstChoice('transfer'); setSecondPhase(false); setAddSecond(null);
-                }}
+                onChangeTours={() => { setStep2InitialTab('tours'); setStep(2); }}
+                onChangeTransfers={() => { setStep2InitialTab('transfers'); setStep(2); }}
               />
             )}
           </div>
 
           {/* ── Footer Actions ───────────────────────────────────────────── */}
           <div className="cbf-footer">
-            {step > 1 && (
-              <button type="button" className="cbf-back-btn" onClick={goBack} disabled={loading}>
-                <ChevronLeft size={16} /> Back
-              </button>
+            {/* Step 2 selection hint */}
+            {step === 2 && (selectedTours.length > 0 || selectedTransfers.length > 0) && (
+              <div className="cbf-footer-total">
+                <span className="cbf-footer-total-items">
+                  {selectedTours.length + selectedTransfers.length} item{selectedTours.length + selectedTransfers.length !== 1 ? 's' : ''}
+                </span>
+                <span className="cbf-footer-total-amt">₱{fmt(grandTotal)}</span>
+              </div>
             )}
 
-            {step < 4 ? (
-              <button
-                type="button"
-                className="cbf-next-btn"
-                onClick={() => {
-                  if (step === 2) {
-                    if (!firstChoice) return;
-                    const hasSelection = selectedTours.length > 0 || selectedTransfers.length > 0;
-                    if (!hasSelection) return;
-                    if (firstChoice && !secondPhase) { setSecondPhase(true); return; }
-                    if (firstChoice && secondPhase && addSecond === null &&
-                        !(selectedTours.length > 0 && selectedTransfers.length > 0)) return;
-                    if (firstChoice && secondPhase && addSecond === true) { setAddSecond(false); return; }
+            <div className="cbf-footer-actions">
+              {step > 1 && (
+                <button type="button" className="cbf-back-btn" onClick={goBack} disabled={loading}>
+                  <ChevronLeft size={16} /> Back
+                </button>
+              )}
+
+              {step < 4 ? (
+                <button
+                  type="button"
+                  className="cbf-next-btn"
+                  onClick={goNext}
+                  disabled={
+                    (step === 2 && selectedTours.length === 0 && selectedTransfers.length === 0) ||
+                    (step === 3 && step3Phase === 'tours' && !tourDateValid) ||
+                    (step === 3 && step3Phase === 'transfers' && !detailValid) ||
+                    loading
                   }
-                  goNext();
-                }}
-                disabled={
-                  (step === 2 && !firstChoice) ||
-                  (step === 2 && firstChoice && !secondPhase && selectedTours.length === 0 && selectedTransfers.length === 0) ||
-                  (step === 2 && firstChoice && secondPhase && addSecond === null && !(selectedTours.length > 0 && selectedTransfers.length > 0)) ||
-                  (step === 2 && firstChoice && secondPhase && addSecond === false && selectedTours.length === 0 && selectedTransfers.length === 0) ||
-                  (step === 3 && step3Phase === 'tours' && !tourDateValid) ||
-                  (step === 3 && step3Phase === 'transfers' && !detailValid) ||
-                  loading
-                }
-              >
-                {step === 3
-                  ? step3NextLabel()
-                  : step === 2 && firstChoice && secondPhase &&
-                    (addSecond === false || (selectedTours.length > 0 && selectedTransfers.length > 0))
-                  ? 'Review Summary'
-                  : 'Continue'}
-                <ChevronRight size={16} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="cbf-submit-btn"
-                onClick={handleSubmit}
-                disabled={loading || (selectedTours.length === 0 && selectedTransfers.length === 0)}
-              >
-                {loading ? (
-                  <><span className="cbf-spinner-sm" />Processing...</>
-                ) : (
-                  <><CheckCircle size={16} /> Proceed to Payment</>
-                )}
-              </button>
-            )}
+                >
+                  {step === 3 ? step3NextLabel() : step === 2 && selectedTours.length === 0 && selectedTransfers.length === 0 ? 'Select a service' : 'Continue'}
+                  <ChevronRight size={16} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="cbf-submit-btn"
+                  onClick={handleSubmit}
+                  disabled={loading || (selectedTours.length === 0 && selectedTransfers.length === 0)}
+                >
+                  {loading ? (
+                    <><span className="cbf-spinner-sm" />Processing...</>
+                  ) : (
+                    <><CheckCircle size={16} /> Proceed to Payment</>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

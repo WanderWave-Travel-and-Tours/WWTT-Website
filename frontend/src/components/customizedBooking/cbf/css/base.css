@@ -493,11 +493,42 @@
 
 .cbf-footer {
   display: flex;
-  gap: 10px;
-  padding: 16px 24px;
+  flex-direction: column;
+  gap: 0;
+  padding: 14px 24px;
   border-top: 1px solid #e2e8f0;
   background: white;
   border-radius: 0 0 16px 16px;
+}
+
+/* Footer total strip (Step 2 when items selected) */
+.cbf-footer-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: #fff7ed;
+  border: 1.5px solid #fde68a;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.cbf-footer-total-items {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.cbf-footer-total-amt {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ea580c;
+}
+
+.cbf-footer-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
 }
 
 .cbf-back-btn,

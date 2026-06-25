@@ -1,25 +1,8 @@
 // cbf/components/SelectedPanel.jsx
 import React from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { fmt, fmtDate } from '../utils';
 
-/**
- * Shows selected tours & transfers as cards with a summary footer.
- * Rendered at the bottom of Step 2 whenever at least one item is selected.
- *
- * Props:
- *   selectedTours     – Tour[]
- *   selectedTransfers – Transfer[]
- *   transferTypes     – { [id]: 'oneway' | 'roundtrip' }
- *   tourDates         – { [tourId]: 'YYYY-MM-DD' }
- *   paxCount          – string | number
- *   grandTotal        – number
- *   firstChoice       – null | 'tour' | 'transfer'
- *   secondPhase       – boolean
- *   onToggleTour      – (tour) => void
- *   onToggleTransfer  – (transfer) => void
- *   onAddSecond       – () => void  (triggers "add second service" flow)
- */
 export default function SelectedPanel({
   selectedTours,
   selectedTransfers,
@@ -27,11 +10,8 @@ export default function SelectedPanel({
   tourDates,
   paxCount,
   grandTotal,
-  firstChoice,
-  secondPhase,
   onToggleTour,
   onToggleTransfer,
-  onAddSecond,
 }) {
   const pax = parseInt(paxCount) || 1;
 
@@ -158,17 +138,6 @@ export default function SelectedPanel({
         </div>
       </div>
 
-      {/* ── Add second service type ── */}
-      {firstChoice && !secondPhase && selectedTours.length > 0 && selectedTransfers.length === 0 && (
-        <button type="button" className="cbf-add-service-btn" onClick={onAddSecond}>
-          <Plus size={14} /> Add Transfers
-        </button>
-      )}
-      {firstChoice && !secondPhase && selectedTransfers.length > 0 && selectedTours.length === 0 && (
-        <button type="button" className="cbf-add-service-btn" onClick={onAddSecond}>
-          <Plus size={14} /> Add Tours
-        </button>
-      )}
     </div>
   );
 }

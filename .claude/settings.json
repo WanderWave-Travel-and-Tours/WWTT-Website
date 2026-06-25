@@ -19,7 +19,17 @@
       "Bash(curl -s -m 60 -o /dev/null -w \"%{http_code} | size=%{size_download} bytes\\\\n\" \"https://wanderwaveph.onrender.com/api/packages/all\")",
       "Bash(curl -s -m 60 \"https://wanderwaveph.onrender.com/api/packages/destinations?category=International\")",
       "PowerShell(node \"C:\\\\Users\\\\HHSARM~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hhsarmiento-Desktop-WWTT-Website\\\\0caef1bd-cdfa-49d5-bc1b-367cd54b77e2\\\\scratchpad\\\\activateServices.js\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "PowerShell($pkg = Get-Content frontend/package.json | ConvertFrom-Json; $pkg.scripts)",
+      "PowerShell(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c cd frontend && npm run dev\" -WorkingDirectory \"C:\\\\Users\\\\hhsarmiento\\\\Desktop\\\\WWTT-Website\" -WindowStyle Hidden)",
+      "PowerShell(Test-NetConnection -ComputerName localhost -Port 3000 -WarningAction SilentlyContinue)",
+      "PowerShell(Start-Process \"chrome.exe\" -ArgumentList \"http://localhost:3000/packages\" -ErrorAction SilentlyContinue)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(curl -s http://localhost:3002)",
+      "PowerShell(Get-Process chrome -ErrorAction SilentlyContinue | Where-Object {$_.MainWindowTitle -ne \"\"} | Select-Object Id, MainWindowTitle, MainWindowHandle | Format-List)",
+      "PowerShell(Get-Process chrome -ErrorAction SilentlyContinue | Where-Object {$_.MainWindowTitle -ne \"\"} | Select-Object Id, MainWindowTitle | Format-List)",
+      "Bash(npx playwright *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\hhsarmiento\\Desktop"

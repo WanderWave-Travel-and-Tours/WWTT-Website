@@ -40,6 +40,7 @@ function AllPackages({
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState(''); // '' | 'price-asc' | 'price-desc'
+  const [animKey, setAnimKey] = useState(0);
   
   const itemsPerPage = 6; 
 
@@ -74,7 +75,8 @@ function AllPackages({
   useEffect(() => {
     setCurrentPage(1);
     setPriceError('');
-  }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations]);
+    setAnimKey(k => k + 1);
+  }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations, sortOrder]);
 
   // ✅ Hidden packages — excluded from public listing
   const HIDDEN_PACKAGE_IDS = ['69c4c9cceda858d7049a460c'];
@@ -253,6 +255,64 @@ function AllPackages({
           </div>
 
           <div className="side-filter-content">
+
+            {/* ── MOBILE ONLY: Scope tabs + sort integrated inside filter panel ── */}
+            <div className="mobile-scope-section">
+              <label className="filter-label">View</label>
+              <div className="mobile-scope-grid">
+                <button
+                  className={`mobile-scope-btn ${scopeFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => onScopeChange('all')}
+                >All</button>
+                <button
+                  className={`mobile-scope-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
+                  onClick={() => onScopeChange('best-deals')}
+                >
+                  <Sparkles size={13} />Best Deals
+                </button>
+                <button
+                  className={`mobile-scope-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
+                  onClick={() => onScopeChange('favorites')}
+                >
+                  <Heart size={13} fill={scopeFilter === 'favorites' ? 'currentColor' : 'none'} />
+                  Favorites{favorites.length > 0 && ` (${favorites.length})`}
+                </button>
+                <button
+                  className={`mobile-scope-btn ${scopeFilter === 'local' ? 'active' : ''}`}
+                  onClick={() => onScopeChange('local')}
+                >
+                  <MapPin size={13} />Local
+                </button>
+                <button
+                  className={`mobile-scope-btn ${scopeFilter === 'international' ? 'active' : ''}`}
+                  onClick={() => onScopeChange('international')}
+                >
+                  <Globe size={13} />International
+                </button>
+                <button
+                  className={`mobile-scope-btn ${scopeFilter === 'with-tours' ? 'active' : ''}`}
+                  onClick={() => onScopeChange('with-tours')}
+                >
+                  <Map size={13} />With Tours
+                </button>
+              </div>
+              <label className="filter-label" style={{ marginTop: '4px' }}>Sort by Price</label>
+              <div className="mobile-sort-row">
+                <button
+                  className={`mobile-sort-btn ${sortOrder === 'price-asc' ? 'active' : ''}`}
+                  onClick={() => setSortOrder(prev => prev === 'price-asc' ? '' : 'price-asc')}
+                >
+                  <ArrowUpNarrowWide size={14} />Low–High
+                </button>
+                <button
+                  className={`mobile-sort-btn ${sortOrder === 'price-desc' ? 'active' : ''}`}
+                  onClick={() => setSortOrder(prev => prev === 'price-desc' ? '' : 'price-desc')}
+                >
+                  <ArrowDownNarrowWide size={14} />High–Low
+                </button>
+              </div>
+            </div>
+
             <div className="filter-group">
               <label className="filter-label">Search</label>
               <div className="side-search-wrapper">
@@ -338,72 +398,76 @@ function AllPackages({
           </div>
         </aside>
 
-        {/* ── FILTER BAR — col 2, row 1 — naturally level with sidebar header ── */}
+        {/* ── FILTER BAR — full width, row 1 ── */}
         <div className="packages-filter-bar-container">
-          <div className="packages-scope-filter-container">
-            <button
-              className={`packages-scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => onScopeChange('all')}
-            >
-              All
-            </button>
-            <button
-              className={`packages-scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
-              onClick={() => onScopeChange('best-deals')}
-            >
-              <Sparkles size={16} />
-              <span>Best Deals</span>
-            </button>
-            <button
-              className={`packages-scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
-              onClick={() => onScopeChange('favorites')}
-            >
-              <Heart size={16} fill={scopeFilter === 'favorites' ? 'currentColor' : 'none'} />
-              <span>Favorites</span>
-              {favorites.length > 0 && <span className="fav-count">({favorites.length})</span>}
-            </button>
-            <button
-              className={`packages-scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
-              onClick={() => onScopeChange('local')}
-            >
-              <MapPin size={16} />
-              <span>Local</span>
-            </button>
-            <button
-              className={`packages-scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
-              onClick={() => onScopeChange('international')}
-            >
-              <Globe size={16} />
-              <span>International</span>
-            </button>
-            <button
-              className={`packages-scope-filter-btn ${scopeFilter === 'with-tours' ? 'active' : ''}`}
-              onClick={() => onScopeChange('with-tours')}
-            >
-              <Map size={16} />
-              <span>With Tours</span>
-            </button>
+          <div className="filter-bar-inner">
+            {/* Scope filter pills */}
+            <div className="packages-scope-filter-row">
+              <button
+                className={`packages-scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
+                onClick={() => onScopeChange('all')}
+              >
+                All
+              </button>
+              <button
+                className={`packages-scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
+                onClick={() => onScopeChange('best-deals')}
+              >
+                <Sparkles size={15} />
+                <span>Best Deals</span>
+              </button>
+              <button
+                className={`packages-scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
+                onClick={() => onScopeChange('favorites')}
+              >
+                <Heart size={15} fill={scopeFilter === 'favorites' ? 'currentColor' : 'none'} />
+                <span>Favorites</span>
+                {favorites.length > 0 && <span className="fav-count">({favorites.length})</span>}
+              </button>
+              <button
+                className={`packages-scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
+                onClick={() => onScopeChange('local')}
+              >
+                <MapPin size={15} />
+                <span>Local</span>
+              </button>
+              <button
+                className={`packages-scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
+                onClick={() => onScopeChange('international')}
+              >
+                <Globe size={15} />
+                <span>International</span>
+              </button>
+              <button
+                className={`packages-scope-filter-btn ${scopeFilter === 'with-tours' ? 'active' : ''}`}
+                onClick={() => onScopeChange('with-tours')}
+              >
+                <Map size={15} />
+                <span>With Tours</span>
+              </button>
+            </div>
 
-            {/* Divider separating scope filters from sort filters */}
-            <div className="scope-filter-divider" />
+            {/* Vertical divider */}
+            <div className="filter-bar-divider" />
 
-            {/* Sort: Price Low to High */}
-            <button
-              className={`packages-scope-filter-btn sort-btn ${sortOrder === 'price-asc' ? 'active' : ''}`}
-              onClick={() => setSortOrder(prev => prev === 'price-asc' ? '' : 'price-asc')}
-            >
-              <ArrowUpNarrowWide size={16} />
-              <span>Price: Low–High</span>
-            </button>
-
-            {/* Sort: Price High to Low */}
-            <button
-              className={`packages-scope-filter-btn sort-btn ${sortOrder === 'price-desc' ? 'active' : ''}`}
-              onClick={() => setSortOrder(prev => prev === 'price-desc' ? '' : 'price-desc')}
-            >
-              <ArrowDownNarrowWide size={16} />
-              <span>Price: High–Low</span>
-            </button>
+            {/* Sort group — pushed to right */}
+            <div className="packages-sort-group">
+              <span className="sort-by-label">Sort:</span>
+              <button
+                className={`packages-scope-filter-btn sort-btn ${sortOrder === 'price-asc' ? 'active' : ''}`}
+                onClick={() => setSortOrder(prev => prev === 'price-asc' ? '' : 'price-asc')}
+              >
+                <ArrowUpNarrowWide size={15} />
+                <span>Low–High</span>
+              </button>
+              <button
+                className={`packages-scope-filter-btn sort-btn ${sortOrder === 'price-desc' ? 'active' : ''}`}
+                onClick={() => setSortOrder(prev => prev === 'price-desc' ? '' : 'price-desc')}
+              >
+                <ArrowDownNarrowWide size={15} />
+                <span>High–Low</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -497,18 +561,19 @@ function AllPackages({
               </div>
             ) : currentPackages.length > 0 ? (
               currentPackages.map((pkg, index) => (
-                <PackageCard
-                  key={pkg.id}
-                  package={pkg}
-                  isFirst={index === 0}
-                  isFavorite={favorites.includes(pkg.id)}
-                  onToggleFavorite={onToggleFavorite}
-                  onBookNow={onBookNow}
-                  currency={currency}
-                  exchangeRate={exchangeRate}
-                  isLoggedIn={isLoggedIn}
-                  onLoginRequired={onLoginRequired}
-                />
+                <div key={`${animKey}-${pkg.id}`} className="card-animate-wrapper" style={{ '--card-index': index }}>
+                  <PackageCard
+                    package={pkg}
+                    isFirst={index === 0}
+                    isFavorite={favorites.includes(pkg.id)}
+                    onToggleFavorite={onToggleFavorite}
+                    onBookNow={onBookNow}
+                    currency={currency}
+                    exchangeRate={exchangeRate}
+                    isLoggedIn={isLoggedIn}
+                    onLoginRequired={onLoginRequired}
+                  />
+                </div>
               ))
             ) : (
               <div className="no-results" style={{

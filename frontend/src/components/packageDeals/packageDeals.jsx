@@ -368,7 +368,19 @@ function PackageDealsContent() {
     }
   }, [pendingBookId, pendingInitialPax, packages]);
 
-  const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
+  // ✅ FIX: De-duplicate destinations case-insensitively (trimmed), so the same
+  // destination saved with inconsistent casing/whitespace in the database
+  // (e.g. "Bohol" vs "bohol ") doesn't show up as separate checkbox entries.
+  // The first-seen casing is kept as the display label.
+  const allLocations = useMemo(() => {
+    const seen = new Map(); // normalized key -> original display label
+    packages.forEach(p => {
+      if (!p.location) return;
+      const key = p.location.trim().toLowerCase();
+      if (!seen.has(key)) seen.set(key, p.location.trim());
+    });
+    return [...seen.values()].sort();
+  }, [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
   useEffect(() => {
@@ -724,7 +736,15 @@ function PackageDealsContent() {
   }
 
   if (selectedDestinations.length > 0) {
-    filteredPackages = filteredPackages.filter(pkg => selectedDestinations.includes(pkg.location));
+    // ✅ FIX: Compare destination names case-insensitively and trimmed,
+    // since the same destination can be saved with different casing/whitespace
+    // in the database (e.g. "Bohol" vs "bohol " vs "BOHOL"). Without this,
+    // selecting a destination checkbox could return zero results even when
+    // matching packages exist, because the exact-string comparison failed.
+    const normalizedSelected = selectedDestinations.map(d => d.trim().toLowerCase());
+    filteredPackages = filteredPackages.filter(pkg =>
+      pkg.location && normalizedSelected.includes(pkg.location.trim().toLowerCase())
+    );
   }
 
   // ============================================================

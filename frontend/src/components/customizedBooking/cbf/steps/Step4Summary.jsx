@@ -1,6 +1,6 @@
 // cbf/steps/Step4Summary.jsx
 import React from 'react';
-import { MapPin, User, Mail, Phone, Calendar, Users, FileText, CreditCard, Wallet, Clock } from 'lucide-react';
+import { MapPin, User, Mail, Phone, Calendar, Users, FileText, CreditCard, Wallet, Clock, Mountain, Bus, ArrowRight, RefreshCw, Moon } from 'lucide-react';
 import { fmt, fmtDate } from '../utils';
 
 /**
@@ -52,7 +52,7 @@ export default function Step4Summary({
 
       {/* ── Your Information ── */}
       <div className="cbf-summary-block cbf-summary-block-info">
-        <div className="cbf-summary-block-title">👤 Your Information</div>
+        <div className="cbf-summary-block-title"><User size={15} /> Your Information</div>
         <div className="cbf-info-card-grid">
           <div className="cbf-info-card">
             <div className="cbf-ic-icon-wrap destination"><MapPin size={13} /></div>
@@ -123,7 +123,7 @@ export default function Step4Summary({
       {selectedTours.length > 0 && (
         <div className="cbf-summary-block">
           <div className="cbf-summary-block-title">
-            🏔️ Selected Tours
+            <Mountain size={15} /> Selected Tours
             <button type="button" className="cbf-change-type-btn" onClick={onChangeTours}>
               Change
             </button>
@@ -136,11 +136,11 @@ export default function Step4Summary({
               <div className="cbf-ssr-info">
                 <div className="cbf-ssr-title">{t.title || t.name}</div>
                 <div className="cbf-ssr-badges">
-                  {t.destination && <span className="cbf-ssr-badge location">📍 {t.destination}</span>}
-                  {t.duration    && <span className="cbf-ssr-badge duration">⏱ {t.duration}</span>}
+                  {t.destination && <span className="cbf-ssr-badge location"><MapPin size={10} /> {t.destination.split(',')[0]}</span>}
+                  {t.duration    && <span className="cbf-ssr-badge duration"><Clock size={10} /> {t.duration}</span>}
                   {t.category    && <span className="cbf-ssr-badge category">{t.category}</span>}
                   {tourDates[t._id] && (
-                    <span className="cbf-ssr-badge duration">📅 {fmtDate(tourDates[t._id])}</span>
+                    <span className="cbf-ssr-badge duration"><Calendar size={10} /> {fmtDate(tourDates[t._id])}</span>
                   )}
                 </div>
                 <div className="cbf-ssr-pax-line">
@@ -163,7 +163,7 @@ export default function Step4Summary({
       {selectedTransfers.length > 0 && (
         <div className="cbf-summary-block">
           <div className="cbf-summary-block-title">
-            🚐 Selected Transfers
+            <Bus size={15} /> Selected Transfers
             <button type="button" className="cbf-change-type-btn" onClick={onChangeTransfers}>
               Change
             </button>
@@ -184,7 +184,9 @@ export default function Step4Summary({
                     <div className="cbf-ssr-title">{t.title}</div>
                     <div className="cbf-ssr-badges">
                       <span className={`cbf-ssr-badge ${type === 'roundtrip' ? 'roundtrip' : 'oneway'}`}>
-                        {type === 'roundtrip' ? '🔄 Roundtrip' : '➡️ One Way'}
+                        {type === 'roundtrip'
+                          ? <><RefreshCw size={10} /> Roundtrip</>
+                          : <><ArrowRight size={10} /> One Way</>}
                       </span>
                       {t.category && (
                         <span className="cbf-ssr-badge category">{t.category}</span>
@@ -238,7 +240,7 @@ export default function Step4Summary({
           </div>
           {nightSurcharge > 0 && (
             <div className="cbf-subtotal-row cbf-night-surcharge-row">
-              <span>🌙 Late Night Surcharge</span>
+              <span><Moon size={12} /> Late Night Surcharge</span>
               <strong>+₱{fmt(nightSurcharge)}</strong>
             </div>
           )}
@@ -261,7 +263,7 @@ export default function Step4Summary({
         {/* Full-payment-only banner */}
         {!isPartialPaymentAllowed && (
           <div className="bfm-full-payment-banner">
-            <span className="bfm-fpb-icon">⚡</span>
+            <CreditCard size={16} className="bfm-fpb-icon" />
             <div>
               <strong>Full Payment Required</strong>
               <span>
@@ -320,9 +322,9 @@ export default function Step4Summary({
                 Complete payment now and secure your booking instantly.
               </div>
               <ul className="bfm-payment-benefits">
-                <li>✓ Instant confirmation</li>
-                <li>✓ No further payments needed</li>
-                <li>✓ Priority processing</li>
+                <li>Instant confirmation</li>
+                <li>No further payments needed</li>
+                <li>Priority processing</li>
               </ul>
             </div>
           </div>

@@ -1,6 +1,6 @@
 // cbf/components/TransferList.jsx
 import React from 'react';
-import { MapPin, Check, Plus } from 'lucide-react';
+import { MapPin, Check, Plus, ArrowRight, RefreshCw } from 'lucide-react';
 
 /**
  * Renders a list of transfer cards for Step 2.
@@ -28,9 +28,6 @@ export default function TransferList({
 
   return (
     <>
-      <p className="cbf-section-desc" style={{ marginBottom: '12px' }}>
-        Select one or more transfers. Choose One Way or Roundtrip for each.
-      </p>
       <div className="cbf-service-list">
         {transfers.map(transfer => {
           const isSelected = selected.some(t => t._id === transfer._id);
@@ -99,7 +96,7 @@ export default function TransferList({
                     className={`cbf-tt-btn ${type === 'oneway' ? 'active' : ''}`}
                     onClick={e => { e.stopPropagation(); onTypeChange(transfer._id, 'oneway'); }}
                   >
-                    ➡️ One Way
+                    <ArrowRight size={13} /> One Way
                     {transfer.oneWayPrice > 0 && (
                       <span className="cbf-tt-price">
                         ₱{Number(transfer.oneWayPrice).toLocaleString()}
@@ -113,7 +110,7 @@ export default function TransferList({
                       className={`cbf-tt-btn ${type === 'roundtrip' ? 'active' : ''}`}
                       onClick={e => { e.stopPropagation(); onTypeChange(transfer._id, 'roundtrip'); }}
                     >
-                      🔄 Roundtrip
+                      <RefreshCw size={13} /> Roundtrip
                       <span className="cbf-tt-price">
                         ₱{Number(transfer.roundtripPrice).toLocaleString()}
                       </span>
