@@ -1,6 +1,6 @@
 // cbf/components/TourList.jsx
 import React from 'react';
-import { MapPin, Clock, Check, Plus } from 'lucide-react';
+import { MapPin, Clock, Check, Plus, Mountain } from 'lucide-react';
 
 /**
  * Renders a scrollable list of tour cards for Step 2.
@@ -19,7 +19,7 @@ export default function TourList({ tours, selected, onToggle, paxCount }) {
 
   return (
     <>
-      <div className="cbf-service-list">
+      <div className="cbf-service-list cbf-tour-grid">
         {tours.map(tour => {
           const isSelected = selected.some(t => t._id === tour._id);
           const img        = tour.imageUrl || tour.image;
@@ -35,7 +35,7 @@ export default function TourList({ tours, selected, onToggle, paxCount }) {
               <div className="cbf-card-image-wrap">
                 {img
                   ? <img src={img} alt={tour.title || tour.name} className="cbf-card-img" />
-                  : <div className="cbf-card-img-placeholder">🏝️</div>
+                  : <div className="cbf-card-img-placeholder"><Mountain size={32} /></div>
                 }
 
                 {/* Category badge — top-left */}

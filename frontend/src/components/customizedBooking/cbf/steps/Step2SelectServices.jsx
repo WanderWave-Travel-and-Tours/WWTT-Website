@@ -85,6 +85,20 @@ export default function Step2SelectServices({
         </button>
       </div>
 
+      {/* Selected items bar — compact strip above the grid */}
+      {(selectedTours.length > 0 || selectedTransfers.length > 0) && (
+        <SelectedPanel
+          selectedTours={selectedTours}
+          selectedTransfers={selectedTransfers}
+          transferTypes={transferTypes}
+          tourDates={tourDates}
+          paxCount={info.paxCount}
+          grandTotal={grandTotal}
+          onToggleTour={toggleTour}
+          onToggleTransfer={toggleTransfer}
+        />
+      )}
+
       {/* Tour list */}
       {activeTab === 'tours' && (
         availableTours.length === 0
@@ -109,25 +123,6 @@ export default function Step2SelectServices({
               onTypeChange={setTransferType}
               paxCount={info.paxCount}
             />
-      )}
-
-      {/* Selected items summary panel */}
-      {(selectedTours.length > 0 || selectedTransfers.length > 0) && (
-        <div className="cbf-s2-panel-divider">
-          <span>Your Selections</span>
-        </div>
-      )}
-      {(selectedTours.length > 0 || selectedTransfers.length > 0) && (
-        <SelectedPanel
-          selectedTours={selectedTours}
-          selectedTransfers={selectedTransfers}
-          transferTypes={transferTypes}
-          tourDates={tourDates}
-          paxCount={info.paxCount}
-          grandTotal={grandTotal}
-          onToggleTour={toggleTour}
-          onToggleTransfer={toggleTransfer}
-        />
       )}
     </div>
   );

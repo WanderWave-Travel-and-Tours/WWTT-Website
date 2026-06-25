@@ -112,6 +112,21 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [isOtpFormVisible, setIsOtpFormVisible] = useState(false);
     const [tempEmailForVerification, setTempEmailForVerification] = useState('');
 
+    // MOBILE: controls whether the dark form panel is slid up
+    const [mobileFormVisible, setMobileFormVisible] = useState(false);
+
+    // Controls the fade-out/in animation when switching between login ↔ signup
+    const [formSwitching, setFormSwitching] = useState(false);
+
+    // Animated switch handler — fade out, swap, fade in
+    const handleSwitchPage = () => {
+        setFormSwitching(true);
+        setTimeout(() => {
+            setIsSignup(prev => !prev);
+            resetForm();
+            setFormSwitching(false);
+        }, 240); // matches formFadeSlideOut duration
+    };
     const recaptchaRef = useRef(null);
     const RECAPTCHA_SITE_KEY = "6Le-qx0sAAAAAJX4nGcaXMjdL6gMU2GdmD9NJi0J";
 
@@ -401,6 +416,147 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         if (e.key === 'Enter' && !isLoading) handleSubmit(e);
     };
 
+    // Shared form JSX — rendered in both desktop panel and mobile form screen
+    const renderFormContent = () => (
+        <>
+            <form className="login-form" onSubmit={handleSubmit}>
+                {/* Full Name */}
+                {isSignup && (
+                    <div className="input-group">
+                        <label className="input-label">Full Name</label>
+                        <input
+                            type="text"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="Juan dela Cruz"
+                            className="input-field"
+                            required
+                            disabled={isLoading}
+                        />
+                    </div>
+                )}
+
+                {/* Email */}
+                <div className="input-group">
+                    <label className="input-label">Email</label>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="you@example.com"
+                        className="input-field"
+                        required
+                        disabled={isLoading}
+                    />
+                </div>
+
+                {/* Username */}
+                {isSignup && (
+                    <div className="input-group">
+                        <label className="input-label">Username</label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="juandelacruz123"
+                            className="input-field"
+                            required
+                            disabled={isLoading}
+                        />
+                    </div>
+                )}
+
+                {/* Password - With Toggle */}
+                <div className="input-group">
+                    <label className="input-label">Password</label>
+                    <div className="password-wrapper">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="••••••••"
+                            className="input-field"
+                            required
+                            disabled={isLoading}
+                        />
+                        <button
+                            type="button"
+                            className="password-toggle-btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                            disabled={isLoading}
+                        >
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Confirm Password - With Toggle */}
+                {isSignup && (
+                    <div className="input-group">
+                        <label className="input-label">Confirm Password</label>
+                        <div className="password-wrapper">
+                            <input
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                placeholder="••••••••"
+                                className="input-field"
+                                required
+                                disabled={isLoading}
+                            />
+                            <button
+                                type="button"
+                                className="password-toggle-btn"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                disabled={isLoading}
+                            >
+                                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="recaptcha-wrapper">
+                    <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={handleRecaptchaChange}
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    className="login-button"
+                    disabled={isLoading || !recaptchaToken}
+                >
+                    {isLoading ? 'Please wait...' : (isSignup ? 'Create Account' : 'Log In')}
+                </button>
+            </form>
+
+            <p className="switch-page-text">
+                {isSignup ? 'Already have an account?' : "Don't have an account?"}
+                <span
+                    className="switch-page-link"
+                    onClick={handleSwitchPage}
+                >
+                    {isSignup ? 'Log In' : 'Sign Up'}
+                </span>
+            </p>
+        </>
+    );
+
+    // Wrap rendered form content in animated container
+    const renderAnimatedForm = () => (
+        <div className={`form-transition-wrapper ${formSwitching ? 'form-switching' : ''}`}>
+            {renderFormContent()}
+        </div>
+    );
+
     return (
         <div className="user-login-wrapper">
 
@@ -411,27 +567,31 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 subtitle="Please wait a moment"
                 fullScreen
             />
-            
+
             {/* Conditional OTP Modal/Popup */}
             {isOtpFormVisible && (
-                <OtpVerificationForm 
+                <OtpVerificationForm
                     email={tempEmailForVerification}
                     onVerify={handleOtpVerification}
                     onCancel={() => {
                         setIsOtpFormVisible(false);
                         setIsLoading(false);
                         setOtpError('');
-                        resetForm(); 
+                        resetForm();
                     }}
                     onResend={handleResendOtp}
                     isLoading={isLoading}
                 />
             )}
-            
+
+            {/* ============================================================
+                DESKTOP / TABLET layout  (> 900px)
+                Unchanged two-column card — hidden on mobile via CSS
+                ============================================================ */}
             <div className={`user-login-container ${isOtpFormVisible ? 'blur-background' : ''}`}>
                 <div className="slideshow-panel">
                     {/* Back Button */}
-                    <button 
+                    <button
                         className="back-nav-btn"
                         onClick={handleBackNavigation}
                         aria-label="Go back"
@@ -469,13 +629,13 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
                 <div className="login-panel">
                     <div className="login-form-wrapper">
-                        <div className="logo-section">
+                        <div className={`logo-section form-transition-wrapper ${formSwitching ? 'form-switching' : ''}`}>
                             <img
                                 src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
                                 alt="WanderWave Logo"
                                 className="logo-img"
                             />
-                            
+
                             <div className="header-text-col title-col">
                                 <span className="title-line">{isSignup ? 'Create' : 'Welcome'}</span>
                                 <span className="title-line">{isSignup ? 'Account' : 'Back'}</span>
@@ -488,140 +648,128 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                             </div>
                         </div>
 
-                        <form className="login-form" onSubmit={handleSubmit}>
-                            {/* Full Name */}
-                            {isSignup && (
-                                <div className="input-group">
-                                    <label className="input-label">Full Name</label>
-                                    <input
-                                        type="text"
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        placeholder="Juan dela Cruz"
-                                        className="input-field"
-                                        required
-                                        disabled={isLoading}
-                                    />
-                                </div>
-                            )}
-
-                            {/* Email */}
-                            <div className="input-group">
-                                <label className="input-label">Email</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder="you@example.com"
-                                    className="input-field"
-                                    required
-                                    disabled={isLoading}
-                                />
-                            </div>
-                            
-                            {/* Username */}
-                            {isSignup && (
-                                <div className="input-group">
-                                    <label className="input-label">Username</label>
-                                    <input
-                                        type="text"
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        placeholder="juandelacruz123"
-                                        className="input-field"
-                                        required
-                                        disabled={isLoading}
-                                    />
-                                </div>
-                            )}
-
-                            {/* Password - With Toggle */}
-                            <div className="input-group">
-                                <label className="input-label">Password</label>
-                                <div className="password-wrapper">
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        placeholder="••••••••"
-                                        className="input-field"
-                                        required
-                                        disabled={isLoading}
-                                    />
-                                    <button
-                                        type="button"
-                                        className="password-toggle-btn"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        disabled={isLoading}
-                                    >
-                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Confirm Password - With Toggle */}
-                            {isSignup && (
-                                <div className="input-group">
-                                    <label className="input-label">Confirm Password</label>
-                                    <div className="password-wrapper">
-                                        <input
-                                            type={showConfirmPassword ? 'text' : 'password'}
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            onKeyPress={handleKeyPress}
-                                            placeholder="••••••••"
-                                            className="input-field"
-                                            required
-                                            disabled={isLoading}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="password-toggle-btn"
-                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            disabled={isLoading}
-                                        >
-                                            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="recaptcha-wrapper">
-                                <ReCAPTCHA
-                                    ref={recaptchaRef}
-                                    sitekey={RECAPTCHA_SITE_KEY}
-                                    onChange={handleRecaptchaChange}
-                                />
-                            </div>
-
-                            <button 
-                                type="submit" 
-                                className="login-button"
-                                disabled={isLoading || !recaptchaToken}
-                            >
-                                {isLoading ? 'Please wait...' : (isSignup ? 'Create Account' : 'Log In')}
-                            </button>
-                        </form>
-
-                        <p className="switch-page-text">
-                            {isSignup ? 'Already have an account?' : "Don't have an account?"}
-                            <span 
-                                className="switch-page-link"
-                                onClick={() => {
-                                    setIsSignup(!isSignup);
-                                    resetForm();
-                                }}
-                            >
-                                {isSignup ? 'Log In' : 'Sign Up'}
-                            </span>
-                        </p>
+                        {renderAnimatedForm()}
                     </div>
                 </div>
             </div>
+
+            {/* ============================================================
+                MOBILE layout  (≤ 900px)
+                Screen 1: Full-screen carousel with Sign In / Sign Up CTAs
+                Screen 2: Dark form panel that slides up from the bottom
+                ============================================================ */}
+            <div className="mobile-splash">
+
+                {/* --- Screen 1: Carousel Splash --- */}
+                <div className={`mobile-carousel-screen ${mobileFormVisible ? 'slide-out' : ''}`}>
+                    {/* Destination slides */}
+                    {destinations.map((dest, index) => (
+                        <div
+                            key={index}
+                            className={`mobile-slide-item ${index === currentSlide ? 'active' : ''}`}
+                            style={{ backgroundImage: `url(${dest.image})` }}
+                        />
+                    ))}
+
+                    {/* Gradient overlay */}
+                    <div className="mobile-carousel-overlay" />
+
+                    {/* Bottom content */}
+                    <div className="mobile-carousel-content">
+                        <p className="mobile-slide-tagline">Travel. Unwind. Repeat!</p>
+                        <h2 className="mobile-slide-name">{destinations[currentSlide].name}</h2>
+                        <p className="mobile-slide-desc">{destinations[currentSlide].description}</p>
+
+                        {/* Dot indicators */}
+                        <div className="mobile-slide-indicators">
+                            {destinations.map((_, i) => (
+                                <button
+                                    key={i}
+                                    className={`mobile-indicator-dot ${currentSlide === i ? 'active-dot' : ''}`}
+                                    onClick={() => setCurrentSlide(i)}
+                                    aria-label={`Go to slide ${i + 1}`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* CTA Buttons */}
+                        <div className="mobile-cta-buttons">
+                            <button
+                                className="mobile-cta-signin"
+                                onClick={() => {
+                                    setIsSignup(false);
+                                    resetForm();
+                                    setMobileFormVisible(true);
+                                }}
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                className="mobile-cta-signup"
+                                onClick={() => {
+                                    setIsSignup(true);
+                                    resetForm();
+                                    setMobileFormVisible(true);
+                                }}
+                            >
+                                Not a member? <strong>Join Now</strong>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- Screen 2: Dark Form Panel (slides up) --- */}
+                <div className={`mobile-form-screen ${mobileFormVisible ? 'visible' : ''}`}>
+
+                    {/* Mini carousel strip at the top */}
+                    <div className="mobile-form-carousel-strip">
+                        {destinations.map((dest, index) => (
+                            <div
+                                key={index}
+                                className={`mobile-form-strip-slide ${index === currentSlide ? 'active' : ''}`}
+                                style={{ backgroundImage: `url(${dest.image})` }}
+                            />
+                        ))}
+                        <div className="mobile-form-strip-overlay" />
+
+                        {/* Back button — returns to splash */}
+                        <button
+                            className="mobile-form-back-btn"
+                            onClick={() => {
+                                setMobileFormVisible(false);
+                                resetForm();
+                            }}
+                            aria-label="Go back to home"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                    </div>
+
+                    {/* Form body */}
+                    <div className="mobile-form-body">
+                        <div className={`form-transition-wrapper ${formSwitching ? 'form-switching' : ''}`}>
+                            <div className="mobile-form-header">
+                                <p className="mobile-form-greeting">
+                                    {isSignup ? 'Get Started' : 'Welcome Back!'}
+                                </p>
+                                <h2 className="mobile-form-title">
+                                    {isSignup ? 'Create Account' : 'Sign in to continue'}
+                                </h2>
+                                <p className="mobile-form-subtitle">
+                                    {isSignup
+                                        ? 'Join WanderWave for amazing travel deals'
+                                        : 'Enter your credentials to access your account'}
+                                </p>
+                            </div>
+
+                            {renderFormContent()}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            {/* END mobile-splash */}
+
         </div>
     );
 };

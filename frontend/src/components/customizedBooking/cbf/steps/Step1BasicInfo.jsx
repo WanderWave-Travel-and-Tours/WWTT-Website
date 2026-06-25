@@ -1,6 +1,6 @@
 // cbf/steps/Step1BasicInfo.jsx
 import React from 'react';
-import { MapPin, User, Mail, Phone, Users } from 'lucide-react';
+import { MapPin, User, Mail, Phone, Users, Baby } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 
 /**
@@ -30,6 +30,12 @@ export default function Step1BasicInfo({
   setShowDestDropdown,
 }) {
   const today = new Date().toISOString().split('T')[0];
+
+  const maxBirthDate = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 18);
+    return d.toISOString().split('T')[0];
+  })();
 
   const filteredDestinations = (() => {
     const q = info.destination.toLowerCase();
@@ -120,15 +126,41 @@ export default function Step1BasicInfo({
 
         {/* ── Phone ── */}
         <div className="cbf-field">
-          <label>Phone Number</label>
+          <label>Phone Number <span className="cbf-optional">(optional)</span></label>
           <div className="cbf-input-wrap">
             <Phone size={14} className="cbf-input-icon" />
             <input
-              placeholder="+63 9XX XXX XXXX"
+              className={infoErrors.phone ? 'cbf-error' : ''}
+              placeholder="09XX XXX XXXX"
               value={info.phone}
               onChange={e => onInfoChange('phone', e.target.value)}
             />
           </div>
+          {infoErrors.phone && (
+            <span className="cbf-err-msg">{infoErrors.phone}</span>
+          )}
+        </div>
+
+        {/* ── Date of Birth ── */}
+        <div className="cbf-field">
+          <label>
+            Date of Birth <span className="cbf-req">*</span>
+            <span className="cbf-optional">(must be 18+)</span>
+          </label>
+          <div className="cbf-input-wrap">
+            <Baby size={14} className="cbf-input-icon" />
+            <input
+              type="date"
+              className={infoErrors.birthDate ? 'cbf-error' : ''}
+              max={maxBirthDate}
+              min="1924-01-01"
+              value={info.birthDate}
+              onChange={e => onInfoChange('birthDate', e.target.value)}
+            />
+          </div>
+          {infoErrors.birthDate && (
+            <span className="cbf-err-msg">{infoErrors.birthDate}</span>
+          )}
         </div>
 
         {/* ── Travel Date ── */}
@@ -157,8 +189,12 @@ export default function Step1BasicInfo({
             value={info.returnDate}
             minDate={info.travelDate || today}
             onChange={val => onInfoChange('returnDate', val)}
+            hasError={!!infoErrors.returnDate}
             placeholder="Select return date"
           />
+          {infoErrors.returnDate && (
+            <span className="cbf-err-msg">{infoErrors.returnDate}</span>
+          )}
         </div>
 
         {/* ── Pax Count ── */}
@@ -167,14 +203,14 @@ export default function Step1BasicInfo({
           <div className="cbf-input-wrap">
             <Users size={14} className="cbf-input-icon" />
             <input
-              type="number"
-              min="1"
-              max="20"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               className={infoErrors.paxCount ? 'cbf-error' : ''}
               placeholder="e.g. 2"
               value={info.paxCount}
               onChange={e => {
-                const v = e.target.value;
+                const v = e.target.value.replace(/[^0-9]/g, '');
                 onInfoChange(
                   'paxCount',
                   v === '' ? '' : Math.min(20, parseInt(v) || 1),

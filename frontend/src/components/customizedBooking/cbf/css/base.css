@@ -5,6 +5,12 @@
    ─ All classes use the cbf- prefix
    ============================================================= */
 
+/* Remove browser click-outline on all interactive elements inside the modal */
+.cbf-modal button:focus:not(:focus-visible),
+.cbf-modal a:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* ============================================================
    OVERLAY & MODAL CARD
    ============================================================ */
@@ -100,6 +106,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  outline: none;
   transition: all 0.2s ease;
   z-index: 30;
   backdrop-filter: blur(4px);
@@ -382,6 +389,17 @@
   margin-top: 3px;
 }
 
+/* Date inputs inside cbf-input-wrap — native picker icon stays on the right */
+.cbf-input-wrap input[type="date"] {
+  padding-right: 8px;
+  color-scheme: light;
+}
+
+.cbf-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
 .cbf-textarea {
   width: 100%;
   padding: 8px 10px;
@@ -540,6 +558,7 @@
   font-size: 0.85rem;
   cursor: pointer;
   border: none;
+  outline: none;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;

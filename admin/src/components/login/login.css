@@ -436,3 +436,375 @@
     max-width: 100%;
     margin: 0 auto;
 }
+
+/* ============================================================
+   MOBILE VIEW — Full-screen carousel splash + slide-in form
+   (Applies when viewport ≤ 900px wide)
+   ============================================================ */
+
+/* ---- Mobile Splash Screen ---- */
+.mobile-splash {
+    display: none; /* hidden on desktop */
+}
+
+@media (max-width: 900px) {
+
+    /* On mobile, hide the normal two-column container entirely
+       and show the mobile splash flow instead */
+    .login-wrapper {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    /* Hide the desktop two-column card */
+    .login-container {
+        display: none !important;
+    }
+
+    /* Show mobile layout */
+    .mobile-splash {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* ---- Splash: full-screen carousel ---- */
+    .mobile-carousel-screen {
+        position: relative;
+        width: 100%;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: transform, opacity;
+    }
+
+    .mobile-carousel-screen.slide-out {
+        transform: scale(0.94) translateY(-3%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Slides fill the whole screen */
+    .mobile-slide-item {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0;
+        transition: opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+        z-index: 1;
+    }
+
+    .mobile-slide-item.active {
+        opacity: 1;
+        z-index: 2;
+    }
+
+    /* Dark gradient overlay on carousel */
+    .mobile-carousel-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.15) 0%,
+            rgba(0,0,0,0.0) 35%,
+            rgba(0,0,0,0.65) 70%,
+            rgba(0,0,0,0.88) 100%
+        );
+        z-index: 5;
+    }
+
+    /* Content anchored at bottom of splash */
+    .mobile-carousel-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 0 28px 44px;
+        color: white;
+    }
+
+    .mobile-slide-tagline {
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #ff9800;
+        margin-bottom: 8px;
+        opacity: 0.95;
+    }
+
+    .mobile-slide-name {
+        font-size: 2.4rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin: 0 0 6px 0;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        letter-spacing: -0.5px;
+    }
+
+    .mobile-slide-desc {
+        font-size: 0.95rem;
+        opacity: 0.85;
+        font-weight: 500;
+        margin: 0 0 22px 0;
+        text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+    }
+
+    /* Dot indicators on splash */
+    .mobile-slide-indicators {
+        display: flex;
+        gap: 7px;
+        margin-bottom: 28px;
+    }
+
+    .mobile-indicator-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.5);
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    border-radius 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    background 0.3s ease,
+                    opacity 0.3s ease;
+    }
+
+    .mobile-indicator-dot.active-dot {
+        width: 26px;
+        border-radius: 20px;
+        background: #ff9800;
+        opacity: 1;
+    }
+
+    /* CTA buttons on splash */
+    .mobile-cta-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .mobile-cta-signin {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        box-shadow: 0 6px 20px rgba(255,152,0,0.35);
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        letter-spacing: 0.3px;
+    }
+
+    .mobile-cta-signin:hover,
+    .mobile-cta-signin:active {
+        transform: translateY(-3px) scale(1.01);
+        box-shadow: 0 12px 30px rgba(255,152,0,0.45);
+    }
+
+    /* ---- Mobile Form Screen (full screen, slides up) ---- */
+    .mobile-form-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border-radius: 0;
+        transform: translateY(100%);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        will-change: transform;
+    }
+
+    .mobile-form-screen.visible {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+
+    /* Mini carousel strip at top of form screen */
+    .mobile-form-carousel-strip {
+        position: relative;
+        width: 100%;
+        height: 220px;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .mobile-form-strip-slide {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        opacity: 0;
+        transition: opacity 1.5s ease-in-out;
+    }
+
+    .mobile-form-strip-slide.active {
+        opacity: 1;
+    }
+
+    /* No overlay — show the full image cleanly */
+    .mobile-form-strip-overlay {
+        display: none;
+    }
+
+    /* Back button inside form screen */
+    .mobile-form-back-btn {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: rgba(255,255,255,0.18);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: white;
+        z-index: 10;
+        padding: 0;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .mobile-form-back-btn:hover {
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.05);
+    }
+
+    /* Form body below the strip */
+    .mobile-form-body {
+        padding: 28px 28px 36px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Header inside form */
+    .mobile-form-header {
+        margin-bottom: 22px;
+    }
+
+    .mobile-form-greeting {
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #ff9800;
+        margin-bottom: 4px;
+    }
+
+    .mobile-form-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1a237e;
+        line-height: 1.1;
+        margin: 0 0 4px 0;
+    }
+
+    .mobile-form-subtitle {
+        font-size: 0.88rem;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Inputs on mobile form */
+    .mobile-form-screen .input-label {
+        color: #333;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .mobile-form-screen .input-field {
+        background-color: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        color: #333;
+        font-size: 16px; /* Prevents iOS zoom */
+        border-radius: 10px;
+    }
+
+    .mobile-form-screen .input-field::placeholder {
+        color: #aaa;
+    }
+
+    .mobile-form-screen .input-field:focus {
+        border-color: #ff9800;
+        background-color: white;
+        box-shadow: 0 0 0 4px rgba(255,152,0,0.1);
+    }
+
+    .mobile-form-screen .password-toggle-btn {
+        color: #888;
+    }
+
+    .mobile-form-screen .password-toggle-btn:hover {
+        color: #333;
+    }
+
+    /* Recaptcha inside mobile form — centered */
+    .mobile-form-screen .recaptcha-wrapper {
+        margin: 16px 0;
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    /* Login button on mobile form */
+    .mobile-form-screen .login-button {
+        margin-top: 8px;
+    }
+
+    /* Footer on mobile form */
+    .mobile-form-screen .footer-text {
+        color: #999;
+    }
+}
+
+/* On larger mobile (landscape or tablet ≥600px), keep a taller strip */
+@media (max-width: 900px) and (min-width: 600px) {
+    .mobile-form-carousel-strip {
+        height: 280px;
+    }
+
+    .mobile-form-title {
+        font-size: 2.2rem;
+    }
+}
+
+/* ============================================================
+   REDUCED MOTION — respect system accessibility preference
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    .mobile-form-screen,
+    .mobile-carousel-screen,
+    .slide-item,
+    .mobile-slide-item,
+    .indicator-dot,
+    .mobile-indicator-dot,
+    .login-button,
+    .mobile-cta-signin,
+    .input-field {
+        transition: none !important;
+        animation: none !important;
+    }
+}

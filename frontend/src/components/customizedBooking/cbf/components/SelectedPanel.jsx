@@ -1,13 +1,16 @@
 // cbf/components/SelectedPanel.jsx
 import React from 'react';
-import { Trash2 } from 'lucide-react';
-import { fmt, fmtDate } from '../utils';
+import { X, Mountain, Bus } from 'lucide-react';
+import { fmt } from '../utils';
 
+/**
+ * Compact selection bar — appears above the service grid.
+ * Shows each selected item as a chip with a remove button, plus a total.
+ */
 export default function SelectedPanel({
   selectedTours,
   selectedTransfers,
   transferTypes,
-  tourDates,
   paxCount,
   grandTotal,
   onToggleTour,
@@ -15,129 +18,69 @@ export default function SelectedPanel({
 }) {
   const pax = parseInt(paxCount) || 1;
 
+  const allSelected = [
+    ...selectedTours.map(t => ({
+      id: t._id,
+      type: 'tour',
+      name: t.title || t.name,
+      img:  t.imageUrl || t.image || null,
+      price: (t.price || 0) * pax,
+      onRemove: () => onToggleTour(t),
+    })),
+    ...selectedTransfers.map(t => {
+      const ttype  = transferTypes[t._id] || 'oneway';
+      const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
+      return {
+        id: t._id,
+        type: 'transfer',
+        name: t.title,
+        img:  t.imageUrl || null,
+        price: tprice,
+        subLabel: ttype === 'roundtrip' ? 'Roundtrip' : 'One Way',
+        onRemove: () => onToggleTransfer(t),
+      };
+    }),
+  ];
+
   return (
-    <div className="cbf-selected-panel">
-
-      {/* ── Panel header ── */}
-      <div className="cbf-sp-header">
-        <div className="cbf-sp-header-left">
-          <span className="cbf-sp-your-trip">YOUR TRIP</span>
-          <h3 className="cbf-sp-title">Selections</h3>
-        </div>
-        <span className="cbf-sel-count-badge">
-          {selectedTours.length + selectedTransfers.length} item
-          {selectedTours.length + selectedTransfers.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* ── Tour cards ── */}
-      {selectedTours.map(t => {
-        const tourTotal = (t.price || 0) * pax;
-        return (
-          <div key={t._id} className="cbf-sel-card">
-            <div
-              className="cbf-sel-card-img"
-              style={{ backgroundImage: `url(${t.imageUrl || t.image || ''})` }}
-            >
-              <div className="cbf-sel-card-img-overlay" />
-              <span className="cbf-sel-card-badge cbf-sel-badge-tour">
-                {t.category || 'Tour Package'}
-              </span>
-              <button
-                type="button"
-                className="cbf-sel-card-remove"
-                onClick={() => onToggleTour(t)}
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-            <div className="cbf-sel-card-body">
-              <div className="cbf-sel-card-body-left">
-                <span className="cbf-sel-card-name">{t.title || t.name}</span>
-                <span className="cbf-sel-card-sub">
-                  ₱{Number(t.price || 0).toLocaleString()} × {pax} pax
-                  {t.duration ? ` · ${t.duration}` : ''}
-                  {tourDates[t._id] ? ` · 📅 ${fmtDate(tourDates[t._id])}` : ''}
+    <div className="cbf-selbar">
+      <div className="cbf-selbar-inner">
+        {allSelected.map(item => (
+          <div key={item.id} className={`cbf-selbar-chip cbf-chip-${item.type}`}>
+            {/* Thumbnail */}
+            {item.img
+              ? <img src={item.img} alt={item.name} className="cbf-chip-thumb" />
+              : <span className="cbf-chip-icon-wrap">
+                  {item.type === 'tour'
+                    ? <Mountain size={13} />
+                    : <Bus size={13} />}
                 </span>
-              </div>
-              <div className="cbf-sel-card-body-price">
-                <span className="cbf-sel-body-price-label">PRICE</span>
-                <span className="cbf-sel-body-price-val">₱{fmt(tourTotal)}</span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+            }
 
-      {/* ── Transfer cards ── */}
-      {selectedTransfers.map(t => {
-        const ttype  = transferTypes[t._id] || 'oneway';
-        const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
-        return (
-          <div key={t._id} className="cbf-sel-card">
-            <div
-              className="cbf-sel-card-img"
-              style={{ backgroundImage: `url(${t.imageUrl || ''})` }}
+            {/* Name + price */}
+            <div className="cbf-chip-info">
+              <span className="cbf-chip-name">{item.name}</span>
+              <span className="cbf-chip-price">₱{fmt(item.price)}</span>
+            </div>
+
+            {/* Remove */}
+            <button
+              type="button"
+              className="cbf-chip-remove"
+              onClick={item.onRemove}
+              aria-label={`Remove ${item.name}`}
             >
-              <div className="cbf-sel-card-img-overlay" />
-              <span className="cbf-sel-card-badge cbf-sel-badge-transfer">Transfer</span>
-              <button
-                type="button"
-                className="cbf-sel-card-remove"
-                onClick={() => onToggleTransfer(t)}
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-            <div className="cbf-sel-card-body">
-              <div className="cbf-sel-card-body-left">
-                <span className="cbf-sel-card-name">{t.title}</span>
-                <span className="cbf-sel-card-sub">
-                  {ttype === 'roundtrip' ? 'Roundtrip' : 'One Way'}
-                  {t.category ? ` · ${t.category}` : ''}
-                </span>
-              </div>
-              <div className="cbf-sel-card-body-price">
-                <span className="cbf-sel-body-price-label">PRICE</span>
-                <span className="cbf-sel-body-price-val">₱{fmt(tprice)}</span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* ── Summary ── */}
-      <div className="cbf-sel-summary">
-        <div className="cbf-sel-summary-label">SUMMARY</div>
-
-        {selectedTours.map(t => (
-          <div key={t._id} className="cbf-sel-summary-row">
-            <span className="cbf-sel-summary-dot cbf-dot-tour" />
-            <span className="cbf-sel-summary-name">{t.title || t.name}</span>
-            <span className="cbf-sel-summary-price">
-              ₱{fmt((t.price || 0) * pax)}
-            </span>
+              <X size={11} />
+            </button>
           </div>
         ))}
-
-        {selectedTransfers.map(t => {
-          const ttype  = transferTypes[t._id] || 'oneway';
-          const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
-          return (
-            <div key={t._id} className="cbf-sel-summary-row">
-              <span className="cbf-sel-summary-dot cbf-dot-transfer" />
-              <span className="cbf-sel-summary-name">{t.title}</span>
-              <span className="cbf-sel-summary-price">₱{fmt(tprice)}</span>
-            </div>
-          );
-        })}
-
-        <div className="cbf-sel-total-row">
-          <span className="cbf-sel-total-label">Total Due</span>
-          <strong className="cbf-sel-total-amount">₱{fmt(grandTotal)}</strong>
-        </div>
       </div>
 
+      {/* Total */}
+      <div className="cbf-selbar-total">
+        <span className="cbf-selbar-total-label">Total</span>
+        <strong className="cbf-selbar-total-val">₱{fmt(grandTotal)}</strong>
+      </div>
     </div>
   );
 }

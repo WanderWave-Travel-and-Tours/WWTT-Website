@@ -396,7 +396,7 @@ const GHL_BOOKING_WEBHOOK_URL =
 // Backward-compat alias — transfer booking previously used this name.
 const GHL_TRANSFER_BOOKING_WEBHOOK_URL = GHL_BOOKING_WEBHOOK_URL;
 
-const sendTransferBookingToGHL = async (booking) => {
+const sendTransferBookingToGHL = async (booking, overrides = {}) => {
   const fullName   = booking.fullName || '';
   const firstName  = fullName.split(' ')[0] || '';
   const lastName   = fullName.split(' ').slice(1).join(' ') || '';
@@ -410,31 +410,39 @@ const sendTransferBookingToGHL = async (booking) => {
     created_at: new Date().toISOString(),
 
     // ── Booking identity ──────────────────────────────────────
-    bookingId:       booking._id ? booking._id.toString() : '',
-    booking_id:      booking._id ? booking._id.toString() : '',
-    bookingType:     booking.bookingType     || 'transfer',
-    createdByType:   booking.createdByType   || 'customer',
-    status:          booking.status          || 'pending',
-    paymentStatus:   booking.paymentStatus   || 'pending',
-    isArchive:       booking.isArchive       || 'No',
+    bookingId:        booking._id ? booking._id.toString() : '',
+    booking_id:       booking._id ? booking._id.toString() : '',
+    referenceNumber:  booking.referenceNumber || '',
+    reference_number: booking.referenceNumber || '',
+    bookingType:      booking.bookingType     || 'transfer',
+    createdByType:    booking.createdByType   || 'customer',
+    status:           booking.status          || 'pending',
+    paymentStatus:    booking.paymentStatus   || 'pending',
+    isArchive:        booking.isArchive       || 'No',
+    booking_created_at: booking.createdAt ? new Date(booking.createdAt).toISOString() : '',
 
     // ── Transfer listing ──────────────────────────────────────
     transferId:      booking.transferId ? booking.transferId.toString() : '',
     activityName:    booking.activityName    || '',
     transferName:    booking.activityName    || '',
     transfer_name:   booking.activityName    || '',
+    serviceName:     booking.activityName    || '',
+    service:         booking.activityName    || '',
     destination:     booking.destination     || '',
     category:        booking.category        || '',
     supplierName:    booking.supplierName    || '',
+    supplier:        booking.supplierName    || '',
 
     // ── Trip type ─────────────────────────────────────────────
     transferType:    booking.transferType    || 'oneway',
+    transfer_type:   booking.transferType    || 'oneway',
 
     // ── Schedule ─────────────────────────────────────────────
     travelDate:      booking.travelDate      || '',
     travel_date:     booking.travelDate      || '',
     returnDate:      booking.returnDate      || '',
     return_date:     booking.returnDate      || '',
+    travel_dates:    `${booking.travelDate || ''}${booking.returnDate ? ' to ' + booking.returnDate : ''}`,
     arrivalTime:     booking.arrivalTime     || '',
     arrival_time:    booking.arrivalTime     || '',
     departureTime:   booking.departureTime   || '',
@@ -445,6 +453,7 @@ const sendTransferBookingToGHL = async (booking) => {
     pickup_location: booking.pickupLocation  || '',
     dropoffLocation: booking.dropoffLocation || '',
     dropoff_location:booking.dropoffLocation || '',
+    route:           [booking.pickupLocation, booking.dropoffLocation].filter(Boolean).join(' → '),
 
     // ── Contact details ───────────────────────────────────────
     fullName,
@@ -453,7 +462,9 @@ const sendTransferBookingToGHL = async (booking) => {
     last_name:       lastName,
     email:           booking.email           || '',
     phone:           booking.phone           || '',
+    nationality:     booking.nationality     || '',
     message:         booking.message         || '',
+    notes:           booking.notes           || '',
     specialRequests: booking.specialRequests || '',
     special_requests:booking.specialRequests || '',
 
@@ -479,6 +490,8 @@ const sendTransferBookingToGHL = async (booking) => {
     initial_payment_amount:booking.initialPaymentAmount  || 0,
     remainingBalance:      booking.remainingBalance      || 0,
     remaining_balance:     booking.remainingBalance      || 0,
+    payment_confirmed:     false,
+    payment_confirmed_at:  '',
 
     // ── Promo ─────────────────────────────────────────────────
     promoCode:       booking.promoCode       || '',
@@ -487,6 +500,9 @@ const sendTransferBookingToGHL = async (booking) => {
     // ── Booking date ──────────────────────────────────────────
     bookingDate:     new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date:    new Date().toISOString(),
+
+    // ── Caller-supplied overrides (e.g. payment_confirmed: true) ──
+    ...overrides,
   };
 
   console.log('📤 Sending TRANSFER_BOOKING to GHL:');
@@ -509,7 +525,7 @@ const sendTransferBookingToGHL = async (booking) => {
 // Fires every time a TourBooking is created (online, walk-in, and
 // sales/admin bookings). Posts to the shared booking automation webhook.
 // ============================================================
-const sendTourBookingToGHL = async (booking) => {
+const sendTourBookingToGHL = async (booking, overrides = {}) => {
   const b = booking || {};
   const fullName  = b.fullName || b.primaryContact?.fullName || '';
   const firstName = fullName.split(' ')[0] || '';
@@ -537,14 +553,17 @@ const sendTourBookingToGHL = async (booking) => {
     created_at: new Date().toISOString(),
 
     // ── Booking identity ──────────────────────────────────────
-    bookingId:     b._id ? b._id.toString() : '',
-    booking_id:    b._id ? b._id.toString() : '',
-    bookingType:   b.bookingType   || 'tour',
-    bookingSource: b.bookingSource || 'online',
-    createdByType: b.createdByType || 'user',
-    status:        b.status        || 'pending',
-    paymentStatus: b.paymentStatus || 'pending',
-    isArchive:     b.isArchive     || 'No',
+    bookingId:        b._id ? b._id.toString() : '',
+    booking_id:       b._id ? b._id.toString() : '',
+    referenceNumber:  b.referenceNumber || '',
+    reference_number: b.referenceNumber || '',
+    bookingType:      b.bookingType   || 'tour',
+    bookingSource:    b.bookingSource || 'online',
+    createdByType:    b.createdByType || 'user',
+    status:           b.status        || 'pending',
+    paymentStatus:    b.paymentStatus || 'pending',
+    isArchive:        b.isArchive     || 'No',
+    booking_created_at: b.createdAt ? new Date(b.createdAt).toISOString() : '',
 
     // ── Tour listing ──────────────────────────────────────────
     tourId:       b.tourId    ? b.tourId.toString()    : '',
@@ -555,6 +574,9 @@ const sendTourBookingToGHL = async (booking) => {
     tour_name:    b.packageName || '',
     service:      b.packageName || '',
     serviceName:  b.packageName || '',
+    destination:  b.destination || '',
+    category:     b.category    || '',
+    duration:     b.duration    || '',
 
     // ── Schedule ─────────────────────────────────────────────
     startDate:    b.startDate || '',
@@ -564,16 +586,19 @@ const sendTourBookingToGHL = async (booking) => {
     end_date:     b.endDate   || '',
     travel_end:   b.endDate   || '',
     travel_dates: `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
-    duration:     b.duration  || '',
 
     // ── Contact details ───────────────────────────────────────
     fullName,
-    name:        fullName,
-    first_name:  firstName,
-    last_name:   lastName,
-    email:       b.email || b.primaryContact?.email || '',
-    phone:       b.phone || '',
-    message:     b.message || '',
+    name:            fullName,
+    first_name:      firstName,
+    last_name:       lastName,
+    email:           b.email || b.primaryContact?.email || '',
+    phone:           b.phone || '',
+    nationality:     b.nationality || b.primaryContact?.nationality || '',
+    message:         b.message || '',
+    notes:           b.notes   || '',
+    specialRequests: b.specialRequests || '',
+    special_requests:b.specialRequests || '',
 
     // ── Passengers ────────────────────────────────────────────
     passengerCount:  paxTotal,
@@ -586,25 +611,27 @@ const sendTourBookingToGHL = async (booking) => {
     passengers_list: passengersFormatted,
 
     // ── Pricing ───────────────────────────────────────────────
-    packagePrice:   b.packagePrice   || 0,
-    package_price:  b.packagePrice   || 0,
-    discountAmount: b.discountAmount || 0,
-    discount_amount:b.discountAmount || 0,
-    airfareTotal:   b.airfareTotal   || 0,
-    airfare_total:  b.airfareTotal   || 0,
+    packagePrice:    b.packagePrice   || 0,
+    package_price:   b.packagePrice   || 0,
+    discountAmount:  b.discountAmount || 0,
+    discount_amount: b.discountAmount || 0,
+    airfareTotal:    b.airfareTotal   || 0,
+    airfare_total:   b.airfareTotal   || 0,
     includesAirfare: b.includesAirfare ? 'Yes' : 'No',
     includes_airfare:b.includesAirfare ? 'Yes' : 'No',
-    totalAmount:    totalAmount,
-    total_amount:   totalAmount,
+    totalAmount:     totalAmount,
+    total_amount:    totalAmount,
     totalAmountFormatted: `₱${(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
 
     // ── Payment ───────────────────────────────────────────────
-    paymentType:           b.paymentType          || 'full',
-    payment_type:          b.paymentType          || 'full',
-    initialPaymentAmount:  b.initialPaymentAmount || 0,
-    initial_payment_amount:b.initialPaymentAmount || 0,
-    remainingBalance:      b.remainingBalance      || 0,
-    remaining_balance:     b.remainingBalance      || 0,
+    paymentType:            b.paymentType          || 'full',
+    payment_type:           b.paymentType          || 'full',
+    initialPaymentAmount:   b.initialPaymentAmount || 0,
+    initial_payment_amount: b.initialPaymentAmount || 0,
+    remainingBalance:       b.remainingBalance      || 0,
+    remaining_balance:      b.remainingBalance      || 0,
+    payment_confirmed:      false,
+    payment_confirmed_at:   '',
 
     // ── Promo ─────────────────────────────────────────────────
     promoCode:  b.promoCode || '',
@@ -613,6 +640,9 @@ const sendTourBookingToGHL = async (booking) => {
     // ── Booking date ──────────────────────────────────────────
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),
+
+    // ── Caller-supplied overrides (e.g. payment_confirmed: true) ──
+    ...overrides,
   };
 
   console.log('📤 Sending TOUR_BOOKING to GHL:');
@@ -637,7 +667,7 @@ const sendTourBookingToGHL = async (booking) => {
 // transfers, so we send a readable summary plus the raw arrays.
 // Posts to the shared booking automation webhook.
 // ============================================================
-const sendCustomBookingToGHL = async (booking) => {
+const sendCustomBookingToGHL = async (booking, overrides = {}) => {
   const b = booking || {};
   const fullName  = b.fullName || '';
   const firstName = fullName.split(' ')[0] || '';
@@ -672,15 +702,16 @@ const sendCustomBookingToGHL = async (booking) => {
     created_at: new Date().toISOString(),
 
     // ── Booking identity ──────────────────────────────────────
-    bookingId:       b._id ? b._id.toString() : '',
-    booking_id:      b._id ? b._id.toString() : '',
-    referenceNumber: b.referenceNumber || '',
-    reference_number:b.referenceNumber || '',
-    bookingType:     b.bookingType   || 'customized',
-    createdByType:   b.createdByType || 'customer',
-    status:          b.status        || 'pending',
-    paymentStatus:   b.paymentStatus || 'pending',
-    isArchive:       b.isArchive     || 'No',
+    bookingId:        b._id ? b._id.toString() : '',
+    booking_id:       b._id ? b._id.toString() : '',
+    referenceNumber:  b.referenceNumber || '',
+    reference_number: b.referenceNumber || '',
+    bookingType:      b.bookingType   || 'customized',
+    createdByType:    b.createdByType || 'customer',
+    status:           b.status        || 'pending',
+    paymentStatus:    b.paymentStatus || 'pending',
+    isArchive:        b.isArchive     || 'No',
+    booking_created_at: b.createdAt ? new Date(b.createdAt).toISOString() : '',
 
     // ── Trip overview ─────────────────────────────────────────
     destination:  b.destination || '',
@@ -699,6 +730,9 @@ const sendCustomBookingToGHL = async (booking) => {
     last_name:   lastName,
     email:       b.email || '',
     phone:       b.phone || '',
+    nationality: b.nationality || '',
+    birthDate:   b.birthDate   || '',
+    birth_date:  b.birthDate   || '',
     message:     b.message || '',
     notes:       b.notes   || '',
 
@@ -708,30 +742,32 @@ const sendCustomBookingToGHL = async (booking) => {
     pax:             b.paxCount || 1,
 
     // ── Services (summary + raw) ──────────────────────────────
-    tours_count:        tours.length,
-    transfers_count:    transfers.length,
-    tours_summary:      toursFormatted,
-    transfers_summary:  transfersFormatted,
-    tours_raw:          JSON.stringify(tours),
-    transfers_raw:      JSON.stringify(transfers),
+    tours_count:       tours.length,
+    transfers_count:   transfers.length,
+    tours_summary:     toursFormatted,
+    transfers_summary: transfersFormatted,
+    tours_raw:         JSON.stringify(tours),
+    transfers_raw:     JSON.stringify(transfers),
 
     // ── Pricing ───────────────────────────────────────────────
-    toursTotal:     b.toursTotal     || 0,
-    tours_total:    b.toursTotal     || 0,
-    transfersTotal: b.transfersTotal || 0,
-    transfers_total:b.transfersTotal || 0,
-    totalAmount:    totalAmount,
-    total_amount:   totalAmount,
+    toursTotal:      b.toursTotal     || 0,
+    tours_total:     b.toursTotal     || 0,
+    transfersTotal:  b.transfersTotal || 0,
+    transfers_total: b.transfersTotal || 0,
+    totalAmount:     totalAmount,
+    total_amount:    totalAmount,
     totalAmountFormatted: `₱${(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
 
     // ── Payment ───────────────────────────────────────────────
-    currency:              b.currency             || 'PHP',
-    paymentType:           b.paymentType          || 'full',
-    payment_type:          b.paymentType          || 'full',
-    initialPaymentAmount:  b.initialPaymentAmount || 0,
-    initial_payment_amount:b.initialPaymentAmount || 0,
-    remainingBalance:      b.remainingBalance      || 0,
-    remaining_balance:     b.remainingBalance      || 0,
+    currency:               b.currency             || 'PHP',
+    paymentType:            b.paymentType          || 'full',
+    payment_type:           b.paymentType          || 'full',
+    initialPaymentAmount:   b.initialPaymentAmount || 0,
+    initial_payment_amount: b.initialPaymentAmount || 0,
+    remainingBalance:       b.remainingBalance      || 0,
+    remaining_balance:      b.remainingBalance      || 0,
+    payment_confirmed:      false,
+    payment_confirmed_at:   '',
 
     // ── Promo ─────────────────────────────────────────────────
     promoCode:  b.promoCode || '',
@@ -740,6 +776,9 @@ const sendCustomBookingToGHL = async (booking) => {
     // ── Booking date ──────────────────────────────────────────
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),
+
+    // ── Caller-supplied overrides (e.g. payment_confirmed: true) ──
+    ...overrides,
   };
 
   console.log('📤 Sending CUSTOM_BOOKING to GHL:');
