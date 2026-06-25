@@ -9,15 +9,15 @@ const itineraryItemSchema = new mongoose.Schema({
 
 const passengerSchema = new mongoose.Schema({
   passengerNumber: { type: Number, required: true },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  email: { type: String, required: false, default: null },   // optional, null if not provided
-  phone: { type: String, required: true },
-  dateOfBirth: { type: String, required: true },
-  age: { type: Number, required: true },
-  gender: { type: String, required: true },
-  address: { type: String, required: true },
-  nationality: { type: String, required: true },
+  firstName: { type: String, default: '' },
+  lastName: { type: String, default: '' },
+  email: { type: String, default: null },
+  phone: { type: String, default: '' },
+  dateOfBirth: { type: String, default: '' },
+  age: { type: Number, default: 0 },
+  gender: { type: String, default: '' },
+  address: { type: String, default: '' },
+  nationality: { type: String, default: 'Filipino' },
   
   idDocument: {
     filename: String,

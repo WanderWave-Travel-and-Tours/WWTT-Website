@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from 'axios';
+import api from '../../../lib/axiosInstance';
 import Sidebar from "../../sidebar/sidebar"; 
 import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search, UserPlus, Eye, Mail, Archive } from "lucide-react"; 
 import { InquiryModal, ServiceListModal, ServiceEditorModal, ContactRemarksModal } from "./CenomarModals"; 
@@ -321,7 +321,7 @@ const CenomarRequestContent = () => {
 
   const fetchCENOMARDocs = async () => {
     try {
-      const res = await axios.get("https://wanderwaveph.onrender.com/api/cenomar");
+      const res = await api.get("/api/cenomar");
       if (Array.isArray(res.data)) {
         const mapped = res.data.map(d => ({ ...d, id: d._id, desc: d.description }));
         setCenomarDocs(mapped);
@@ -337,7 +337,7 @@ const CenomarRequestContent = () => {
   const fetchInquiries = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('https://wanderwaveph.onrender.com/api/inquiries');
+      const response = await api.get('/api/inquiries');
       if (response.data.success) {
         const cenomarRequests = response.data.data.filter(inq => 
           inq.inquiryType === 'CENOMAR' && inq.isArchive === 'No'
@@ -421,7 +421,7 @@ const CenomarRequestContent = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`https://wanderwaveph.onrender.com/api/documents/inquiry/${inquiryId}`);
+      const response = await api.get(`/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) setDocuments(response.data.documents || []);
     } catch (error) { 
         console.error('Error fetching documents:', error); 
@@ -445,8 +445,8 @@ const CenomarRequestContent = () => {
         const { userEmail, adminId } = getAdminData();
         
         try {
-          const res = await axios.put(
-            `https://wanderwaveph.onrender.com/api/inquiries/${id}/archive`, 
+          const res = await api.put(
+            `/api/inquiries/${id}/archive`, 
             { 
               isArchive: "Yes",
               userEmail,
@@ -489,8 +489,8 @@ const CenomarRequestContent = () => {
         const { userEmail, adminId } = getAdminData();
         
         try {
-          const response = await axios.put(
-            `https://wanderwaveph.onrender.com/api/inquiries/${inquiryId}/status`, 
+          const response = await api.put(
+            `/api/inquiries/${inquiryId}/status`, 
             { 
               status: newStatus,
               userEmail,
@@ -522,8 +522,8 @@ const CenomarRequestContent = () => {
         const { userEmail, adminId } = getAdminData();
         
         try {
-          const response = await axios.put(
-            `https://wanderwaveph.onrender.com/api/inquiries/${selectedInquiry._id}/status`, 
+          const response = await api.put(
+            `/api/inquiries/${selectedInquiry._id}/status`, 
             { 
               status: 'PAYMENT_PENDING',
               userEmail,
@@ -561,8 +561,8 @@ const CenomarRequestContent = () => {
       
       if (contactEvidence) formData.append('evidence', contactEvidence);
       
-      const response = await axios.put(
-        `https://wanderwaveph.onrender.com/api/inquiries/${selectedInquiry._id}/status`, 
+      const response = await api.put(
+        `/api/inquiries/${selectedInquiry._id}/status`, 
         formData, 
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -590,8 +590,8 @@ const CenomarRequestContent = () => {
         const { userEmail, adminId } = getAdminData();
         
         try {
-          const response = await axios.put(
-            `https://wanderwaveph.onrender.com/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
+          const response = await api.put(
+            `/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
             { 
               adminName: 'Admin',
               userEmail,
@@ -627,8 +627,8 @@ const CenomarRequestContent = () => {
     formData.append('adminId', adminId);
 
     try {
-      const response = await axios.put(
-        `https://wanderwaveph.onrender.com/api/inquiries/${selectedInquiry._id}/deliver-documents`,
+      const response = await api.put(
+        `/api/inquiries/${selectedInquiry._id}/deliver-documents`,
         formData, 
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -679,7 +679,7 @@ const CenomarRequestContent = () => {
       type: "danger",
       onConfirm: async () => {
         try { 
-            await axios.delete(`https://wanderwaveph.onrender.com/api/cenomar/${id}`); 
+            await api.delete(`/api/cenomar/${id}`); 
             toast.success("Service deleted successfully!");
             fetchCENOMARDocs(); 
         } catch(err) { 
@@ -702,9 +702,9 @@ const CenomarRequestContent = () => {
     
     try {
       if (isEditorOpen && selectedCENOMAR) {
-        await axios.put(`https://wanderwaveph.onrender.com/api/cenomar/${selectedCENOMAR._id}`, payload);
+        await api.put(`/api/cenomar/${selectedCENOMAR._id}`, payload);
       } else {
-        await axios.post(`https://wanderwaveph.onrender.com/api/cenomar`, payload);
+        await api.post(`/api/cenomar`, payload);
       }
       
       toast.success("Service saved successfully!"); 
@@ -736,7 +736,7 @@ const CenomarRequestContent = () => {
     formData.append('file', file);
     
     try {
-      const res = await axios.post('https://wanderwaveph.onrender.com/api/upload', formData);
+      const res = await api.post('/api/upload', formData);
       if (res.data.success) {
         setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
         toast.success("File uploaded successfully!");

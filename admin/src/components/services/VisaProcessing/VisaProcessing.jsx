@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from '../../../lib/axiosInstance';
 import Sidebar from "../../sidebar/sidebar"; 
 import { 
   FolderOpen, Clock, CheckCircle, RefreshCw, FileText, 
@@ -369,7 +369,7 @@ const VisaProcessing = () => {
 
   const fetchVisas = async () => {
     try {
-      const res = await axios.get("https://wanderwaveph.onrender.com/api/visas");
+      const res = await api.get("/api/visas");
       if (Array.isArray(res.data)) {
         setVisaForms(res.data.map((v) => ({ ...v, id: v._id, desc: v.description })));
       }
@@ -383,7 +383,7 @@ const VisaProcessing = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get('https://wanderwaveph.onrender.com/api/inquiries?isArchive=No');
+      const response = await api.get('/api/inquiries?isArchive=No');
       if (response.data.success) {
         const visaRequests = response.data.data.filter(inq => 
             (inq.inquiryType === 'VISA') && inq.isArchive === 'No'
@@ -404,7 +404,7 @@ const VisaProcessing = () => {
         async () => {
             const { userEmail, adminId } = getAdminData();
             try {
-                const response = await axios.put(`https://wanderwaveph.onrender.com/api/inquiries/${id}/archive`, {
+                const response = await api.put(`/api/inquiries/${id}/archive`, {
                     isArchive: "Yes",
                     userEmail, 
                     adminId    

@@ -354,14 +354,14 @@
   overflow: hidden;
   padding: 0;
   background: #f8fafc;
-  flex: 1;
-  min-height: 0;
 }
 
+/* Desktop: side-by-side gallery + info */
 @media (min-width: 641px) {
   .hrs-lightbox-body {
     flex-direction: row;
     height: 550px;
+    overflow: hidden;
   }
 }
 
