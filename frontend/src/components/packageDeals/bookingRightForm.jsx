@@ -1250,18 +1250,20 @@ const handleNextPassenger = async (e) => {
       // This array is only used as a last resort if no DB match is found.
       itinerary: (pkg.itinerary || []).map(({ day, title, activities }) => ({ day, title, activities })),
       
-      passengers: passengers.map(p => ({
-        passengerNumber: p.passengerNumber || 1,
-        firstName: p.firstName || '',
-        lastName: p.lastName || '',
-        email: p.email || '',
-        phone: p.phone || '',
-        dateOfBirth: p.dateOfBirth || '',
-        age: p.age || 0,
-        gender: p.gender || '',
-        address: p.address || '',
-        nationality: p.nationality || 'Filipino',
-      }))
+      passengers: passengers
+        .filter((p, i) => i === 0 || p.firstName)
+        .map(p => ({
+          passengerNumber: p.passengerNumber || 1,
+          firstName: p.firstName || '',
+          lastName: p.lastName || '',
+          email: p.email || '',
+          phone: p.phone || '',
+          dateOfBirth: p.dateOfBirth || '',
+          age: p.age || 0,
+          gender: p.gender || '',
+          address: p.address || '',
+          nationality: p.nationality || 'Filipino',
+        }))
     };
     
     formData.append('bookingData', JSON.stringify(baseBookingData));

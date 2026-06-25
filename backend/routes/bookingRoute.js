@@ -862,13 +862,13 @@ router.post('/', upload.any(), async (req, res) => {
 
       for (let index = 0; index < rawPassengers.length; index++) {
         const passengerData = rawPassengers[index];
-          if (!passengerData.firstName || !passengerData.lastName || 
-               !passengerData.phone || 
-              !passengerData.dateOfBirth) {
+          if (index === 0 && (!passengerData.firstName || !passengerData.lastName ||
+               !passengerData.phone ||
+              !passengerData.dateOfBirth)) {
               req.files?.forEach(file => { try { fs.unlinkSync(file.path); } catch (e) {} });
               return res.status(400).json({
                 success: false,
-                message: `Passenger ${index + 1} is missing required fields (firstName, lastName, email, phone, or dateOfBirth). Please complete all passenger details.`
+                message: `Primary passenger is missing required fields (firstName, lastName, phone, or dateOfBirth). Please complete the primary passenger details.`
               });
           }
 

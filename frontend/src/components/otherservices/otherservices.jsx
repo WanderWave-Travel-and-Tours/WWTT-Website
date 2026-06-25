@@ -219,6 +219,9 @@ const OtherServices = ({ setAuthPage }) => {
             requirements: service.requirements || [],
             order: service.order || 999,
             isComingSoon: !service.isActive,
+            hasSubCollection: service.hasSubCollection || false,
+            subCollectionName: service.subCollectionName || null,
+            category: service.category || null,
           };
         });
 
@@ -263,7 +266,7 @@ const OtherServices = ({ setAuthPage }) => {
     closeConfirm();
   };
 
-  // ── Service card click handler ────────────────────────────────────────────────
+  // ── Service card click handler — routing driven by DB fields ─────────────────
   const handleInquireClick = (item) => {
     if (item.isComingSoon) {
       toast.info(
@@ -273,113 +276,7 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // ── Tour Arrangements: redirect to dedicated tours page ──────────────────
-    if (
-      item.title === "Tour Arrangements" ||
-      item.title.toLowerCase().includes("tour arrangement")
-    ) {
-      navigate("/tours");
-      return;
-    }
-
-    // ── Tourist Transfers: redirect to dedicated transfers page ──────────────
-    if (
-      item.title === "Tourist Transfers" ||
-      item.title.toLowerCase().includes("transfer")
-    ) {
-      navigate("/transfers");
-      return;
-    }
-
-    if (item.title === "Visa Assistance") {
-      setIsVisaService(true);
-      setIsPSAService(false);
-      setIsCENOMARService(false);
-      setIsPassportService(false);
-      setSelectedPackage({
-        title: item.title,
-        desc: item.desc,
-        requirements: [],
-        price: item.price || 4999.99,
-        visaCountry: null,
-        psaDocument: null,
-        cenomarDocument: null,
-        serviceId: item._id,
-      });
-      setFormData({ fullName: "", email: "", message: "" });
-      setShowModal(false);
-      setShowVisaCountries(true);
-      return;
-    }
-
-    if (item.title === "PSA Assistance" || item.title.includes("PSA")) {
-      setIsPSAService(true);
-      setIsVisaService(false);
-      setIsCENOMARService(false);
-      setIsPassportService(false);
-      setSelectedPackage({
-        title: item.title,
-        desc: item.desc,
-        requirements: [],
-        price: item.price || 350,
-        visaCountry: null,
-        psaDocument: null,
-        cenomarDocument: null,
-        serviceId: item._id,
-      });
-      setFormData({ fullName: "", email: "", message: "" });
-      setShowModal(false);
-      setShowPSADocuments(true);
-      return;
-    }
-
-    if (item.title === "CENOMAR Assistance" || item.title.includes("CENOMAR")) {
-      setIsCENOMARService(true);
-      setIsVisaService(false);
-      setIsPSAService(false);
-      setIsPassportService(false);
-      setSelectedPackage({
-        title: item.title,
-        desc: item.desc,
-        requirements: [],
-        price: item.price || 450,
-        visaCountry: null,
-        psaDocument: null,
-        cenomarDocument: null,
-        serviceId: item._id,
-      });
-      setFormData({ fullName: "", email: "", message: "" });
-      setShowModal(false);
-      setShowCENOMARDocuments(true);
-      return;
-    }
-
-    if (item.title === "Passport Assistance" || item.title.includes("Passport")) {
-      setIsPassportService(true);
-      setIsVisaService(false);
-      setIsPSAService(false);
-      setIsCENOMARService(false);
-      setSelectedPackage({
-        title: item.title,
-        desc: item.desc,
-        requirements: [],
-        price: item.price || 1500,
-        visaCountry: null,
-        psaDocument: null,
-        cenomarDocument: null,
-        serviceId: item._id,
-      });
-      setFormData({ fullName: "", email: "", message: "" });
-      setShowModal(false);
-      setShowPassportService(true);
-      return;
-    }
-
-    setIsVisaService(false);
-    setIsPSAService(false);
-    setIsCENOMARService(false);
-    setIsPassportService(false);
-    setSelectedPackage({
+    const basePackage = {
       title: item.title,
       desc: item.desc,
       requirements: item.requirements || [],
@@ -388,7 +285,67 @@ const OtherServices = ({ setAuthPage }) => {
       psaDocument: null,
       cenomarDocument: null,
       serviceId: item._id,
-    });
+    };
+
+    // ── Tour Arrangements: redirect (category = TOURS or subCollectionName = tours) ──
+    if (
+      item.category?.toUpperCase() === "TOURS" ||
+      item.subCollectionName === "tours" ||
+      item.title.toLowerCase().includes("tour arrangement")
+    ) {
+      navigate("/tours");
+      return;
+    }
+
+    // ── Tourist Transfers: redirect (category = TRANSFERS or subCollectionName = transfers) ──
+    if (
+      item.category?.toUpperCase() === "TRANSFERS" ||
+      item.subCollectionName === "transfers" ||
+      item.title.toLowerCase().includes("transfer")
+    ) {
+      navigate("/transfers");
+      return;
+    }
+
+    // ── Services with a sub-collection — use subCollectionName from DB ────────
+    if (item.hasSubCollection && item.subCollectionName) {
+      const sub = item.subCollectionName.toLowerCase();
+
+      setIsVisaService(false);
+      setIsPSAService(false);
+      setIsCENOMARService(false);
+      setIsPassportService(false);
+      setSelectedPackage({ ...basePackage, requirements: [] });
+      setFormData({ fullName: "", email: "", message: "" });
+      setShowModal(false);
+
+      if (sub === "visas") {
+        setIsVisaService(true);
+        setShowVisaCountries(true);
+      } else if (sub === "psa") {
+        setIsPSAService(true);
+        setShowPSADocuments(true);
+      } else if (sub === "cenomar") {
+        setIsCENOMARService(true);
+        setShowCENOMARDocuments(true);
+      } else if (sub === "passports") {
+        setIsPassportService(true);
+        setShowPassportService(true);
+      } else {
+        // Unknown sub-collection: fall through to generic modal
+        setSelectedPackage(basePackage);
+        setMobileStep("info");
+        setShowModal(true);
+      }
+      return;
+    }
+
+    // ── Generic inquiry modal — uses requirements from services collection ────
+    setIsVisaService(false);
+    setIsPSAService(false);
+    setIsCENOMARService(false);
+    setIsPassportService(false);
+    setSelectedPackage(basePackage);
     setFormData({ fullName: "", email: "", message: "" });
     setMobileStep("info");
     setShowModal(true);
