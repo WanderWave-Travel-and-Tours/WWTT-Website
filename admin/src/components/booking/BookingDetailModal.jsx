@@ -4,10 +4,7 @@ import './BookingDetailModal.css';
 import VoucherPreviewModal from './VoucherPreviewModal';
 import OrderSlipModal from './OrderSlipModal';
 
-const getAdminHeaders = () => {
-    const token = sessionStorage.getItem('adminToken');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const getAdminHeaders = () => ({});
 
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";

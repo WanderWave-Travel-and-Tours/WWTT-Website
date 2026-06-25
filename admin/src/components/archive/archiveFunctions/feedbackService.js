@@ -13,10 +13,7 @@ export const fetchArchivedFeedbacks = async () => {
     
     const response = await fetch(`${API_BASE_URL}/feedback`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}`
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {
@@ -71,10 +68,7 @@ export const restoreFeedback = async (feedbackId) => {
 
     const response = await fetch(`${API_BASE_URL}/feedback/${feedbackId}/restore`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}`
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {

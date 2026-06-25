@@ -626,11 +626,6 @@ const AddPackage = () => {
             const response = await fetch("https://wanderwaveph.onrender.com/api/packages/add", {
                 method: "POST",
                 body: formData,
-                headers: {
-                    ...(sessionStorage.getItem('adminToken') && { 
-                        'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}` 
-                    })
-                }
             });
             
             const data = await response.json();

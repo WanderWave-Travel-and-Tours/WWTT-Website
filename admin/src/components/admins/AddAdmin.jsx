@@ -98,9 +98,8 @@ const AddAdmin = () => {
     setLoading(true);
 
     try {
-      const token = sessionStorage.getItem('adminToken'); 
       const username = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-      
+
       const adminData = {
         username: username,
         email: formData.email.trim().toLowerCase(),
@@ -108,13 +107,9 @@ const AddAdmin = () => {
       };
 
       const response = await axios.post(
-        'https://wanderwaveph.onrender.com/api/admin/create', 
+        'https://wanderwaveph.onrender.com/api/admin/create',
         adminData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+        { withCredentials: true }
       );
 
       alert('✅ Admin account created successfully!');

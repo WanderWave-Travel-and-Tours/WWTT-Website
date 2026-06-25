@@ -69,13 +69,8 @@ const ViewServices = () => {
     }, [toast]);
 
     useEffect(() => {
-        const isLoggedIn = sessionStorage.getItem('adminToken');
-        if (!isLoggedIn) {
-            navigate('/');
-        } else {
-            fetchServices();
-        }
-    }, [navigate, fetchServices]);
+        fetchServices();
+    }, [fetchServices]);
 
     const handleToggleStatus = async (serviceId, newIsActive) => {
         try {

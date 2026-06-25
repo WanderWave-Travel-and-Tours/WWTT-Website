@@ -142,10 +142,7 @@ const EditPackage = () => {
   const [otherTourTypeValue, setOtherTourTypeValue] = useState('');
 
   const API_BASE_URL = "https://wanderwaveph.onrender.com/api/packages";
-  const getAdminHeaders = () => {
-    const token = sessionStorage.getItem('adminToken');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  const getAdminHeaders = () => ({});
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 

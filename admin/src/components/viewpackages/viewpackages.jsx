@@ -41,10 +41,7 @@ const ViewPackages = () => {
     });
 
     const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/packages';
-    const getAdminHeaders = () => {
-        const token = sessionStorage.getItem('adminToken');
-        return token ? { Authorization: `Bearer ${token}` } : {};
-    };
+    const getAdminHeaders = () => ({});
 
     // ✅ Toggle Function
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -73,10 +70,8 @@ const ViewPackages = () => {
     };
 
     useEffect(() => {
-        const isLoggedIn = sessionStorage.getItem('adminToken');
-        if (!isLoggedIn) navigate('/');
         fetchPackages();
-    }, [navigate]);
+    }, []);
 
     const getImageUrl = (image) => {
         if (!image) return "https://via.placeholder.com/400x300?text=No+Image";

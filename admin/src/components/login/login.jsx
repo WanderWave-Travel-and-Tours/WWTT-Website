@@ -88,7 +88,6 @@ const Login = () => {
             const data = await response.json();
 
             if (data.status === 'ok') {
-                sessionStorage.setItem('adminToken', data.token);
                 localStorage.setItem('adminData', JSON.stringify(data.data));
                 
                 console.log('🔑 Admin logged in:', {

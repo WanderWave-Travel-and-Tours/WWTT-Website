@@ -12,10 +12,7 @@ import {
 } from '../utils/bookingUtils';
 
 const API_BASE = 'https://wanderwaveph.onrender.com';
-const getAdminHeaders = () => {
-  const token = sessionStorage.getItem('adminToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const getAdminHeaders = () => ({});
 
 export const useBookingLogic = (isOpen, onClose) => {
   const toast = useToast();

@@ -285,10 +285,7 @@ const EditHotel = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const token = sessionStorage.getItem('adminToken');
-                const destResponse = await fetch(`${API_BASE_URL}/api/packages/admin/all`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                });
+                const destResponse = await fetch(`${API_BASE_URL}/api/packages/admin/all`);
                 const destData = await destResponse.json();
                 
                 if (destData.status === 'ok' && Array.isArray(destData.data)) {

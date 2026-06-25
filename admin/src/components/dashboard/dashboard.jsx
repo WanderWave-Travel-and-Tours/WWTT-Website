@@ -78,7 +78,6 @@ const Dashboard = () => {
 
   const handleAutoLogout = useCallback(() => {
     console.warn("Admin session expired due to inactivity.");
-    sessionStorage.removeItem("adminToken");
     localStorage.removeItem("adminData");
     toast.error("Security Alert: Your session has expired due to inactivity. Please log in again.", "Session Expired");
     navigate("/");
@@ -100,12 +99,7 @@ const Dashboard = () => {
   }, [handleAutoLogout]);
 
   useEffect(() => {
-    const isLoggedIn = sessionStorage.getItem("adminToken");
-    if (!isLoggedIn) {
-      navigate("/");
-    } else {
-      fetchDashboardData();
-    }
+    fetchDashboardData();
   }, [navigate]);
 
   const fetchDashboardData = async () => {
@@ -126,7 +120,7 @@ const Dashboard = () => {
         pageViewsResult,
       ] = await Promise.allSettled([
         fetch(`${API}/api/admin/bookings`),
-        fetch(`${API}/api/packages/admin/all`, { headers: { Authorization: `Bearer ${sessionStorage.getItem('adminToken') || ''}` } }),
+        fetch(`${API}/api/packages/admin/all`),
         fetch(`${API}/api/blogs`),
         fetch(`${API}/api/promos`),
         fetch(`${API}/api/testimonials`),
@@ -693,10 +687,8 @@ const Dashboard = () => {
 
   const handleResetViewToBookRate = async () => {
     try {
-      const token = sessionStorage.getItem('adminToken');
       const res = await fetch("https://wanderwaveph.onrender.com/api/page-views/booking-counts/reset", {
         method: "DELETE",
-        headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) {

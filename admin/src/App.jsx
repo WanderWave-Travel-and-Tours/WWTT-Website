@@ -188,7 +188,6 @@ axios.interceptors.response.use(
 
     if ((error.response?.status === 401 || error.response?.data?.requiresAuth) && !isRedirecting) {
       isRedirecting = true;
-      sessionStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
       window.location.href = '/admin/';
     }
@@ -469,16 +468,10 @@ const ProtectedRoute = ({ children }) => {
     let retryTimeout = null;
 
     const verifyToken = async () => {
-      const token = sessionStorage.getItem('adminToken');
-
-      if (!token) {
-        if (isMounted) setAuthState('unauthenticated');
-        return;
-      }
-
       try {
         // Use fetch (not axios) so the global decrypting wrapper in main.jsx
         // auto-decrypts the encrypted verify response before we read it.
+        // Credentials (HttpOnly cookie) are injected automatically by the fetch override.
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -486,7 +479,6 @@ const ProtectedRoute = ({ children }) => {
         try {
           response = await fetch('https://wanderwaveph.onrender.com/api/admin/verify', {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
             signal: controller.signal,
           });
         } finally {
@@ -496,7 +488,6 @@ const ProtectedRoute = ({ children }) => {
         // 401/403 = definitive auth rejection → clear session, block access.
         if (response.status === 401 || response.status === 403) {
           console.error(`❌ Auth rejected (HTTP ${response.status}) - clearing session`);
-          sessionStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
           return;
@@ -517,7 +508,6 @@ const ProtectedRoute = ({ children }) => {
         if (data.status === 'ok') {
           if (isMounted) setAuthState('authenticated');
         } else {
-          sessionStorage.removeItem('adminToken');
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
         }

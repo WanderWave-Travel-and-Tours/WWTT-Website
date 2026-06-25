@@ -111,9 +111,8 @@ const AddAdminModal = ({ isOpen, onClose, onAdminAdded }) => {
   const performSubmit = async () => {
     setLoading(true);
     try {
-      const token = sessionStorage.getItem('adminToken'); 
       const username = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-      
+
       const adminData = {
         username: username,
         email: formData.email.trim().toLowerCase(),
@@ -121,13 +120,9 @@ const AddAdminModal = ({ isOpen, onClose, onAdminAdded }) => {
       };
 
       const response = await axios.post(
-        'https://wanderwaveph.onrender.com/api/admin/create', 
+        'https://wanderwaveph.onrender.com/api/admin/create',
         adminData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+        { withCredentials: true }
       );
 
       if (response.data.status === 'ok' || response.status === 200 || response.status === 201) {

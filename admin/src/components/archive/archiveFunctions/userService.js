@@ -2,15 +2,10 @@ import axios from 'axios';
 
 const API_URL = 'https://wanderwaveph.onrender.com/api/users';
 
-const getAuthHeaders = () => {
-    const token = sessionStorage.getItem('adminToken');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const fetchArchivedUsers = async () => {
     try {
         const response = await axios.get(`${API_URL}/all-with-archived`, {
-            headers: getAuthHeaders()
+            withCredentials: true
         });
         return response.data.filter(user => user.isArchive === "Yes");
     } catch (error) {
@@ -24,7 +19,7 @@ export const restoreUser = async (userId) => {
         const response = await axios.put(
             `${API_URL}/update-profile/${userId}`,
             { isArchive: "No" },
-            { headers: getAuthHeaders() }
+            { withCredentials: true }
         );
         return response.data.status === "ok";
     } catch (error) {
