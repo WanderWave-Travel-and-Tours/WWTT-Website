@@ -1699,6 +1699,29 @@
   letter-spacing: 0.01em;
 }
 
+.cdp-nav-selectors {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cdp-nav-select {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 3px 5px;
+  cursor: pointer;
+  outline: none;
+  appearance: auto;
+  transition: border-color 0.15s ease;
+}
+
+.cdp-nav-select:hover,
+.cdp-nav-select:focus { border-color: #fc9c1b; }
+
 /* Weekday header row */
 .cdp-weekdays {
   display: grid;
