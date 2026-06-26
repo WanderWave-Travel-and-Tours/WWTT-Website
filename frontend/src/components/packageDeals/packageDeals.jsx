@@ -649,7 +649,7 @@ function PackageDealsContent() {
         }
 
       } catch (e) {
-        setError('Error connecting to the API.');
+        setError('Error: ' + (e?.message || String(e)));
       } finally {
         setLoading(false);
       }

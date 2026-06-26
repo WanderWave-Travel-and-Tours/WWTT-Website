@@ -41,7 +41,8 @@
       "PowerShell(Get-Process -Id 32396 -ErrorAction SilentlyContinue)",
       "Bash(node .claude/skills/run-wwtt-website/driver.mjs screenshot /tmp/services-mobile.png \"http://localhost:3000/other-services\" --viewport 390x844)",
       "Bash(node .claude/skills/run-wwtt-website/driver.mjs screenshot \"C:/Users/HHSARM~1/AppData/Local/Temp/claude/services-mobile.png\" \"http://localhost:3000/other-services\")",
-      "Bash(node -e \"console.log\\(process.versions.node\\)\")"
+      "Bash(node -e \"console.log\\(process.versions.node\\)\")",
+      "Bash(node --check server.js)"
     ],
     "additionalDirectories": [
       "c:\\Users\\hhsarmiento\\Desktop",

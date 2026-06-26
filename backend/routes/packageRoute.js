@@ -391,8 +391,9 @@ router.get('/all', async (req, res) => {
                 .sort({ _id: -1 });
             return res.status(200).json({ status: 'ok', data: packages });
         } catch (error) {
+            console.error(`❌ /api/packages/all attempt ${attempt} failed:`, error.message);
             if (attempt === 2) {
-                return res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.' });
+                return res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.', detail: error.message });
             }
             await new Promise(r => setTimeout(r, 1500));
         }
