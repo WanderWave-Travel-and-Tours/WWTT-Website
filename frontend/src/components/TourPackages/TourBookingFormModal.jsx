@@ -24,6 +24,11 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                       'July', 'August', 'September', 'October', 'November', 'December'];
 
+  const maxYearDOB = maxDate ? new Date(maxDate).getFullYear() : new Date().getFullYear();
+  const minYearDOB = maxYearDOB - 100;
+  const yearsDOB = [];
+  for (let y = maxYearDOB; y >= minYearDOB; y--) yearsDOB.push(y);
+
   const weekDays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
@@ -137,7 +142,22 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
               <button type="button" className="cdp-nav-btn" onClick={previousMonth} aria-label="Previous month">
                 <ChevronLeft size={16} />
               </button>
-              <span className="cdp-month-year-label">{monthNames[viewMonth]} {viewYear}</span>
+              <div className="cdp-nav-selectors">
+                <select
+                  className="cdp-nav-select"
+                  value={viewMonth}
+                  onChange={e => setViewMonth(parseInt(e.target.value))}
+                >
+                  {monthNames.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+                <select
+                  className="cdp-nav-select"
+                  value={viewYear}
+                  onChange={e => setViewYear(parseInt(e.target.value))}
+                >
+                  {yearsDOB.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
               <button type="button" className="cdp-nav-btn" onClick={nextMonth} aria-label="Next month">
                 <ChevronRight size={16} />
               </button>

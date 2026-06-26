@@ -66,6 +66,12 @@
         var _launcherBtn = null;
         var _hiddenSiblings = [];
 
+        var HIDDEN_ROUTES = ['/login', '/dashboard'];
+
+        function isHiddenRoute() {
+          return HIDDEN_ROUTES.indexOf(window.location.pathname) !== -1;
+        }
+
         function hideLauncherBtn(btn) {
           btn.style.setProperty('opacity', '0', 'important');
           btn.style.setProperty('pointer-events', 'none', 'important');
@@ -74,12 +80,51 @@
           btn.style.setProperty('right', '-9999px', 'important');
         }
 
+        function hideChatWidget() {
+          var chatEl = document.querySelector('chat-widget');
+          if (chatEl) {
+            chatEl.style.setProperty('display', 'none', 'important');
+            chatEl.style.setProperty('visibility', 'hidden', 'important');
+            chatEl.style.setProperty('opacity', '0', 'important');
+            chatEl.style.setProperty('pointer-events', 'none', 'important');
+          }
+        }
+
+        function showChatWidget() {
+          var chatEl = document.querySelector('chat-widget');
+          if (chatEl) {
+            chatEl.style.removeProperty('display');
+            chatEl.style.removeProperty('visibility');
+            chatEl.style.removeProperty('opacity');
+            chatEl.style.removeProperty('pointer-events');
+          }
+        }
+
+        function updateChatVisibility() {
+          if (isHiddenRoute()) {
+            hideChatWidget();
+          } else {
+            showChatWidget();
+          }
+        }
+
+        // Listen to SPA route changes via History API
+        var _origPushState = history.pushState;
+        var _origReplaceState = history.replaceState;
+        history.pushState = function () {
+          _origPushState.apply(this, arguments);
+          updateChatVisibility();
+        };
+        history.replaceState = function () {
+          _origReplaceState.apply(this, arguments);
+          updateChatVisibility();
+        };
+        window.addEventListener('popstate', updateChatVisibility);
+
         function hideTooltipSiblings(btn) {
-          // Hide the speech bubble / tooltip elements next to the launcher button
           var parent = btn.parentElement;
           if (!parent) return;
 
-          // Hide direct siblings of the button
           var siblings = parent.children;
           for (var i = 0; i < siblings.length; i++) {
             if (siblings[i] !== btn) {
@@ -90,14 +135,12 @@
             }
           }
 
-          // Also check grandparent level for tooltip wrappers
           var grandParent = parent.parentElement;
           if (grandParent) {
             var uncles = grandParent.children;
             for (var j = 0; j < uncles.length; j++) {
               if (uncles[j] !== parent) {
                 var rect = uncles[j].getBoundingClientRect();
-                // Only hide small floating elements (tooltips/bubbles), not the main chat panel
                 if (rect.width > 0 && rect.width < 500 && rect.height > 0 && rect.height < 200) {
                   uncles[j].style.setProperty('display', 'none', 'important');
                   uncles[j].style.setProperty('visibility', 'hidden', 'important');
@@ -122,6 +165,7 @@
         }
 
         window.openGHLChat = function () {
+          if (isHiddenRoute()) return;
           if (_launcherBtn) {
             _launcherBtn.style.setProperty('pointer-events', 'auto', 'important');
             _launcherBtn.click();
@@ -139,7 +183,12 @@
           attempts++;
           var chatEl = document.querySelector('chat-widget');
           if (chatEl) {
-            // Force z-index and position on the host element
+            if (isHiddenRoute()) {
+              hideChatWidget();
+              clearInterval(interval);
+              return;
+            }
+
             chatEl.style.setProperty('position', 'fixed', 'important');
             chatEl.style.setProperty('z-index', '2147483647', 'important');
             chatEl.style.setProperty('bottom', '-40px', 'important');

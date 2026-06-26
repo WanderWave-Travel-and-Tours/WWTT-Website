@@ -44,6 +44,11 @@ export default function DatePicker({
     return { year: base.getFullYear(), month: base.getMonth() };
   };
 
+  const minYear = toDate(effectiveMin)?.getFullYear() ?? new Date().getFullYear();
+  const maxYear = effectiveMax ? toDate(effectiveMax).getFullYear() : new Date().getFullYear() + 5;
+  const yearOptions = [];
+  for (let y = maxYear; y >= minYear; y--) yearOptions.push(y);
+
   const [open, setOpen]   = useState(false);
   const [view, setView]   = useState(initView);
   const calRef            = useRef(null);
@@ -122,7 +127,22 @@ export default function DatePicker({
 
         <div className="cbf-dp-cal-header">
           <button type="button" className="cbf-dp-nav" onClick={prevMonth}>&#8249;</button>
-          <span className="cbf-dp-month-label">{MONTH_NAMES[view.month]} {view.year}</span>
+          <div className="cbf-dp-selectors">
+            <select
+              className="cbf-dp-select"
+              value={view.month}
+              onChange={e => setView(v => ({ ...v, month: parseInt(e.target.value) }))}
+            >
+              {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+            </select>
+            <select
+              className="cbf-dp-select"
+              value={view.year}
+              onChange={e => setView(v => ({ ...v, year: parseInt(e.target.value) }))}
+            >
+              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
           <button type="button" className="cbf-dp-nav" onClick={nextMonth}>&#8250;</button>
         </div>
 
