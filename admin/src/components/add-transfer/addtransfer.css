@@ -47,7 +47,7 @@
 }
 
 .atrn-main.collapsed-main {
-    margin-left: 90px;
+    margin-left: 64px;
 }
 
 .atrn-main *,
@@ -235,10 +235,10 @@
 @media (max-width: 768px) {
     .atrn-main,
     .atrn-main.collapsed-main {
-        margin-left: 90px !important;
+        margin-left: 64px !important;
         margin-right: 0 !important;
         padding: 24px 16px !important;
-        width: calc(100% - 90px) !important;
+        width: calc(100% - 64px) !important;
         overflow-x: hidden;
         box-sizing: border-box;
     }
@@ -308,7 +308,7 @@
         box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
         z-index: 100;
         margin: 0;
-        width: calc(100% - 90px);
+        width: calc(100% - 64px);
         gap: 8px;
         box-sizing: border-box;
     }
@@ -357,8 +357,8 @@
 @media (max-width: 480px) {
     .atrn-main,
     .atrn-main.collapsed-main {
-        margin-left: 90px !important;
-        width: calc(100% - 90px) !important;
+        margin-left: 64px !important;
+        width: calc(100% - 64px) !important;
         padding: 20px 12px !important;
     }
 
@@ -389,7 +389,7 @@
 
     .atrn-actions {
         left: 90px;
-        width: calc(100% - 90px);
+        width: calc(100% - 64px);
         flex-direction: row;
         padding: 10px 12px;
         gap: 6px;

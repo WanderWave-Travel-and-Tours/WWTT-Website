@@ -19,7 +19,7 @@
 }
 
 .editservice-main--collapsed {
-    margin-left: 90px;
+    margin-left: 64px;
 }
 
 .editservice-container {
@@ -412,9 +412,9 @@
 @media (max-width: 768px) {
     .editservice-main, 
     .editservice-main--collapsed {
-        margin-left: 90px !important;
+        margin-left: 64px !important;
         padding: 24px 16px !important;
-        width: calc(100% - 90px) !important;
+        width: calc(100% - 64px) !important;
     }
 
     .editservice-header {

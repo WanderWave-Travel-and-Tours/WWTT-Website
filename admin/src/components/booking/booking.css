@@ -26,8 +26,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 .bkm-main.expanded { 
-    margin-left: 80px !important; 
-    width: calc(100% - 80px) !important;
+    margin-left: 64px !important; 
+    width: calc(100% - 64px) !important;
     padding: 40px 60px; 
 }
 

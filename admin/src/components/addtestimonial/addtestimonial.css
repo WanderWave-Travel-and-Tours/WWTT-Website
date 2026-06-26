@@ -20,7 +20,7 @@
 }
 
 .testi-main--collapsed {
-    margin-left: 90px;
+    margin-left: 64px;
 }
 
 .testi-container {
@@ -234,9 +234,9 @@
 
 @media (max-width: 768px) {
     .testi-main {
-        margin-left: 90px !important;
+        margin-left: 64px !important;
         padding: 24px 16px !important;
-        width: calc(100% - 90px) !important;
+        width: calc(100% - 64px) !important;
     }
     .testi-header { padding: 45px 30px; margin-bottom: 32px; }
     .testi-title { font-size: 1.8rem; }
@@ -247,7 +247,7 @@
         padding: 10px 14px;
         box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
         z-index: 100;
-        width: calc(100% - 90px);
+        width: calc(100% - 64px);
     }
     .testi-btn { padding: 11px 18px; font-size: 12px; letter-spacing: 0.8px; }
     .testi-right { margin-bottom: 80px; }
@@ -258,7 +258,7 @@
 @media (max-width: 480px) {
     .testi-title { font-size: 1.8rem; }
     .testi-header { padding: 35px 25px; }
-    .testi-actions { left: 90px; width: calc(100% - 90px); }
+    .testi-actions { left: 90px; width: calc(100% - 64px); }
     
     .testi-field label {
         font-size: 10px;

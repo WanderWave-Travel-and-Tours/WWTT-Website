@@ -16,7 +16,7 @@
 }
 
 .add-admin-main.sidebar-collapsed {
-    margin-left: 70px;
+    margin-left: 64px;
 }
 
 .add-admin-container {
@@ -335,9 +335,9 @@
 @media (max-width: 768px) {
     .add-admin-main,
     .add-admin-main.sidebar-collapsed {
-        margin-left: 70px !important;
+        margin-left: 64px !important;
         padding: 24px 16px !important;
-        width: calc(100% - 70px) !important;
+        width: calc(100% - 64px) !important;
     }
 
     .add-admin-header {

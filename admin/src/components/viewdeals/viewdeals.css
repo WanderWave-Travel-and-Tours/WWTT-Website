@@ -139,6 +139,6 @@
 }
 
 @media (max-width: 1024px) {
-    .vd-main { margin-left: 70px; padding: 20px; }
+    .vd-main { margin-left: 64px; padding: 20px; }
     .vd-actions-top { width: 100%; justify-content: space-between; }
 }

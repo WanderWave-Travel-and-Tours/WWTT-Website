@@ -20,7 +20,7 @@
 }
 
 .apstr-main--collapsed {
-    margin-left: 90px;
+    margin-left: 64px;
 }
 
 .apstr-container {
@@ -285,9 +285,9 @@
 
 @media (max-width: 768px) {
     .apstr-main, .apstr-main--collapsed { 
-        margin-left: 90px !important; 
+        margin-left: 64px !important; 
         padding: 24px 16px !important; 
-        width: calc(100% - 90px) !important; 
+        width: calc(100% - 64px) !important; 
     }
     
     .apstr-header { padding: 45px 40px; margin-bottom: 32px; }
@@ -298,7 +298,7 @@
         background: #fff; 
         padding: 10px 14px; 
         z-index: 100; 
-        width: calc(100% - 90px); 
+        width: calc(100% - 64px); 
         box-shadow: 0 -4px 16px rgba(0,0,0,0.1); 
         gap: 10px;
     }
@@ -319,7 +319,7 @@
 @media (max-width: 480px) {
     .apstr-title { font-size: 1.8rem; }
     .apstr-header { padding: 35px 25px; }
-    .apstr-actions { left: 90px; width: calc(100% - 90px); }
+    .apstr-actions { left: 90px; width: calc(100% - 64px); }
     
     .pstr-field label {
         font-size: 10px;

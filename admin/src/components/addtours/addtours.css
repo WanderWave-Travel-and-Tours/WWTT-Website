@@ -21,7 +21,7 @@
 }
 
 .atour-main.atour-collapsed {
-    margin-left: 90px;
+    margin-left: 64px;
 }
 
 .atour-container {
@@ -151,9 +151,9 @@
 
 @media (max-width: 768px) {
     .atour-main, .atour-main.atour-collapsed {
-        margin-left: 90px !important;
+        margin-left: 64px !important;
         padding: 24px 16px !important;
-        width: calc(100% - 90px) !important;
+        width: calc(100% - 64px) !important;
     }
     
     .atour-header { padding: 45px 40px; margin-bottom: 32px; }
@@ -165,7 +165,7 @@
         padding: 10px 14px;
         box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
         z-index: 100;
-        width: calc(100% - 90px);
+        width: calc(100% - 64px);
         gap: 10px;
     }
     
@@ -180,7 +180,7 @@
 
 /* NEW RULE FOR COLLAPSED SIDEBAR */
 .pkg-main--collapsed {
-    margin-left: 70px;
+    margin-left: 64px;
 }
 /* END NEW RULE */
 
@@ -189,9 +189,9 @@
     .pkg-right { position: static; order: -1; max-width: 400px; }
 }
 @media (max-width: 900px) {
-    .pkg-main { margin-left: 70px; padding: 24px; }
+    .pkg-main { margin-left: 64px; padding: 24px; }
     /* Ensure the collapsed state still works below 900px, although the default will be 70px */
-    .pkg-main--collapsed { margin-left: 70px; } 
+    .pkg-main--collapsed { margin-left: 64px; } 
 }
 @media (max-width: 640px) {
     .pkg-main { padding: 16px; }
@@ -199,5 +199,5 @@
 @media (max-width: 480px) {
     .atour-title { font-size: 2rem; }
     .atour-header { padding: 35px 25px; }
-    .atour-actions { left: 90px; width: calc(100% - 90px); }
+    .atour-actions { left: 90px; width: calc(100% - 64px); }
 }}
