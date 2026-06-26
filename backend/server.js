@@ -11,8 +11,14 @@ const { initSession } = require('./utils/payloadCrypto');
 initSession();
 const encryptResponse = require('./middleware/encryptResponse');
 
+// DNS resolvers for the MongoDB Atlas SRV lookup. We APPEND public resolvers
+// as fallbacks instead of REPLACING the system resolver — forcing only Google
+// DNS means that if 8.8.8.8 rate-limits or times out on the SRV/TXT query, the
+// whole Atlas connection fails and every route 500s. Keeping the OS resolver
+// first preserves normal resolution; the public servers are just a safety net.
 const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+const existingDnsServers = dns.getServers();
+dns.setServers([...new Set([...existingDnsServers, '8.8.8.8', '8.8.4.4', '1.1.1.1'])]);
 
 const app = express();
 
@@ -174,12 +180,40 @@ app.use((req, res, next) => {
   next();
 });
 
-mongoose.connect(process.env.MONGODB_URI) 
-    .then(() => console.log("✅ DATABASE CONNECTED!"))
-    .catch((err) => {
-        console.error("❌ Database Connection Error:", err);
-        console.error("⚠️ Check your .env file or IP Whitelist.");
-    });
+// ── MongoDB connection with resilient retry ────────────────────────────────
+// Render's container can briefly lose network on cold start, and the Atlas SRV
+// lookup can intermittently fail. Without retry, a single failed connect leaves
+// the server running with NO database — every route then 500s until a manual
+// restart. This connects with sane timeouts and keeps retrying until it's up,
+// and re-establishes automatically if the connection drops later.
+const MONGO_OPTIONS = {
+    serverSelectionTimeoutMS: 10000, // fail fast instead of hanging queries
+    socketTimeoutMS: 45000,
+    maxPoolSize: 20,
+    minPoolSize: 2,
+    retryWrites: true,
+};
+
+async function connectWithRetry(attempt = 1) {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, MONGO_OPTIONS);
+        console.log("✅ DATABASE CONNECTED!");
+    } catch (err) {
+        console.error(`❌ Database Connection Error (attempt ${attempt}):`, err.message);
+        console.error("⚠️ Check your .env file or IP Whitelist. Retrying in 5s…");
+        setTimeout(() => connectWithRetry(attempt + 1), 5000);
+    }
+}
+
+// Auto-reconnect if the live connection drops after the server is already up.
+mongoose.connection.on('disconnected', () => {
+    console.error("⚠️ MongoDB disconnected — attempting to reconnect…");
+});
+mongoose.connection.on('error', (err) => {
+    console.error("❌ MongoDB runtime error:", err.message);
+});
+
+connectWithRetry();
 
     
 app.get('/', (req, res) => {
