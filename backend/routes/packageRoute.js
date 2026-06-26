@@ -383,14 +383,19 @@ router.get('/admin/:id', authMiddleware, async (req, res) => {
 // run AES-GCM decryption. React frontend checks isEncryptedPayload() first
 // and passes plain JSON through unchanged, so this is safe for both clients.
 router.get('/all', async (req, res) => {
-    try {
-        res.locals.skipEncrypt = true;
-        const packages = await Package.find({ isArchive: 'No' })
-            .select(PUBLIC_SELECT)
-            .sort({ _id: -1 });
-        res.status(200).json({ status: 'ok', data: packages });
-    } catch (error) {
-        res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.' });
+    res.locals.skipEncrypt = true;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+            const packages = await Package.find({ isArchive: 'No' })
+                .select(PUBLIC_SELECT)
+                .sort({ _id: -1 });
+            return res.status(200).json({ status: 'ok', data: packages });
+        } catch (error) {
+            if (attempt === 2) {
+                return res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.' });
+            }
+            await new Promise(r => setTimeout(r, 1500));
+        }
     }
 });
 
