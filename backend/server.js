@@ -167,6 +167,18 @@ function _replaceCloudinaryUrls(obj, proxyBase) {
   }
   if (Array.isArray(obj)) return obj.map(v => _replaceCloudinaryUrls(v, proxyBase));
   if (obj && typeof obj === 'object') {
+    // Mongoose documents: serialize to a plain object FIRST. .toJSON() converts
+    // ObjectId → hex string and Date → ISO string, so the recursion below sees
+    // primitives instead of mangling the special types into empty {}.
+    if (typeof obj.toJSON === 'function' && (obj.$__ || obj._doc)) {
+      return _replaceCloudinaryUrls(obj.toJSON(), proxyBase);
+    }
+    // Leave other special objects (raw ObjectId, Date, Buffer, etc.) untouched —
+    // recursing into them with Object.entries() would destroy them. e.g. an
+    // ObjectId would become a plain {} and _id.split() then throws on the frontend.
+    const proto = Object.getPrototypeOf(obj);
+    const isPlain = proto === Object.prototype || proto === null;
+    if (!isPlain) return obj;
     const out = {};
     for (const [k, v] of Object.entries(obj)) out[k] = _replaceCloudinaryUrls(v, proxyBase);
     return out;

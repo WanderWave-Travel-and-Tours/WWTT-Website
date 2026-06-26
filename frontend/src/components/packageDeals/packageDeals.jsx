@@ -554,8 +554,13 @@ function PackageDealsContent() {
           };
           
           const formattedPackages = data.map((pkg, index) => {
+            // ✅ Coerce _id to a string — depending on the serialization layer it may
+            // arrive as an ObjectId object or { $oid } rather than a plain string.
+            const pkgId = typeof pkg._id === 'string'
+              ? pkg._id
+              : (pkg._id?.$oid || pkg._id?.toString?.() || String(pkg._id));
             // ✅ FIXED: Generate consistent seed from package ID
-            const seed = pkg._id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = pkgId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
             
             // ⭐ DETERMINISTIC RATING (4.0 - 5.0, same for each package always)
             const ratingRandom = seededRandom(seed);
@@ -598,8 +603,8 @@ function PackageDealsContent() {
 
             return {
               // ✅ Keep both _id and id so BookingFormModal can always resolve packageId
-              _id: pkg._id,
-              id: pkg._id,
+              _id: pkgId,
+              id: pkgId,
               name: pkg.title,
               title: pkg.title,
               category: pkg.category.toLowerCase(),
