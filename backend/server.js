@@ -378,6 +378,10 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
     }
 });
 
+// Lightweight wake-up endpoint — called by the frontend on app load so Render's
+// server is fully awake before real data requests go out.
+app.get('/api/ping', (req, res) => res.status(200).json({ status: 'ok' }));
+
 // ✅ FIX: siteVisitRoutes is now mounted BEFORE inline app.post/app.get routes
 // to ensure it is matched first and not shadowed by anything below it.
 app.use('/api/packages', packageRoutes);

@@ -531,8 +531,14 @@ function PackageDealsContent() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        // Reuse the pre-fetch started in main.jsx — avoids a duplicate network request
-        const result = await preFetchPackages();
+        // Reuse the pre-fetch started in main.jsx — avoids a duplicate network request.
+        // On Render cold-start the first attempt may fail; preFetchPackages clears the
+        // cache on failure so a second call here will actually retry the network request.
+        let result = await preFetchPackages();
+        if (!result) {
+          await new Promise(r => setTimeout(r, 2000));
+          result = await preFetchPackages();
+        }
 
         if (!result) {
           throw new Error('Failed to load packages');
