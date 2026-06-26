@@ -31,7 +31,13 @@ window.fetch = async function (...args) {
 
 // Warm PBKDF2 session key before any component mounts and makes encrypted API calls
 initSessionKey();
-preFetchPackages();
+
+// Wake up the Render server first, then kick off the packages pre-fetch.
+// On cold start, /api/ping responds in ~5-15s while the server boots —
+// waiting for it ensures /with-tours doesn't fire into a sleeping server.
+fetch('https://wanderwaveph.onrender.com/api/ping')
+  .catch(() => {})
+  .finally(() => preFetchPackages());
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
