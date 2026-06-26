@@ -20,7 +20,7 @@
 }
 
 .ai-main--collapsed {
-    margin-left: 90px;
+    margin-left: 64px;
 }
 
 .ai-container {
@@ -252,9 +252,9 @@
 
 @media (max-width: 768px) {
     .ai-main, .ai-main--collapsed {
-        margin-left: 90px !important;
+        margin-left: 64px !important;
         padding: 24px 16px !important;
-        width: calc(100% - 90px) !important;
+        width: calc(100% - 64px) !important;
     }
     
     .ai-header { padding: 45px 30px; margin-bottom: 32px; }
@@ -268,7 +268,7 @@
         padding: 10px 14px;
         box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
         z-index: 100;
-        width: calc(100% - 90px);
+        width: calc(100% - 64px);
         gap: 10px;
         margin-top: 0;
     }

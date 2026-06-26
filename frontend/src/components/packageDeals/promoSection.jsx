@@ -421,12 +421,14 @@ function PromoSection({ onBookNow }) {
         </>}
 
         <div className="promo-carousel-container">
-          <div className="promo-track" onTouchStart={onTStart} onTouchEnd={onTEnd}>
-            {slots.map(({ promo, cls, key, position }) => (
-              <div key={key} className={`promo-slide ${cls}`}>
-                {renderCard(promo, position === 'active' || cls === 'promo-slide--active')}
-              </div>
-            ))}
+          <div className="promo-track-mask">
+            <div className="promo-track" onTouchStart={onTStart} onTouchEnd={onTEnd}>
+              {slots.map(({ promo, cls, key, position }) => (
+                <div key={key} className={`promo-slide ${cls}`}>
+                  {renderCard(promo, position === 'active' || cls === 'promo-slide--active')}
+                </div>
+              ))}
+            </div>
           </div>
 
           {n > 1 && (

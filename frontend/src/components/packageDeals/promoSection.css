@@ -11,7 +11,9 @@
   position: relative;
   width: 100%;
   box-sizing: border-box;
+  isolation: isolate;
 }
+
 
 /* ── ARROWS ── */
 .external-arrow {
@@ -20,18 +22,16 @@
   transform: translateY(-50%);
   z-index: 100;
   background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(10px);
   border: 2px solid rgba(255,140,0,0.3);
   width: 42px; height: 42px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; color: #FF8C00;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 4px 16px rgba(255,140,0,0.15);
 }
 .external-arrow:hover {
   background: #FF8C00; color: #fff; border-color: #FF8C00;
-  transform: translateY(-50%) scale(1.08);
   box-shadow: 0 8px 24px rgba(255,140,0,0.35);
 }
 .arrow-left  { left: 16px; }
@@ -50,6 +50,29 @@
   overflow: visible;
   padding: 24px 0 28px;
   box-sizing: border-box;
+}
+
+/* Mask wrapper: fades peek cards at the edges instead of hard-clipping.
+   overflow: clip is needed so the mask actually clips overflowing abs-positioned children.
+   isolation: isolate keeps the animation compositor layer independent from the arrow hover. */
+.promo-track-mask {
+  position: relative;
+  overflow: clip;
+  isolation: isolate;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 11%,
+    black 89%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 11%,
+    black 89%,
+    transparent 100%
+  );
 }
 
 /* ── SLIDE BASE ── */
@@ -108,7 +131,7 @@
   border-radius: 20px;
   align-items: stretch;
   background: linear-gradient(135deg, #001020 0%, #002050 100%);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: none;
   box-shadow: 0 28px 72px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.2);
   transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), box-shadow 0.5s ease;
 }
@@ -143,6 +166,8 @@
   border-radius: 0;
   background-color: #001b3e;
   flex-shrink: 0;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 .destination-bg-image {
@@ -151,11 +176,12 @@
   object-position: center center;
   position: absolute; top: 0; left: 0;
   z-index: 1;
-  transition: transform 0.8s ease;
+  will-change: transform;
 }
 
 .promo-slide--active .destination-bg-image {
-  animation: smooth-zoom 20s ease-in-out infinite;
+  animation: smooth-zoom 20s ease-in-out infinite both;
+  backface-visibility: hidden;
 }
 @keyframes smooth-zoom {
   0%, 100% { transform: scale(1); }
@@ -399,7 +425,7 @@
 /* ── COMING SOON CARD ── */
 .coming-soon-card {
   background: linear-gradient(135deg, #001020 0%, #002050 100%) !important;
-  border: 1px solid rgba(255,140,0,0.2) !important;
+  border: none !important;
   overflow: hidden !important;
 }
 .coming-soon-image-side {
@@ -543,6 +569,22 @@
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {
+  .promo-track-mask {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 6%,
+      black 94%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 6%,
+      black 94%,
+      transparent 100%
+    );
+  }
   .external-arrow { display: none; }
   .promo-slide--active { width: 88%; }
   .promo-slide--prev, .promo-slide--next { width: 88%; left: 6%; }

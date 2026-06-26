@@ -27,8 +27,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 .cbk-main.expanded {
-  margin-left: 80px !important;
-  width: calc(100% - 80px) !important;
+  margin-left: 64px !important;
+  width: calc(100% - 64px) !important;
 }
 
 .cbk-container { max-width: 1600px; width: 100%; margin: 0 auto; }

@@ -30,8 +30,8 @@
 
 /* Collapsed Sidebar State */
 .dash-main--collapsed {
-  margin-left: 80px !important; /* Matches Sidebar Collapsed Width */
-  width: calc(100% - 80px) !important;
+  margin-left: 64px !important; /* Matches Sidebar Collapsed Width */
+  width: calc(100% - 64px) !important;
   padding: 40px 60px;
 }
 
@@ -106,8 +106,8 @@
   /* âœ… CORRECTED: Keep margin for collapsed sidebar, don't remove it! */
   .dash-main, 
   .dash-main--collapsed {
-    margin-left: 90px !important; /* Space for collapsed sidebar */
-    width: calc(100% - 90px) !important; /* Full width minus sidebar */
+    margin-left: 64px !important; /* Space for collapsed sidebar */
+    width: calc(100% - 64px) !important; /* Full width minus sidebar */
     padding: 24px 16px !important;
   }
 
@@ -120,8 +120,8 @@
 @media (max-width: 640px) { 
   .dash-main, 
   .dash-main--collapsed {
-    margin-left: 90px !important;
-    width: calc(100% - 90px) !important;
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
     padding: 20px 14px !important;
   }
 
@@ -138,8 +138,8 @@
 @media (max-width: 480px) {
   .dash-main,
   .dash-main--collapsed {
-    margin-left: 90px !important;
-    width: calc(100% - 90px) !important;
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
     padding: 18px 12px !important;
   }
 
@@ -152,8 +152,8 @@
 @media (max-width: 360px) {
   .dash-main,
   .dash-main--collapsed {
-    margin-left: 90px !important;
-    width: calc(100% - 90px) !important;
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
     padding: 16px 10px !important;
   }
 

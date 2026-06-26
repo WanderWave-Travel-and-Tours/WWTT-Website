@@ -6,7 +6,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 /* LAYOUT */
 .visa-page { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; min-height: 100vh; width: 100%; display: flex; position: relative; }
 .visa-main { margin-left: 260px; width: calc(100% - 260px); padding: 40px 120px; min-height: 100vh; transition: all 0.3s ease; }
-.visa-main.expanded { margin-left: 80px !important; width: calc(100% - 80px) !important; padding: 30px 60px; }
+.visa-main.expanded { margin-left: 64px !important; width: calc(100% - 64px) !important; padding: 30px 60px; }
 .visa-container { max-width: 1600px; width: 100%; margin: 0 auto; }
 
 /* HEADER */
@@ -260,8 +260,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 .visa-main.expanded { 
-    margin-left: 80px !important; 
-    width: calc(100% - 80px) !important;
+    margin-left: 64px !important; 
+    width: calc(100% - 64px) !important;
     padding: 40px 60px; 
 }
 

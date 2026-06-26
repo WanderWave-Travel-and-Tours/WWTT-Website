@@ -35,8 +35,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 .rp-main--collapsed {
-  margin-left: 80px !important; /* Matches Sidebar Collapsed Width */
-  width: calc(100% - 80px) !important;
+  margin-left: 64px !important; /* Matches Sidebar Collapsed Width */
+  width: calc(100% - 64px) !important;
   padding: 40px 60px;
 }
 
@@ -1330,8 +1330,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 @media (max-width: 768px) {
   .rp-main,
   .rp-main--collapsed {
-    margin-left: 90px !important;
-    width: calc(100% - 90px) !important;
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
     padding: 24px 16px !important;
   }
 
@@ -1365,8 +1365,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 @media (max-width: 640px) {
   .rp-main,
   .rp-main--collapsed {
-    margin-left: 90px !important;
-    width: calc(100% - 90px) !important;
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
     padding: 20px 14px !important;
   }
 
@@ -1389,8 +1389,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 @media (max-width: 480px) {
   .rp-main,
   .rp-main--collapsed {
-    margin-left: 90px !important;
-    width: calc(100% - 90px) !important;
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
     padding: 18px 12px !important;
   }
 
@@ -1420,8 +1420,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 @media (max-width: 360px) {
   .rp-main,
   .rp-main--collapsed {
-    margin-left: 90px !important;
-    width: calc(100% - 90px) !important;
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
     padding: 16px 10px !important;
   }
 

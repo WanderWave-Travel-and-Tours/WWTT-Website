@@ -80,7 +80,7 @@ const MenuItem = ({ path, icon: Icon, label, isCollapsed, isActive, onClick }) =
       >
         <div className="btn-content">
           <Icon size={20} className="btn-icon" />
-          <span className={`btn-label ${isCollapsed ? 'hidden' : ''}`}>{label}</span>
+          <span className="btn-label">{label}</span>
         </div>
       </button>
     </li>
@@ -104,13 +104,11 @@ const DropdownMenu = ({ title, icon: Icon, menuKey, childrenItems, isOpen, isCol
         >
           <div className="btn-content">
             <Icon size={20} className="btn-icon" />
-            <span className={`btn-label ${isCollapsed ? 'hidden' : ''}`}>{title}</span>
+            <span className="btn-label">{title}</span>
           </div>
-          {!isCollapsed && (
-            <span className="arrow-icon">
-                {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </span>
-          )}
+          <span className={`arrow-icon ${isCollapsed ? 'arrow-hidden' : ''} ${isOpen ? 'arrow-open' : ''}`}>
+            <ChevronRight size={16} />
+          </span>
         </button>
 
         <div className={`submenu-wrapper ${isOpen && !isCollapsed ? 'open' : 'closed'}`}>
@@ -269,24 +267,25 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 />
             </div>
             
-            <div className={`brand-info ${isCollapsed ? 'hidden' : ''}`}>
+            <div className="brand-info">
                 <h1>WANDERWAVE</h1>
                 <span>Admin Panel</span>
             </div>
         </div>
         
-        <button 
-            className="toggle-btn" 
+        <button
+            className="toggle-btn"
             onClick={toggleSidebar}
             type="button"
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-            {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+            <ChevronLeft size={20} />
         </button>
       </div>
 
       <nav className="sidebar-nav custom-scrollbar">
         <div className="menu-group">
-          <h3 className={`menu-title ${isCollapsed ? 'hidden' : ''}`}>Main Menu</h3>
+          <h3 className="menu-title">Main Menu</h3>
           <ul className="nav-list">
             <MenuItem 
                 path="/dashboard" 
@@ -401,7 +400,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         </div>
 
         <div className="menu-group">
-          <h3 className={`menu-title ${isCollapsed ? 'hidden' : ''}`}>Management</h3>
+          <h3 className="menu-title">Management</h3>
           <ul className="nav-list">
             <MenuItem 
                 path="/seller-rate" 
@@ -469,25 +468,23 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         <div className={`user-profile-card ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="user-info-group">
             <div className="user-avatar">A</div>
-            <div className={`user-details ${isCollapsed ? 'hidden' : ''}`}>
+            <div className="user-details">
               <span className="user-name">Admin</span>
               <span className="user-role">{isMainAdmin ? 'Main Admin' : 'SysAdmin'}</span>
             </div>
           </div>
-          {!isCollapsed && (
-            <button 
-              onClick={handleLogout} 
-              className="logout-btn" 
-              title="Logout"
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? (
-                <div className="logout-spinner"></div>
-              ) : (
-                <LogOut size={18} />
-              )}
-            </button>
-          )}
+          <button
+            onClick={handleLogout}
+            className="logout-btn"
+            title="Logout"
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? (
+              <div className="logout-spinner"></div>
+            ) : (
+              <LogOut size={18} />
+            )}
+          </button>
         </div>
       </div>
     </div>
