@@ -20,10 +20,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { X, MapPin, User, Phone, Mail, Calendar, Users, ChevronRight, ChevronLeft,
          Car, Compass, Check, Clock, ArrowRight, FileText, CheckCircle, Plus, Trash2,
-         CreditCard, Wallet } from 'lucide-react';
+         CreditCard, Wallet, Mountain, Bus } from 'lucide-react';
 import './Customizedbookingform.css';
-import tourBg          from '../../../../backend/assets/tour.png';
-import transferBg      from '../../../../backend/assets/transfer.png';
 import CustomTimePicker from '../timePicker/Clock';
 import LocationSelect   from '../location/LocationSelect';
 
@@ -103,13 +101,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   const [availableTours,     setAvailableTours]     = useState([]);
   const [availableTransfers, setAvailableTransfers] = useState([]);
   const [fetchingServices,   setFetchingServices]   = useState(false);
-
-  // What the user first picked to browse (null | 'tour' | 'transfer')
-  const [firstChoice,  setFirstChoice]  = useState(null);
-  // Whether we've asked about the second type
-  const [secondPhase,  setSecondPhase]  = useState(false);
-  // Whether user wants to also pick the other type
-  const [addSecond,    setAddSecond]    = useState(null); // null | true | false
+  const [activeTab,          setActiveTab]          = useState('tours');
 
   const [selectedTours,     setSelectedTours]     = useState([]);
   const [selectedTransfers, setSelectedTransfers] = useState([]);
@@ -158,7 +150,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       setInfo({ destination:'', fullName:'', email:'', phone:'', birthDate:'', travelDate:'', returnDate:'', paxCount:'', message:'' });
       setInfoErrors({});
       setShowDestDropdown(false);
-      setFirstChoice(null); setSecondPhase(false); setAddSecond(null);
+      setActiveTab('tours');
       setSelectedTours([]); setSelectedTransfers([]); setTransferTypes({});
       setTourDates({}); setTourDateIdx(0); setCurrentTourDate(''); setStep3Phase('tours');
       setDetailsIdx(0); setDetailsMap({}); setDetailForm({ arrivalTime:'', departureTime:'', pickupLocation:'', dropoffLocation:'', message:'' });
@@ -332,19 +324,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
     return travel > tomorrow;
   })();
 
-  // Second service type (the one NOT chosen first)
-  const secondType = firstChoice === 'tour' ? 'transfer' : 'tour';
-
-  // Are all selected transfers filled in?
-  const allTransfersFilled = selectedTransfers.every(t => {
-    const d = detailsMap[t._id];
-    const isRT = transferTypes[t._id] === 'roundtrip';
-    if (!d) return false;
-    if (!d.arrivalTime || !d.pickupLocation) return false;
-    if (isRT && (!d.departureTime || !d.dropoffLocation)) return false;
-    return true;
-  });
-
   // ─────────────────────────────────────────────────────────────────────────
   // Step 1 validation
   // ─────────────────────────────────────────────────────────────────────────
@@ -378,7 +357,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       if (!validateInfo()) return;
       setStep(2);
     } else if (step === 2) {
-      // Always go to step 3 — for tour dates and/or transfer details
       if (selectedTours.length > 0) {
         setStep3Phase('tours');
         setTourDateIdx(0);
@@ -426,32 +404,11 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // Helper: restore step 2 to show the correct list when navigating back into it
-  const returnToStep2 = () => {
-    // Always land back on the first-choice list (Phase B) so the user
-    // can see and modify their selections without losing them.
-    setSecondPhase(false);
-    setAddSecond(null);
-    setStep(2);
-  };
+  const returnToStep2 = () => setStep(2);
 
   const goBack = () => {
     if (step === 2) {
-      // Navigate backwards through step 2's internal phases before exiting to step 1
-      if (firstChoice && secondPhase && addSecond === true) {
-        // Phase D (second list) → Phase C (yes/no question)
-        setAddSecond(null);
-      } else if (firstChoice && secondPhase) {
-        // Phase C or "addSecond=false" state → Phase B (first list)
-        setSecondPhase(false);
-        setAddSecond(null);
-      } else if (firstChoice) {
-        // Phase B (first list) → Phase A (service type picker)
-        setFirstChoice(null);
-      } else {
-        // Phase A → Step 1
-        setStep(1);
-      }
+      setStep(1);
     }
     else if (step === 3) {
       if (step3Phase === 'tours') {
@@ -521,12 +478,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       const remaining = selectedTours.filter(t => t._id !== tour._id);
       setSelectedTours(remaining);
       setTourDates(prev => { const n = {...prev}; delete n[tour._id]; return n; });
-      // Reset to Phase A if all selections are now cleared so user can start fresh
-      if (remaining.length === 0 && selectedTransfers.length === 0) {
-        setFirstChoice(null);
-        setSecondPhase(false);
-        setAddSecond(null);
-      }
     } else {
       setSelectedTours(prev => [...prev, tour]);
     }
@@ -539,12 +490,6 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       setSelectedTransfers(remaining);
       setTransferTypes(prev => { const n = {...prev}; delete n[transfer._id]; return n; });
       setDetailsMap(prev => { const n = {...prev}; delete n[transfer._id]; return n; });
-      // Reset to Phase A if all selections are now cleared so user can start fresh
-      if (remaining.length === 0 && selectedTours.length === 0) {
-        setFirstChoice(null);
-        setSecondPhase(false);
-        setAddSecond(null);
-      }
     } else {
       setSelectedTransfers(prev => [...prev, transfer]);
       if (!transferTypes[transfer._id]) {
@@ -924,312 +869,125 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                 </div>
               ) : (
                 <>
-                  {/* ── Phase A: Pick first service type ── */}
-                  {!firstChoice && (
-                    <>
-                      <div className="cbf-section-title">
-                        <Compass size={16}/> What would you like to book?
-                      </div>
-                      <p className="cbf-section-desc">
-                        Choose a service type to start building your trip for <strong>{info.destination}</strong>.
-                      </p>
-                      <div className="cbf-service-type-grid">
-                        <button
-                          type="button"
-                          className={`cbf-service-type-card ${availableTours.length === 0 ? 'disabled' : ''}`}
-                          onClick={() => availableTours.length > 0 && setFirstChoice('tour')}
-                          style={{ backgroundImage: `url(${tourBg})` }}
-                        >
-                          <div className="cbf-stc-overlay">
-                            <div className="cbf-stc-label">Tours</div>
-                            <div className="cbf-stc-count">{availableTours.length} available</div>
-                            {availableTours.length === 0 && <div className="cbf-stc-none">None in this destination</div>}
-                          </div>
-                        </button>
-                        <button
-                          type="button"
-                          className={`cbf-service-type-card ${availableTransfers.length === 0 ? 'disabled' : ''}`}
-                          onClick={() => availableTransfers.length > 0 && setFirstChoice('transfer')}
-                          style={{ backgroundImage: `url(${transferBg})` }}
-                        >
-                          <div className="cbf-stc-overlay">
-                            <div className="cbf-stc-label">Transfers</div>
-                            <div className="cbf-stc-count">{availableTransfers.length} available</div>
-                            {availableTransfers.length === 0 && <div className="cbf-stc-none">None in this destination</div>}
-                          </div>
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ── Phase B: Show list of first-chosen type ── */}
-                  {firstChoice && !secondPhase && (
-                    <>
-                      <div className="cbf-section-title" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {firstChoice === 'tour' ? 'Select Tours' : 'Select Transfers'}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                          {((firstChoice === 'tour' && selectedTours.length > 0) ||
-                            (firstChoice === 'transfer' && selectedTransfers.length > 0)) && (
-                            <span style={{
-                              background: '#e2e8f0',
-                              color: '#475569',
-                              fontSize: '0.65rem',
-                              fontWeight: 700,
-                              padding: '2px 10px',
-                              borderRadius: '20px',
-                            }}>
-                              {firstChoice === 'tour' ? selectedTours.length : selectedTransfers.length} selected
-                            </span>
-                          )}
-                          {((firstChoice === 'tour' && selectedTours.length > 0) ||
-                            (firstChoice === 'transfer' && selectedTransfers.length > 0)) && (
-                            <button
-                              type="button"
-                              className="cbf-change-type-btn"
-                              onClick={() => setFirstChoice(null)}
-                            >
-                              Change
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {firstChoice === 'tour' && (
-                        <TourList
-                          tours={availableTours}
-                          selected={selectedTours}
-                          onToggle={toggleTour}
-                          paxCount={info.paxCount}
-                        />
-                      )}
-
-                      {firstChoice === 'transfer' && (
-                        <TransferList
-                          transfers={availableTransfers}
-                          selected={selectedTransfers}
-                          transferTypes={transferTypes}
-                          onToggle={toggleTransfer}
-                          onTypeChange={setTransferType}
-                          paxCount={info.paxCount}
-                        />
-                      )}
-                    </>
-                  )}
-
-                  {/* ── Phase C: Ask about second service type ── */}
-                  {firstChoice && secondPhase && addSecond === null && !(selectedTours.length > 0 && selectedTransfers.length > 0) && (
-                    <>
-                      <div className="cbf-section-title">
-                        Would you also like to add {secondType === 'tour' ? 'tours 🏔️' : 'transfers 🚐'}?
-                      </div>
-                      <p className="cbf-section-desc">
-                        You've selected {firstChoice === 'tour'
-                          ? `${selectedTours.length} tour(s)`
-                          : `${selectedTransfers.length} transfer(s)`}.
-                        Want to also add {secondType === 'tour' ? 'a tour' : 'transfers'}?
-                      </p>
-                      <div className="cbf-yesno-grid">
-                        <button
-                          type="button"
-                          className="cbf-yesno-btn yes"
-                          onClick={() => setAddSecond(true)}
-                        >
-                          <Plus size={18}/> Yes, add {secondType}s
-                        </button>
-                        <button
-                          type="button"
-                          className="cbf-yesno-btn no"
-                          onClick={() => setAddSecond(false)}
-                        >
-                          <ChevronRight size={18}/> No, proceed
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ── Phase D: Show second service type list ── */}
-                  {firstChoice && secondPhase && addSecond === true && (
-                    <>
-                      <div className="cbf-section-title">
-                        {secondType === 'tour' ? '🏔️ Select Tours' : '🚐 Select Transfers'}
-                        <button
-                          type="button"
-                          className="cbf-change-type-btn"
-                          onClick={() => setAddSecond(null)}
-                        >
-                          Back
-                        </button>
-                      </div>
-
-                      {secondType === 'tour' && (
-                        <TourList
-                          tours={availableTours}
-                          selected={selectedTours}
-                          onToggle={toggleTour}
-                          paxCount={info.paxCount}
-                        />
-                      )}
-                      {secondType === 'transfer' && (
-                        <TransferList
-                          transfers={availableTransfers}
-                          selected={selectedTransfers}
-                          transferTypes={transferTypes}
-                          onToggle={toggleTransfer}
-                          onTypeChange={setTransferType}
-                          paxCount={info.paxCount}
-                        />
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-
-              {/* ── Selected Items Panel — card layout matching "Your Trip / Selections" design ── */}
-              {(selectedTours.length > 0 || selectedTransfers.length > 0) && (
-                <div className="cbf-selected-panel">
-
-                  {/* ── Panel header ── */}
-                  <div className="cbf-sp-header">
-                    <div className="cbf-sp-header-left">
-                      <span className="cbf-sp-your-trip">YOUR TRIP</span>
-                      <h3 className="cbf-sp-title">Selections</h3>
-                    </div>
-                    <span className="cbf-sel-count-badge">
-                      {selectedTours.length + selectedTransfers.length} item{selectedTours.length + selectedTransfers.length !== 1 ? 's' : ''}
+                  {/* Destination context */}
+                  <div className="cbf-s2-context">
+                    <MapPin size={14} style={{ color: '#fc9c1b', flexShrink: 0, marginTop: 1 }}/>
+                    <span>
+                      Select services for <strong>{info.destination}</strong>. You can add both tours and transfers.
                     </span>
                   </div>
 
-                  {/* ── Tour cards ── */}
-                  {selectedTours.map(t => {
-                    const tourTotal = (t.price || 0) * (pax || parseInt(info.paxCount) || 1);
-                    return (
-                      <div key={t._id} className="cbf-sel-card">
-                        {/* Image section — badge left, remove button right */}
-                        <div
-                          className="cbf-sel-card-img"
-                          style={{ backgroundImage: `url(${t.imageUrl || t.image || ''})` }}
-                        >
-                          <div className="cbf-sel-card-img-overlay"/>
-                          <span className="cbf-sel-card-badge cbf-sel-badge-tour">
-                            {t.category || 'Tour Package'}
-                          </span>
-                          <button
-                            type="button"
-                            className="cbf-sel-card-remove"
-                            onClick={() => toggleTour(t)}
-                          >
-                            <Trash2 size={13}/>
-                          </button>
-                        </div>
-                        {/* Card body — name+sub left, price right */}
-                        <div className="cbf-sel-card-body">
-                          <div className="cbf-sel-card-body-left">
-                            <span className="cbf-sel-card-name">{t.title || t.name}</span>
-                            <span className="cbf-sel-card-sub">
-                              ₱{Number(t.price || 0).toLocaleString()} × {pax || info.paxCount} pax
-                              {t.duration ? ` · ${t.duration}` : ''}
-                              {tourDates[t._id] ? ` · 📅 ${fmtDate(tourDates[t._id])}` : ''}
-                            </span>
-                          </div>
-                          <div className="cbf-sel-card-body-price">
-                            <span className="cbf-sel-body-price-label">PRICE</span>
-                            <span className="cbf-sel-body-price-val">₱{fmt(tourTotal)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {/* Tab switcher */}
+                  <div className="cbf-tab-switcher">
+                    <button
+                      type="button"
+                      className={`cbf-tab-btn ${activeTab === 'tours' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('tours')}
+                    >
+                      {selectedTours.length > 0 && (
+                        <span className="cbf-tab-sel-badge">{selectedTours.length}</span>
+                      )}
+                      <Mountain size={22} strokeWidth={2}/>
+                      <span className="cbf-tab-label">Tours</span>
+                      <span className="cbf-tab-count">{availableTours.length} available</span>
+                    </button>
 
-                  {/* ── Transfer cards ── */}
-                  {selectedTransfers.map(t => {
-                    const ttype  = transferTypes[t._id] || 'oneway';
-                    const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
-                    return (
-                      <div key={t._id} className="cbf-sel-card">
-                        {/* Image section — badge left, remove button right */}
-                        <div
-                          className="cbf-sel-card-img"
-                          style={{ backgroundImage: `url(${t.imageUrl || ''})` }}
-                        >
-                          <div className="cbf-sel-card-img-overlay"/>
-                          <span className="cbf-sel-card-badge cbf-sel-badge-transfer">Transfer</span>
-                          <button
-                            type="button"
-                            className="cbf-sel-card-remove"
-                            onClick={() => toggleTransfer(t)}
-                          >
-                            <Trash2 size={13}/>
-                          </button>
-                        </div>
-                        {/* Card body — name+sub left, price right */}
-                        <div className="cbf-sel-card-body">
-                          <div className="cbf-sel-card-body-left">
-                            <span className="cbf-sel-card-name">{t.title}</span>
-                            <span className="cbf-sel-card-sub">
-                              {ttype === 'roundtrip' ? 'Roundtrip' : 'One Way'}
-                              {t.category ? ` · ${t.category}` : ''}
-                            </span>
-                          </div>
-                          <div className="cbf-sel-card-body-price">
-                            <span className="cbf-sel-body-price-label">PRICE</span>
-                            <span className="cbf-sel-body-price-val">₱{fmt(tprice)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* ── Summary section ── */}
-                  <div className="cbf-sel-summary">
-                    <div className="cbf-sel-summary-label">SUMMARY</div>
-                    {selectedTours.map(t => (
-                      <div key={t._id} className="cbf-sel-summary-row">
-                        <span className="cbf-sel-summary-dot cbf-dot-tour"/>
-                        <span className="cbf-sel-summary-name">{t.title || t.name}</span>
-                        <span className="cbf-sel-summary-price">
-                          ₱{fmt((t.price || 0) * (pax || parseInt(info.paxCount) || 1))}
-                        </span>
-                      </div>
-                    ))}
-                    {selectedTransfers.map(t => {
-                      const ttype  = transferTypes[t._id] || 'oneway';
-                      const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
-                      return (
-                        <div key={t._id} className="cbf-sel-summary-row">
-                          <span className="cbf-sel-summary-dot cbf-dot-transfer"/>
-                          <span className="cbf-sel-summary-name">{t.title}</span>
-                          <span className="cbf-sel-summary-price">₱{fmt(tprice)}</span>
-                        </div>
-                      );
-                    })}
-                    <div className="cbf-sel-total-row">
-                      <span className="cbf-sel-total-label">Total Due</span>
-                      <strong className="cbf-sel-total-amount">₱{fmt(grandTotal)}</strong>
-                    </div>
+                    <button
+                      type="button"
+                      className={`cbf-tab-btn ${activeTab === 'transfers' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('transfers')}
+                    >
+                      {selectedTransfers.length > 0 && (
+                        <span className="cbf-tab-sel-badge">{selectedTransfers.length}</span>
+                      )}
+                      <Bus size={22} strokeWidth={2}/>
+                      <span className="cbf-tab-label">Transfers</span>
+                      <span className="cbf-tab-count">{availableTransfers.length} available</span>
+                    </button>
                   </div>
 
-                  {/* Add second service type if only one is picked */}
-                  {firstChoice && !secondPhase && selectedTours.length > 0 && selectedTransfers.length === 0 && (
-                    <button
-                      type="button"
-                      className="cbf-add-service-btn"
-                      onClick={() => { setSecondPhase(true); setAddSecond(true); }}
-                    >
-                      <Plus size={14}/> Add Transfers
-                    </button>
+                  {/* Selected items compact bar */}
+                  {(selectedTours.length > 0 || selectedTransfers.length > 0) && (
+                    <div className="cbf-selbar">
+                      <div className="cbf-selbar-inner">
+                        {selectedTours.map(t => (
+                          <div key={t._id} className="cbf-selbar-chip cbf-chip-tour">
+                            {(t.imageUrl || t.image)
+                              ? <img src={t.imageUrl || t.image} alt={t.title || t.name} className="cbf-chip-thumb"/>
+                              : <span className="cbf-chip-icon-wrap"><Mountain size={13}/></span>
+                            }
+                            <div className="cbf-chip-info">
+                              <span className="cbf-chip-name">{t.title || t.name}</span>
+                              <span className="cbf-chip-price">₱{fmt((t.price || 0) * pax)}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="cbf-chip-remove"
+                              onClick={() => toggleTour(t)}
+                              aria-label={`Remove ${t.title || t.name}`}
+                            >
+                              <X size={11}/>
+                            </button>
+                          </div>
+                        ))}
+                        {selectedTransfers.map(t => {
+                          const ttype  = transferTypes[t._id] || 'oneway';
+                          const tprice = ttype === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
+                          return (
+                            <div key={t._id} className="cbf-selbar-chip cbf-chip-transfer">
+                              {t.imageUrl
+                                ? <img src={t.imageUrl} alt={t.title} className="cbf-chip-thumb"/>
+                                : <span className="cbf-chip-icon-wrap"><Bus size={13}/></span>
+                              }
+                              <div className="cbf-chip-info">
+                                <span className="cbf-chip-name">{t.title}</span>
+                                <span className="cbf-chip-price">₱{fmt(tprice)}</span>
+                              </div>
+                              <button
+                                type="button"
+                                className="cbf-chip-remove"
+                                onClick={() => toggleTransfer(t)}
+                                aria-label={`Remove ${t.title}`}
+                              >
+                                <X size={11}/>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="cbf-selbar-total">
+                        <span className="cbf-selbar-total-label">Total</span>
+                        <strong className="cbf-selbar-total-val">₱{fmt(grandTotal)}</strong>
+                      </div>
+                    </div>
                   )}
-                  {firstChoice && !secondPhase && selectedTransfers.length > 0 && selectedTours.length === 0 && (
-                    <button
-                      type="button"
-                      className="cbf-add-service-btn"
-                      onClick={() => { setSecondPhase(true); setAddSecond(true); }}
-                    >
-                      <Plus size={14}/> Add Tours
-                    </button>
+
+                  {/* Tour list */}
+                  {activeTab === 'tours' && (
+                    availableTours.length === 0
+                      ? <p className="cbf-empty-tab">No tours available for this destination.</p>
+                      : <TourList
+                          tours={availableTours}
+                          selected={selectedTours}
+                          onToggle={toggleTour}
+                          paxCount={info.paxCount}
+                        />
                   )}
-                </div>
+
+                  {/* Transfer list */}
+                  {activeTab === 'transfers' && (
+                    availableTransfers.length === 0
+                      ? <p className="cbf-empty-tab">No transfers available for this destination.</p>
+                      : <TransferList
+                          transfers={availableTransfers}
+                          selected={selectedTransfers}
+                          transferTypes={transferTypes}
+                          onToggle={toggleTransfer}
+                          onTypeChange={setTransferType}
+                          paxCount={info.paxCount}
+                        />
+                  )}
+                </>
               )}
             </div>
           )}
@@ -1726,7 +1484,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     <button
                       type="button"
                       className="cbf-change-type-btn"
-                      onClick={() => { setStep(2); setFirstChoice('tour'); setSecondPhase(false); setAddSecond(null); }}
+                      onClick={() => { setActiveTab('tours'); setStep(2); }}
                     >
                       Change
                     </button>
@@ -1769,7 +1527,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
                     <button
                       type="button"
                       className="cbf-change-type-btn"
-                      onClick={() => { setStep(2); setFirstChoice('transfer'); setSecondPhase(false); setAddSecond(null); }}
+                      onClick={() => { setActiveTab('transfers'); setStep(2); }}
                     >
                       Change
                     </button>
@@ -2003,34 +1761,15 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
             <button
               type="button"
               className="cbf-next-btn"
-              onClick={() => {
-                // For step 2, handle internal phases
-                if (step === 2) {
-                  if (!firstChoice) return; // must pick a type first
-                  const hasSelection = selectedTours.length > 0 || selectedTransfers.length > 0;
-                  if (!hasSelection) return; // must select at least one service
-                  if (firstChoice && !secondPhase) { setSecondPhase(true); return; }
-                  // If both service types are already selected, skip the yes/no gate and proceed
-                  if (firstChoice && secondPhase && addSecond === null && !(selectedTours.length > 0 && selectedTransfers.length > 0)) return; // must answer
-                  if (firstChoice && secondPhase && addSecond === true) { setAddSecond(false); return; }
-                }
-                goNext();
-              }}
+              onClick={goNext}
               disabled={
-                (step === 2 && !firstChoice) ||
-                (step === 2 && firstChoice && !secondPhase && selectedTours.length === 0 && selectedTransfers.length === 0) ||
-                (step === 2 && firstChoice && secondPhase && addSecond === null && !(selectedTours.length > 0 && selectedTransfers.length > 0)) ||
-                (step === 2 && firstChoice && secondPhase && addSecond === false && selectedTours.length === 0 && selectedTransfers.length === 0) ||
+                (step === 2 && selectedTours.length === 0 && selectedTransfers.length === 0) ||
                 (step === 3 && step3Phase === 'tours' && !tourDateValid) ||
                 (step === 3 && step3Phase === 'transfers' && !detailValid) ||
                 loading
               }
             >
-              {step === 3
-                ? step3NextLabel()
-                : step === 2 && firstChoice && secondPhase && (addSecond === false || (selectedTours.length > 0 && selectedTransfers.length > 0))
-                ? 'Review Summary'
-                : 'Continue'}
+              {step === 3 ? step3NextLabel() : step === 2 && selectedTours.length === 0 && selectedTransfers.length === 0 ? 'Select a service' : 'Continue'}
               <ChevronRight size={16}/>
             </button>
           ) : (
