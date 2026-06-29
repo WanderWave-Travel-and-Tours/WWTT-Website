@@ -493,7 +493,10 @@ router.get('/search', async (req, res) => {
         const { destination, duration, pax, category, title } = req.query;
         const paxNum = parseInt(pax) || 1;
 
-        if (!destination && !title) {
+        const destStr  = (destination || '').trim();
+        const titleStr = (title || '').trim();
+
+        if (!destStr && !titleStr) {
             return res.status(400).json({ status: 'error', error: 'Destination is required.' });
         }
 
@@ -514,8 +517,7 @@ router.get('/search', async (req, res) => {
             'Singapore, Universal Studio',
         ]);
 
-        const useTitleSearch = title && title.trim() !== ''
-            && destination && TITLE_SEARCH_DESTINATIONS.has(destination.trim());
+        const useTitleSearch = titleStr !== '' && TITLE_SEARCH_DESTINATIONS.has(destStr);
 
         // Build query
         const query = { isArchive: 'No' };
@@ -523,10 +525,12 @@ router.get('/search', async (req, res) => {
         if (useTitleSearch) {
             // Search by title field for the 7 title-reliant destinations.
             // e.g. title="Ho Chi Minh" matches "Ho Chi Minh - Min of 2 pax"
-            query.title = { $regex: title.trim(), $options: 'i' };
-        } else {
+            query.title = { $regex: titleStr, $options: 'i' };
+        } else if (destStr) {
             // Normal destination field search for all other destinations.
-            query.destination = { $regex: destination.trim(), $options: 'i' };
+            query.destination = { $regex: destStr, $options: 'i' };
+        } else {
+            return res.status(400).json({ status: 'error', error: 'Destination is required.' });
         }
 
         // Optional: filter by duration if provided
@@ -562,7 +566,7 @@ router.get('/search', async (req, res) => {
             };
         });
 
-        console.log(`🔍 /search — destination: "${destination || '—'}", title: "${title || '—'}" (title-search: ${useTitleSearch}), duration: "${duration}", pax: ${paxNum}, category: "${category || 'any'}" → ${results.length} result(s)`);
+        console.log(`🔍 /search — destination: "${destStr || '—'}", title: "${titleStr || '—'}" (title-search: ${useTitleSearch}), duration: "${duration}", pax: ${paxNum}, category: "${category || 'any'}" → ${results.length} result(s)`);
 
         res.status(200).json({ status: 'ok', data: results });
 
