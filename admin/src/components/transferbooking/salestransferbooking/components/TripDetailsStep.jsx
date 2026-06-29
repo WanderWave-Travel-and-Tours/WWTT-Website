@@ -302,6 +302,7 @@ const TripDetailsStep = ({
             key={i}
             index={i}
             passenger={p}
+            total={passengers.length}
             onUpdate={updatePassenger}
             onDobChange={handleDobPartChange}
           />

@@ -185,19 +185,18 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
     if (!selectedDestination) { toast.error('Please select a destination'); return false; }
     if (!selectedTour)        { toast.error('Please select a tour package'); return false; }
     if (!departureDate)       { toast.error('Please pick a departure date'); return false; }
-    for (let i = 0; i < passengers.length; i++) {
-      const p = passengers[i];
-      if (!p.firstName || !p.lastName) {
-        toast.error(`Passenger ${i + 1}: First & Last name required`); return false;
-      }
-      if (!p.phone)        { toast.error(`Passenger ${i + 1}: Phone is required`); return false; }
-      if (!p.dateOfBirth)  { toast.error(`Passenger ${i + 1}: Date of Birth is required`); return false; }
-      if (i === 0 && (!p.age || parseInt(p.age) < 18)) {
-        toast.error('Passenger 1 must be at least 18 years old to book.'); return false;
-      }
-      if (!p.gender)       { toast.error(`Passenger ${i + 1}: Gender is required`); return false; }
-      if (!p.address)      { toast.error(`Passenger ${i + 1}: Address is required`); return false; }
+    // Only the primary passenger (index 0) has required fields
+    const primary = passengers[0];
+    if (!primary.firstName || !primary.lastName) {
+      toast.error('Passenger 1: First & Last name required'); return false;
     }
+    if (!primary.phone)       { toast.error('Passenger 1: Phone is required'); return false; }
+    if (!primary.dateOfBirth) { toast.error('Passenger 1: Date of Birth is required'); return false; }
+    if (!primary.age || parseInt(primary.age) < 18) {
+      toast.error('Passenger 1 must be at least 18 years old to book.'); return false;
+    }
+    if (!primary.gender)  { toast.error('Passenger 1: Gender is required'); return false; }
+    if (!primary.address) { toast.error('Passenger 1: Address is required'); return false; }
     return true;
   };
 

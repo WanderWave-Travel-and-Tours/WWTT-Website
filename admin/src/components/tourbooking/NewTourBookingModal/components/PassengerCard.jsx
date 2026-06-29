@@ -9,13 +9,21 @@ const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1939 }, (_, n) => currentYear - n);
 const days  = Array.from({ length: 31 }, (_, n) => n + 1);
 
-const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, onRemove }) => (
+const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, onRemove }) => {
+  const isPrimary = i === 0;
+  const req = isPrimary ? <span style={{ color: '#ef4444' }}>*</span> : null;
+
+  return (
   <div className="ntbm-passenger-card">
 
     {/* Heading */}
     <div className="ntbm-passenger-heading">
       <div className="ntbm-passenger-num">{i + 1}</div>
       <span className="ntbm-passenger-label">Passenger {i + 1}</span>
+      {isPrimary
+        ? <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', background: '#fef3c7', border: '1px solid #fcd34d', padding: '2px 8px', borderRadius: '6px' }}>Primary Contact</span>
+        : <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '6px' }}>Details Optional</span>
+      }
       {total > 1 && (
         <button className="ntbm-remove-pax-btn" onClick={onRemove}>
           ✕ Remove
@@ -23,10 +31,17 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
       )}
     </div>
 
+    {/* Optional note for additional passengers */}
+    {!isPrimary && (
+      <div style={{ fontSize: '0.75rem', color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px' }}>
+        Additional passenger details are optional. You may fill them in now or leave them blank.
+      </div>
+    )}
+
     {/* First + Last Name */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
       <div className="ntbm-pfield">
-        <label>First Name <span style={{ color: '#ef4444' }}>*</span></label>
+        <label>First Name {req}</label>
         <input
           className="ntbm-input"
           value={p.firstName}
@@ -35,7 +50,7 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
         />
       </div>
       <div className="ntbm-pfield">
-        <label>Last Name <span style={{ color: '#ef4444' }}>*</span></label>
+        <label>Last Name {req}</label>
         <input
           className="ntbm-input"
           value={p.lastName}
@@ -62,7 +77,7 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
         />
       </div>
       <div className="ntbm-pfield">
-        <label>Phone <span style={{ color: '#ef4444' }}>*</span></label>
+        <label>Phone {req}</label>
         <input
           className="ntbm-input"
           value={p.phone}
@@ -83,7 +98,7 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
         letterSpacing: '0.02em',
         textTransform: 'uppercase',
       }}>
-        Date of Birth <span style={{ color: '#ef4444' }}>*</span>
+        Date of Birth {req}
       </label>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         {/* Day */}
@@ -150,7 +165,7 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
     {/* Gender + Nationality */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
       <div className="ntbm-pfield">
-        <label>Gender <span style={{ color: '#ef4444' }}>*</span></label>
+        <label>Gender {req}</label>
         <select
           className="ntbm-input"
           value={p.gender}
@@ -163,7 +178,7 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
         </select>
       </div>
       <div className="ntbm-pfield">
-        <label>Nationality <span style={{ color: '#ef4444' }}>*</span></label>
+        <label>Nationality {req}</label>
         <input
           className="ntbm-input"
           value={p.nationality}
@@ -175,7 +190,7 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
 
     {/* Address */}
     <div className="ntbm-pfield" style={{ marginTop: '12px' }}>
-      <label>Complete Address <span style={{ color: '#ef4444' }}>*</span></label>
+      <label>Complete Address {req}</label>
       <input
         className="ntbm-input"
         value={p.address}
@@ -184,6 +199,7 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
       />
     </div>
   </div>
-);
+  );
+};
 
 export default PassengerCard;
