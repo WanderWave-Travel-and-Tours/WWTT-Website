@@ -34,12 +34,13 @@ function PromoSection({ onBookNow }) {
 
   useEffect(() => {
     const onStorage = () => setCurrency(readCurrency());
+    const onCurrencyChange = (e) => setCurrency(e.detail?.currency || readCurrency());
     window.addEventListener('storage', onStorage);
-    const poll = setInterval(() => {
-      const c = readCurrency();
-      setCurrency(p => p !== c ? c : p);
-    }, 300);
-    return () => { window.removeEventListener('storage', onStorage); clearInterval(poll); };
+    window.addEventListener('currencyChanged', onCurrencyChange);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('currencyChanged', onCurrencyChange);
+    };
   }, []);
 
   const fallbackImg = (type) => {
