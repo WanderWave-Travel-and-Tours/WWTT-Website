@@ -490,18 +490,44 @@ router.get('/search', async (req, res) => {
         // there) — return plain JSON. Only the React app decrypts; it never calls /search.
         res.locals.skipEncrypt = true;
 
-        const { destination, duration, pax, category } = req.query;
+        const { destination, duration, pax, category, title } = req.query;
         const paxNum = parseInt(pax) || 1;
 
-        if (!destination) {
+        if (!destination && !title) {
             return res.status(400).json({ status: 'error', error: 'Destination is required.' });
         }
 
+        // ── TITLE-SEARCH WHITELIST ───────────────────────────────────────
+        // These 7 international destinations store their packages by title
+        // in the DB rather than by a clean destination field value.
+        // Title search is ONLY allowed for these exact destination names.
+        // All other destinations (Local + other International) always use
+        // the normal destination field search — title param is ignored.
+        // ────────────────────────────────────────────────────────────────
+        const TITLE_SEARCH_DESTINATIONS = new Set([
+            'Bangkok',
+            'Hongkong',
+            'Hanoi, Vietnam',
+            'Ho Chi Minh, Vietnam',
+            'Kuala Lumpur',
+            'Sapa + Hanoi, Vietnam',
+            'Singapore, Universal Studio',
+        ]);
+
+        const useTitleSearch = title && title.trim() !== ''
+            && destination && TITLE_SEARCH_DESTINATIONS.has(destination.trim());
+
         // Build query
-        const query = {
-            isArchive: 'No',
-            destination: { $regex: destination.trim(), $options: 'i' }
-        };
+        const query = { isArchive: 'No' };
+
+        if (useTitleSearch) {
+            // Search by title field for the 7 title-reliant destinations.
+            // e.g. title="Ho Chi Minh" matches "Ho Chi Minh - Min of 2 pax"
+            query.title = { $regex: title.trim(), $options: 'i' };
+        } else {
+            // Normal destination field search for all other destinations.
+            query.destination = { $regex: destination.trim(), $options: 'i' };
+        }
 
         // Optional: filter by duration if provided
         if (duration && duration.trim() !== '') {
@@ -536,7 +562,7 @@ router.get('/search', async (req, res) => {
             };
         });
 
-        console.log(`🔍 /search — destination: "${destination}", duration: "${duration}", pax: ${paxNum}, category: "${category || 'any'}" → ${results.length} result(s)`);
+        console.log(`🔍 /search — destination: "${destination || '—'}", title: "${title || '—'}" (title-search: ${useTitleSearch}), duration: "${duration}", pax: ${paxNum}, category: "${category || 'any'}" → ${results.length} result(s)`);
 
         res.status(200).json({ status: 'ok', data: results });
 
