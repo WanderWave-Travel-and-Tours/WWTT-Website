@@ -519,6 +519,42 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       const bookingId = data.bookingId || data.data?._id;
       if (!bookingId) throw new Error('Booking created but no ID returned. Please contact support.');
 
+      // Fire GHL webhook (non-blocking)
+      try {
+        const nameParts = (info.fullName || '').trim().split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName  = nameParts.slice(1).join(' ') || '';
+        const tourNames     = tourSnapshots.map(t => t.title).filter(Boolean);
+        const transferNames = transferSnapshots.map(t => t.title).filter(Boolean);
+        const bookingNames  = [...tourNames, ...transferNames].join(', ');
+        await fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId,
+            firstName,
+            lastName,
+            fullName:        info.fullName,
+            email:           info.email,
+            phone:           info.phone,
+            typeOfBooking:   'Custom Booking (Admin)',
+            bookingName:     bookingNames,
+            destination:     info.destination,
+            travelDate:      info.travelDate,
+            returnDate:      info.returnDate || '',
+            paxCount:        info.paxCount,
+            tours:           tourNames,
+            transfers:       transferNames,
+            toursTotal,
+            transfersTotal,
+            nightSurcharge,
+            totalAmount:     grandTotal,
+            paymentType,
+            initialPaymentAmount: amountToPay,
+          }),
+        });
+      } catch (_) {}
+
       const paymentRes  = await fetch(`${API_BASE}/api/payment/create-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

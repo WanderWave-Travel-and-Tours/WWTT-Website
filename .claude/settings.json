@@ -65,11 +65,14 @@
       "Bash(color:#555)",
       "Bash('font-family:sans-serif>EXPANDED \\(280px\\)</div> *)",
       "Bash(node \"C:/Users/HHSARM~1/AppData/Local/Temp/claude/c--Users-hhsarmiento-Desktop-WWTT-Website/b481a538-7309-4497-9e46-78bee76d0cd9/scratchpad/screenshot.mjs\")",
-      "Bash(node \"C:/Users/HHSARM~1/AppData/Local/Temp/claude/c--Users-hhsarmiento-Desktop-WWTT-Website/b481a538-7309-4497-9e46-78bee76d0cd9/scratchpad/screenshot2.mjs\")"
+      "Bash(node \"C:/Users/HHSARM~1/AppData/Local/Temp/claude/c--Users-hhsarmiento-Desktop-WWTT-Website/b481a538-7309-4497-9e46-78bee76d0cd9/scratchpad/screenshot2.mjs\")",
+      "Read(//c/Users/hhsarmiento/Desktop/funnel/**)",
+      "Bash(dir \"c:\\\\Users\\\\hhsarmiento\\\\Desktop\\\\funnel\" /b)"
     ],
     "additionalDirectories": [
       "c:\\Users\\hhsarmiento\\Desktop",
-      "c:\\Users\\hhsarmiento\\Desktop\\WWTT-Website\\.claude\\skills"
+      "c:\\Users\\hhsarmiento\\Desktop\\WWTT-Website\\.claude\\skills",
+      "c:\\Users\\hhsarmiento\\Desktop\\funnel"
     ]
   }
 }

@@ -268,6 +268,33 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
       const bookingId = bookingResult.bookingId || bookingResult.data?._id;
       console.log('✅ Tour walk-in booking created → ID:', bookingId);
 
+      // Fire GHL webhook (non-blocking)
+      try {
+        await fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId,
+            firstName:       primaryPax.firstName || '',
+            lastName:        primaryPax.lastName  || '',
+            fullName:        bookingData.fullName,
+            email:           bookingData.email,
+            phone:           primaryPax.phone     || '',
+            typeOfBooking:   'Tour Booking (Sales)',
+            bookingName:     bookingData.packageName,
+            destination:     selectedDestination,
+            travelDate:      departureDate,
+            endDate:         endDate,
+            duration:        bookingData.duration,
+            paxCount,
+            totalAmount:     packageTotal,
+            packagePrice:    tourPrice,
+            paymentType,
+            initialPaymentAmount,
+          }),
+        });
+      } catch (_) {}
+
       // ── Create PayMongo checkout session ──────────────────────────────────
       const amountToPay = paymentType === 'full' ? packageTotal : initialPaymentAmount;
 
