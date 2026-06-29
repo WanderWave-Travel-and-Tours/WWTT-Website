@@ -529,6 +529,36 @@ const TourBookingFormModal = ({
       } catch (abandonedErr) {
       }
 
+      // Fire GHL booking webhook (non-blocking)
+      try {
+        const primaryPax = passengers[0] || {};
+        await fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId,
+            firstName:       primaryPax.firstName || '',
+            lastName:        primaryPax.lastName  || '',
+            fullName:        fullBookingData.fullName,
+            email:           fullBookingData.email,
+            phone:           primaryPax.phone     || '',
+            typeOfBooking:   'Tour Booking',
+            bookingName:     fullBookingData.packageName,
+            destination:     pkg.destination || pkg.name || '',
+            travelDate:      fullBookingData.startDate,
+            endDate:         fullBookingData.endDate,
+            duration:        fullBookingData.duration,
+            paxCount:        totalPassengers,
+            totalAmount:     fullBookingData.totalAmount,
+            packageTotal:    finalPackageTotal,
+            discountAmount:  discountAmount || 0,
+            promoCode:       appliedPromo?.code || null,
+            paymentType,
+            initialPaymentAmount: amountToPay,
+          }),
+        });
+      } catch (_) {}
+
       // ✅ STEP 5: REDIRECT TO PAYMENT
       toast.success('Redirecting to secure payment page...');
       if (checkoutSessionId) {
