@@ -131,6 +131,23 @@ export default function Step1BasicInfo({
           </div>
         </div>
 
+        {/* ── Date of Birth ── */}
+        <div className="cbf-field">
+          <label>Date of Birth <span className="cbf-req">*</span></label>
+          <div className="cbf-input-wrap">
+            <input
+              type="date"
+              className={infoErrors.birthDate ? 'cbf-error' : ''}
+              value={info.birthDate || ''}
+              max={new Date().toISOString().split('T')[0]}
+              onChange={e => onInfoChange('birthDate', e.target.value)}
+            />
+          </div>
+          {infoErrors.birthDate && (
+            <span className="cbf-err-msg">{infoErrors.birthDate}</span>
+          )}
+        </div>
+
         {/* ── Travel Date ── */}
         <div className="cbf-field">
           <label>Travel Date <span className="cbf-req">*</span></label>

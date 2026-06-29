@@ -44,7 +44,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
   // ── Step 1 – Basic Info ────────────────────────────────────────────────────
   const [info, setInfo] = useState({
-    destination: '', fullName: '', email: '', phone: '',
+    destination: '', fullName: '', email: '', phone: '', birthDate: '',
     travelDate: '', returnDate: '', paxCount: '', message: '',
   });
   const [infoErrors, setInfoErrors] = useState({});
@@ -95,7 +95,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (!isOpen) {
       setStep(1);
-      setInfo({ destination:'', fullName:'', email:'', phone:'', travelDate:'', returnDate:'', paxCount:'', message:'' });
+      setInfo({ destination:'', fullName:'', email:'', phone:'', birthDate:'', travelDate:'', returnDate:'', paxCount:'', message:'' });
       setInfoErrors({});
       setShowDestDropdown(false);
       setFirstChoice(null); setSecondPhase(false); setAddSecond(null);
@@ -277,6 +277,16 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
     if (!info.fullName.trim())    errs.fullName    = 'Full name is required.';
     if (!info.email.trim())       errs.email       = 'Email is required.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email)) errs.email = 'Enter a valid email.';
+    if (!info.birthDate) {
+      errs.birthDate = 'Date of birth is required.';
+    } else {
+      const birth = new Date(info.birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const md = today.getMonth() - birth.getMonth();
+      if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
+      if (age < 18) errs.birthDate = 'Primary booker must be at least 18 years old.';
+    }
     if (!info.travelDate)         errs.travelDate  = 'Travel date is required.';
     if (!info.paxCount || parseInt(info.paxCount) < 1) errs.paxCount = 'At least 1 passenger required.';
     setInfoErrors(errs);

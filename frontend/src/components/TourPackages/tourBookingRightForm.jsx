@@ -581,6 +581,10 @@ const handleRemoveFlight = () => {
     const curr = passengers[passengerStep - 1];
     if (bookingWithAirfare && requiresID && !curr.idFile) { toast.error('Please upload a valid ID for this passenger'); return; }
     if (bookingWithAirfare && requiresPassport && !curr.passportFile) { toast.error('Please upload a valid passport for this passenger'); return; }
+    if (passengerStep === 1) {
+      const primaryAge = parseInt(passengers[0]?.age);
+      if (!primaryAge || primaryAge < 18) { toast.error('Passenger 1 must be at least 18 years old to book.'); return; }
+    }
     if (passengerStep < totalPassengers) { setPassengerStep(prev => prev + 1); return; }
 
     setLoading(true);
@@ -712,6 +716,8 @@ const handleRemoveFlight = () => {
   };
 
   const handleBackPassenger = () => { if (passengerStep > 1) setPassengerStep(prev => prev - 1); };
+
+  const handleSkipToPayment = () => { setPassengerStep(totalPassengers); };
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -1057,6 +1063,7 @@ const handleRemoveFlight = () => {
         removeFile={removeFile}
         handleNextPassenger={handleNextPassenger}
         handleBackPassenger={handleBackPassenger}
+        handleSkipToPayment={handleSkipToPayment}
         loading={loading}
         currency={currency}
         exchangeRate={exchangeRate}

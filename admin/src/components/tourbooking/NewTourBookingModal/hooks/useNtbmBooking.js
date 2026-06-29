@@ -192,6 +192,9 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
       }
       if (!p.phone)        { toast.error(`Passenger ${i + 1}: Phone is required`); return false; }
       if (!p.dateOfBirth)  { toast.error(`Passenger ${i + 1}: Date of Birth is required`); return false; }
+      if (i === 0 && (!p.age || parseInt(p.age) < 18)) {
+        toast.error('Passenger 1 must be at least 18 years old to book.'); return false;
+      }
       if (!p.gender)       { toast.error(`Passenger ${i + 1}: Gender is required`); return false; }
       if (!p.address)      { toast.error(`Passenger ${i + 1}: Address is required`); return false; }
     }
