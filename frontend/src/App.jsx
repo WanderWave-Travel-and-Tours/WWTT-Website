@@ -257,9 +257,10 @@ function MainLayout() {
   // ============================================================
   // ⭐ FETCH WISHLIST COUNT
   // ============================================================
+  const currentUserIdApp = currentUser?._id || currentUser?.id || null;
   useEffect(() => {
-    const fetchWishlistCount = async () => {
-      if (!currentUser) {
+    const fetchWishlistCount = async (signal) => {
+      if (!currentUserIdApp) {
         setWishlistCount(0);
         return;
       }
@@ -274,24 +275,23 @@ function MainLayout() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
+          signal,
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch wishlist count');
-        }
+        if (!response.ok) throw new Error('Failed to fetch wishlist count');
 
         const result = await response.json();
-        
+
         if (result.status === 'ok' && result.data) {
-          const count = result.data.length;
-          setWishlistCount(count);
+          setWishlistCount(result.data.length);
         }
       } catch (err) {
-        setWishlistCount(0);
+        if (err.name !== 'AbortError') setWishlistCount(0);
       }
     };
 
-    fetchWishlistCount();
+    const controller = new AbortController();
+    fetchWishlistCount(controller.signal);
 
     const handleWishlistUpdate = () => {
       fetchWishlistCount();
@@ -300,9 +300,10 @@ function MainLayout() {
     window.addEventListener('wishlistUpdated', handleWishlistUpdate);
 
     return () => {
+      controller.abort();
       window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
     };
-  }, [currentUser]);
+  }, [currentUserIdApp]);
 
   useEffect(() => {
     if (window.google?.translate) {

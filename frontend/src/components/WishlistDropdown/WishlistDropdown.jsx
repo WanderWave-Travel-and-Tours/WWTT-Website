@@ -19,21 +19,25 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
   const [removingId, setRemovingId] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
 
+  const currentUserIdWishlist = currentUser?._id || currentUser?.id || null;
   useEffect(() => {
-    const fetchWishlistItems = async () => {
-      if (!isOpen || !currentUser) return;
+    if (!isOpen || !currentUserIdWishlist) return;
 
-      setActiveFilter('all');
-      setLoading(true);
+    setActiveFilter('all');
+    setLoading(true);
+
+    const controller = new AbortController();
+
+    const fetchWishlistItems = async () => {
       try {
         const token = localStorage.getItem('wanderwave_token');
         if (!token) { setLoading(false); return; }
 
-        // cache: 'no-store' prevents 304 stale responses
         const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           cache: 'no-store',
+          signal: controller.signal,
         });
 
         if (!response.ok) throw new Error('Failed to fetch wishlist');
@@ -41,17 +45,18 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
         const result = await response.json();
 
         if (result.status === 'ok' && result.data) {
-          // Server now returns packageDetails + itemType directly — no extra fetching needed
           setWishlistItems(result.data);
         }
       } catch (err) {
+        if (err.name !== 'AbortError') setWishlistItems([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchWishlistItems();
-  }, [isOpen, currentUser]);
+    return () => controller.abort();
+  }, [isOpen, currentUserIdWishlist]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

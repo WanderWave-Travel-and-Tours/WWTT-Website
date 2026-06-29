@@ -120,13 +120,16 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
   // ============================================================
   // FETCH FAVORITES FOR CURRENT USER
   // ============================================================
+  const currentUserIdTransfer = currentUser?._id || currentUser?.id || null;
   useEffect(() => {
-    const fetchFavorites = async () => {
-      if (!isLoggedIn || !currentUser) {
-        setUserFavorites([]);
-        return;
-      }
+    if (!isLoggedIn || !currentUserIdTransfer) {
+      setUserFavorites([]);
+      return;
+    }
 
+    const controller = new AbortController();
+
+    const fetchFavorites = async () => {
       try {
         const token = localStorage.getItem('wanderwave_token');
         if (!token) { setUserFavorites([]); return; }
@@ -134,7 +137,7 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
         const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          cache: 'no-store',
+          signal: controller.signal,
         });
 
         if (!response.ok) throw new Error('Failed to fetch favorites');
@@ -145,11 +148,13 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
           setUserFavorites(favoriteIds);
         }
       } catch (err) {
+        if (err.name !== 'AbortError') setUserFavorites([]);
       }
     };
 
     fetchFavorites();
-  }, [isLoggedIn, currentUser]);
+    return () => controller.abort();
+  }, [isLoggedIn, currentUserIdTransfer]);
 
   // ── Listen for wishlist changes (e.g. removed from WishlistDropdown) ────
   useEffect(() => {
