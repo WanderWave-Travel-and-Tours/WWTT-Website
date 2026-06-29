@@ -502,10 +502,13 @@ router.get('/search', async (req, res) => {
 
         // ── TITLE-SEARCH WHITELIST ───────────────────────────────────────
         // These 7 international destinations store their packages by title
-        // in the DB rather than by a clean destination field value.
-        // Title search is ONLY allowed for these exact destination names.
-        // All other destinations (Local + other International) always use
-        // the normal destination field search — title param is ignored.
+        // or itinerary in the DB rather than by a clean destination field.
+        // Search order for these destinations:
+        //   1. Title field search (keyword match)
+        //   2. Itinerary search (itinerary.title + itinerary.activities)
+        //      — fallback when title search returns 0 results
+        // All other destinations always use the normal destination field
+        // search — title and itinerary params are ignored.
         // ────────────────────────────────────────────────────────────────
         const TITLE_SEARCH_DESTINATIONS = new Set([
             'Bangkok',
@@ -519,54 +522,90 @@ router.get('/search', async (req, res) => {
 
         const useTitleSearch = titleStr !== '' && TITLE_SEARCH_DESTINATIONS.has(destStr);
 
-        // Build query
-        const query = { isArchive: 'No' };
+        // Helper: build shared filters (duration + category) to reuse across queries
+        const buildSharedFilters = () => {
+            const filters = { isArchive: 'No' };
+            if (duration && duration.trim() !== '') {
+                filters.duration = { $regex: duration.trim(), $options: 'i' };
+            }
+            if (category && category.trim() !== '') {
+                const cat = category.trim().toLowerCase();
+                if (cat.startsWith('inter')) {
+                    filters.category = { $regex: 'Internation', $options: 'i' };
+                } else if (cat.startsWith('local')) {
+                    filters.category = { $regex: '^Local$', $options: 'i' };
+                } else {
+                    filters.category = { $regex: category.trim(), $options: 'i' };
+                }
+            }
+            return filters;
+        };
+
+        const formatResults = (packages) => packages.map((pkg) => {
+            const obj = publicFields(pkg.toObject());
+            return { ...obj, displayPrice: obj.price, paxUsed: paxNum };
+        });
+
+        // ── SEARCH EXECUTION ─────────────────────────────────────────────
+        let packages = [];
+        let searchMode = 'destination';
 
         if (useTitleSearch) {
-            // Search by title field for the 7 title-reliant destinations.
-            // e.g. title="Ho Chi Minh" matches "Ho Chi Minh - Min of 2 pax"
-            query.title = { $regex: titleStr, $options: 'i' };
+            // STEP 1: Title field search
+            const titleQuery = { ...buildSharedFilters(), title: { $regex: titleStr, $options: 'i' } };
+            packages = await Package.find(titleQuery).sort({ _id: -1 });
+            searchMode = 'title';
+
+            // STEP 2: Itinerary search — fallback when title search returns 0
+            // Searches itinerary.title (day titles) and itinerary.activities (activity names)
+            if (packages.length === 0) {
+                const itineraryQuery = {
+                    ...buildSharedFilters(),
+                    $or: [
+                        { 'itinerary.title':      { $regex: titleStr, $options: 'i' } },
+                        { 'itinerary.activities': { $regex: titleStr, $options: 'i' } },
+                    ]
+                };
+                packages = await Package.find(itineraryQuery).sort({ _id: -1 });
+                searchMode = 'itinerary';
+
+                // STEP 3: Itinerary search without duration — if still 0, drop duration filter
+                // so we still show relevant packages even if duration doesn't match exactly
+                if (packages.length === 0 && duration && duration.trim() !== '') {
+                    const itineraryQueryNoDur = {
+                        isArchive: 'No',
+                        $or: [
+                            { 'itinerary.title':      { $regex: titleStr, $options: 'i' } },
+                            { 'itinerary.activities': { $regex: titleStr, $options: 'i' } },
+                        ]
+                    };
+                    if (category && category.trim() !== '') {
+                        const cat = category.trim().toLowerCase();
+                        if (cat.startsWith('inter')) {
+                            itineraryQueryNoDur.category = { $regex: 'Internation', $options: 'i' };
+                        } else if (cat.startsWith('local')) {
+                            itineraryQueryNoDur.category = { $regex: '^Local$', $options: 'i' };
+                        } else {
+                            itineraryQueryNoDur.category = { $regex: category.trim(), $options: 'i' };
+                        }
+                    }
+                    packages = await Package.find(itineraryQueryNoDur).sort({ _id: -1 });
+                    searchMode = 'itinerary-no-duration';
+                }
+            }
+
         } else if (destStr) {
-            // Normal destination field search for all other destinations.
-            query.destination = { $regex: destStr, $options: 'i' };
+            // Normal destination field search for all other destinations
+            const destQuery = { ...buildSharedFilters(), destination: { $regex: destStr, $options: 'i' } };
+            packages = await Package.find(destQuery).sort({ _id: -1 });
+            searchMode = 'destination';
         } else {
             return res.status(400).json({ status: 'error', error: 'Destination is required.' });
         }
 
-        // Optional: filter by duration if provided
-        if (duration && duration.trim() !== '') {
-            query.duration = { $regex: duration.trim(), $options: 'i' };
-        }
+        const results = formatResults(packages);
 
-        // ✅ Optional: filter by category (Local / International).
-        // The 'Internation' regex intentionally matches BOTH 'International'
-        // and the legacy 'Internation Tour' enum value (typo kept for back-compat).
-        if (category && category.trim() !== '') {
-            const cat = category.trim().toLowerCase();
-            if (cat.startsWith('inter')) {
-                query.category = { $regex: 'Internation', $options: 'i' };
-            } else if (cat.startsWith('local')) {
-                query.category = { $regex: '^Local$', $options: 'i' };
-            } else {
-                query.category = { $regex: category.trim(), $options: 'i' };
-            }
-        }
-
-        const packages = await Package.find(query).sort({ _id: -1 });
-
-        // ✅ displayPrice always equals pkg.price.
-        // Even when soloPaxPrice or multiplePaxPrice are set on the record,
-        // the landing page always shows the base computed price.
-        const results = packages.map((pkg) => {
-            const obj = publicFields(pkg.toObject());
-            return {
-                ...obj,
-                displayPrice: obj.price,
-                paxUsed: paxNum
-            };
-        });
-
-        console.log(`🔍 /search — destination: "${destStr || '—'}", title: "${titleStr || '—'}" (title-search: ${useTitleSearch}), duration: "${duration}", pax: ${paxNum}, category: "${category || 'any'}" → ${results.length} result(s)`);
+        console.log(`🔍 /search — destination: "${destStr || '—'}", title: "${titleStr || '—'}" (mode: ${searchMode}), duration: "${duration}", pax: ${paxNum}, category: "${category || 'any'}" → ${results.length} result(s)`);
 
         res.status(200).json({ status: 'ok', data: results });
 
