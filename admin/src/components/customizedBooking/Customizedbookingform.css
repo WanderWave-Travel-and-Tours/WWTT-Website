@@ -401,7 +401,241 @@
 }
 
 /* ============================================
-   STEP 2 – SERVICE TYPE SELECTION
+   STEP 2 – TAB SWITCHER
+   ============================================ */
+
+.cbf-s2-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.cbf-s2-context strong { color: #1e3a5f; font-weight: 700; }
+
+.cbf-tab-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cbf-tab-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 13px 10px 11px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.cbf-tab-btn:hover:not(.active) {
+  border-color: #fbbf24;
+  background: #fffbf5;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(252,156,27,0.12);
+}
+
+.cbf-tab-btn.active {
+  border-color: #fc9c1b;
+  background: linear-gradient(160deg, #fff7ed 0%, #fffcf5 100%);
+  box-shadow: 0 4px 16px rgba(252,156,27,0.22);
+  transform: translateY(-1px);
+}
+
+.cbf-tab-btn > svg { color: #94a3b8; transition: color 0.2s ease; margin-bottom: 2px; }
+.cbf-tab-btn.active > svg { color: #f97316; }
+.cbf-tab-btn:hover:not(.active) > svg { color: #475569; }
+
+.cbf-tab-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
+.cbf-tab-btn.active .cbf-tab-label { color: #ea580c; }
+
+.cbf-tab-count {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.cbf-tab-btn.active .cbf-tab-count { color: #f97316; }
+
+.cbf-tab-sel-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  background: #10b981;
+  color: white;
+  border-radius: 20px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 2px solid #f8fafc;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.cbf-empty-tab {
+  text-align: center;
+  padding: 32px 16px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-style: italic;
+  background: white;
+  border: 1.5px dashed #e2e8f0;
+  border-radius: 12px;
+}
+
+/* ============================================
+   STEP 2 – SELECTED ITEMS BAR (CHIPS)
+   ============================================ */
+
+.cbf-selbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.cbf-selbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cbf-selbar-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border-radius: 8px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  max-width: 200px;
+}
+
+.cbf-chip-tour     { border-left: 3px solid #16a34a; }
+.cbf-chip-transfer { border-left: 3px solid #2563eb; }
+
+.cbf-chip-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.cbf-chip-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.cbf-chip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cbf-chip-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.cbf-chip-price {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #10b981;
+  line-height: 1;
+}
+
+.cbf-chip-remove {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 2px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.cbf-chip-remove:hover { color: #e11d48; background: #ffe4e6; }
+
+.cbf-selbar-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+  border-left: 1px solid #bbf7d0;
+  padding-left: 10px;
+}
+
+.cbf-selbar-total-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #16a34a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cbf-selbar-total-val {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #15803d;
+  white-space: nowrap;
+}
+
+/* ============================================
+   STEP 2 – SERVICE TYPE SELECTION (legacy, kept for safety)
    ============================================ */
 
 .cbf-service-type-grid {
