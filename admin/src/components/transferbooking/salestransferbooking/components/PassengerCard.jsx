@@ -5,22 +5,32 @@ const MONTHS = [
   'July','August','September','October','November','December',
 ];
 
-const PassengerCard = ({ index, passenger: p, onUpdate, onDobChange }) => {
+const PassengerCard = ({ index, passenger: p, total, onUpdate, onDobChange }) => {
   const isPrimary = index === 0;
+  const req = isPrimary ? <span style={{ color: '#ef4444' }}>*</span> : null;
 
   return (
     <div className="nbm-passenger-card">
       <div className="nbm-passenger-heading">
         <div className="nbm-passenger-num">{index + 1}</div>
-        <div className="nbm-passenger-label">
-          Passenger {index + 1}{isPrimary ? ' (Primary Contact)' : ''}
-        </div>
+        <div className="nbm-passenger-label">Passenger {index + 1}</div>
+        {isPrimary
+          ? <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', background: '#fef3c7', border: '1px solid #fcd34d', padding: '2px 8px', borderRadius: '6px' }}>Primary Contact</span>
+          : <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '6px' }}>Details Optional</span>
+        }
       </div>
+
+      {/* Optional note for additional passengers */}
+      {!isPrimary && (
+        <div style={{ fontSize: '0.75rem', color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px' }}>
+          Additional passenger details are optional. You may fill them in now or leave them blank.
+        </div>
+      )}
 
       {/* Row 1: First + Last Name */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div className="nbm-pfield">
-          <label>First Name <span style={{ color: '#ef4444' }}>*</span></label>
+          <label>First Name {req}</label>
           <input
             value={p.firstName}
             onChange={e => onUpdate(index, 'firstName', e.target.value)}
@@ -28,7 +38,7 @@ const PassengerCard = ({ index, passenger: p, onUpdate, onDobChange }) => {
           />
         </div>
         <div className="nbm-pfield">
-          <label>Last Name <span style={{ color: '#ef4444' }}>*</span></label>
+          <label>Last Name {req}</label>
           <input
             value={p.lastName}
             onChange={e => onUpdate(index, 'lastName', e.target.value)}
@@ -61,7 +71,7 @@ const PassengerCard = ({ index, passenger: p, onUpdate, onDobChange }) => {
 
       {/* Row 3: Date of Birth */}
       <div className="nbm-pfield" style={{ marginTop: 10 }}>
-        <label>Date of Birth</label>
+        <label>Date of Birth {req}</label>
         <div className="nbm-dob-row">
           <select
             className="nbm-dob-select dob-day"
