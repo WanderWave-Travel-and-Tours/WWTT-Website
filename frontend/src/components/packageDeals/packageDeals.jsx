@@ -116,13 +116,16 @@ function PackageDealsContent() {
   // ============================================================
   // FETCH USER FAVORITES WHEN LOGGED IN
   // ============================================================
+  const currentUserId = currentUser?._id || currentUser?.id || null;
   useEffect(() => {
-    const fetchUserFavorites = async () => {
-      if (!isLoggedIn || !currentUser) {
-        setFavorites([]);
-        return;
-      }
+    if (!isLoggedIn || !currentUserId) {
+      setFavorites([]);
+      return;
+    }
 
+    const controller = new AbortController();
+
+    const fetchUserFavorites = async () => {
       try {
         const token = localStorage.getItem('wanderwave_token');
         if (!token) { setFavorites([]); return; }
@@ -133,11 +136,10 @@ function PackageDealsContent() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
+          signal: controller.signal,
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch favorites');
-        }
+        if (!response.ok) throw new Error('Failed to fetch favorites');
 
         const result = await response.json();
 
@@ -146,12 +148,13 @@ function PackageDealsContent() {
           setFavorites(favoriteIds);
         }
       } catch (err) {
-        setFavorites([]);
+        if (err.name !== 'AbortError') setFavorites([]);
       }
     };
 
     fetchUserFavorites();
-  }, [isLoggedIn, currentUser]);
+    return () => controller.abort();
+  }, [isLoggedIn, currentUserId]);
 
   // ============================================================
   // CURRENCY MODAL AUTO-SHOW

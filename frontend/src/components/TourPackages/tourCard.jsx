@@ -124,9 +124,11 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
-  // Check if this tour is already in the user's wishlist on mount
+  const currentUserIdTourCard = currentUser?._id || currentUser?.id || null;
   useEffect(() => {
-    if (!currentUser?._id || !tour?._id) return;
+    if (!currentUserIdTourCard || !tour?._id) return;
+
+    const controller = new AbortController();
 
     const checkFavoriteStatus = async () => {
       try {
@@ -134,7 +136,10 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
         if (!token) return;
         const res = await fetch(
           `https://wanderwaveph.onrender.com/api/favorites/check/${tour._id}`,
-          { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
+          {
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          }
         );
         const data = await res.json();
         if (data.status === 'ok') {
@@ -145,7 +150,8 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
     };
 
     checkFavoriteStatus();
-  }, [currentUser, tour._id]);
+    return () => controller.abort();
+  }, [currentUserIdTourCard, tour._id]);
 
   // Toggle wishlist for this tour
   const handleWishlistToggle = async (e) => {
