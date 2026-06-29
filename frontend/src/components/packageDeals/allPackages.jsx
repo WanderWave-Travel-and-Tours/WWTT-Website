@@ -72,11 +72,13 @@ function AllPackages({
     };
   }, [packagesRef]);
 
+  const packagesKey = packages.map(p => p.id || p._id).join(',');
   useEffect(() => {
     setCurrentPage(1);
     setPriceError('');
     setAnimKey(k => k + 1);
-  }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations, sortOrder]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packagesKey, scopeFilter, searchQuery, priceRange.min, priceRange.max, selectedDuration, selectedDestinations.join(','), sortOrder]);
 
   // ✅ Hidden packages — excluded from public listing
   const HIDDEN_PACKAGE_IDS = ['69c4c9cceda858d7049a460c'];

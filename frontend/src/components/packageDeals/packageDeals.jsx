@@ -44,8 +44,12 @@ function PackageDealsContent() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showLoginNotice, setShowLoginNotice] = useState(false);
 
-  const [currency, setCurrency] = useState('PHP');        
+  const [currency, setCurrencyState] = useState('PHP');
   const exchangeRate = 58;
+  const setCurrency = (c) => {
+    setCurrencyState(c);
+    window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: c } }));
+  };
 
 
 
