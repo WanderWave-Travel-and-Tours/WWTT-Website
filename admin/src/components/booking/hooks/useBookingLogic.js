@@ -452,6 +452,11 @@ export const useBookingLogic = (isOpen, onClose) => {
       toast.error('Invalid package price. Please check the selected package.');
       return;
     }
+    const primaryAge = parseInt(formData.passengers?.[0]?.age);
+    if (!primaryAge || primaryAge < 18) {
+      toast.error('Passenger 1 must be at least 18 years old to book.');
+      return;
+    }
     setShowConfirm(false);
     setLoading(true);
 

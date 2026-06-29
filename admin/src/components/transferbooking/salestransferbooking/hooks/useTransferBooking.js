@@ -228,6 +228,7 @@ export const useTransferBooking = (isOpen, onClose) => {
     if (!p.firstName.trim() || !p.lastName.trim()) { toast.error('Passenger 1 full name is required'); return false; }
     if (!p.email.trim())  { toast.error('Passenger 1 email is required'); return false; }
     if (!p.phone.trim())  { toast.error('Passenger 1 phone number is required'); return false; }
+    if (!p.age || parseInt(p.age) < 18) { toast.error('Passenger 1 must be at least 18 years old to book.'); return false; }
     return true;
   };
 

@@ -241,6 +241,7 @@ const TourBookingFormModal = ({
   removeFile,
   handleNextPassenger,
   handleBackPassenger,
+  handleSkipToPayment,
   // Payment option props
   paymentType,
   setPaymentType,
@@ -319,6 +320,7 @@ const TourBookingFormModal = ({
   };
 
   const isLastPassenger = passengerStep === totalPassengers;
+  const isPrimaryPassenger = passengerStep === 1;
   const finalAmount = selectedFlight ? totalAmount : finalPackageTotal;
 
   const partialPercentage = selectedFlight ? 85 : 50;
@@ -703,16 +705,25 @@ const TourBookingFormModal = ({
           <form className="bfm-form" onSubmit={handleFormSubmit}>
             <div className="bfm-form-section-header">
               <span className="bfm-passenger-badge">Passenger {passengerStep}</span>
-              {passengerStep === 1 && <span className="bfm-primary-contact-label">Primary Contact</span>}
+              {isPrimaryPassenger
+                ? <span className="bfm-primary-contact-label">Primary Contact</span>
+                : <span className="bfm-optional-badge">Details Optional</span>
+              }
             </div>
+
+            {!isPrimaryPassenger && (
+              <p className="bfm-optional-note">
+                Additional passenger details are optional. You may fill them in now or skip to continue.
+              </p>
+            )}
 
             {/* FORM GRID */}
             <div className="bfm-form-grid">
 
               <div className="bfm-form-group">
-                <label>First Name <span className="bfm-required">*</span></label>
+                <label>First Name {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <input
-                  required
+                  required={isPrimaryPassenger}
                   type="text"
                   value={currentPassenger.firstName}
                   onChange={(e) => handleNameChange(passengerStep - 1, 'firstName', e.target.value)}
@@ -723,9 +734,9 @@ const TourBookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Last Name <span className="bfm-required">*</span></label>
+                <label>Last Name {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <input
-                  required
+                  required={isPrimaryPassenger}
                   type="text"
                   value={currentPassenger.lastName}
                   onChange={(e) => handleNameChange(passengerStep - 1, 'lastName', e.target.value)}
@@ -736,9 +747,9 @@ const TourBookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Email Address <span className="bfm-required">*</span></label>
+                <label>Email Address {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <input
-                  required
+                  required={isPrimaryPassenger}
                   type="email"
                   value={currentPassenger.email}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'email', e.target.value)}
@@ -747,15 +758,15 @@ const TourBookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Phone Number <span className="bfm-required">*</span></label>
+                <label>Phone Number {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <input
-                  required
+                  required={isPrimaryPassenger}
                   type="tel"
                   value={currentPassenger.phone}
                   onChange={(e) => handlePhoneChange(passengerStep - 1, e.target.value)}
                   placeholder="0917 123 4567"
                   pattern="[0-9]{8,20}"
-                  minLength={8}
+                  minLength={isPrimaryPassenger ? 8 : undefined}
                   maxLength={20}
                   title="Phone number must be 8–20 digits, numbers only"
                 />
@@ -763,20 +774,23 @@ const TourBookingFormModal = ({
 
               {/* CUSTOM DATE PICKER */}
               <div className="bfm-form-group">
-                <label>Date of Birth <span className="bfm-required">*</span></label>
+                <label>
+                  Date of Birth {isPrimaryPassenger && <span className="bfm-required">*</span>}
+                  {isPrimaryPassenger && <span className="bfm-age-hint">(Must be 18+)</span>}
+                </label>
                 <CustomDatePicker
                   value={currentPassenger.dateOfBirth}
                   onChange={(e) => handleDateOfBirthChange(passengerStep - 1, e.target.value)}
                   maxDate={new Date().toISOString().split('T')[0]}
-                  required
+                  required={isPrimaryPassenger}
                   placeholder="Select birth date"
                 />
               </div>
 
               <div className="bfm-form-group">
-                <label>Age <span className="bfm-required">*</span></label>
+                <label>Age {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <input
-                  required
+                  required={isPrimaryPassenger}
                   type="number"
                   value={currentPassenger.age}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)}
@@ -786,12 +800,17 @@ const TourBookingFormModal = ({
                   readOnly
                   style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                 />
+                {isPrimaryPassenger && currentPassenger.age && parseInt(currentPassenger.age) < 18 && (
+                  <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+                    ⚠ Primary passenger must be at least 18 years old.
+                  </span>
+                )}
               </div>
 
               <div className="bfm-form-group">
-                <label>Gender <span className="bfm-required">*</span></label>
+                <label>Gender {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <select
-                  required
+                  required={isPrimaryPassenger}
                   value={currentPassenger.gender}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'gender', e.target.value)}
                 >
@@ -803,9 +822,9 @@ const TourBookingFormModal = ({
               </div>
 
               <div className="bfm-form-group">
-                <label>Nationality <span className="bfm-required">*</span></label>
+                <label>Nationality {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <input
-                  required
+                  required={isPrimaryPassenger}
                   type="text"
                   value={currentPassenger.nationality}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'nationality', e.target.value)}
@@ -814,9 +833,9 @@ const TourBookingFormModal = ({
               </div>
 
               <div className="bfm-form-group bfm-full-width">
-                <label>Complete Address <span className="bfm-required">*</span></label>
+                <label>Complete Address {isPrimaryPassenger && <span className="bfm-required">*</span>}</label>
                 <input
-                  required
+                  required={isPrimaryPassenger}
                   type="text"
                   value={currentPassenger.address}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'address', e.target.value)}
@@ -1057,6 +1076,21 @@ const TourBookingFormModal = ({
                   className="bfm-back-btn"
                 >
                   Back
+                </button>
+              )}
+
+              {passengerStep < totalPassengers && handleSkipToPayment && (
+                <button
+                  type="button"
+                  disabled={localLoading || loading}
+                  className="bfm-book-now-btn"
+                  onClick={(e) => {
+                    const form = e.target.closest('form');
+                    if (form && !form.checkValidity()) { form.reportValidity(); return; }
+                    handleSkipToPayment();
+                  }}
+                >
+                  Book Now
                 </button>
               )}
 

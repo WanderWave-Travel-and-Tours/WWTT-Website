@@ -133,7 +133,19 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
           }
         </div>
       </div>
+
+      {/* Age restriction warning for primary passenger */}
+      {i === 0 && p.age && parseInt(p.age) < 18 && (
+        <div style={{
+          marginTop: '6px', padding: '6px 10px', borderRadius: '6px',
+          background: '#fef2f2', border: '1px solid #fecaca',
+          color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600,
+        }}>
+          ⚠ Primary passenger must be at least 18 years old.
+        </div>
+      )}
     </div>
+
 
     {/* Gender + Nationality */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>

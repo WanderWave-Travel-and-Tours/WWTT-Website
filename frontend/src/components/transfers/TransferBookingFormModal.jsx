@@ -202,10 +202,11 @@ const TransferBookingFormModal = ({
   const [showBookingCompletedModal, setShowBookingCompletedModal] = useState(false);
 
   // Contact form state
-  const [fullName, setFullName] = useState('');
-  const [email,    setEmail]    = useState('');
-  const [phone,    setPhone]    = useState('');
-  const [message,  setMessage]  = useState('');
+  const [fullName,   setFullName]   = useState('');
+  const [email,      setEmail]      = useState('');
+  const [phone,      setPhone]      = useState('');
+  const [birthDate,  setBirthDate]  = useState('');
+  const [message,    setMessage]    = useState('');
 
   // ── Return Date (roundtrip only) ──────────────────────────────────────────
   const [returnDate, setReturnDate] = useState('');
@@ -281,6 +282,14 @@ const TransferBookingFormModal = ({
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
+    if (birthDate) {
+      const birth = new Date(birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const md = today.getMonth() - birth.getMonth();
+      if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
+      if (age < 18) { toast.error('Lead contact must be at least 18 years old to book.'); return; }
+    }
     setShowConfirmModal(true);
   };
 
@@ -524,6 +533,30 @@ const TransferBookingFormModal = ({
                   placeholder="+63 912 345 6789"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)} />
+              </div>
+
+              <div className="tbfm-form-group">
+                <label className="tbfm-form-label">Date of Birth <span className="tbfm-required">*</span></label>
+                <input
+                  type="date"
+                  className="tbfm-form-input"
+                  required
+                  value={birthDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                />
+                {birthDate && (() => {
+                  const birth = new Date(birthDate);
+                  const today = new Date();
+                  let age = today.getFullYear() - birth.getFullYear();
+                  const md = today.getMonth() - birth.getMonth();
+                  if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
+                  return age < 18 ? (
+                    <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+                      ⚠ Lead contact must be at least 18 years old.
+                    </span>
+                  ) : null;
+                })()}
               </div>
 
               <div className="tbfm-form-group">
