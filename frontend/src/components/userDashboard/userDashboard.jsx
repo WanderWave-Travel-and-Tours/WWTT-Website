@@ -9,6 +9,7 @@ import * as Icons from './Icons';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import WanderLoader from '../loading/WanderLoader';
+import { getAuthHeaders } from '../../utils/authHeaders';
 
 // ─────────────────────────────────────────────────────────────
 // Inner component — must be inside ToastProvider to use useToast
@@ -93,10 +94,10 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 customizedBookingsRes,
             ] = await Promise.allSettled([
                 fetch(`https://wanderwaveph.onrender.com/api/inquiries/email/${user.email}`).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/bookings/user/${user.email}`).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/tour-bookings?email=${user.email}`).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/transfer-bookings?email=${user.email}`).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/customized-bookings?email=${user.email}`).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/bookings/user/${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/tour-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/transfer-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
+                fetch(`https://wanderwaveph.onrender.com/api/customized-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
             ]);
 
             // Safely unwrap — a rejected/failed call returns null so it's skipped below

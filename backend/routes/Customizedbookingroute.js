@@ -13,6 +13,7 @@ const CustomizedBooking = require('../models/Customizedbooking');
 const Tour              = require('../models/tour');
 const Transfer          = require('../models/transfer');
 const authMiddleware    = require('../middleware/auth');
+const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
 const { sendCustomBookingToGHL } = require('../utils/ghlService');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,13 +297,20 @@ router.post('/', async (req, res) => {
 // GET /api/customized-bookings
 // List all customized bookings (admin).
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', verifyAdminOrUser, async (req, res) => {
   try {
     const { email, status, destination, page = 1, limit = 50 } = req.query;
     const filter = { isArchive: { $ne: 'Yes' } };
-    if (email)       filter.email       = { $regex: email, $options: 'i' };
     if (status)      filter.status      = status;
     if (destination) filter.destination = { $regex: destination, $options: 'i' };
+
+    // Customers may only ever see their own bookings — ignore any email
+    // filter they pass and pin it to the authenticated account's email.
+    if (req.authType === 'user') {
+      filter.email = req.user.email;
+    } else if (email) {
+      filter.email = { $regex: email, $options: 'i' };
+    }
 
     const skip  = (parseInt(page) - 1) * parseInt(limit);
     const total = await CustomizedBooking.countDocuments(filter);

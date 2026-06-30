@@ -10,6 +10,7 @@ const router               = express.Router();
 const TransferBookingOrder = require('../models/transferBookingOrder');
 const Transfer             = require('../models/transfer');
 const authMiddleware       = require('../middleware/auth');
+const verifyAdminOrUser    = require('../middleware/verifyAdminOrUser');
 const { sendTransferBookingToGHL } = require('../utils/ghlService');
 const { syncLocations }            = require('../utils/syncLocations');       // ← ADD
 
@@ -212,15 +213,22 @@ sendTransferBookingToGHL(booking).catch((err) =>
 // GET /api/transfer-bookings
 // List all transfer bookings (admin)
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', verifyAdminOrUser, async (req, res) => {
   try {
     const { email, status, transferType, createdByType, page = 1, limit = 50 } = req.query;
 
     const filter = {};
-    if (email)         filter.email         = { $regex: email, $options: 'i' };
     if (status)        filter.status        = status;
     if (transferType)  filter.transferType  = transferType;
     if (createdByType) filter.createdByType = createdByType;
+
+    // Customers may only ever see their own bookings — ignore any email
+    // filter they pass and pin it to the authenticated account's email.
+    if (req.authType === 'user') {
+      filter.email = req.user.email;
+    } else if (email) {
+      filter.email = { $regex: email, $options: 'i' };
+    }
 
     const skip  = (parseInt(page) - 1) * parseInt(limit);
     const total = await TransferBookingOrder.countDocuments(filter);

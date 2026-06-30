@@ -9,6 +9,7 @@ const TourBooking = require('../models/tourBooking');
 const Package     = require('../models/package');
 const Tour        = require('../models/tour');
 const authMiddleware = require('../middleware/auth');
+const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
 const { sendTourBookingToGHL } = require('../utils/ghlService');
 
 // ── Multer setup ─────────────────────────────────────────────────────────────
@@ -242,15 +243,22 @@ router.post('/', upload.any(), async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/tour-bookings
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', verifyAdminOrUser, async (req, res) => {
   console.log('\n🔵 [GET /api/tour-bookings] Fetching all tour bookings');
   console.log('   Query params:', req.query);
   try {
     const { status, email, tourId, page = 1, limit = 50 } = req.query;
     const filter = {};
     if (status) filter.status = status;
-    if (email)  filter.email  = { $regex: email, $options: 'i' };
     if (tourId) filter.tourId = tourId;
+
+    // Customers may only ever see their own bookings — ignore any email
+    // filter they pass and pin it to the authenticated account's email.
+    if (req.authType === 'user') {
+      filter.email = req.user.email;
+    } else if (email) {
+      filter.email = { $regex: email, $options: 'i' };
+    }
 
     console.log('   Filter:', JSON.stringify(filter));
 
