@@ -815,6 +815,44 @@ const generateVoucherData = async (booking) => {
                             </div>
                         )}
 
+                        {/* PROOF / REFERENCE IMAGE */}
+                        {selectedBooking.rawData?.proofImage?.url && (
+                            <div className="cnm-card">
+                                <div className="cnm-card-header">
+                                    <h3 className="cnm-card-title">Proof / Reference Image</h3>
+                                </div>
+                                <a
+                                    href={selectedBooking.rawData.proofImage.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: 'inline-block', width: '160px', borderRadius: '10px',
+                                        overflow: 'hidden', border: '1px solid #e2e8f0', background: '#f8fafc',
+                                        textDecoration: 'none', cursor: 'pointer'
+                                    }}
+                                >
+                                    <div style={{ width: '100%', height: '140px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
+                                        <img
+                                            src={selectedBooking.rawData.proofImage.url}
+                                            alt="Proof / reference"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            onError={e => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'flex';
+                                            }}
+                                        />
+                                        <div style={{
+                                            display: 'none', width: '100%', height: '100%',
+                                            alignItems: 'center', justifyContent: 'center',
+                                            position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
+                                        }}>
+                                            <Image size={28} color="#94a3b8" />
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        )}
+
                         {/* SUBMITTED DOCUMENTS */}
                         <div className="cnm-card">
                             <div className="cnm-card-header">
