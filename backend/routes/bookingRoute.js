@@ -944,7 +944,12 @@ router.post('/', upload.any(), async (req, res) => {
           allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
           transformation: [{ width: 1600, height: 1600, crop: 'limit', quality: 'auto' }]
         });
-        proofImageData = { url: result.secure_url, publicId: result.public_id };
+        proofImageData = {
+          filename: result.public_id,
+          originalName: proofImageFile.originalname,
+          path: result.secure_url,
+          size: proofImageFile.size
+        };
         console.log(`🖼️ Proof image uploaded to Cloudinary: ${result.secure_url}`);
       } catch (uploadErr) {
         console.error('❌ Failed to upload proof image to Cloudinary:', uploadErr.message);

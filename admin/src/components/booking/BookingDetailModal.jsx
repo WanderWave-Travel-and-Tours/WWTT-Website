@@ -131,7 +131,48 @@ export const BookingDetailModal = ({
 
     const closeModal = () => setShowModal(false);
 
-    const hasDocuments = submittedDocs.length > 0;
+    // ── Documents embedded directly on the booking (ID/passport per passenger + proof image) ──
+    const bookingDocs = (() => {
+        const docs = [];
+        const rawBooking = selectedBooking.rawData || {};
+
+        (rawBooking.passengers || []).forEach((p, idx) => {
+            if (p.idDocument?.path) {
+                docs.push({
+                    _id: `id-${idx}`,
+                    fileUrl: p.idDocument.path,
+                    originalName: p.idDocument.originalName,
+                    fileType: 'image/*',
+                    section: `Passenger ${idx + 1} — Valid ID`
+                });
+            }
+            if (p.passportDocument?.path) {
+                docs.push({
+                    _id: `passport-${idx}`,
+                    fileUrl: p.passportDocument.path,
+                    originalName: p.passportDocument.originalName,
+                    fileType: 'image/*',
+                    section: `Passenger ${idx + 1} — Passport`
+                });
+            }
+        });
+
+        if (rawBooking.proofImage?.path) {
+            docs.push({
+                _id: 'proof-image',
+                fileUrl: rawBooking.proofImage.path,
+                originalName: rawBooking.proofImage.originalName || 'Proof / Reference Image',
+                fileType: 'image/*',
+                section: 'Proof / Reference Image'
+            });
+        }
+
+        return docs;
+    })();
+
+    const allDocs = [...bookingDocs, ...submittedDocs];
+
+    const hasDocuments = allDocs.length > 0;
 
     const handleConfirmAndClose = (booking) => {
         handleConfirm(booking);
@@ -815,51 +856,13 @@ const generateVoucherData = async (booking) => {
                             </div>
                         )}
 
-                        {/* PROOF / REFERENCE IMAGE */}
-                        {selectedBooking.rawData?.proofImage?.url && (
-                            <div className="cnm-card">
-                                <div className="cnm-card-header">
-                                    <h3 className="cnm-card-title">Proof / Reference Image</h3>
-                                </div>
-                                <a
-                                    href={selectedBooking.rawData.proofImage.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{
-                                        display: 'inline-block', width: '160px', borderRadius: '10px',
-                                        overflow: 'hidden', border: '1px solid #e2e8f0', background: '#f8fafc',
-                                        textDecoration: 'none', cursor: 'pointer'
-                                    }}
-                                >
-                                    <div style={{ width: '100%', height: '140px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
-                                        <img
-                                            src={selectedBooking.rawData.proofImage.url}
-                                            alt="Proof / reference"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            onError={e => {
-                                                e.target.style.display = 'none';
-                                                e.target.nextSibling.style.display = 'flex';
-                                            }}
-                                        />
-                                        <div style={{
-                                            display: 'none', width: '100%', height: '100%',
-                                            alignItems: 'center', justifyContent: 'center',
-                                            position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
-                                        }}>
-                                            <Image size={28} color="#94a3b8" />
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        )}
-
-                        {/* SUBMITTED DOCUMENTS */}
+                        {/* SUBMITTED DOCUMENTS (booking-embedded ID/passport/proof image + any inquiry docs) */}
                         <div className="cnm-card">
                             <div className="cnm-card-header">
                                 <h3 className="cnm-card-title">Submitted Documents</h3>
                                 {!isLoadingDocs && (
                                     <span className="cnm-badge cnm-badge-amber">
-                                        {submittedDocs.length} file{submittedDocs.length !== 1 ? 's' : ''}
+                                        {allDocs.length} file{allDocs.length !== 1 ? 's' : ''}
                                     </span>
                                 )}
                             </div>
@@ -873,7 +876,7 @@ const generateVoucherData = async (booking) => {
                                     }} />
                                     <p style={{ margin: 0, fontSize: '14px' }}>Loading documents...</p>
                                 </div>
-                            ) : submittedDocs.length === 0 ? (
+                            ) : allDocs.length === 0 ? (
                                 <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
                                     <FileText size={32} style={{ marginBottom: '8px', opacity: 0.4 }} />
                                     <p style={{ margin: 0, fontSize: '14px' }}>No documents submitted yet.</p>
@@ -885,7 +888,7 @@ const generateVoucherData = async (booking) => {
                                     gap: '12px',
                                     padding: '4px 0'
                                 }}>
-                                    {submittedDocs.map((doc, idx) => {
+                                    {allDocs.map((doc, idx) => {
                                         // Correct field names from Document model:
                                         // fileUrl, fileName, originalName, fileType, fileSize, section
                                         const fileUrl = doc.fileUrl || '#';
