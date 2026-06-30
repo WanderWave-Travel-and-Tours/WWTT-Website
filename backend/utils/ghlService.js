@@ -176,7 +176,13 @@ const sendBookingConfirmationToGHL = async (
   const firstName = fullName.split(' ')[0] || '';
   const lastName = fullName.split(' ').slice(1).join(' ') || '';
 
-  const inclusions  = packageData?.inclusions  || bookingData?.inclusions  || [];
+  const checkedCustomizedInclusions = Array.isArray(bookingData?.customizedInclusions)
+    ? bookingData.customizedInclusions.filter(inc => inc.isChecked !== false)
+    : null;
+
+  const inclusions  = (checkedCustomizedInclusions && checkedCustomizedInclusions.length > 0)
+    ? checkedCustomizedInclusions
+    : (packageData?.inclusions || bookingData?.inclusions || []);
   const itinerary   = packageData?.itinerary   || bookingData?.itinerary   || [];
   const hotels      = packageData?.hotels      || bookingData?.hotels      || [];
   const exclusions  = packageData?.exclusions  || bookingData?.exclusions  || [];
