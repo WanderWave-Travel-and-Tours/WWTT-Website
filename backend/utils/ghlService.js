@@ -101,6 +101,7 @@ const sendInquiryToGHL = async (email, fullName, serviceName, message) => {
     service: serviceName,
     serviceName: serviceName,
     typeOfBooking: 'Inquiry',
+    bookingTypeLabel: 'Inquiry',
     bookingName: serviceName,
     message: message,
     inquiry_message: message,
@@ -238,6 +239,7 @@ const sendBookingConfirmationToGHL = async (
 
   const data = {
     type: 'BOOKING_CONFIRMATION',
+    bookingTypeLabel: 'Booking Confirmation',
     event: 'booking_confirmation',
     source: 'WanderWave',
     timestamp: new Date().toISOString(),
@@ -254,6 +256,7 @@ const sendBookingConfirmationToGHL = async (
     package_name:       packageName,
     service:            packageName,
     serviceName:        packageName,
+    bookingName:        packageName,
     package_image_url:  packageData?.image || '',
     package_destination: destName,
     package_duration:   packageData?.duration     || booking.duration    || '',
@@ -295,6 +298,7 @@ const sendBookingConfirmationToGHL = async (
     passengers_list: passengersFormatted,
 
     totalAmount:             `₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+    totalAmountFormatted:    `₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
     total_amount:            totalAmount,
     amount:                  totalAmount,
     payment_type:            paymentType,
@@ -311,6 +315,7 @@ const sendBookingConfirmationToGHL = async (
 
     bookingId:    booking._id ? booking._id.toString() : '',
     booking_id:   booking._id ? booking._id.toString() : '',
+    status:         booking.status || '',
     booking_status: booking.status || '',
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),
@@ -406,6 +411,7 @@ const sendTransferBookingToGHL = async (booking, overrides = {}) => {
   const data = {
     // ── Meta ──────────────────────────────────────────────────
     type:      'TRANSFER_BOOKING',
+    bookingTypeLabel: 'Transfer Booking',
     event:     'transfer_booking_created',
     source:    'WanderWave',
     timestamp: new Date().toISOString(),
@@ -430,6 +436,7 @@ const sendTransferBookingToGHL = async (booking, overrides = {}) => {
     transfer_name:   booking.activityName    || '',
     serviceName:     booking.activityName    || '',
     service:         booking.activityName    || '',
+    bookingName:     booking.activityName    || '',
     destination:     booking.destination     || '',
     category:        booking.category        || '',
     supplierName:    booking.supplierName    || '',
@@ -549,6 +556,7 @@ const sendTourBookingToGHL = async (booking, overrides = {}) => {
   const data = {
     // ── Meta ──────────────────────────────────────────────────
     type:      'TOUR_BOOKING',
+    bookingTypeLabel: 'Tour Booking',
     event:     'tour_booking_created',
     source:    'WanderWave',
     timestamp: new Date().toISOString(),
@@ -576,6 +584,7 @@ const sendTourBookingToGHL = async (booking, overrides = {}) => {
     tour_name:    b.packageName || '',
     service:      b.packageName || '',
     serviceName:  b.packageName || '',
+    bookingName:  b.packageName || '',
     destination:  b.destination || '',
     category:     b.category    || '',
     duration:     b.duration    || '',
@@ -698,6 +707,7 @@ const sendCustomBookingToGHL = async (booking, overrides = {}) => {
   const data = {
     // ── Meta ──────────────────────────────────────────────────
     type:      'CUSTOM_BOOKING',
+    bookingTypeLabel: 'Custom Booking',
     event:     'custom_booking_created',
     source:    'WanderWave',
     timestamp: new Date().toISOString(),
@@ -719,6 +729,7 @@ const sendCustomBookingToGHL = async (booking, overrides = {}) => {
     destination:  b.destination || '',
     service:      `Custom Trip — ${b.destination || ''}`.trim(),
     serviceName:  `Custom Trip — ${b.destination || ''}`.trim(),
+    bookingName:  `Custom Trip — ${b.destination || ''}`.trim(),
     travelDate:   b.travelDate || '',
     travel_date:  b.travelDate || '',
     returnDate:   b.returnDate || '',
