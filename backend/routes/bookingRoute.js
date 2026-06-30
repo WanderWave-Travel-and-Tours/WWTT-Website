@@ -27,7 +27,7 @@ function stripInternal(obj) {
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let uploadPath;
-    if (file.fieldname === 'proofImage') {
+    if (file.fieldname.startsWith('proofImage_')) {
       uploadPath = './uploads/tmp-proof/';
     } else if (file.fieldname.includes('passport')) {
       uploadPath = './uploads/passports/';
@@ -955,29 +955,33 @@ router.post('/', upload.any(), async (req, res) => {
       console.log(`✅ Successfully processed ${passengers.length} passengers for regular booking`);
     }
 
-    // ===== PROOF IMAGE — upload to Cloudinary, then discard local temp file =====
-    let proofImageData = null;
-    const proofImageFile = req.files ? req.files.find(f => f.fieldname === 'proofImage') : null;
+    // ===== PROOF IMAGES — upload to Cloudinary, then discard local temp files =====
+    // Capped at one per passenger — re-enforced here in case a tampered request
+    // tries to attach more than the frontend's limit.
+    const proofImagesData = [];
+    const proofImageFiles = (req.files || [])
+      .filter(f => f.fieldname.startsWith('proofImage_'))
+      .slice(0, passengers.length);
 
-    if (proofImageFile) {
+    for (const proofImageFile of proofImageFiles) {
       try {
         const result = await cloudinary.uploader.upload(proofImageFile.path, {
           folder: 'wanderwave/bookings',
           allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
           transformation: [{ width: 1600, height: 1600, crop: 'limit', quality: 'auto' }]
         });
-        proofImageData = {
+        proofImagesData.push({
           filename: result.public_id,
           originalName: proofImageFile.originalname,
           path: result.secure_url,
           size: proofImageFile.size
-        };
+        });
         console.log(`🖼️ Proof image uploaded to Cloudinary: ${result.secure_url}`);
       } catch (uploadErr) {
         console.error('❌ Failed to upload proof image to Cloudinary:', uploadErr.message);
         return res.status(400).json({
           success: false,
-          message: 'Failed to upload proof image. Please try again.'
+          message: 'Failed to upload one of the proof images. Please try again.'
         });
       } finally {
         try { fs.unlinkSync(proofImageFile.path); } catch (e) {}
@@ -1280,7 +1284,7 @@ router.post('/', upload.any(), async (req, res) => {
       fullName: primaryName,
       email: primaryEmail,
       message: bookingData.message || '',
-      proofImage: proofImageData,
+      proofImages: proofImagesData,
       passengers: passengers,
       status: 'pending',
       createdAt: new Date(),
