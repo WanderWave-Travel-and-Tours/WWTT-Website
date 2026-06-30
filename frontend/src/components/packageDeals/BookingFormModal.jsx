@@ -306,47 +306,17 @@ const BookingFormModal = ({
   // ✅ FIX: Added missing props referenced in handleConfirmBooking
   selectedRoomType = null,
   customizationData = null,
+  // ✅ Proof/reference image (booking-level, owned by parent — actual submit happens there)
+  proofImageFile = null,
+  proofImagePreview = null,
+  proofImageError = '',
+  handleProofImageChange,
+  removeProofImage,
 }) => {
   const toast = useToast();
   const [localLoading, setLocalLoading] = useState(false);
   const overlayRef = useRef(null);
   const formWrapperRef = useRef(null);
-
-  // ✅ Proof image (booking-level, e.g. proof of payment / reference photo)
-  const [proofImageFile, setProofImageFile] = useState(null);
-  const [proofImagePreview, setProofImagePreview] = useState(null);
-  const [proofImageError, setProofImageError] = useState('');
-
-  const PROOF_IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
-  const PROOF_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-
-  const handleProofImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!PROOF_IMAGE_ALLOWED_TYPES.includes(file.type)) {
-      setProofImageError('Only JPG, PNG, or WEBP images are allowed.');
-      e.target.value = '';
-      return;
-    }
-
-    if (file.size > PROOF_IMAGE_MAX_SIZE) {
-      setProofImageError('Image must be 5MB or smaller.');
-      e.target.value = '';
-      return;
-    }
-
-    setProofImageError('');
-    setProofImageFile(file);
-    setProofImagePreview(URL.createObjectURL(file));
-  };
-
-  const removeProofImage = () => {
-    if (proofImagePreview) URL.revokeObjectURL(proofImagePreview);
-    setProofImageFile(null);
-    setProofImagePreview(null);
-    setProofImageError('');
-  };
 
   // ✅ FIX: Forward wheel events from anywhere inside the modal card to the
   // bfm-form-wrapper scroll container. This ensures mouse wheel scrolling works
