@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const path = require('path');
 
 const USER_JWT_SECRET = process.env.USER_JWT_SECRET || process.env.JWT_SECRET || 'wanderwaveph_user25';
-const USER_JWT_EXPIRES_IN = '7d';
+const USER_JWT_EXPIRES_IN = '1d';
 
 // 🎯 IMPORT ACTIVITY LOGGER
 const { 

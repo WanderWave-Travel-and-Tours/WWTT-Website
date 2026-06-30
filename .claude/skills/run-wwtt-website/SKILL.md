@@ -92,7 +92,7 @@ cd backend && npm run dev
 
 Backend needs a `backend/.env` file with `MONGO_URI`, `JWT_SECRET`, `CLOUDINARY_*`, `AMADEUS_*`, etc. The `.env` file already exists in the repo (not committed).
 
-Then update `frontend/vite.config.js` to proxy to `http://localhost:5000` instead of the Render URL.
+Then update `frontend/vite.config.js` to proxy to `https://wanderwaveph.onrender.com` instead of the Render URL.
 
 ## Key routes
 
