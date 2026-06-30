@@ -292,37 +292,6 @@ export const useTransferBooking = (isOpen, onClose) => {
       const bookingId = bookingResult.bookingId || bookingResult.data?._id;
       console.log('✅ Transfer booking created (sales) → ID:', bookingId);
 
-      // Fire GHL webhook (non-blocking)
-      try {
-        await fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId,
-            firstName:       primaryPax.firstName || '',
-            lastName:        primaryPax.lastName  || '',
-            fullName:        bookingPayload.fullName,
-            email:           primaryPax.email     || '',
-            phone:           primaryPax.phone     || '',
-            typeOfBooking:   'Transfer Booking (Sales)',
-            bookingName:     selectedTransfer.title || '',
-            destination,
-            transferType:    tripType,
-            travelDate,
-            returnDate:      tripType === 'roundtrip' ? returnDate : '',
-            arrivalTime,
-            departureTime:   tripType === 'roundtrip' ? departureTime : '',
-            pickupLocation,
-            dropoffLocation: tripType === 'roundtrip' ? dropoffLocation : '',
-            passengerCount:  paxCount,
-            totalAmount,
-            nightSurcharge:  totalSurcharge,
-            sellingPrice,
-            paymentType,
-            initialPaymentAmount,
-          }),
-        });
-      } catch (_) {}
 
       const amountToPay = paymentType === 'full' ? totalAmount : initialPaymentAmount;
       const paymentRes = await fetch(`${BASE_URL}/api/payment/create-intent`, {

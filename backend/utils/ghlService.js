@@ -100,6 +100,8 @@ const sendInquiryToGHL = async (email, fullName, serviceName, message) => {
     last_name: lastName,
     service: serviceName,
     serviceName: serviceName,
+    typeOfBooking: 'Inquiry',
+    bookingName: serviceName,
     message: message,
     inquiry_message: message,
     timestamp: new Date().toISOString(),

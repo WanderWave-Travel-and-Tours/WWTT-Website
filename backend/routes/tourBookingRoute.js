@@ -130,6 +130,8 @@ router.post('/', upload.any(), async (req, res) => {
       data.sellerPrice          = pkg.sellerPrice;
       data.markup               = pkg.markup;
       data.price                = serverPerPaxPrice;
+      data.destination          = pkg.destination || data.destination || '';
+      data.category             = pkg.category    || data.category    || '';
       data.packagePrice         = serverPerPaxPrice;
       data.originalPackagePrice = serverPerPaxPrice;
       data.packageTotal         = serverPackageTotal;
@@ -170,6 +172,8 @@ router.post('/', upload.any(), async (req, res) => {
       packageId:       data.packageId || null,
       packageName:     data.packageName,
       bookingType:     'tour',
+      destination:     data.destination || '',
+      category:        data.category    || '',
       isManual,
       bookingSource,
       startDate:       data.startDate,

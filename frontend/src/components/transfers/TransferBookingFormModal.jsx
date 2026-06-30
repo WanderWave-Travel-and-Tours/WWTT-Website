@@ -352,38 +352,6 @@ const TransferBookingFormModal = ({
       const bookingId = bookingRes.data.bookingId || bookingRes.data.data?._id;
       if (!bookingId) throw new Error('Booking was created but no booking ID was returned. Please contact support.');
 
-      // Fire GHL booking webhook (non-blocking)
-      try {
-        const nameParts = (fullName || '').trim().split(/\s+/);
-        await fetch('https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/fd8ffa44-1198-4891-999b-de2062a79176', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId,
-            firstName:       nameParts[0] || '',
-            lastName:        nameParts.slice(1).join(' ') || '',
-            fullName,
-            email,
-            phone,
-            typeOfBooking:   'Transfer Booking',
-            bookingName:     transfer.activity || transfer.title || transfer.activityName || '',
-            destination:     transfer.packageDestination || '',
-            transferType,
-            travelDate,
-            returnDate:      transferType === 'roundtrip' ? returnDate : '',
-            arrivalTime:     arrivalTime || '',
-            departureTime:   transferType === 'roundtrip' ? (departureTime || '') : '',
-            pickupLocation,
-            dropoffLocation: transferType === 'roundtrip' ? dropoffLocation : '',
-            passengerCount,
-            totalAmount:     effectiveTotalAmount,
-            nightSurcharge:  nightSurchargeCount * NIGHT_SURCHARGE,
-            paymentType,
-            initialPaymentAmount: amountToPay,
-          }),
-        });
-      } catch (_) {}
-
       const paymentRes = await axios.post(`${RENDER_BASE}/api/payment/create-intent`, {
         bookingId,
         paymentType,
