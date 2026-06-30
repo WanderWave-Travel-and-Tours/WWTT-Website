@@ -23,6 +23,7 @@ const DocumentsSection = ({
     
     // Define the valid file extensions for strict validation
     const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx'];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB — must match backend's uploadDocument multer limit
 
     // --- Custom Toast Design Functions ---
 
@@ -61,27 +62,40 @@ const DocumentsSection = ({
     // --- Validation Logic Function ---
     const validateFiles = (fileList) => {
         const filesToUpload = [];
-        const invalidFiles = [];
+        const invalidTypeFiles = [];
+        const oversizedFiles = [];
 
         for (const file of fileList) {
             // Get the file extension (e.g., 'file.docx' -> 'docx')
             const extension = file.name.split('.').pop().toLowerCase();
 
-            if (validExtensions.includes(extension)) {
-                filesToUpload.push(file);
-            } else {
-                invalidFiles.push(file);
+            if (!validExtensions.includes(extension)) {
+                invalidTypeFiles.push(file);
+                continue;
             }
+
+            if (file.size > maxFileSize) {
+                oversizedFiles.push(file);
+                continue;
+            }
+
+            filesToUpload.push(file);
         }
 
-        if (invalidFiles.length > 0) {
-            const invalidFileNames = invalidFiles.map(f => f.name).join(', ');
-            
+        if (invalidTypeFiles.length > 0) {
+            const invalidFileNames = invalidTypeFiles.map(f => f.name).join(', ');
             showErrorToast(
                 `The following files were rejected: ${invalidFileNames}. Only JPG, PNG, WEBP, PDF, DOC, and DOCX files are allowed.`
             );
         }
-        
+
+        if (oversizedFiles.length > 0) {
+            const oversizedFileNames = oversizedFiles.map(f => f.name).join(', ');
+            showErrorToast(
+                `The following files exceed the 10MB limit: ${oversizedFileNames}.`
+            );
+        }
+
         return filesToUpload;
     };
     // ---------------------------------

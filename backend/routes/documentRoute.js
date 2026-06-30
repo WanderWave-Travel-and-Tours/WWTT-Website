@@ -1,7 +1,8 @@
 const express = require('express');
-const { 
-  uploadDocuments, 
-  getDocumentsByInquiry, 
+const multer = require('multer');
+const {
+  uploadDocuments,
+  getDocumentsByInquiry,
   getDocumentsByUser,
   getUserDocuments,
   deleteDocument,
@@ -15,8 +16,22 @@ const { uploadDocument } = require('../config/cloudinary');
 
 const router = express.Router();
 
+// Wraps the multer/Cloudinary middleware so file-size and format rejections
+// return clean JSON instead of falling through to Express's default HTML
+// error page (which breaks the frontend's response.json() parse).
+const handleUpload = (req, res, next) => {
+  uploadDocument.array('documents', 10)(req, res, (err) => {
+    if (!err) return next();
+
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ success: false, message: 'Each file must be 10MB or smaller.' });
+    }
+    return res.status(400).json({ success: false, message: err.message || 'File upload failed.' });
+  });
+};
+
 // Main upload route - multiple documents
-router.post('/upload', uploadDocument.array('documents', 10), uploadDocuments);
+router.post('/upload', handleUpload, uploadDocuments);
 
 // ⭐⭐⭐ FIX: ADD THESE TWO ROUTES FOR SIGNED URLS ⭐⭐⭐
 router.get('/:documentId/view', getSignedViewUrl);
