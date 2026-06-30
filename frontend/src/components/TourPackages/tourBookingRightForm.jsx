@@ -96,8 +96,6 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
 
   const isInternationalFlight = selectedFlight &&
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
-  const requiresPassport = isInternationalFlight;
-  const requiresID       = selectedFlight && !isInternationalFlight;
 
   const [passengers, setPassengers] = useState(
     Array.from({ length: totalPassengers }, (_, idx) => ({
@@ -555,32 +553,8 @@ const handleRemoveFlight = () => {
     setPassengers(prev => { const u = [...prev]; u[index] = { ...u[index], [field]: value }; return u; });
   };
 
-  const handleFileUpload = (index, type, event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('File size must be less than 5MB'); event.target.value = null; return; }
-    setPassengers(prev => {
-      const u = [...prev];
-      if (type === 'id') { u[index].idFile = file; u[index].idFileName = file.name; }
-      else if (type === 'passport') { u[index].passportFile = file; u[index].passportFileName = file.name; }
-      return u;
-    });
-  };
-
-  const removeFile = (index, type) => {
-    setPassengers(prev => {
-      const u = [...prev];
-      if (type === 'id') { u[index].idFile = null; u[index].idFileName = ''; }
-      else { u[index].passportFile = null; u[index].passportFileName = ''; }
-      return u;
-    });
-  };
-
   const handleNextPassenger = async (e) => {
     e.preventDefault();
-    const curr = passengers[passengerStep - 1];
-    if (bookingWithAirfare && requiresID && !curr.idFile) { toast.error('Please upload a valid ID for this passenger'); return; }
-    if (bookingWithAirfare && requiresPassport && !curr.passportFile) { toast.error('Please upload a valid passport for this passenger'); return; }
     if (passengerStep === 1) {
       const primaryAge = parseInt(passengers[0]?.age);
       if (!primaryAge || primaryAge < 18) { toast.error('Passenger 1 must be at least 18 years old to book.'); return; }
@@ -1048,8 +1022,6 @@ const handleRemoveFlight = () => {
         totalAmount={convertedFinalTotalAmount}
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
-        requiresID={requiresID}
-        requiresPassport={requiresPassport}
         passengerStep={passengerStep}
         totalPassengers={totalPassengers}
         paymentType={paymentType}
@@ -1059,8 +1031,6 @@ const handleRemoveFlight = () => {
         currentPassenger={passengers[passengerStep - 1]}
         passengers={passengers}
         handlePassengerChange={handlePassengerChange}
-        handleFileUpload={handleFileUpload}
-        removeFile={removeFile}
         handleNextPassenger={handleNextPassenger}
         handleBackPassenger={handleBackPassenger}
         handleSkipToPayment={handleSkipToPayment}
