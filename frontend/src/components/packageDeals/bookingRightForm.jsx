@@ -114,6 +114,10 @@ const BookingRightForm = ({
   const [loadingHotelData, setLoadingHotelData] = useState(false);
   const [passengerStep, setPassengerStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  // ✅ Proof/reference image (booking-level, optional)
+  const [proofImageFile, setProofImageFile] = useState(null);
+  const [proofImagePreview, setProofImagePreview] = useState(null);
+  const [proofImageError, setProofImageError] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
@@ -1095,6 +1099,37 @@ const handleApplyPromo = async () => {
     });
   };
 
+  const PROOF_IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const PROOF_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+
+  const handleProofImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!PROOF_IMAGE_ALLOWED_TYPES.includes(file.type)) {
+      setProofImageError('Only JPG, PNG, or WEBP images are allowed.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > PROOF_IMAGE_MAX_SIZE) {
+      setProofImageError('Image must be 5MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    setProofImageError('');
+    setProofImageFile(file);
+    setProofImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeProofImage = () => {
+    if (proofImagePreview) URL.revokeObjectURL(proofImagePreview);
+    setProofImageFile(null);
+    setProofImagePreview(null);
+    setProofImageError('');
+  };
+
   // ✅ Returns the correct per-pax price based on timer status and customization
 const getTimerAwarePrice = () => {
   // Check if customization is active
@@ -1276,7 +1311,11 @@ const handleNextPassenger = async (e) => {
         formData.append(`passportFile_${idx}`, passenger.passportFile);
       }
     });
-    
+
+    if (proofImageFile instanceof File) {
+      formData.append('proofImage', proofImageFile);
+    }
+
     const RENDER_BASE = 'https://wanderwaveph.onrender.com';
 
     // ✅ Wake up Render server before booking (free tier sleeps after inactivity)
@@ -2187,6 +2226,11 @@ const handleNextPassenger = async (e) => {
           convertPrice={convertPrice}
         selectedRoomType={selectedRoomType}
         customizationData={customizationData}
+        proofImageFile={proofImageFile}
+        proofImagePreview={proofImagePreview}
+        proofImageError={proofImageError}
+        handleProofImageChange={handleProofImageChange}
+        removeProofImage={removeProofImage}
       />
 
       <AppointmentModal
