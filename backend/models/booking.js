@@ -197,10 +197,14 @@ const bookingSchema = new mongoose.Schema({
   email:    { type: String, required: true },
   message:  { type: String },
 
-  // ✅ Proof/reference image uploaded by the customer during booking (Cloudinary)
+  // ✅ Proof/reference image uploaded by the customer during booking (Cloudinary).
+  // Same shape as passengers[].idDocument / passportDocument so it surfaces
+  // alongside them in the booking's submitted-documents query.
   proofImage: {
-    url: { type: String, default: null },
-    publicId: { type: String, default: null }
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number
   },
 
   passengers: { type: [passengerSchema], required: true, validate: {
