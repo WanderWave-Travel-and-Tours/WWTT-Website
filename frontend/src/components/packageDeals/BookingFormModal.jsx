@@ -312,6 +312,42 @@ const BookingFormModal = ({
   const overlayRef = useRef(null);
   const formWrapperRef = useRef(null);
 
+  // ✅ Proof image (booking-level, e.g. proof of payment / reference photo)
+  const [proofImageFile, setProofImageFile] = useState(null);
+  const [proofImagePreview, setProofImagePreview] = useState(null);
+  const [proofImageError, setProofImageError] = useState('');
+
+  const PROOF_IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const PROOF_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+
+  const handleProofImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!PROOF_IMAGE_ALLOWED_TYPES.includes(file.type)) {
+      setProofImageError('Only JPG, PNG, or WEBP images are allowed.');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > PROOF_IMAGE_MAX_SIZE) {
+      setProofImageError('Image must be 5MB or smaller.');
+      e.target.value = '';
+      return;
+    }
+
+    setProofImageError('');
+    setProofImageFile(file);
+    setProofImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeProofImage = () => {
+    if (proofImagePreview) URL.revokeObjectURL(proofImagePreview);
+    setProofImageFile(null);
+    setProofImagePreview(null);
+    setProofImageError('');
+  };
+
   // ✅ FIX: Forward wheel events from anywhere inside the modal card to the
   // bfm-form-wrapper scroll container. This ensures mouse wheel scrolling works
   // regardless of where inside the modal the cursor is — not just on the overlay edges.
@@ -565,6 +601,10 @@ const BookingFormModal = ({
           formData.append(`passportFile_${index}`, passenger.passportFile);
         }
       });
+
+      if (proofImageFile instanceof File) {
+        formData.append('proofImage', proofImageFile);
+      }
 
       const API_BASE = import.meta.env.VITE_API_URL ||
         (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
@@ -1119,6 +1159,55 @@ const BookingFormModal = ({
                       <span>Remaining balance:</span>
                       <span>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</span>
                     </div>
+                  )}
+                </div>
+
+                {/* PROOF IMAGE UPLOAD (optional, booking-level) */}
+                <div className="bfm-form-group bfm-full-width" style={{ marginTop: '16px' }}>
+                  <label>
+                    Upload Reference / Proof Image
+                    <span className="bfm-upload-hint">(Optional — payment receipt, screenshot, etc.)</span>
+                  </label>
+
+                  {proofImagePreview ? (
+                    <div className="bfm-file-uploaded">
+                      <div className="bfm-file-info">
+                        <img
+                          src={proofImagePreview}
+                          alt="Proof preview"
+                          style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, marginRight: 8 }}
+                        />
+                        <CheckCircle size={18} color="#22c55e"/>
+                        <span className="bfm-file-name">{proofImageFile?.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeProofImage}
+                        className="bfm-remove-file-btn"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bfm-file-upload-box">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                        onChange={handleProofImageChange}
+                        id="proof-image-upload"
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor="proof-image-upload" className="bfm-file-upload-label">
+                        <Upload size={28} color="#94a3b8"/>
+                        <span className="bfm-upload-text">Click to upload image</span>
+                        <span className="bfm-upload-subtext">PNG, JPG or WEBP (Max 5MB)</span>
+                      </label>
+                    </div>
+                  )}
+                  {proofImageError && (
+                    <span style={{ color: '#ef4444', fontSize: '13px', marginTop: '6px', display: 'block' }}>
+                      {proofImageError}
+                    </span>
                   )}
                 </div>
               </div>

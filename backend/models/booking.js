@@ -197,6 +197,12 @@ const bookingSchema = new mongoose.Schema({
   email:    { type: String, required: true },
   message:  { type: String },
 
+  // ✅ Proof/reference image uploaded by the customer during booking (Cloudinary)
+  proofImage: {
+    url: { type: String, default: null },
+    publicId: { type: String, default: null }
+  },
+
   passengers: { type: [passengerSchema], required: true, validate: {
     validator: v => Array.isArray(v) && v.length > 0,
     message: 'A booking must contain at least one passenger.'

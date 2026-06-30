@@ -14,6 +14,7 @@ const { BookingCount } = require('../models/PageView');
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
 const authMiddleware = require('../middleware/auth');
 const verifyUserJWT = require('../middleware/verifyUserJWT');
+const { cloudinary } = require('../config/cloudinary');
 
 // Fields that must never appear in customer-facing responses
 const INTERNAL_FIELDS = ['sellerPrice', 'markup', 'markupType', 'checkoutSessionId', 'createdByEmail', 'createdByType', '__v'];
@@ -25,14 +26,19 @@ function stripInternal(obj) {
  
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = file.fieldname.includes('passport') 
-      ? './uploads/passports/' 
-      : './uploads/ids/';
-    
+    let uploadPath;
+    if (file.fieldname === 'proofImage') {
+      uploadPath = './uploads/tmp-proof/';
+    } else if (file.fieldname.includes('passport')) {
+      uploadPath = './uploads/passports/';
+    } else {
+      uploadPath = './uploads/ids/';
+    }
+
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
-    
+
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
@@ -927,6 +933,30 @@ router.post('/', upload.any(), async (req, res) => {
       console.log(`✅ Successfully processed ${passengers.length} passengers for regular booking`);
     }
 
+    // ===== PROOF IMAGE — upload to Cloudinary, then discard local temp file =====
+    let proofImageData = null;
+    const proofImageFile = req.files ? req.files.find(f => f.fieldname === 'proofImage') : null;
+
+    if (proofImageFile) {
+      try {
+        const result = await cloudinary.uploader.upload(proofImageFile.path, {
+          folder: 'wanderwave/bookings',
+          allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+          transformation: [{ width: 1600, height: 1600, crop: 'limit', quality: 'auto' }]
+        });
+        proofImageData = { url: result.secure_url, publicId: result.public_id };
+        console.log(`🖼️ Proof image uploaded to Cloudinary: ${result.secure_url}`);
+      } catch (uploadErr) {
+        console.error('❌ Failed to upload proof image to Cloudinary:', uploadErr.message);
+        return res.status(400).json({
+          success: false,
+          message: 'Failed to upload proof image. Please try again.'
+        });
+      } finally {
+        try { fs.unlinkSync(proofImageFile.path); } catch (e) {}
+      }
+    }
+
     const primaryEmail = bookingData.email || bookingData.primaryContact?.email || passengers[0]?.email;
     const primaryName = bookingData.fullName || bookingData.primaryContact?.fullName || 
                        `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
@@ -1223,6 +1253,7 @@ router.post('/', upload.any(), async (req, res) => {
       fullName: primaryName,
       email: primaryEmail,
       message: bookingData.message || '',
+      proofImage: proofImageData,
       passengers: passengers,
       status: 'pending',
       createdAt: new Date(),
