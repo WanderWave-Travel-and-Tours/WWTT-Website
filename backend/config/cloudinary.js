@@ -54,7 +54,10 @@ const documentStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'wanderwave/documents',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+        // ✅ Must stay in sync with the frontend's validExtensions list
+        // (frontend/src/components/userDashboard/DocumentsSection.jsx) — a mismatch
+        // here silently rejects uploads that passed frontend validation (e.g. webp).
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx'],
         resource_type: 'auto',
         type: 'upload',
         access_mode: 'public'
