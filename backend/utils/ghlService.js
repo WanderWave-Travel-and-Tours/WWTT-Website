@@ -315,8 +315,8 @@ const sendBookingConfirmationToGHL = async (
 
     bookingId:    booking._id ? booking._id.toString() : '',
     booking_id:   booking._id ? booking._id.toString() : '',
-    status:         booking.status || '',
-    booking_status: booking.status || '',
+    status:         booking.status || 'pending',
+    booking_status: booking.status || 'pending',
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),
     booking_notes: booking.notes || booking.specialRequests || '',
