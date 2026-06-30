@@ -111,6 +111,7 @@ const tourStorage = new CloudinaryStorage({
         transformation: [{ width: 1200, height: 800, crop: 'limit', quality: 'auto' }]
     }
 });
+
 // Export multer instances
 module.exports = {
     cloudinary,
