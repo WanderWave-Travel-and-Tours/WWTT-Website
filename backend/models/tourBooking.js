@@ -33,6 +33,8 @@ const TourBookingSchema = new mongoose.Schema({
   packageId:       { type: mongoose.Schema.Types.ObjectId, ref: 'Tour' }, // alias kept for compat
   packageName:     { type: String, required: true },
   bookingType:     { type: String, default: 'tour' },
+  destination:     { type: String, default: '' },
+  category:        { type: String, default: '' },
 
   // ── Manual / Walk-in flags ─────────────────────────────────────────
   isManual:        { type: Boolean, default: false },
