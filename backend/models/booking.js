@@ -198,14 +198,23 @@ const bookingSchema = new mongoose.Schema({
   message:  { type: String },
 
   // ✅ Proof/reference image uploaded by the customer during booking (Cloudinary).
-  // Same shape as passengers[].idDocument / passportDocument so it surfaces
-  // alongside them in the booking's submitted-documents query.
+  // Legacy singular field — kept so older bookings (saved before proofImages existed) still read back correctly.
   proofImage: {
     filename: String,
     originalName: String,
     path: String,
     size: Number
   },
+
+  // ✅ Proof/reference images — capped at one per passenger. Same shape as
+  // passengers[].idDocument / passportDocument so it surfaces alongside them
+  // in the booking's submitted-documents query.
+  proofImages: [{
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number
+  }],
 
   passengers: { type: [passengerSchema], required: true, validate: {
     validator: v => Array.isArray(v) && v.length > 0,

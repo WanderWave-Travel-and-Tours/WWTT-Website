@@ -114,9 +114,8 @@ const BookingRightForm = ({
   const [loadingHotelData, setLoadingHotelData] = useState(false);
   const [passengerStep, setPassengerStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  // ✅ Proof/reference image (booking-level, optional)
-  const [proofImageFile, setProofImageFile] = useState(null);
-  const [proofImagePreview, setProofImagePreview] = useState(null);
+  // ✅ Proof/reference images (booking-level, optional, capped at one per passenger)
+  const [proofImageFiles, setProofImageFiles] = useState([]);
   const [proofImageError, setProofImageError] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
@@ -1103,30 +1102,62 @@ const handleApplyPromo = async () => {
   const PROOF_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 
   const handleProofImageChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const selectedFiles = Array.from(event.target.files || []);
+    if (selectedFiles.length === 0) return;
 
-    if (!PROOF_IMAGE_ALLOWED_TYPES.includes(file.type)) {
+    const maxProofImages = totalPassengers;
+    const remainingSlots = maxProofImages - proofImageFiles.length;
+
+    if (remainingSlots <= 0) {
+      setProofImageError(`You can upload at most ${maxProofImages} image${maxProofImages !== 1 ? 's' : ''} (one per passenger).`);
+      event.target.value = '';
+      return;
+    }
+
+    const filesToAdd = [];
+    let rejectedForType = false;
+    let rejectedForSize = false;
+
+    for (const file of selectedFiles) {
+      if (filesToAdd.length >= remainingSlots) break;
+
+      if (!PROOF_IMAGE_ALLOWED_TYPES.includes(file.type)) {
+        rejectedForType = true;
+        continue;
+      }
+      if (file.size > PROOF_IMAGE_MAX_SIZE) {
+        rejectedForSize = true;
+        continue;
+      }
+      filesToAdd.push(file);
+    }
+
+    if (rejectedForType) {
       setProofImageError('Only JPG, PNG, or WEBP images are allowed.');
-      event.target.value = '';
-      return;
+    } else if (rejectedForSize) {
+      setProofImageError('Each image must be 5MB or smaller.');
+    } else if (selectedFiles.length > remainingSlots) {
+      setProofImageError(`You can upload at most ${maxProofImages} image${maxProofImages !== 1 ? 's' : ''} (one per passenger).`);
+    } else {
+      setProofImageError('');
     }
 
-    if (file.size > PROOF_IMAGE_MAX_SIZE) {
-      setProofImageError('Image must be 5MB or smaller.');
-      event.target.value = '';
-      return;
+    if (filesToAdd.length > 0) {
+      setProofImageFiles(prev => [
+        ...prev,
+        ...filesToAdd.map(file => ({ file, preview: URL.createObjectURL(file) }))
+      ]);
     }
 
-    setProofImageError('');
-    setProofImageFile(file);
-    setProofImagePreview(URL.createObjectURL(file));
+    event.target.value = '';
   };
 
-  const removeProofImage = () => {
-    if (proofImagePreview) URL.revokeObjectURL(proofImagePreview);
-    setProofImageFile(null);
-    setProofImagePreview(null);
+  const removeProofImage = (index) => {
+    setProofImageFiles(prev => {
+      const target = prev[index];
+      if (target?.preview) URL.revokeObjectURL(target.preview);
+      return prev.filter((_, i) => i !== index);
+    });
     setProofImageError('');
   };
 
@@ -1312,9 +1343,11 @@ const handleNextPassenger = async (e) => {
       }
     });
 
-    if (proofImageFile instanceof File) {
-      formData.append('proofImage', proofImageFile);
-    }
+    proofImageFiles.forEach((entry, idx) => {
+      if (entry.file instanceof File) {
+        formData.append(`proofImage_${idx}`, entry.file);
+      }
+    });
 
     const RENDER_BASE = 'https://wanderwaveph.onrender.com';
 
@@ -2226,8 +2259,7 @@ const handleNextPassenger = async (e) => {
           convertPrice={convertPrice}
         selectedRoomType={selectedRoomType}
         customizationData={customizationData}
-        proofImageFile={proofImageFile}
-        proofImagePreview={proofImagePreview}
+        proofImageFiles={proofImageFiles}
         proofImageError={proofImageError}
         handleProofImageChange={handleProofImageChange}
         removeProofImage={removeProofImage}

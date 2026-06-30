@@ -306,9 +306,8 @@ const BookingFormModal = ({
   // ✅ FIX: Added missing props referenced in handleConfirmBooking
   selectedRoomType = null,
   customizationData = null,
-  // ✅ Proof/reference image (booking-level, owned by parent — actual submit happens there)
-  proofImageFile = null,
-  proofImagePreview = null,
+  // ✅ Proof/reference images (booking-level, owned by parent — actual submit happens there)
+  proofImageFiles = [],
   proofImageError = '',
   handleProofImageChange,
   removeProofImage,
@@ -572,9 +571,11 @@ const BookingFormModal = ({
         }
       });
 
-      if (proofImageFile instanceof File) {
-        formData.append('proofImage', proofImageFile);
-      }
+      proofImageFiles.forEach((entry, idx) => {
+        if (entry.file instanceof File) {
+          formData.append(`proofImage_${idx}`, entry.file);
+        }
+      });
 
       const API_BASE = import.meta.env.VITE_API_URL ||
         (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
@@ -1132,37 +1133,46 @@ const BookingFormModal = ({
                   )}
                 </div>
 
-                {/* PROOF IMAGE UPLOAD (optional, booking-level) */}
+                {/* PROOF IMAGE UPLOAD (optional, booking-level, capped at one per passenger) */}
                 <div className="bfm-form-group bfm-full-width" style={{ marginTop: '16px' }}>
                   <label>
                     Upload Reference / Proof Image
-                    <span className="bfm-upload-hint">(Optional — payment receipt, screenshot, etc.)</span>
+                    <span className="bfm-upload-hint">
+                      (Optional — payment receipt, screenshot, etc. Up to {totalPassengers} image{totalPassengers !== 1 ? 's' : ''})
+                    </span>
                   </label>
 
-                  {proofImagePreview ? (
-                    <div className="bfm-file-uploaded">
-                      <div className="bfm-file-info">
-                        <img
-                          src={proofImagePreview}
-                          alt="Proof preview"
-                          style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, marginRight: 8 }}
-                        />
-                        <CheckCircle size={18} color="#22c55e"/>
-                        <span className="bfm-file-name">{proofImageFile?.name}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={removeProofImage}
-                        className="bfm-remove-file-btn"
-                      >
-                        Remove
-                      </button>
+                  {proofImageFiles.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                      {proofImageFiles.map((entry, idx) => (
+                        <div key={idx} className="bfm-file-uploaded" style={{ width: '100%' }}>
+                          <div className="bfm-file-info">
+                            <img
+                              src={entry.preview}
+                              alt={`Proof preview ${idx + 1}`}
+                              style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, marginRight: 8 }}
+                            />
+                            <CheckCircle size={18} color="#22c55e"/>
+                            <span className="bfm-file-name">{entry.file?.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeProofImage(idx)}
+                            className="bfm-remove-file-btn"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ) : (
+                  )}
+
+                  {proofImageFiles.length < totalPassengers && (
                     <div className="bfm-file-upload-box">
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/jpg,image/webp"
+                        multiple
                         onChange={handleProofImageChange}
                         id="proof-image-upload"
                         style={{ display: 'none' }}
@@ -1170,7 +1180,9 @@ const BookingFormModal = ({
                       <label htmlFor="proof-image-upload" className="bfm-file-upload-label">
                         <Upload size={28} color="#94a3b8"/>
                         <span className="bfm-upload-text">Click to upload image</span>
-                        <span className="bfm-upload-subtext">PNG, JPG or WEBP (Max 5MB)</span>
+                        <span className="bfm-upload-subtext">
+                          PNG, JPG or WEBP (Max 5MB) — {totalPassengers - proofImageFiles.length} slot{totalPassengers - proofImageFiles.length !== 1 ? 's' : ''} left
+                        </span>
                       </label>
                     </div>
                   )}

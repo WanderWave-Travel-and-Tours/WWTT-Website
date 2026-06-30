@@ -33,17 +33,24 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
             });
         }
     });
-    if (booking?.proofImage?.path) {
+    // proofImages is the current (array) field; proofImage is the legacy
+    // singular field kept for bookings saved before the array existed.
+    const proofImages = booking?.proofImages?.length
+        ? booking.proofImages
+        : (booking?.proofImage?.path ? [booking.proofImage] : []);
+
+    proofImages.forEach((img, idx) => {
+        if (!img?.path) return;
         bookingDocs.push({
-            _id: 'proof-image',
-            fileName: booking.proofImage.originalName || 'Proof / Reference Image',
-            originalName: booking.proofImage.originalName,
-            fileSize: booking.proofImage.size,
-            fileUrl: booking.proofImage.path,
-            section: 'Proof / Reference Image',
+            _id: `proof-image-${idx}`,
+            fileName: img.originalName || `Proof / Reference Image ${idx + 1}`,
+            originalName: img.originalName,
+            fileSize: img.size,
+            fileUrl: img.path,
+            section: proofImages.length > 1 ? `Proof / Reference Image ${idx + 1}` : 'Proof / Reference Image',
             isDirectLink: true,
         });
-    }
+    });
 
     const allDocs = [...bookingDocs, ...(documents || [])];
 
