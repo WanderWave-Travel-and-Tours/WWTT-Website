@@ -365,9 +365,10 @@ const ApplicationDetails = ({
 
             {/* Show uploaded documents */}
             <div className="ad-uploaded-docs-wrapper">
-                <UploadedDocumentsView 
+                <UploadedDocumentsView
                     documents={uploadedDocuments}
                     isLoading={isLoadingDocuments}
+                    booking={inquiry}
                 />
             </div>
 

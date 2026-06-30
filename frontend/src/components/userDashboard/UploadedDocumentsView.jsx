@@ -2,8 +2,50 @@ import React, { useState } from 'react';
 import * as Icons from './Icons';
 import './UploadedDocumentsView.css';
 
-const UploadedDocumentsView = ({ documents, isLoading }) => {
+const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
     const [loadingUrls, setLoadingUrls] = useState({});
+
+    // ── Documents embedded directly on the booking (ID/passport per passenger + proof image) ──
+    // These aren't rows in the Document collection (no inquiryId), so they're
+    // sourced straight from the booking object instead of the documents prop.
+    const bookingDocs = [];
+    (booking?.passengers || []).forEach((p, idx) => {
+        if (p.idDocument?.path) {
+            bookingDocs.push({
+                _id: `id-${idx}`,
+                fileName: p.idDocument.originalName || `Passenger ${idx + 1} ID`,
+                originalName: p.idDocument.originalName,
+                fileSize: p.idDocument.size,
+                fileUrl: p.idDocument.path,
+                section: `Passenger ${idx + 1} — Valid ID`,
+                isDirectLink: true,
+            });
+        }
+        if (p.passportDocument?.path) {
+            bookingDocs.push({
+                _id: `passport-${idx}`,
+                fileName: p.passportDocument.originalName || `Passenger ${idx + 1} Passport`,
+                originalName: p.passportDocument.originalName,
+                fileSize: p.passportDocument.size,
+                fileUrl: p.passportDocument.path,
+                section: `Passenger ${idx + 1} — Passport`,
+                isDirectLink: true,
+            });
+        }
+    });
+    if (booking?.proofImage?.path) {
+        bookingDocs.push({
+            _id: 'proof-image',
+            fileName: booking.proofImage.originalName || 'Proof / Reference Image',
+            originalName: booking.proofImage.originalName,
+            fileSize: booking.proofImage.size,
+            fileUrl: booking.proofImage.path,
+            section: 'Proof / Reference Image',
+            isDirectLink: true,
+        });
+    }
+
+    const allDocs = [...bookingDocs, ...(documents || [])];
 
     if (isLoading) {
         return (
@@ -19,7 +61,7 @@ const UploadedDocumentsView = ({ documents, isLoading }) => {
         );
     }
 
-    if (!documents || documents.length === 0) {
+    if (allDocs.length === 0) {
         return (
             <div className="udv-container">
                 <div className="udv-header">
@@ -92,18 +134,32 @@ const UploadedDocumentsView = ({ documents, isLoading }) => {
     };
 
     // ✅ NEW: Handle view button click
-    const handleViewDocument = async (e, documentId) => {
+    const handleViewDocument = async (e, doc) => {
         e.preventDefault();
-        const signedUrl = await getSignedUrl(documentId, 'view');
+        if (doc.isDirectLink) {
+            window.open(doc.fileUrl, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        const signedUrl = await getSignedUrl(doc._id, 'view');
         if (signedUrl) {
             window.open(signedUrl, '_blank', 'noopener,noreferrer');
         }
     };
 
     // ✅ NEW: Handle download button click
-    const handleDownloadDocument = async (e, documentId, fileName) => {
+    const handleDownloadDocument = async (e, doc) => {
         e.preventDefault();
-        const signedUrl = await getSignedUrl(documentId, 'download');
+        const fileName = doc.originalName;
+        if (doc.isDirectLink) {
+            const link = document.createElement('a');
+            link.href = doc.fileUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return;
+        }
+        const signedUrl = await getSignedUrl(doc._id, 'download');
         if (signedUrl) {
             // Create temporary link to trigger download
             const link = document.createElement('a');
@@ -116,7 +172,7 @@ const UploadedDocumentsView = ({ documents, isLoading }) => {
     };
 
     // Group documents by section
-    const groupedDocs = documents.reduce((acc, doc) => {
+    const groupedDocs = allDocs.reduce((acc, doc) => {
         const section = doc.section || 'General Documents';
         if (!acc[section]) {
             acc[section] = [];
@@ -131,7 +187,7 @@ const UploadedDocumentsView = ({ documents, isLoading }) => {
                 <div>
                     <h2>Your Uploaded Documents</h2>
                     <p className="udv-subtitle">
-                        {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
+                        {allDocs.length} document{allDocs.length !== 1 ? 's' : ''} uploaded
                     </p>
                 </div>
                 <div className="udv-badge">
@@ -169,8 +225,8 @@ const UploadedDocumentsView = ({ documents, isLoading }) => {
                                         </div>
                                     </div>
                                     <div className="udv-doc-actions">
-                                        <button 
-                                            onClick={(e) => handleViewDocument(e, doc._id)}
+                                        <button
+                                            onClick={(e) => handleViewDocument(e, doc)}
                                             className="udv-btn-view"
                                             title="View document"
                                             disabled={loadingUrls[doc._id]}
@@ -178,8 +234,8 @@ const UploadedDocumentsView = ({ documents, isLoading }) => {
                                             <Icons.Eye />
                                             {loadingUrls[doc._id] ? 'Loading...' : 'View'}
                                         </button>
-                                        <button 
-                                            onClick={(e) => handleDownloadDocument(e, doc._id, doc.originalName)}
+                                        <button
+                                            onClick={(e) => handleDownloadDocument(e, doc)}
                                             className="udv-btn-download"
                                             title="Download document"
                                             disabled={loadingUrls[doc._id]}
