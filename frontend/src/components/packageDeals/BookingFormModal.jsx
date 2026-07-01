@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
+import ImageCropperModal from './ImageCropperModal';
 // Import the new CSS file
 import './BookingFormModal.css';
 
@@ -307,16 +308,33 @@ const BookingFormModal = ({
   // ✅ FIX: Added missing props referenced in handleConfirmBooking
   selectedRoomType = null,
   customizationData = null,
-  // ✅ Proof/reference images (booking-level, owned by parent — actual submit happens there)
-  proofImageFiles = [],
-  proofImageError = '',
-  handleProofImageChange,
-  removeProofImage,
 }) => {
   const toast = useToast();
   const [localLoading, setLocalLoading] = useState(false);
   const overlayRef = useRef(null);
   const formWrapperRef = useRef(null);
+
+  // ── Image cropper state ──────────────────────────────────────────────────
+  const [cropperState, setCropperState] = useState(null);
+  // cropperState: { imageSrc, fileName, passengerIndex, type } | null
+
+  const openCropper = useCallback((passengerIndex, type, file) => {
+    const url = URL.createObjectURL(file);
+    setCropperState({ imageSrc: url, fileName: file.name, passengerIndex, type });
+  }, []);
+
+  const closeCropper = useCallback(() => {
+    if (cropperState?.imageSrc) URL.revokeObjectURL(cropperState.imageSrc);
+    setCropperState(null);
+  }, [cropperState]);
+
+  const handleCropConfirm = useCallback((croppedFile) => {
+    if (!cropperState) return;
+    handleFileUpload(cropperState.passengerIndex, cropperState.type, {
+      target: { files: [croppedFile] }
+    });
+    closeCropper();
+  }, [cropperState, handleFileUpload, closeCropper]);
 
   // ✅ FIX: Forward wheel events from anywhere inside the modal card to the
   // bfm-form-wrapper scroll container. This ensures mouse wheel scrolling works
@@ -572,12 +590,6 @@ const BookingFormModal = ({
         }
       });
 
-      proofImageFiles.forEach((entry, idx) => {
-        if (entry.file instanceof File) {
-          formData.append(`proofImage_${idx}`, entry.file);
-        }
-      });
-
       const API_BASE = import.meta.env.VITE_API_URL ||
         (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
       const baseUrl = API_BASE.replace(/\/+$/, '');
@@ -758,14 +770,12 @@ const BookingFormModal = ({
           </div>
 
           {/* DOCUMENT REQUIREMENTS */}
-          {(bookingWithAirfare || isInternationalPackage) && (
-            <div className={`bfm-doc-req-box ${isInternationalFlight ? '' : 'bfm-domestic'}`}>
-              <strong>Required Documents:</strong>
-              {bookingWithAirfare
-                ? ' Valid ID and Passport for all passengers'
-                : ' Valid Passport for all passengers'}
-            </div>
-          )}
+          <div className={`bfm-doc-req-box ${isInternationalFlight ? '' : 'bfm-domestic'}`}>
+            <strong>Required Documents:</strong>
+            {(bookingWithAirfare || isInternationalPackage)
+              ? ' Valid ID and Passport for all passengers'
+              : ' Valid ID for all passengers'}
+          </div>
         </div>
 
         {/* SCROLLABLE FORM CONTENT */}
@@ -914,7 +924,7 @@ const BookingFormModal = ({
               </div>
 
               {/* ID UPLOAD */}
-              {(bookingWithAirfare || isInternationalPackage) && requiresID && (
+              {requiresID && (
                 <div className="bfm-form-group bfm-full-width">
                   <label>
                     Upload Valid ID {isPrimaryPassenger && <span className="bfm-required">*</span>}
@@ -942,7 +952,16 @@ const BookingFormModal = ({
                       <input
                         type="file"
                         accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          e.target.value = null;
+                          if (file.type.startsWith('image/')) {
+                            openCropper(passengerStep - 1, 'id', file);
+                          } else {
+                            handleFileUpload(passengerStep - 1, 'id', { target: { files: [file] } });
+                          }
+                        }}
                         id={`id-upload-${passengerStep}`}
                         style={{display: 'none'}}
                       />
@@ -985,7 +1004,16 @@ const BookingFormModal = ({
                       <input
                         type="file"
                         accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          e.target.value = null;
+                          if (file.type.startsWith('image/')) {
+                            openCropper(passengerStep - 1, 'passport', file);
+                          } else {
+                            handleFileUpload(passengerStep - 1, 'passport', { target: { files: [file] } });
+                          }
+                        }}
                         id={`passport-upload-${passengerStep}`}
                         style={{display: 'none'}}
                       />
@@ -1136,65 +1164,6 @@ const BookingFormModal = ({
                   )}
                 </div>
 
-                {/* PROOF IMAGE UPLOAD (optional, booking-level, capped at one per passenger) */}
-                <div className="bfm-form-group bfm-full-width" style={{ marginTop: '16px' }}>
-                  <label>
-                    Upload Reference / Proof Image
-                    <span className="bfm-upload-hint">
-                      (Optional — payment receipt, screenshot, etc. Up to {totalPassengers} image{totalPassengers !== 1 ? 's' : ''})
-                    </span>
-                  </label>
-
-                  {proofImageFiles.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                      {proofImageFiles.map((entry, idx) => (
-                        <div key={idx} className="bfm-file-uploaded" style={{ width: '100%' }}>
-                          <div className="bfm-file-info">
-                            <img
-                              src={entry.preview}
-                              alt={`Proof preview ${idx + 1}`}
-                              style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, marginRight: 8 }}
-                            />
-                            <CheckCircle size={18} color="#22c55e"/>
-                            <span className="bfm-file-name">{entry.file?.name}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeProofImage(idx)}
-                            className="bfm-remove-file-btn"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {proofImageFiles.length < totalPassengers && (
-                    <div className="bfm-file-upload-box">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/jpg,image/webp"
-                        multiple
-                        onChange={handleProofImageChange}
-                        id="proof-image-upload"
-                        style={{ display: 'none' }}
-                      />
-                      <label htmlFor="proof-image-upload" className="bfm-file-upload-label">
-                        <Upload size={28} color="#94a3b8"/>
-                        <span className="bfm-upload-text">Click to upload image</span>
-                        <span className="bfm-upload-subtext">
-                          PNG, JPG or WEBP (Max 5MB) — {totalPassengers - proofImageFiles.length} slot{totalPassengers - proofImageFiles.length !== 1 ? 's' : ''} left
-                        </span>
-                      </label>
-                    </div>
-                  )}
-                  {proofImageError && (
-                    <span style={{ color: '#ef4444', fontSize: '13px', marginTop: '6px', display: 'block' }}>
-                      {proofImageError}
-                    </span>
-                  )}
-                </div>
               </div>
             )}
 
@@ -1265,6 +1234,16 @@ const BookingFormModal = ({
         onClose={handleCloseBookingCompleted}
         packageName={pkg.name}
       />
+
+      {/* IMAGE CROPPER MODAL */}
+      {cropperState && (
+        <ImageCropperModal
+          imageSrc={cropperState.imageSrc}
+          fileName={cropperState.fileName}
+          onConfirm={handleCropConfirm}
+          onCancel={closeCropper}
+        />
+      )}
     </div>
   );
 };

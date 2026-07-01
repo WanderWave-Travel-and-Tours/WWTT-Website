@@ -205,6 +205,50 @@
 
 .udv-doc-info {
     flex: 1;
+    min-width: 0;
+}
+
+.udv-doc-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.udv-doc-type-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.udv-doc-type-id {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.udv-doc-type-passport {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.udv-doc-passenger-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 120px;
 }
 
 .udv-doc-name {

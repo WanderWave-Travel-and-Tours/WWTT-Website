@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 
         const queries = [
             PackageModel.find({ _id: { $in: favoriteIds } })
-                .select('_id title name destination location price image duration soloPaxPrice multiplePaxPrice inclusions rating reviews package_code')
+                .select('_id title name destination location price image duration soloPaxPrice multiplePaxPrice inclusions rating reviews package_code category')
                 .lean(),
             Tour.find({ _id: { $in: favoriteIds } })
                 .select('_id title destination price image duration tourType minPax category inclusions')
