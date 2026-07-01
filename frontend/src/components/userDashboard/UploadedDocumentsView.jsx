@@ -17,7 +17,7 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
                 originalName: p.idDocument.originalName,
                 fileSize: p.idDocument.size,
                 fileUrl: p.idDocument.path,
-                section: `Passenger ${idx + 1} — Valid ID`,
+                section: 'ID',
                 isDirectLink: true,
             });
         }
@@ -28,7 +28,7 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
                 originalName: p.passportDocument.originalName,
                 fileSize: p.passportDocument.size,
                 fileUrl: p.passportDocument.path,
-                section: `Passenger ${idx + 1} — Passport`,
+                section: 'Passport',
                 isDirectLink: true,
             });
         }

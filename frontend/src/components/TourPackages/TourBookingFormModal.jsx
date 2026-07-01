@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from '../../lib/axiosInstance';
-import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Plane, CheckCircle, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 // Import the same CSS files as BookingFormModal
@@ -229,16 +229,12 @@ const TourBookingFormModal = ({
   totalAmount,
   bookingWithAirfare,
   isInternationalFlight,
-  requiresID,
-  requiresPassport,
   passengerStep,
   totalPassengers,
   progressPercent,
   currentPassenger,
   passengers,
   handlePassengerChange,
-  handleFileUpload,
-  removeFile,
   handleNextPassenger,
   handleBackPassenger,
   handleSkipToPayment,
@@ -646,13 +642,6 @@ const TourBookingFormModal = ({
             )}
           </div>
 
-          {/* DOCUMENT REQUIREMENTS */}
-          {bookingWithAirfare && (
-            <div className={`bfm-doc-req-box ${isInternationalFlight ? '' : 'bfm-domestic'}`}>
-              <strong>Required Documents:</strong>
-              {isInternationalFlight ? ' Valid Passport for all passengers' : ' Valid ID for all passengers'}
-            </div>
-          )}
         </div>
 
         {/* SCROLLABLE FORM CONTENT */}
@@ -812,92 +801,6 @@ const TourBookingFormModal = ({
                   placeholder="123 Main St, Makati City, Metro Manila"
                 />
               </div>
-
-              {/* ID UPLOAD */}
-              {bookingWithAirfare && requiresID && (
-                <div className="bfm-form-group bfm-full-width">
-                  <label>
-                    Upload Valid ID <span className="bfm-required">*</span>
-                    <span className="bfm-upload-hint">
-                      (Driver's License, UMID, SSS, Postal ID, etc.)
-                    </span>
-                  </label>
-
-                  {currentPassenger.idFileName ? (
-                    <div className="bfm-file-uploaded">
-                      <div className="bfm-file-info">
-                        <CheckCircle size={18} color="#22c55e" />
-                        <span className="bfm-file-name">{currentPassenger.idFileName}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(passengerStep - 1, 'id')}
-                        className="bfm-remove-file-btn"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="bfm-file-upload-box">
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)}
-                        id={`id-upload-${passengerStep}`}
-                        style={{ display: 'none' }}
-                      />
-                      <label htmlFor={`id-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={28} color="#94a3b8" />
-                        <span className="bfm-upload-text">Click to upload ID</span>
-                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* PASSPORT UPLOAD */}
-              {bookingWithAirfare && requiresPassport && (
-                <div className="bfm-form-group bfm-full-width">
-                  <label>
-                    Upload Passport <span className="bfm-required">*</span>
-                    <span className="bfm-upload-hint">
-                      (Bio-data page with photo)
-                    </span>
-                  </label>
-
-                  {currentPassenger.passportFileName ? (
-                    <div className="bfm-file-uploaded">
-                      <div className="bfm-file-info">
-                        <CheckCircle size={18} color="#22c55e" />
-                        <span className="bfm-file-name">{currentPassenger.passportFileName}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(passengerStep - 1, 'passport')}
-                        className="bfm-remove-file-btn"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="bfm-file-upload-box">
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)}
-                        id={`passport-upload-${passengerStep}`}
-                        style={{ display: 'none' }}
-                      />
-                      <label htmlFor={`passport-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={28} color="#94a3b8" />
-                        <span className="bfm-upload-text">Click to upload Passport</span>
-                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
 
             </div>
 

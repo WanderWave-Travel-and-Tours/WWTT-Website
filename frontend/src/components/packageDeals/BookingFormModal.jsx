@@ -279,8 +279,9 @@ const BookingFormModal = ({
   selectedFlight, 
   airfareTotal, 
   totalAmount, 
-  bookingWithAirfare, 
-  isInternationalFlight, 
+  bookingWithAirfare,
+  isInternationalFlight,
+  isInternationalPackage,
   requiresID,
   requiresPassport,
   passengerStep, 
@@ -757,10 +758,12 @@ const BookingFormModal = ({
           </div>
 
           {/* DOCUMENT REQUIREMENTS */}
-          {bookingWithAirfare && (
+          {(bookingWithAirfare || isInternationalPackage) && (
             <div className={`bfm-doc-req-box ${isInternationalFlight ? '' : 'bfm-domestic'}`}>
               <strong>Required Documents:</strong>
-              {isInternationalFlight ? ' Valid Passport for all passengers' : ' Valid ID for all passengers'}
+              {bookingWithAirfare
+                ? ' Valid ID and Passport for all passengers'
+                : ' Valid Passport for all passengers'}
             </div>
           )}
         </div>
@@ -911,7 +914,7 @@ const BookingFormModal = ({
               </div>
 
               {/* ID UPLOAD */}
-              {bookingWithAirfare && requiresID && (
+              {(bookingWithAirfare || isInternationalPackage) && requiresID && (
                 <div className="bfm-form-group bfm-full-width">
                   <label>
                     Upload Valid ID {isPrimaryPassenger && <span className="bfm-required">*</span>}
@@ -954,7 +957,7 @@ const BookingFormModal = ({
               )}
 
               {/* PASSPORT UPLOAD */}
-              {bookingWithAirfare && requiresPassport && (
+              {(bookingWithAirfare || isInternationalPackage) && requiresPassport && (
                 <div className="bfm-form-group bfm-full-width">
                   <label>
                     Upload Passport {isPrimaryPassenger && <span className="bfm-required">*</span>}

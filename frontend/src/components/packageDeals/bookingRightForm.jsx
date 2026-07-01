@@ -147,10 +147,11 @@ const BookingRightForm = ({
     return timerPrice;
   })();
 
-  const isInternationalFlight = selectedFlight && 
+  const isInternationalFlight = selectedFlight &&
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
-  const requiresPassport = isInternationalFlight;
-  const requiresID = selectedFlight && !isInternationalFlight;
+  const isInternationalPackage = (pkg.category || '').toLowerCase() === 'international';
+  const requiresPassport = !!selectedFlight || isInternationalPackage;
+  const requiresID = !!selectedFlight || isInternationalPackage;
 
   const [passengers, setPassengers] = useState(
     Array.from({ length: totalPassengers }, (_, idx) => ({
@@ -1191,12 +1192,12 @@ const handleNextPassenger = async (e) => {
     }
   }
 
-  if (passengerStep === 1 && bookingWithAirfare && requiresID && !currentPassengerData.idFile) {
+  if (passengerStep === 1 && (bookingWithAirfare || isInternationalPackage) && requiresID && !currentPassengerData.idFile) {
     toast.error('Please upload a valid ID for the primary passenger');
     return;
   }
 
-  if (passengerStep === 1 && bookingWithAirfare && requiresPassport && !currentPassengerData.passportFile) {
+  if (passengerStep === 1 && (bookingWithAirfare || isInternationalPackage) && requiresPassport && !currentPassengerData.passportFile) {
     toast.error('Please upload a valid passport for the primary passenger');
     return;
   }
@@ -2236,6 +2237,7 @@ const handleNextPassenger = async (e) => {
         totalAmount={convertedFinalTotalAmount}      
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
+        isInternationalPackage={isInternationalPackage}
         requiresID={requiresID}
         requiresPassport={requiresPassport}
         passengerStep={passengerStep}
@@ -2282,6 +2284,7 @@ const handleNextPassenger = async (e) => {
         totalAmount={convertedFinalTotalAmount}        
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
+        isInternationalPackage={isInternationalPackage}
         requiresID={requiresID}
         requiresPassport={requiresPassport}
         totalPassengers={totalPassengers}

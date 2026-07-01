@@ -143,7 +143,7 @@ export const BookingDetailModal = ({
                     fileUrl: p.idDocument.path,
                     originalName: p.idDocument.originalName,
                     fileType: 'image/*',
-                    section: `Passenger ${idx + 1} — Valid ID`
+                    section: 'ID'
                 });
             }
             if (p.passportDocument?.path) {
@@ -152,7 +152,7 @@ export const BookingDetailModal = ({
                     fileUrl: p.passportDocument.path,
                     originalName: p.passportDocument.originalName,
                     fileType: 'image/*',
-                    section: `Passenger ${idx + 1} — Passport`
+                    section: 'Passport'
                 });
             }
         });
