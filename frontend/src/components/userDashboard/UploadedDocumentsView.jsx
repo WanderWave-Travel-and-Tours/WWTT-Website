@@ -10,48 +10,38 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
     // sourced straight from the booking object instead of the documents prop.
     const bookingDocs = [];
     (booking?.passengers || []).forEach((p, idx) => {
-        if (p.idDocument?.path) {
+        const passengerLabel = (p.firstName && p.lastName)
+            ? `${p.firstName} ${p.lastName}`
+            : `Passenger ${idx + 1}`;
+        const idPath = p.idDocument?.path || p.idDocument?.url;
+        const passportPath = p.passportDocument?.path || p.passportDocument?.url;
+        if (idPath) {
             bookingDocs.push({
                 _id: `id-${idx}`,
-                fileName: p.idDocument.originalName || `Passenger ${idx + 1} ID`,
+                fileName: p.idDocument.originalName || `${passengerLabel} - Valid ID`,
                 originalName: p.idDocument.originalName,
                 fileSize: p.idDocument.size,
-                fileUrl: p.idDocument.path,
-                section: 'ID',
+                fileUrl: idPath,
+                section: 'ID Documents',
+                docType: 'ID',
+                passengerLabel,
                 isDirectLink: true,
             });
         }
-        if (p.passportDocument?.path) {
+        if (passportPath) {
             bookingDocs.push({
                 _id: `passport-${idx}`,
-                fileName: p.passportDocument.originalName || `Passenger ${idx + 1} Passport`,
+                fileName: p.passportDocument.originalName || `${passengerLabel} - Passport`,
                 originalName: p.passportDocument.originalName,
                 fileSize: p.passportDocument.size,
-                fileUrl: p.passportDocument.path,
-                section: 'Passport',
+                fileUrl: passportPath,
+                section: 'Passport Documents',
+                docType: 'Passport',
+                passengerLabel,
                 isDirectLink: true,
             });
         }
     });
-    // proofImages is the current (array) field; proofImage is the legacy
-    // singular field kept for bookings saved before the array existed.
-    const proofImages = booking?.proofImages?.length
-        ? booking.proofImages
-        : (booking?.proofImage?.path ? [booking.proofImage] : []);
-
-    proofImages.forEach((img, idx) => {
-        if (!img?.path) return;
-        bookingDocs.push({
-            _id: `proof-image-${idx}`,
-            fileName: img.originalName || `Proof / Reference Image ${idx + 1}`,
-            originalName: img.originalName,
-            fileSize: img.size,
-            fileUrl: img.path,
-            section: proofImages.length > 1 ? `Proof / Reference Image ${idx + 1}` : 'Proof / Reference Image',
-            isDirectLink: true,
-        });
-    });
-
     const allDocs = [...bookingDocs, ...(documents || [])];
 
     if (isLoading) {
@@ -218,6 +208,18 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
                                         {getFileIcon(doc.fileName)}
                                     </div>
                                     <div className="udv-doc-info">
+                                        <div className="udv-doc-badges">
+                                            {doc.docType && (
+                                                <span className={`udv-doc-type-badge udv-doc-type-${doc.docType.toLowerCase()}`}>
+                                                    {doc.docType}
+                                                </span>
+                                            )}
+                                            {doc.passengerLabel && (
+                                                <span className="udv-doc-passenger-badge">
+                                                    {doc.passengerLabel}
+                                                </span>
+                                            )}
+                                        </div>
                                         <h4 className="udv-doc-name" title={doc.fileName}>
                                             {doc.fileName}
                                         </h4>

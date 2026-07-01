@@ -115,8 +115,6 @@ const BookingRightForm = ({
   const [passengerStep, setPassengerStep] = useState(1);
   const [loading, setLoading] = useState(false);
   // ✅ Proof/reference images (booking-level, optional, capped at one per passenger)
-  const [proofImageFiles, setProofImageFiles] = useState([]);
-  const [proofImageError, setProofImageError] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
@@ -149,9 +147,9 @@ const BookingRightForm = ({
 
   const isInternationalFlight = selectedFlight &&
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
-  const isInternationalPackage = (pkg.category || '').toLowerCase() === 'international';
+  const isInternationalPackage = (pkg.category || '').toLowerCase().startsWith('internation');
   const requiresPassport = !!selectedFlight || isInternationalPackage;
-  const requiresID = !!selectedFlight || isInternationalPackage;
+  const requiresID = true; // ID required for all package bookings
 
   const [passengers, setPassengers] = useState(
     Array.from({ length: totalPassengers }, (_, idx) => ({
@@ -782,7 +780,7 @@ const handleApplyPromo = async () => {
         // ✅ PROMO TYPE vs PACKAGE TYPE VALIDATION (frontend guard)
         // Prevents local-only promos on international packages and vice versa
         const pkgCategory = (pkg.category || '').toLowerCase();
-        const isInternationalPackage = pkgCategory === 'international';
+        const isInternationalPackage = pkgCategory.startsWith('internation');
         const promoHasLocal = promo.pricing && promo.pricing.local > 0;
         const promoHasInternational = promo.pricing && promo.pricing.international > 0;
 
@@ -1099,68 +1097,6 @@ const handleApplyPromo = async () => {
     });
   };
 
-  const PROOF_IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
-  const PROOF_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-
-  const handleProofImageChange = (event) => {
-    const selectedFiles = Array.from(event.target.files || []);
-    if (selectedFiles.length === 0) return;
-
-    const maxProofImages = totalPassengers;
-    const remainingSlots = maxProofImages - proofImageFiles.length;
-
-    if (remainingSlots <= 0) {
-      setProofImageError(`You can upload at most ${maxProofImages} image${maxProofImages !== 1 ? 's' : ''} (one per passenger).`);
-      event.target.value = '';
-      return;
-    }
-
-    const filesToAdd = [];
-    let rejectedForType = false;
-    let rejectedForSize = false;
-
-    for (const file of selectedFiles) {
-      if (filesToAdd.length >= remainingSlots) break;
-
-      if (!PROOF_IMAGE_ALLOWED_TYPES.includes(file.type)) {
-        rejectedForType = true;
-        continue;
-      }
-      if (file.size > PROOF_IMAGE_MAX_SIZE) {
-        rejectedForSize = true;
-        continue;
-      }
-      filesToAdd.push(file);
-    }
-
-    if (rejectedForType) {
-      setProofImageError('Only JPG, PNG, or WEBP images are allowed.');
-    } else if (rejectedForSize) {
-      setProofImageError('Each image must be 5MB or smaller.');
-    } else if (selectedFiles.length > remainingSlots) {
-      setProofImageError(`You can upload at most ${maxProofImages} image${maxProofImages !== 1 ? 's' : ''} (one per passenger).`);
-    } else {
-      setProofImageError('');
-    }
-
-    if (filesToAdd.length > 0) {
-      setProofImageFiles(prev => [
-        ...prev,
-        ...filesToAdd.map(file => ({ file, preview: URL.createObjectURL(file) }))
-      ]);
-    }
-
-    event.target.value = '';
-  };
-
-  const removeProofImage = (index) => {
-    setProofImageFiles(prev => {
-      const target = prev[index];
-      if (target?.preview) URL.revokeObjectURL(target.preview);
-      return prev.filter((_, i) => i !== index);
-    });
-    setProofImageError('');
-  };
 
   // ✅ Returns the correct per-pax price based on timer status and customization
 const getTimerAwarePrice = () => {
@@ -1192,7 +1128,7 @@ const handleNextPassenger = async (e) => {
     }
   }
 
-  if (passengerStep === 1 && (bookingWithAirfare || isInternationalPackage) && requiresID && !currentPassengerData.idFile) {
+  if (passengerStep === 1 && requiresID && !currentPassengerData.idFile) {
     toast.error('Please upload a valid ID for the primary passenger');
     return;
   }
@@ -1341,12 +1277,6 @@ const handleNextPassenger = async (e) => {
       }
       if (passenger.passportFile) {
         formData.append(`passportFile_${idx}`, passenger.passportFile);
-      }
-    });
-
-    proofImageFiles.forEach((entry, idx) => {
-      if (entry.file instanceof File) {
-        formData.append(`proofImage_${idx}`, entry.file);
       }
     });
 
@@ -2261,10 +2191,6 @@ const handleNextPassenger = async (e) => {
           convertPrice={convertPrice}
         selectedRoomType={selectedRoomType}
         customizationData={customizationData}
-        proofImageFiles={proofImageFiles}
-        proofImageError={proofImageError}
-        handleProofImageChange={handleProofImageChange}
-        removeProofImage={removeProofImage}
       />
 
       <AppointmentModal

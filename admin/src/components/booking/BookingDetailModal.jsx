@@ -157,23 +157,6 @@ export const BookingDetailModal = ({
             }
         });
 
-        // proofImages is the current (array) field; proofImage is the legacy
-        // singular field kept for bookings saved before the array existed.
-        const proofImages = rawBooking.proofImages?.length
-            ? rawBooking.proofImages
-            : (rawBooking.proofImage?.path ? [rawBooking.proofImage] : []);
-
-        proofImages.forEach((img, idx) => {
-            if (!img?.path) return;
-            docs.push({
-                _id: `proof-image-${idx}`,
-                fileUrl: img.path,
-                originalName: img.originalName || `Proof / Reference Image ${idx + 1}`,
-                fileType: 'image/*',
-                section: proofImages.length > 1 ? `Proof / Reference Image ${idx + 1}` : 'Proof / Reference Image'
-            });
-        });
-
         return docs;
     })();
 
