@@ -914,7 +914,7 @@ const BookingFormModal = ({
               </div>
 
               {/* ID UPLOAD */}
-              {bookingWithAirfare && requiresID && (
+              {(bookingWithAirfare || isInternationalPackage) && requiresID && (
                 <div className="bfm-form-group bfm-full-width">
                   <label>
                     Upload Valid ID {isPrimaryPassenger && <span className="bfm-required">*</span>}

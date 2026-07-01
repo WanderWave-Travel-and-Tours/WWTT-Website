@@ -151,7 +151,7 @@ const BookingRightForm = ({
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
   const isInternationalPackage = (pkg.category || '').toLowerCase() === 'international';
   const requiresPassport = !!selectedFlight || isInternationalPackage;
-  const requiresID = !!selectedFlight;
+  const requiresID = !!selectedFlight || isInternationalPackage;
 
   const [passengers, setPassengers] = useState(
     Array.from({ length: totalPassengers }, (_, idx) => ({
@@ -1192,7 +1192,7 @@ const handleNextPassenger = async (e) => {
     }
   }
 
-  if (passengerStep === 1 && bookingWithAirfare && requiresID && !currentPassengerData.idFile) {
+  if (passengerStep === 1 && (bookingWithAirfare || isInternationalPackage) && requiresID && !currentPassengerData.idFile) {
     toast.error('Please upload a valid ID for the primary passenger');
     return;
   }
