@@ -49,6 +49,9 @@ export const useBookingLogic = (isOpen, onClose) => {
   const [hotelData, setHotelData]                 = useState(null);
   const [loadingHotelData, setLoadingHotelData]   = useState(false);
 
+  // ── Package Customization (inclusions swap, customizable destinations only) ──
+  const [customizationData, setCustomizationData] = useState(null);
+
   // ── Promo ─────────────────────────────────────────────────────────────────
   const [promoCode, setPromoCode]                 = useState('');
   const [appliedPromo, setAppliedPromo]           = useState(null);
@@ -105,7 +108,10 @@ export const useBookingLogic = (isOpen, onClose) => {
   // ─────────────────────────────────────────────────────────────────────────
   const calculateBasePackageTotal = () => {
     if (!selectedPackage) return 0;
-    const basePrice = selectedPackage.price || 0;
+    // Customization swaps/removes inclusions and adjusts the per-pax price —
+    // when active, it replaces the raw package price as the effective rate.
+    const basePrice = customizationData ? customizationData.totalPrice : (selectedPackage.price || 0);
+    if (customizationData && basePrice <= 0) return 0;
     if (isSoloPkg)    return basePrice;
     if (isMinTwoPkg) {
       const baseFor2      = basePrice * 2;
@@ -427,6 +433,7 @@ export const useBookingLogic = (isOpen, onClose) => {
     setSelectedTourAddOns([]);
     setSelectedTransferAddOns([]);
     setTransferTypes({});
+    setCustomizationData(null);
   };
 
   const addPassenger = () => setPaxCount(prev => prev + 1);
@@ -489,6 +496,11 @@ export const useBookingLogic = (isOpen, onClose) => {
     const primaryAge = parseInt(formData.passengers?.[0]?.age);
     if (!primaryAge || primaryAge < 18) {
       toast.error('Passenger 1 must be at least 18 years old to book.');
+      return;
+    }
+    const primaryEmailInput = (formData.passengers?.[0]?.email || '').trim();
+    if (!primaryEmailInput || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(primaryEmailInput)) {
+      toast.error('Please enter a valid email for the primary passenger so the customer can view this booking in their account.');
       return;
     }
     const primaryPassenger = formData.passengers?.[0];
@@ -558,8 +570,12 @@ export const useBookingLogic = (isOpen, onClose) => {
         addOnsTotal: calculateAddOnsTotal(),
       };
 
+      const primaryPax = formData.passengers[0] || {};
+
       const bookingData = {
         ...formData,
+        email:             primaryEmailInput,
+        fullName:          `${primaryPax.firstName || ''} ${primaryPax.lastName || ''}`.trim(),
         packageId:         selectedPackage?._id,
         price:             selectedPackage.price,
         finalPackageTotal: computeFinalTotal(),
@@ -576,6 +592,27 @@ export const useBookingLogic = (isOpen, onClose) => {
         discountAmount:    calculateDiscount(),
         appliedPromoId:    appliedPromo ? appliedPromo._id : null,
         addOns:            addOnsPayload,
+        isCustomized:            !!customizationData,
+        customizedInclusions:    customizationData
+          ? customizationData.inclusions.map(inc => ({
+              id:            inc.id,
+              name:          inc.name,
+              price:         inc.price || 0,
+              supplierRate:  inc.supplierRate || null,
+              markup:        inc.markup || null,
+              markupType:    inc.markupType || null,
+              supplier:      inc.supplier || null,
+              destination:   inc.destination || null,
+              pax:           inc.pax || null,
+              notes:         inc.notes || null,
+              isOriginal:    inc.isOriginal !== undefined ? inc.isOriginal : false,
+              isChecked:     inc.isChecked !== undefined ? inc.isChecked : true,
+              source:        inc.source || (inc.sellerRateId ? 'seller-rate' : 'package'),
+              sellerRateId:  inc.sellerRateId || null,
+            }))
+          : [],
+        customizationAdditionalPrice: customizationData ? customizationData.additionalPrice : 0,
+        originalInclusions:      selectedPackage.inclusions || [],
         passengers:        formData.passengers.map((p, i) => ({
           passengerNumber: i + 1,
           firstName:       p.firstName,
@@ -656,6 +693,7 @@ export const useBookingLogic = (isOpen, onClose) => {
     selectedRoomType, setSelectedRoomType,
     hotelData,
     loadingHotelData,
+    customizationData, setCustomizationData,
     promoCode, setPromoCode,
     appliedPromo,
     finalPackageTotal,

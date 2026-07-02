@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Users, UserPlus, MapPin, Clock, Tag, CheckCircle, Info, ChevronDown, Package as PackageIcon } from 'lucide-react';
 import PassengerCard from './PassengerCard';
 import TripDateCalendar from './TripDateCalendar';
-import { detectPackageTypeInfo } from '../utils/bookingUtils';
+import PackageCustomizer from './PackageCustomizer';
+import { detectPackageTypeInfo, isCustomizableDestination } from '../utils/bookingUtils';
 
 // Some package titles already bake in their duration/destination (e.g.
 // "4D3N Da Nang, Vietnam Solo"), so blindly prepending both again produces
@@ -54,6 +55,9 @@ const BookingStep1 = ({
 
   // Document requirements
   isInternational,
+
+  // Package customization
+  customizationData, setCustomizationData,
 
   // Toast (passed down for date validation error)
   toast,
@@ -174,6 +178,7 @@ const BookingStep1 = ({
                           handlePackageTypeDetect(pkg);
                           setSelectedDestination(pkg.destination);
                           setPkgDropdownOpen(false);
+                          setCustomizationData(null);
                         }}
                       >
                         <PackageIcon size={16} className="nbm-pkg-option-icon" />
@@ -260,24 +265,35 @@ const BookingStep1 = ({
                   <div>
                     <span className="nbm-pkgdetails-row-label">Package Price</span>
                     <strong className="nbm-pkgdetails-price">
-                      ₱{(selectedPackage.price || 0).toLocaleString()}
+                      {customizationData && customizationData.additionalPrice !== 0 && (
+                        <span className="nbm-pkgdetails-price-original">₱{(selectedPackage.price || 0).toLocaleString()}</span>
+                      )}
+                      ₱{(customizationData ? customizationData.totalPrice : (selectedPackage.price || 0)).toLocaleString()}
                       <span className="nbm-pkgdetails-price-suffix"> / per pax</span>
                     </strong>
                   </div>
                 </div>
               </div>
 
-              {Array.isArray(selectedPackage.inclusions) && selectedPackage.inclusions.length > 0 && (
-                <div className="nbm-pkgdetails-inclusions">
-                  <div className="nbm-pkgdetails-inclusions-title">Inclusions</div>
-                  <ul className="nbm-pkgdetails-inclusions-list">
-                    {selectedPackage.inclusions.map((item, idx) => (
-                      <li key={idx}>
-                        <CheckCircle size={14} /> {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {isCustomizableDestination(selectedPackage.destination) ? (
+                <PackageCustomizer
+                  key={selectedPackage._id}
+                  pkg={selectedPackage}
+                  onCustomizationChange={setCustomizationData}
+                />
+              ) : (
+                Array.isArray(selectedPackage.inclusions) && selectedPackage.inclusions.length > 0 && (
+                  <div className="nbm-pkgdetails-inclusions">
+                    <div className="nbm-pkgdetails-inclusions-title">Inclusions</div>
+                    <ul className="nbm-pkgdetails-inclusions-list">
+                      {selectedPackage.inclusions.map((item, idx) => (
+                        <li key={idx}>
+                          <CheckCircle size={14} /> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
               )}
 
               {isMinTwoPkg && (

@@ -840,6 +840,15 @@ const sendPackageBookingToGHL = async (booking, overrides = {}) => {
 
   const totalAmount = b.totalAmount || 0;
 
+  // ── Inclusions — customized (checked items) if applied, else the original package list ──
+  const checkedCustomizedInclusions = Array.isArray(b.customizedInclusions)
+    ? b.customizedInclusions.filter(inc => inc.isChecked !== false)
+    : null;
+  const inclusions = (checkedCustomizedInclusions && checkedCustomizedInclusions.length > 0)
+    ? checkedCustomizedInclusions
+    : (b.originalInclusions || []);
+  const inclusionsFormatted = formatInclusions(inclusions);
+
   const data = {
     // ── Meta ──────────────────────────────────────────────────
     type:      'PACKAGE_BOOKING',
@@ -868,6 +877,11 @@ const sendPackageBookingToGHL = async (booking, overrides = {}) => {
     serviceName:  b.packageName || '',
     bookingName:  b.packageName || '',
     duration:     b.duration    || '',
+
+    package_inclusions:     inclusionsFormatted,
+    package_inclusions_raw: JSON.stringify(inclusions),
+    isCustomized:           b.isCustomized ? 'Yes' : 'No',
+    is_customized:          b.isCustomized ? 'Yes' : 'No',
 
     // ── Schedule ─────────────────────────────────────────────
     startDate:    b.startDate || '',

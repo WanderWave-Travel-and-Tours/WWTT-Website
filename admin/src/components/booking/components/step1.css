@@ -493,6 +493,14 @@
   color: var(--nbm-light-slate);
 }
 
+.nbm-pkgdetails-price-original {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--nbm-light-slate);
+  text-decoration: line-through;
+  margin-right: 6px;
+}
+
 /* Inclusions checklist */
 .nbm-pkgdetails-inclusions {
   background: #eff6ff;
@@ -554,6 +562,251 @@
 .nbm-pkgdetails-remarks-text {
   font-size: 0.82rem;
   color: #78350f;
+}
+
+/* ── Package Customizer (inclusions swap for customizable destinations) ── */
+.nbm-pkgcust {
+  background: var(--nbm-bg);
+  border: 1.5px solid var(--nbm-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.nbm-pkgcust-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.nbm-pkgcust-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--nbm-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nbm-pkgcust-matchcount {
+  font-size: 0.72rem;
+  color: var(--nbm-light-slate);
+  margin-top: 2px;
+}
+
+.nbm-pkgcust-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid var(--nbm-border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--nbm-slate);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nbm-pkgcust-reset-btn:hover { border-color: var(--nbm-amber); color: var(--nbm-amber); }
+
+.nbm-pkgcust-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.nbm-pkgcust-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.nbm-pkgcust-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--nbm-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.nbm-pkgcust-item.unchecked { opacity: 0.55; }
+
+.nbm-pkgcust-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.nbm-pkgcust-item-main input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--nbm-amber);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.nbm-pkgcust-item-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nbm-pkgcust-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.nbm-pkgcust-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.nbm-pkgcust-item-price {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #dc2626;
+  white-space: nowrap;
+}
+
+.nbm-pkgcust-item-price.positive { color: #059669; }
+
+.nbm-pkgcust-remove-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #cbd5e1;
+  cursor: pointer;
+  display: flex;
+}
+
+.nbm-pkgcust-remove-btn:hover { color: #ef4444; }
+
+.nbm-pkgcust-add-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #fff;
+  border: 1.5px dashed var(--nbm-border);
+  border-radius: 8px;
+  padding: 9px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--nbm-slate);
+  cursor: pointer;
+}
+
+.nbm-pkgcust-add-toggle:hover { border-color: var(--nbm-amber); color: var(--nbm-amber); }
+.nbm-pkgcust-add-toggle:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.nbm-pkgcust-addpanel {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1.5px dashed var(--nbm-border);
+}
+
+.nbm-pkgcust-search {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.nbm-pkgcust-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--nbm-light-slate);
+}
+
+.nbm-pkgcust-search input {
+  width: 100%;
+  padding: 8px 10px 8px 30px !important;
+  border: 1.5px solid var(--nbm-border) !important;
+  border-radius: 8px !important;
+  font-size: 0.8rem !important;
+  box-sizing: border-box;
+}
+
+.nbm-pkgcust-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.nbm-pkgcust-activity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--nbm-border);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+.nbm-pkgcust-activity-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nbm-pkgcust-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--nbm-amber);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nbm-pkgcust-add-btn:hover { opacity: 0.88; }
+
+.nbm-pkgcust-empty {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--nbm-light-slate);
+  padding: 12px;
 }
 
 /* ── Pax Counter (legacy — kept for any reuse) ── */

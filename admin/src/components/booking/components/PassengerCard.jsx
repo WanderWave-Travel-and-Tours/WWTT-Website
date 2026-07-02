@@ -76,16 +76,25 @@ const PassengerCard = ({
     <div className="nbm-grid-2" style={{ marginTop: '12px' }}>
       <div className="nbm-pfield">
         <label>
-          Email{' '}
-          <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem' }}>
-            (optional)
-          </span>
+          Email {isPrimary ? (
+            <span style={{ color: '#ef4444' }}>*</span>
+          ) : (
+            <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem' }}>
+              (optional)
+            </span>
+          )}
         </label>
         <input
+          type="email"
           value={p.email}
           onChange={e => updatePassenger(i, 'email', e.target.value)}
           placeholder="juan@email.com"
         />
+        {isPrimary && (
+          <span style={{ display: 'block', marginTop: '4px', fontSize: '0.72rem', color: '#94a3b8' }}>
+            Needed so the customer can see this booking in their account.
+          </span>
+        )}
       </div>
       <div className="nbm-pfield">
         <label>Phone <span style={{ color: '#ef4444' }}>*</span></label>
