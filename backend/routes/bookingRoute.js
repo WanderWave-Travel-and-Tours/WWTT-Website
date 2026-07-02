@@ -1320,9 +1320,9 @@ router.post('/', upload.any(), async (req, res) => {
 
     console.log(`💰 Booking saved successfully! ID: ${newBooking._id}`);
 
-    // Fire the booking automation webhook for walk-in/sales bookings paid via
-    // partial payment — fire-and-forget, never blocks the response.
-    if (bookingData.isWalkin && newBooking.paymentType === 'partial') {
+    // Fire the booking automation webhook for walk-in/sales bookings —
+    // both partial and full payment — fire-and-forget, never blocks the response.
+    if (bookingData.isWalkin) {
       sendPackageBookingToGHL(newBooking).catch((err) =>
         console.error('⚠️ GHL package booking webhook failed (non-fatal):', err.message)
       );
