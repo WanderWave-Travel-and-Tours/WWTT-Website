@@ -23,7 +23,57 @@ function stripInternal(obj) {
   INTERNAL_FIELDS.forEach(f => delete out[f]);
   return out;
 }
- 
+
+// ✅ Uploads a passenger's ID/passport files (if present in req.files) to Cloudinary
+// and attaches idDocument/passportDocument onto the passenger object. Shared by both
+// the walk-in and regular booking branches so uploaded documents always get saved.
+async function attachPassengerDocuments(passenger, index, files) {
+  const idFile = files ? files.find(f => f.fieldname === `idFile_${index}`) : null;
+  const passportFile = files ? files.find(f => f.fieldname === `passportFile_${index}`) : null;
+
+  if (idFile) {
+    try {
+      const result = await cloudinary.uploader.upload(idFile.path, {
+        folder: 'wanderwave/bookings/ids',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tiff', 'pdf'],
+        resource_type: 'auto'
+      });
+      passenger.idDocument = {
+        filename: result.public_id,
+        originalName: idFile.originalname,
+        path: result.secure_url,
+        size: idFile.size
+      };
+      console.log(`  📄 ID uploaded to Cloudinary for passenger ${index + 1}: ${idFile.originalname}`);
+    } catch (uploadErr) {
+      console.error(`❌ Failed to upload ID to Cloudinary for passenger ${index + 1}:`, uploadErr.message);
+    } finally {
+      try { fs.unlinkSync(idFile.path); } catch (e) {}
+    }
+  }
+
+  if (passportFile) {
+    try {
+      const result = await cloudinary.uploader.upload(passportFile.path, {
+        folder: 'wanderwave/bookings/passports',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tiff', 'pdf'],
+        resource_type: 'auto'
+      });
+      passenger.passportDocument = {
+        filename: result.public_id,
+        originalName: passportFile.originalname,
+        path: result.secure_url,
+        size: passportFile.size
+      };
+      console.log(`  📄 Passport uploaded to Cloudinary for passenger ${index + 1}: ${passportFile.originalname}`);
+    } catch (uploadErr) {
+      console.error(`❌ Failed to upload passport to Cloudinary for passenger ${index + 1}:`, uploadErr.message);
+    } finally {
+      try { fs.unlinkSync(passportFile.path); } catch (e) {}
+    }
+  }
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let uploadPath;
@@ -817,7 +867,7 @@ router.post('/', upload.any(), async (req, res) => {
 
         for (let index = 0; index < rawWalkinPassengers.length; index++) {
           const p = rawWalkinPassengers[index];
-          passengers.push({
+          const passenger = {
             passengerNumber: p.passengerNumber || index + 1,
             firstName: p.firstName || 'Walk-in',
             lastName: p.lastName || 'Customer',
@@ -828,7 +878,11 @@ router.post('/', upload.any(), async (req, res) => {
             gender: p.gender || 'Not Specified',
             address: p.address || 'Walk-in',
             nationality: p.nationality || 'Filipino'
-          });
+          };
+
+          await attachPassengerDocuments(passenger, index, req.files);
+
+          passengers.push(passenger);
         }
 
         console.log(`✅ Walk-in: ${passengers.length} passenger(s) processed from form`);
@@ -891,50 +945,7 @@ router.post('/', upload.any(), async (req, res) => {
               nationality: passengerData.nationality || 'Filipino'
           };
 
-          const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
-          const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
-
-          if (idFile) {
-            try {
-              const result = await cloudinary.uploader.upload(idFile.path, {
-                folder: 'wanderwave/bookings/ids',
-                allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tiff', 'pdf'],
-                resource_type: 'auto'
-              });
-              passenger.idDocument = {
-                filename: result.public_id,
-                originalName: idFile.originalname,
-                path: result.secure_url,
-                size: idFile.size
-              };
-              console.log(`  📄 ID uploaded to Cloudinary for passenger ${index + 1}: ${idFile.originalname}`);
-            } catch (uploadErr) {
-              console.error(`❌ Failed to upload ID to Cloudinary for passenger ${index + 1}:`, uploadErr.message);
-            } finally {
-              try { fs.unlinkSync(idFile.path); } catch (e) {}
-            }
-          }
-
-          if (passportFile) {
-            try {
-              const result = await cloudinary.uploader.upload(passportFile.path, {
-                folder: 'wanderwave/bookings/passports',
-                allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tiff', 'pdf'],
-                resource_type: 'auto'
-              });
-              passenger.passportDocument = {
-                filename: result.public_id,
-                originalName: passportFile.originalname,
-                path: result.secure_url,
-                size: passportFile.size
-              };
-              console.log(`  📄 Passport uploaded to Cloudinary for passenger ${index + 1}: ${passportFile.originalname}`);
-            } catch (uploadErr) {
-              console.error(`❌ Failed to upload passport to Cloudinary for passenger ${index + 1}:`, uploadErr.message);
-            } finally {
-              try { fs.unlinkSync(passportFile.path); } catch (e) {}
-            }
-          }
+          await attachPassengerDocuments(passenger, index, req.files);
 
           passengers.push(passenger);
       }
