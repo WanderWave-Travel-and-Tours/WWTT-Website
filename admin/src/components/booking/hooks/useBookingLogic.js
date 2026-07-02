@@ -8,8 +8,11 @@ import {
   detectPackageTypeInfo,
   isAllowedBookingDay,
   getAllowedDayLabel,
+  isInternationalPackage,
   EMPTY_PASSENGER,
 } from '../utils/bookingUtils';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const API_BASE = 'https://wanderwaveph.onrender.com';
 const getAdminHeaders = () => ({});
@@ -93,6 +96,9 @@ export const useBookingLogic = (isOpen, onClose) => {
   const filteredDestinations = destinations.filter(dest =>
     dest.toLowerCase().includes(selectedDestination.toLowerCase())
   );
+
+  // Local packages require a valid ID; international packages require ID + Passport.
+  const isInternational = isInternationalPackage(selectedPackage);
 
   // ─────────────────────────────────────────────────────────────────────────
   //  CALCULATION FUNCTIONS
@@ -331,6 +337,34 @@ export const useBookingLogic = (isOpen, onClose) => {
       passengers: prev.passengers.map((p, i) => i === index ? { ...p, [field]: value } : p),
     }));
 
+  const handleFileUpload = (index, type, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+    const fileField     = type === 'id' ? 'idFile'     : 'passportFile';
+    const fileNameField = type === 'id' ? 'idFileName' : 'passportFileName';
+    setFormData(prev => ({
+      ...prev,
+      passengers: prev.passengers.map((p, i) =>
+        i === index ? { ...p, [fileField]: file, [fileNameField]: file.name } : p
+      ),
+    }));
+  };
+
+  const removeFile = (index, type) => {
+    const fileField     = type === 'id' ? 'idFile'     : 'passportFile';
+    const fileNameField = type === 'id' ? 'idFileName' : 'passportFileName';
+    setFormData(prev => ({
+      ...prev,
+      passengers: prev.passengers.map((p, i) =>
+        i === index ? { ...p, [fileField]: null, [fileNameField]: '' } : p
+      ),
+    }));
+  };
+
   const handleDateOfBirthChange = (index, dateValue) => {
     updatePassenger(index, 'dateOfBirth', dateValue);
     if (dateValue) {
@@ -457,6 +491,15 @@ export const useBookingLogic = (isOpen, onClose) => {
       toast.error('Passenger 1 must be at least 18 years old to book.');
       return;
     }
+    const primaryPassenger = formData.passengers?.[0];
+    if (!primaryPassenger?.idFile) {
+      toast.error('Please upload a valid ID for the primary passenger');
+      return;
+    }
+    if (isInternational && !primaryPassenger?.passportFile) {
+      toast.error('Please upload a valid passport for the primary passenger');
+      return;
+    }
     setShowConfirm(false);
     setLoading(true);
 
@@ -550,6 +593,11 @@ export const useBookingLogic = (isOpen, onClose) => {
       const formPayload = new FormData();
       formPayload.append('bookingData', JSON.stringify(bookingData));
 
+      formData.passengers.forEach((p, i) => {
+        if (p.idFile instanceof File) formPayload.append(`idFile_${i}`, p.idFile);
+        if (p.passportFile instanceof File) formPayload.append(`passportFile_${i}`, p.passportFile);
+      });
+
       const bookingRes    = await fetch(`${API_BASE}/api/bookings`, { method: 'POST', body: formPayload });
       const bookingResult = await bookingRes.json();
       if (!bookingResult.success) throw new Error(bookingResult.message || 'Failed to create booking');
@@ -625,6 +673,7 @@ export const useBookingLogic = (isOpen, onClose) => {
 
     // Derived
     isRestrictedDestination,
+    isInternational,
     filteredDestinations,
     payableAmount,
 
@@ -644,6 +693,8 @@ export const useBookingLogic = (isOpen, onClose) => {
     // Handlers
     updateField,
     updatePassenger,
+    handleFileUpload,
+    removeFile,
     handleDateOfBirthChange,
     handleDobPartChange,
     handlePackageTypeDetect,

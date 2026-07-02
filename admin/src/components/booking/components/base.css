@@ -96,25 +96,65 @@
 
 /* ── Header ── */
 .nbm-header {
-  padding: 14px 24px;
-  border-bottom: 1px solid var(--nbm-border);
+  padding: 18px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #fff7ed 100%);
+  background: linear-gradient(135deg, var(--nbm-dark), var(--nbm-mid));
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
+  z-index: 2;
 }
 
 .nbm-header::after {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 2px;
+  height: 3px;
   background: linear-gradient(90deg, var(--nbm-amber), var(--nbm-amber-light), transparent 80%);
-  opacity: 0.7;
 }
+
+.nbm-header::before {
+  content: '';
+  position: absolute;
+  top: -60%; right: -8%;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.12);
+  pointer-events: none;
+}
+
+.nbm-header-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+  position: relative;
+  z-index: 1;
+}
+
+.nbm-header-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+  transition: background 0.15s, transform 0.2s;
+}
+
+.nbm-header-close:hover { background: rgba(255, 255, 255, 0.2); transform: rotate(90deg); }
 
 /* ── Progress Bar ── */
 .nbm-progress {

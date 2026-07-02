@@ -1,4 +1,5 @@
 import React from 'react';
+import { CreditCard, Wallet } from 'lucide-react';
 import HotelRoomSelector from './hotelRoomSelector';
 
 const BookingStep2 = ({
@@ -142,70 +143,127 @@ const BookingStep2 = ({
       </div>
 
       {/* ── Payment Type ── */}
-      <div className="nbm-field" style={{ marginTop: '20px' }}>
-        <label>Payment Type</label>
-        <select
-          value={formData.paymentType}
-          onChange={e => updateField('paymentType', e.target.value)}
-        >
-          <option value="full">Pay in Full</option>
-          <option value="partial">Partial Payment</option>
-        </select>
-      </div>
+      <div style={{ marginTop: '20px' }}>
+        <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: '#374151', marginBottom: '10px' }}>
+          Payment Option
+        </label>
 
-      {formData.paymentType === 'partial' && (
-        <div className="nbm-field" style={{ marginTop: '12px' }}>
-          <label>
-            Initial Payment Amount (₱)
-            <span style={{ fontSize: '0.85rem', color: '#f59e0b', fontWeight: 600 }}>
-              {' '}— 50% of Total (auto)
-            </span>
-          </label>
-          <input
-            type="number"
-            value={formData.initialPaymentAmount}
-            readOnly
-            style={{ backgroundColor: '#f8fafc', color: '#0f172a', cursor: 'not-allowed' }}
-          />
+        <div className="tbfm-payment-options">
+          {/* Full Payment */}
+          <div
+            className={`tbfm-payment-card ${formData.paymentType === 'full' ? 'active' : ''}`}
+            onClick={() => updateField('paymentType', 'full')}
+          >
+            <div className="tbfm-payment-card-header">
+              <div className="tbfm-payment-radio">
+                <div className={`tbfm-radio-dot ${formData.paymentType === 'full' ? 'active' : ''}`} />
+              </div>
+              <div className="tbfm-payment-card-title">
+                <CreditCard size={15} className="tbfm-card-icon" />
+                <span>Pay in Full</span>
+                <span className="tbfm-badge tbfm-badge-popular">Most Popular</span>
+              </div>
+            </div>
+            <div className="tbfm-payment-card-body">
+              <div className="tbfm-payment-amount">
+                ₱{computeFinalTotal().toLocaleString()}
+              </div>
+              <p className="tbfm-payment-description">Complete payment now and secure your booking</p>
+              <ul className="tbfm-payment-benefits">
+                <li>Instant confirmation</li>
+                <li>No further payments needed</li>
+                <li>Priority processing</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Partial Payment */}
+          <div
+            className={`tbfm-payment-card ${formData.paymentType === 'partial' ? 'active' : ''}`}
+            onClick={() => updateField('paymentType', 'partial')}
+          >
+            <div className="tbfm-payment-card-header">
+              <div className="tbfm-payment-radio">
+                <div className={`tbfm-radio-dot ${formData.paymentType === 'partial' ? 'active' : ''}`} />
+              </div>
+              <div className="tbfm-payment-card-title">
+                <Wallet size={15} className="tbfm-card-icon" />
+                <span>Partial Payment</span>
+                <span className="tbfm-badge tbfm-badge-flexible">Flexible</span>
+              </div>
+            </div>
+            <div className="tbfm-payment-card-body">
+              <div className="tbfm-payment-amount">
+                ₱{Math.round(computeFinalTotal() / 2).toLocaleString()}
+                <span className="tbfm-payment-percentage">50% Down Payment</span>
+              </div>
+              <p className="tbfm-payment-description">Pay 50% now, remaining balance before departure</p>
+              <div className="tbfm-payment-breakdown">
+                <div className="tbfm-breakdown-row">
+                  <span>Now (50%):</span>
+                  <strong>₱{Math.round(computeFinalTotal() / 2).toLocaleString()}</strong>
+                </div>
+                <div className="tbfm-breakdown-row">
+                  <span>Later (50%):</span>
+                  <strong>₱{(computeFinalTotal() - Math.round(computeFinalTotal() / 2)).toLocaleString()}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Payment Summary */}
+        <div className="tbfm-payment-summary">
+          <div className="tbfm-summary-row">
+            <span>Amount to pay now:</span>
+            <strong className="tbfm-amount-highlight">₱{payableAmount.toLocaleString()}</strong>
+          </div>
+          {formData.paymentType === 'partial' && (
+            <div className="tbfm-summary-row tbfm-remaining">
+              <span>Remaining balance:</span>
+              <span>₱{(computeFinalTotal() - payableAmount).toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
 
     {/* ── Total Summary ── */}
     <div className="nbm-total-box">
-      <div className="nbm-total-row">
-        <span>Package Total</span>
-        <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+      <div className="nbm-total-heading">Cost Breakdown</div>
+
+      <div className="nbm-total-itemized">
+        <div className="nbm-total-row">
+          <span>Package Total</span>
+          <span>₱{calculateBasePackageTotal().toLocaleString()}</span>
+        </div>
+
+        {appliedPromo && (
+          <div className="nbm-total-row nbm-total-row-discount">
+            <span>Promo Discount ({appliedPromo.code})</span>
+            <span>-₱{calculateDiscount().toLocaleString()}</span>
+          </div>
+        )}
+
+        {selectedRoomType && calculateHotelTotal() > 0 && (
+          <div className="nbm-total-row">
+            <span>Hotel Accommodation</span>
+            <span>₱{calculateHotelTotal().toLocaleString()}</span>
+          </div>
+        )}
       </div>
 
-      {appliedPromo && (
-        <div className="nbm-total-row" style={{ color: '#10b981', fontSize: '0.95rem' }}>
-          <span>- Promo Discount ({appliedPromo.code})</span>
-          <span>-₱{calculateDiscount().toLocaleString()}</span>
-        </div>
-      )}
-
-      {selectedRoomType && (
-        <div className="nbm-total-row" style={{ fontSize: '0.95rem', color: '#64748b' }}>
-          <span>Hotel Accommodation</span>
-          <span>₱{calculateHotelTotal().toLocaleString()}</span>
-        </div>
-      )}
-
-      <div className="nbm-total-row nbm-total-final">
-        <strong>
-          {formData.paymentType === 'partial' ? 'INITIAL PAYMENT DUE NOW (50%)' : 'FINAL TOTAL'}
-        </strong>
-        <strong>₱{payableAmount.toLocaleString()}</strong>
+      <div className="nbm-total-final">
+        <span className="nbm-total-final-label">
+          {formData.paymentType === 'partial' ? 'Initial Payment Due Now (50%)' : 'Final Total'}
+        </span>
+        <span className="nbm-total-final-amount">₱{payableAmount.toLocaleString()}</span>
       </div>
 
       {formData.paymentType === 'partial' && (
-        <p style={{
-          textAlign: 'right', fontSize: '0.85rem',
-          color: '#64748b', marginTop: '8px', fontWeight: 600,
-        }}>
-          (50% deposit • Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure)
-        </p>
+        <div className="nbm-total-note">
+          50% deposit &bull; Balance ₱{(computeFinalTotal() - payableAmount).toLocaleString()} due before departure
+        </div>
       )}
     </div>
   </div>

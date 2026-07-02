@@ -814,6 +814,140 @@ const sendCustomBookingToGHL = async (booking, overrides = {}) => {
   return result;
 };
 
+// ============================================================
+// ✅ NEW: Send Package Booking data to GHL (partial payment only)
+//
+// Fires only for walk-in/sales package bookings paid via partial
+// payment — mirrors sendTourBookingToGHL's shape but reads from the
+// package Booking model. Posts to the shared booking automation webhook.
+// ============================================================
+const sendPackageBookingToGHL = async (booking, overrides = {}) => {
+  const b = booking || {};
+  const fullName  = b.fullName || '';
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const paxAdult  = b.pax?.adult    || 0;
+  const paxChild  = b.pax?.children || 0;
+  const paxInfant = b.pax?.infants  || 0;
+  const paxTotal  = paxAdult + paxChild + paxInfant;
+
+  const passengersFormatted = Array.isArray(b.passengers) && b.passengers.length > 0
+    ? b.passengers
+        .map((p, i) => `Passenger ${i + 1}: ${p.firstName || ''} ${p.lastName || ''}`.trim())
+        .join('\n')
+    : '';
+
+  const totalAmount = b.totalAmount || 0;
+
+  const data = {
+    // ── Meta ──────────────────────────────────────────────────
+    type:      'PACKAGE_BOOKING',
+    bookingTypeLabel: 'Package Booking',
+    event:     'package_booking_created',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    // ── Booking identity ──────────────────────────────────────
+    bookingId:        b._id ? b._id.toString() : '',
+    booking_id:       b._id ? b._id.toString() : '',
+    referenceNumber:  b.referenceNumber || '',
+    reference_number: b.referenceNumber || '',
+    bookingType:      'package',
+    createdByType:    b.createdByType || 'sales',
+    status:           b.status        || 'pending',
+    isArchive:        b.isArchive     || 'No',
+    booking_created_at: b.createdAt ? new Date(b.createdAt).toISOString() : '',
+
+    // ── Package listing ─────────────────────────────────────────
+    packageId:    b.packageId ? b.packageId.toString() : '',
+    packageName:  b.packageName || '',
+    package_name: b.packageName || '',
+    service:      b.packageName || '',
+    serviceName:  b.packageName || '',
+    bookingName:  b.packageName || '',
+    duration:     b.duration    || '',
+
+    // ── Schedule ─────────────────────────────────────────────
+    startDate:    b.startDate || '',
+    start_date:   b.startDate || '',
+    travel_start: b.startDate || '',
+    endDate:      b.endDate   || '',
+    end_date:     b.endDate   || '',
+    travel_end:   b.endDate   || '',
+    travel_dates: `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
+
+    // ── Contact details ───────────────────────────────────────
+    fullName,
+    name:            fullName,
+    first_name:      firstName,
+    last_name:       lastName,
+    email:           b.email || '',
+    message:         b.message || '',
+
+    // ── Passengers ────────────────────────────────────────────
+    passengerCount:  paxTotal,
+    passenger_count: paxTotal,
+    pax:             paxTotal,
+    pax_adult:       paxAdult,
+    pax_child:       paxChild,
+    pax_infant:      paxInfant,
+    pax_total:       paxTotal,
+    passengers_list: passengersFormatted,
+
+    // ── Accommodation ─────────────────────────────────────────
+    selected_room_type: b.selectedRoomType || '',
+    hotel_name:         b.hotelName        || '',
+    number_of_rooms:    b.numberOfRooms    || '',
+
+    // ── Pricing ───────────────────────────────────────────────
+    packageTotal:    b.packageTotal    || 0,
+    package_total:   b.packageTotal    || 0,
+    discountAmount:  b.discountAmount  || 0,
+    discount_amount: b.discountAmount  || 0,
+    airfareTotal:    b.airfareTotal    || 0,
+    airfare_total:   b.airfareTotal    || 0,
+    includesAirfare: b.includesAirfare ? 'Yes' : 'No',
+    includes_airfare:b.includesAirfare ? 'Yes' : 'No',
+    totalAmount:     totalAmount,
+    total_amount:    totalAmount,
+    totalAmountFormatted: `₱${(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    // ── Payment ───────────────────────────────────────────────
+    paymentType:            b.paymentType          || 'full',
+    payment_type:           b.paymentType          || 'full',
+    initialPaymentAmount:   b.initialPaymentAmount || 0,
+    initial_payment_amount: b.initialPaymentAmount || 0,
+    remainingBalance:       b.remainingBalance      || 0,
+    remaining_balance:      b.remainingBalance      || 0,
+
+    // ── Promo ─────────────────────────────────────────────────
+    promoCode:  b.promoCode || '',
+    promo_code: b.promoCode || '',
+
+    // ── Booking date ──────────────────────────────────────────
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+
+    // ── Caller-supplied overrides ──────────────────────────────
+    ...overrides,
+  };
+
+  console.log('📤 Sending PACKAGE_BOOKING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_BOOKING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('❌ Failed to send package booking to GHL:', result.error);
+  } else {
+    console.log(`✅ Package booking "${b._id}" synced to GHL successfully.`);
+  }
+
+  return result;
+};
+
 module.exports = {
   sendNewUserToGHL,
   sendInquiryToGHL,
@@ -822,4 +956,5 @@ module.exports = {
   sendTransferBookingToGHL, // ✅ New export
   sendTourBookingToGHL,     // ✅ New export
   sendCustomBookingToGHL,   // ✅ New export
+  sendPackageBookingToGHL,  // ✅ New export
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Upload, CheckCircle, IdCard, X } from 'lucide-react';
 
 const MONTHS = [
   'January','February','March','April','May','June',
@@ -9,18 +10,46 @@ const PassengerCard = ({
   passenger: p,
   index: i,
   updatePassenger,
+  handleFileUpload,
+  removeFile,
+  openCropper,
   handleDobPartChange,
   totalPassengers,
   removePassenger,
   isSoloPkg,
   isMinTwoPkg,
-}) => (
+  isInternational,
+}) => {
+  const isPrimary = i === 0;
+
+  const onPickFile = (type) => (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = null;
+    if (file.type.startsWith('image/')) {
+      openCropper(i, type, file);
+    } else {
+      handleFileUpload(i, type, { target: { files: [file] } });
+    }
+  };
+
+  return (
   <div className="nbm-passenger-card">
 
     {/* Heading */}
     <div className="nbm-passenger-heading">
       <div className="nbm-passenger-num">{i + 1}</div>
       <span className="nbm-passenger-label">Passenger {i + 1}</span>
+      {isPrimary && <span className="nbm-passenger-primary-badge">Primary Contact</span>}
+      {totalPassengers > 1 && (
+        <button
+          onClick={() => removePassenger(i)}
+          className="nbm-passenger-remove-btn"
+          aria-label={`Remove Passenger ${i + 1}`}
+        >
+          <X size={16} />
+        </button>
+      )}
     </div>
 
     {/* Row 1: First Name + Last Name */}
@@ -175,20 +204,88 @@ const PassengerCard = ({
       />
     </div>
 
-    {/* Remove button */}
-    {totalPassengers > 1 && (
-      <button
-        onClick={() => removePassenger(i)}
-        style={{
-          marginTop: '14px', color: '#ef4444', fontSize: '0.82rem', fontWeight: 600,
-          background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px',
-          padding: '6px 14px', cursor: 'pointer', fontFamily: 'Plus Jakarta Sans, sans-serif',
-        }}
-      >
-        ✕ Remove Passenger {i + 1}
-      </button>
+    {/* Documents sub-section */}
+    <div className="nbm-passenger-subsection-title">
+      <IdCard size={14} /> Travel Documents
+    </div>
+
+    {/* ID Upload — required for all passengers */}
+    <div className="nbm-pfield" style={{ marginTop: '12px' }}>
+      <label>
+        Upload Valid ID {isPrimary && <span style={{ color: '#ef4444' }}>*</span>}
+        <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem', marginLeft: 6 }}>
+          (Driver's License, UMID, SSS, Postal ID, etc.)
+        </span>
+      </label>
+
+      {p.idFileName ? (
+        <div className="nbm-file-uploaded">
+          <div className="nbm-file-info">
+            <CheckCircle size={18} color="#22c55e" />
+            <span className="nbm-file-name">{p.idFileName}</span>
+          </div>
+          <button type="button" onClick={() => removeFile(i, 'id')} className="nbm-remove-file-btn">
+            Remove
+          </button>
+        </div>
+      ) : (
+        <div className="nbm-file-upload-box">
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={onPickFile('id')}
+            id={`nbm-id-upload-${i}`}
+            style={{ display: 'none' }}
+          />
+          <label htmlFor={`nbm-id-upload-${i}`} className="nbm-file-upload-label">
+            <Upload size={24} color="#94a3b8" />
+            <span className="nbm-upload-text">Click to upload ID</span>
+            <span className="nbm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+          </label>
+        </div>
+      )}
+    </div>
+
+    {/* Passport Upload — required only for international packages */}
+    {isInternational && (
+      <div className="nbm-pfield" style={{ marginTop: '12px' }}>
+        <label>
+          Upload Passport {isPrimary && <span style={{ color: '#ef4444' }}>*</span>}
+          <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: '0.78rem', marginLeft: 6 }}>
+            (Bio-data page with photo)
+          </span>
+        </label>
+
+        {p.passportFileName ? (
+          <div className="nbm-file-uploaded">
+            <div className="nbm-file-info">
+              <CheckCircle size={18} color="#22c55e" />
+              <span className="nbm-file-name">{p.passportFileName}</span>
+            </div>
+            <button type="button" onClick={() => removeFile(i, 'passport')} className="nbm-remove-file-btn">
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="nbm-file-upload-box">
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={onPickFile('passport')}
+              id={`nbm-passport-upload-${i}`}
+              style={{ display: 'none' }}
+            />
+            <label htmlFor={`nbm-passport-upload-${i}`} className="nbm-file-upload-label">
+              <Upload size={24} color="#94a3b8" />
+              <span className="nbm-upload-text">Click to upload Passport</span>
+              <span className="nbm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+            </label>
+          </div>
+        )}
+      </div>
     )}
   </div>
-);
+  );
+};
 
 export default PassengerCard;

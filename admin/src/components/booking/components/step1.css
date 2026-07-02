@@ -51,6 +51,15 @@
 .nbm-grid-align-start { align-items: start; }
 
 /* ── Destination Searchable Dropdown ── */
+.nbm-field {
+  position: relative;
+  z-index: 1;
+}
+
+.nbm-field:focus-within {
+  z-index: 5000;
+}
+
 .nbm-dest-dropdown {
   position: absolute;
   top: calc(100% + 6px);
@@ -61,8 +70,8 @@
   border-radius: 12px;
   max-height: 240px;
   overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.12);
+  z-index: 5000;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.18);
   scrollbar-width: thin;
   scrollbar-color: var(--nbm-amber) #f1f5f9;
   animation: dropdownIn 0.18s ease;
@@ -87,244 +96,464 @@
   padding-left: 22px;
 }
 
-/* ── Trip Configuration Card ── */
-.nbm-tripconfig-card {
-  margin-top: 14px;
-  border-radius: 16px;
-  border: 1.5px solid #e8eef5;
-  background: #ffffff;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
-  transition: border-color 0.25s, box-shadow 0.25s;
-}
-
-.nbm-tripconfig-card:focus-within {
-  border-color: rgba(245, 158, 11, 0.40);
-  box-shadow: 0 6px 28px rgba(245, 158, 11, 0.10);
-}
-
-.nbm-tripconfig-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  background: linear-gradient(135deg, #f8fafc 0%, #fff7ed 100%);
-  border-bottom: 1.5px solid #edf2f7;
-}
-
-.nbm-tripconfig-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #f59e0b, #fc9c1b);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
-  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.30);
-}
-
-.nbm-tripconfig-title {
-  font-weight: 700;
-  font-size: 0.98rem;
-  color: #0f172a;
-  line-height: 1.2;
-}
-
-.nbm-tripconfig-sub {
-  font-size: 0.78rem;
-  color: #94a3b8;
-  margin-top: 1px;
-}
-
-.nbm-tripconfig-grid {
-  display: flex;
-  align-items: stretch;
-  padding: 0;
-  gap: 0;
-}
-
-.nbm-tripconfig-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex: 1;
-  padding: 16px 20px;
-  text-align: center;
-}
-
-.nbm-tripconfig-divider {
-  width: 1px;
-  background: #e2e8f0;
-  margin: 12px 0;
-  align-self: stretch;
-  flex-shrink: 0;
-}
-
-.nbm-tripconfig-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+/* ── Package Custom Dropdown ── */
+.nbm-pkg-trigger {
   width: 100%;
-}
-
-.nbm-tripconfig-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.nbm-tripconfig-hint {
-  font-size: 0.73rem;
-  color: #b0bcc9;
-  margin-top: 0;
-  text-align: center;
-}
-
-/* ── Pax Stepper ── */
-.nbm-pax-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  overflow: hidden;
-  width: fit-content;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.nbm-pax-stepper:focus-within {
-  border-color: var(--nbm-amber);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
-}
-
-.nbm-pax-stepper-btn {
-  width: 36px;
-  height: 40px;
-  border: none;
-  background: #ffffff;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.18s ease;
-  flex-shrink: 0;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-.nbm-pax-stepper-btn:hover:not(:disabled) { background: #fff7ed; color: var(--nbm-amber); }
-.nbm-pax-stepper-btn:active:not(:disabled) { transform: scale(0.9); }
-.nbm-pax-stepper-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.nbm-pax-stepper-btn:first-child { border-right: 1.5px solid #e2e8f0; }
-.nbm-pax-stepper-btn:last-child  { border-left:  1.5px solid #e2e8f0; }
-
-.nbm-pax-stepper-val {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-  min-width: 52px;
-  height: 40px;
-  background: #fff;
-}
-
-.nbm-pax-stepper-num  { font-size: 1.2rem; font-weight: 800; color: #0f172a; line-height: 1; }
-.nbm-pax-stepper-unit { font-size: 0.65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
-
-/* ── Date Input Wrapper ── */
-.nbm-tripconfig-date-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  height: 40px;
-  overflow: hidden;
-  width: 100%;
-}
-
-.nbm-tripconfig-date-wrap:focus-within {
-  border-color: var(--nbm-amber);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
-  background: #fffdf7;
-}
-
-.nbm-tripconfig-date-icon  { font-size: 16px; flex-shrink: 0; line-height: 1; }
-
-.nbm-tripconfig-date-input {
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  font-size: 0.95rem !important;
-  font-weight: 600 !important;
-  color: #0f172a !important;
-  width: 100% !important;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  outline: none !important;
-  cursor: pointer;
-  height: 100%;
-}
-
-.nbm-tripconfig-restrict {
-  margin-top: 8px;
-  font-size: 0.78rem;
-  color: #92400e;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 8px;
-  padding: 6px 10px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* ── Date Preview Strip ── */
-.nbm-tripconfig-datestrip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 18px 16px;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, #fff7ed, #fefce8);
-  border: 1.5px solid #fcd34d;
-  border-radius: 12px;
-  animation: cardFadeIn 0.3s ease;
+  gap: 10px;
+  padding: 13px 16px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: border-color 0.22s, box-shadow 0.22s, background 0.2s;
+  box-sizing: border-box;
 }
 
-.nbm-tripconfig-datestrip-item     { display: flex; align-items: center; gap: 10px; }
-.nbm-tripconfig-datestrip-emoji    { font-size: 20px; line-height: 1; }
-.nbm-tripconfig-datestrip-label    { font-size: 0.7rem; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.06em; }
-.nbm-tripconfig-datestrip-val      { font-size: 0.92rem; font-weight: 700; color: #0f172a; margin-top: 1px; }
-.nbm-tripconfig-datestrip-arrow    { font-size: 1.3rem; color: #f59e0b; font-weight: 300; flex-shrink: 0; }
-.nbm-tripconfig-datestrip-pill     { background: var(--nbm-amber); color: #fff; padding: 5px 14px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.30); }
+.nbm-pkg-trigger:hover { border-color: #b0bcc9; }
 
-/* ── Pax Solo Display ── */
-.nbm-pax-solo {
-  padding: 14px 20px;
-  background: #f0fdf4;
-  border: 1.5px solid #bbf7d0;
+.nbm-pkg-trigger-value {
+  font-size: 0.97rem;
+  color: var(--nbm-dark);
+  font-weight: 600;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nbm-pkg-trigger-placeholder {
+  font-size: 0.97rem;
+  color: #b8c1cc;
+  font-style: italic;
+}
+
+.nbm-pkg-trigger-icon { color: #64748b; flex-shrink: 0; transition: transform 0.2s, color 0.2s; }
+.nbm-pkg-trigger-icon.open { transform: rotate(180deg); color: var(--nbm-amber); }
+.nbm-pkg-trigger:hover .nbm-pkg-trigger-icon { color: var(--nbm-amber); }
+
+.nbm-pkg-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid var(--nbm-border);
+  border-radius: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 5000;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.18);
+  scrollbar-width: thin;
+  scrollbar-color: var(--nbm-amber) #f1f5f9;
+  animation: dropdownIn 0.18s ease;
+}
+
+.nbm-pkg-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f8fafc;
+  transition: background 0.12s;
+}
+
+.nbm-pkg-option:last-child { border-bottom: none; }
+.nbm-pkg-option:hover { background: #fff7ed; }
+.nbm-pkg-option.selected { background: #fff7ed; }
+
+.nbm-pkg-option-icon { color: var(--nbm-amber); flex-shrink: 0; }
+
+.nbm-pkg-option-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nbm-pkg-option-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nbm-pkg-option-price {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--nbm-light-slate);
+}
+
+.nbm-pkg-option-check { color: var(--nbm-amber); flex-shrink: 0; }
+
+/* ── Trip Details: Departure Date + Package Details split ── */
+.nbm-tripconfig-body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.nbm-tripconfig-body-split {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.nbm-tripconfig-cal-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nbm-tripconfig-cal-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nbm-tdcal { width: 100%; flex: 1; display: flex; flex-direction: column; }
+
+/* Hero photo + travel-dates overlay badge, sits above the calendar header */
+.nbm-tdcal-hero {
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  line-height: 0;
+  margin-bottom: 14px;
+}
+
+.nbm-tdcal-hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 160px;
+  object-fit: cover;
+}
+
+.nbm-tdcal-hero-datebadge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(3px);
   border-radius: 10px;
-  text-align: center;
-  font-size: 1.05rem;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+}
+
+.nbm-tdcal-hero-datebadge svg { flex-shrink: 0; }
+
+.nbm-tdcal-hero-datebadge-range {
+  display: block;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #166534;
+  line-height: 1.2;
+}
+
+.nbm-tdcal-hero-datebadge-sub {
+  display: block;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* ── Inline Trip Date Calendar ── */
+.nbm-tdcal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.nbm-tdcal-month-year {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--nbm-dark);
+  text-align: center;
+}
+
+.nbm-tdcal-nav-btn {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.nbm-tdcal-nav-btn:hover {
+  background: var(--nbm-amber);
+  border-color: var(--nbm-amber);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.nbm-tdcal-selected-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.nbm-tdcal-selected-icon { color: #1d4ed8; flex-shrink: 0; }
+.nbm-tdcal-selected-range { font-weight: 700; color: #1e3a5f; font-size: 0.9rem; }
+.nbm-tdcal-selected-sub { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+
+.nbm-tdcal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 6px;
+  flex: 1;
+}
+
+.nbm-tdcal-weekday {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 0 8px;
+}
+
+.nbm-tdcal-day {
+  width: 100%;
+  height: 100%;
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.nbm-tdcal-day:not(.disabled):hover {
+  background: #fff7ed;
+  border-color: var(--nbm-amber);
+  transform: translateY(-1px);
+}
+
+.nbm-tdcal-day.in-range {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border-color: #fbbf24;
+}
+
+.nbm-tdcal-day.today {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.nbm-tdcal-day.selected {
+  background: linear-gradient(135deg, var(--nbm-dark), var(--nbm-mid));
+  color: #fff;
+  font-weight: 800;
+  border-color: var(--nbm-dark);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+  transform: scale(1.05);
+}
+
+.nbm-tdcal-day.disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ── Package Details Panel (right side of Trip Configuration) ── */
+.nbm-pkgdetails-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nbm-pkgdetails-toprow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.nbm-pkgdetails-title-wrap {
+  padding-bottom: 12px;
+  border-bottom: 2px solid #fde68a;
+  position: relative;
+}
+
+.nbm-pkgdetails-title-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 48px;
+  height: 2px;
+  background: var(--nbm-amber);
+}
+
+.nbm-pkgdetails-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #001b3e;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.nbm-pkgdetails-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.nbm-pkgdetails-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.nbm-pkgdetails-row:hover { background: var(--nbm-bg); }
+
+.nbm-pkgdetails-row:last-child { border-bottom: none; }
+
+.nbm-pkgdetails-row-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--nbm-amber-pale);
+  color: var(--nbm-amber);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nbm-pkgdetails-row-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--nbm-light-slate);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.nbm-pkgdetails-row strong { color: var(--nbm-dark); font-weight: 700; }
+
+.nbm-pkgdetails-price {
+  font-size: 1.15rem !important;
+  color: var(--nbm-amber) !important;
+}
+
+.nbm-pkgdetails-price-suffix {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--nbm-light-slate);
+}
+
+/* Inclusions checklist */
+.nbm-pkgdetails-inclusions {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.nbm-pkgdetails-inclusions-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.nbm-pkgdetails-inclusions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nbm-pkgdetails-inclusions-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #1e3a5f;
+}
+
+.nbm-pkgdetails-inclusions-list li svg { color: #16a34a; flex-shrink: 0; }
+
+/* Remarks notice */
+.nbm-pkgdetails-remarks {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.nbm-pkgdetails-remarks-icon { color: #d97706; flex-shrink: 0; margin-top: 2px; }
+
+.nbm-pkgdetails-remarks-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.nbm-pkgdetails-remarks-text {
+  font-size: 0.82rem;
+  color: #78350f;
 }
 
 /* ── Pax Counter (legacy — kept for any reuse) ── */
@@ -343,33 +572,73 @@
 
 /* ── Total Summary Box ── */
 .nbm-total-box {
-  background: linear-gradient(135deg, #fff7ed, #fefce8);
-  border: 2px solid #fc9c1b;
+  background: #fff;
+  border: 1.5px solid var(--nbm-border);
   border-radius: var(--nbm-radius);
-  padding: 16px 20px;
+  padding: 18px 20px;
   margin: 16px 0 0;
-  box-shadow: 0 4px 22px rgba(245, 158, 11, 0.09);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
   animation: cardFadeIn 0.3s ease;
+}
+
+.nbm-total-heading {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--nbm-light-slate);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.nbm-total-itemized {
+  display: flex;
+  flex-direction: column;
 }
 
 .nbm-total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
-  color: #374151;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: var(--nbm-slate);
 }
 
-.nbm-total-row:last-child { margin-bottom: 0; }
+.nbm-total-itemized .nbm-total-row:last-child { border-bottom: none; }
+
+.nbm-total-row-discount { color: #16a34a; }
+.nbm-total-row-discount span:last-child { font-weight: 700; }
 
 .nbm-total-final {
-  border-top: 2px solid #fc9c1b;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-top: 2px solid var(--nbm-amber);
   padding-top: 14px;
-  margin-top: 4px;
-  font-size: 1.25rem !important;
+  margin-top: 10px;
+}
+
+.nbm-total-final-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--nbm-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.nbm-total-final-amount {
+  font-size: 1.5rem;
   font-weight: 800;
-  color: var(--nbm-amber) !important;
+  color: var(--nbm-amber);
+}
+
+.nbm-total-note {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--nbm-light-slate);
+  font-weight: 600;
+  margin-top: 8px;
 }
 
 /* ── Responsive: Tablet ── */
@@ -406,8 +675,11 @@
   .nbm-step-label { display: none; }
 }
 
-/* ── Responsive: Trip Config Card ── */
+/* ── Responsive: Trip Details split layout ── */
+@media (max-width: 680px) {
+  .nbm-tripconfig-body-split { flex-direction: column; }
+}
+
 @media (max-width: 540px) {
-  .nbm-tripconfig-grid    { flex-direction: column; }
-  .nbm-tripconfig-divider { width: 100%; height: 1px; margin: 0; }
+  .nbm-tdcal-day { font-size: 0.8rem; }
 }
