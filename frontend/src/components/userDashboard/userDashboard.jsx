@@ -109,11 +109,11 @@ const UserDashboardInner = ({ user, onLogout }) => {
 
             let combinedData = [];
 
-            if (inquiriesData.success) {
+            if (inquiriesData?.success) {
                 combinedData = [...combinedData, ...inquiriesData.data];
             }
 
-            if (bookingsData.success) {
+            if (bookingsData?.success) {
                 const formattedBookings = bookingsData.data.map(booking => ({
                     ...booking,
                     serviceName: booking.packageName, 
@@ -126,7 +126,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 combinedData = [...combinedData, ...formattedBookings];
             }
 
-            if (tourBookingsData.success) {
+            if (tourBookingsData?.success) {
                 const formattedTourBookings = tourBookingsData.data.map(booking => ({
                     ...booking,
                     serviceName: booking.packageName,
@@ -140,7 +140,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
             }
 
             // ── Format & merge transfer bookings ─────────────────────
-            if (transferBookingsData.success) {
+            if (transferBookingsData?.success) {
                 const formattedTransferBookings = transferBookingsData.data.map(booking => ({
                     ...booking,
                     serviceName: booking.activityName,
@@ -154,7 +154,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
             }
 
             // ── NEW: Format & merge customized bookings ───────────────
-            if (customizedBookingsData.success) {
+            if (customizedBookingsData?.success) {
                 const formattedCustomizedBookings = customizedBookingsData.data.map(booking => ({
                     ...booking,
                     // serviceName shown in the sidebar card — use destination as the label

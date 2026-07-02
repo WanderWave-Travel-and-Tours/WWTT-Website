@@ -81,3 +81,15 @@ export const EMPTY_PASSENGER = {
 // Local packages require a valid ID; international packages require ID + Passport.
 export const isInternationalPackage = (pkg) =>
   (pkg?.category || '').toLowerCase().startsWith('internation');
+
+// Same destination allowlist as the customer-facing PackageCustomizer —
+// seller rates only exist (and are only reliably matchable) for these spots.
+const CUSTOMIZABLE_DESTINATIONS = [
+  'siargao', 'siquijor', 'bohol', 'cebu',
+  'el nido', 'coron', 'palawan', 'puerto princesa',
+];
+
+export const isCustomizableDestination = (destination) => {
+  const dest = (destination || '').toLowerCase().trim();
+  return CUSTOMIZABLE_DESTINATIONS.some(d => dest.includes(d));
+};

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users, Calendar, MapPin, Bed, CreditCard, FileText,
-  Eye, X, Download, Mail, Phone, Sparkles, Tag, Wallet,
+  Eye, X, Download, Mail, Phone, Sparkles, Tag, Wallet, CheckCircle,
 } from 'lucide-react';
 import CustomConfirmModal from '../../confirmationModal/CustomConfirmModal';
 
@@ -20,6 +20,7 @@ const BookingPreviewModal = ({
   formData,
   selectedRoomType,
   appliedPromo,
+  customizationData,
 
   // Add-ons
   selectedTourAddOns,
@@ -47,6 +48,18 @@ const BookingPreviewModal = ({
     s.setDate(s.getDate() + days - 1);
     return s.toISOString().split('T')[0];
   }, [departureDate, selectedPackage, getDurationDays]);
+
+  // Reflect the actual final inclusions the customer will receive — the
+  // customized list (checked items only) when customization was applied,
+  // otherwise the package's original inclusions as-is.
+  const finalInclusions = useMemo(() => {
+    if (customizationData?.inclusions) {
+      return customizationData.inclusions
+        .filter(inc => inc.isChecked)
+        .map(inc => ({ name: inc.name, isAdded: !inc.isOriginal }));
+    }
+    return (selectedPackage?.inclusions || []).map(name => ({ name, isAdded: false }));
+  }, [customizationData, selectedPackage]);
 
   // Build the doc list (ID / Passport) for a single passenger's locally-selected files
   const getPassengerDocs = (p, i) => {
@@ -150,6 +163,27 @@ const BookingPreviewModal = ({
             </div>
           </div>
         </div>
+
+        {/* Package Inclusions */}
+        {finalInclusions.length > 0 && (
+          <div className="nbm-preview-section">
+            <div className="nbm-preview-section-title">
+              <CheckCircle size={16} /> Inclusions
+              {customizationData && <span className="nbm-preview-pill">Customized</span>}
+            </div>
+            <div className="nbm-preview-card">
+              <ul className="nbm-preview-inclusions-list">
+                {finalInclusions.map((inc, idx) => (
+                  <li key={idx}>
+                    <CheckCircle size={14} />
+                    <span>{inc.name}</span>
+                    {inc.isAdded && <span className="nbm-preview-pill">Added</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         {/* Passenger Details — each with their own submitted documents */}
         <div className="nbm-preview-section">

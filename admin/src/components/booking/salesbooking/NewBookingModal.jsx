@@ -98,6 +98,9 @@ const NewBookingModal = ({ isOpen, onClose }) => {
               handleDobPartChange={b.handleDobPartChange}
               // Document requirements
               isInternational={b.isInternational}
+              // Package customization
+              customizationData={b.customizationData}
+              setCustomizationData={b.setCustomizationData}
               // Toast
               toast={toast}
             />
@@ -201,6 +204,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
           formData={b.formData}
           selectedRoomType={b.selectedRoomType}
           appliedPromo={b.appliedPromo}
+          customizationData={b.customizationData}
           selectedTourAddOns={b.selectedTourAddOns}
           selectedTransferAddOns={b.selectedTransferAddOns}
           transferTypes={b.transferTypes}
