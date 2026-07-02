@@ -498,6 +498,11 @@ export const useBookingLogic = (isOpen, onClose) => {
       toast.error('Passenger 1 must be at least 18 years old to book.');
       return;
     }
+    const primaryEmailInput = (formData.passengers?.[0]?.email || '').trim();
+    if (!primaryEmailInput || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(primaryEmailInput)) {
+      toast.error('Please enter a valid email for the primary passenger so the customer can view this booking in their account.');
+      return;
+    }
     const primaryPassenger = formData.passengers?.[0];
     if (!primaryPassenger?.idFile) {
       toast.error('Please upload a valid ID for the primary passenger');
@@ -565,8 +570,12 @@ export const useBookingLogic = (isOpen, onClose) => {
         addOnsTotal: calculateAddOnsTotal(),
       };
 
+      const primaryPax = formData.passengers[0] || {};
+
       const bookingData = {
         ...formData,
+        email:             primaryEmailInput,
+        fullName:          `${primaryPax.firstName || ''} ${primaryPax.lastName || ''}`.trim(),
         packageId:         selectedPackage?._id,
         price:             selectedPackage.price,
         finalPackageTotal: computeFinalTotal(),
