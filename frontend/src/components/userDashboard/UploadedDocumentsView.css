@@ -137,6 +137,11 @@
     background: #fafbfc;
 }
 
+.udv-passenger-section {
+    border-color: #bfdbfe;
+    background: #f0f7ff;
+}
+
 .udv-section-header {
     display: flex;
     justify-content: space-between;
@@ -144,6 +149,24 @@
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #e5e7eb;
+}
+
+.udv-passenger-section .udv-section-header {
+    border-bottom-color: #bfdbfe;
+}
+
+.udv-passenger-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.udv-passenger-number {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #1d4ed8;
 }
 
 .udv-section-header h3 {
@@ -160,6 +183,17 @@
     border-radius: 12px;
     font-size: 0.8rem;
     font-weight: 500;
+}
+
+.udv-doc-section-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
 }
 
 /* Documents Grid */
@@ -357,6 +391,134 @@
     font-size: 0.875rem;
     color: #92400e;
     line-height: 1.5;
+}
+
+/* ========================================
+   IMAGE PREVIEW MODAL
+   ======================================== */
+
+@keyframes udv-preview-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes udv-preview-pop { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.udv-preview-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9));
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: udv-preview-fade 0.25s ease;
+}
+
+.udv-preview-modal {
+    background: #f1f5f9;
+    border-radius: 20px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    display: inline-flex;
+    flex-direction: column;
+    max-width: min(90vw, 820px);
+    animation: udv-preview-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.udv-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(to bottom, #ffffff, #fafbfc);
+    border-radius: 20px 20px 0 0;
+}
+
+.udv-preview-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.udv-preview-header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #1e3a8a;
+}
+
+.udv-preview-header-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.udv-preview-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.udv-preview-name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 480px;
+}
+
+.udv-preview-close {
+    background: #e2e8f0;
+    border: none;
+    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.udv-preview-close:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+
+/* Padding is always even — image is naturally sized within fixed caps */
+.udv-preview-body {
+    padding: 20px;
+}
+
+.udv-preview-img {
+    display: block;
+    max-width: min(75vw, 780px);
+    max-height: 70vh;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
 }
 
 /* ========================================
