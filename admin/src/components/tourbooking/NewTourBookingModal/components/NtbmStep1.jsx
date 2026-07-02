@@ -1,7 +1,8 @@
 import React from 'react';
-import { MapPin, Users, CreditCard, Wallet } from 'lucide-react';
+import { MapPin, Users, CreditCard, Wallet, Clock, Tag, CheckCircle } from 'lucide-react';
 import TourCard from './TourCard';
 import PassengerCard from './PassengerCard';
+import TripDateCalendar from './TripDateCalendar';
 
 const NtbmStep1 = ({
   // Destination
@@ -20,6 +21,9 @@ const NtbmStep1 = ({
   setPaxCount,
   departureDate,
   handleDepartureDateChange,
+  isRestrictedDestination,
+  isDateAllowed,
+  getAllowedDayLabel,
 
   // Payment
   paymentType,
@@ -39,7 +43,11 @@ const NtbmStep1 = ({
   getDurationDays,
   computeEndDate,
   isDateTodayOrTomorrow,
+
+  // Toast (for date validation error)
+  toast,
 }) => {
+  const allowedDayLabel = getAllowedDayLabel();
   const filteredDests = destinations.filter(d =>
     d.toLowerCase().includes(selectedDestination.toLowerCase())
   );
@@ -98,8 +106,8 @@ const NtbmStep1 = ({
           </div>
         </div>
 
-        {/* Tour package list */}
-        {selectedDestination && filteredTours.length > 0 && (
+        {/* Tour package list — only once an exact destination has been chosen */}
+        {destinations.includes(selectedDestination) && filteredTours.length > 0 && (
           <div className="ntbm-field" style={{ marginTop: '16px' }}>
             <label>Tour Package <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="ntbm-tour-grid">
@@ -115,7 +123,7 @@ const NtbmStep1 = ({
           </div>
         )}
 
-        {selectedDestination && filteredTours.length === 0 && (
+        {destinations.includes(selectedDestination) && filteredTours.length === 0 && (
           <div style={{
             marginTop: '16px',
             padding: '20px',
@@ -139,41 +147,101 @@ const NtbmStep1 = ({
           </div>
 
           <div className="ntbm-card" style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
 
-              {/* Pax counter */}
-              <div>
-                <label className="ntbm-field-label">Number of Pax</label>
-                <div className="ntbm-pax-row">
-                  <button
-                    className="ntbm-pax-btn"
-                    onClick={() => { if (paxCount > 1) setPaxCount(p => p - 1); }}
-                    disabled={paxCount <= 1}
-                  >−</button>
-                  <span className="ntbm-pax-count">{paxCount}</span>
-                  <button
-                    className="ntbm-pax-btn"
-                    onClick={() => setPaxCount(p => p + 1)}
-                  >+</button>
-                </div>
-                <div style={{ marginTop: '8px', fontSize: '0.82rem', color: '#94a3b8' }}>
-                  Total: ₱{(selectedTour.price * paxCount).toLocaleString()}
-                </div>
+            {/* Pax counter */}
+            <div>
+              <label className="ntbm-field-label">Number of Pax</label>
+              <div className="ntbm-pax-row">
+                <button
+                  className="ntbm-pax-btn"
+                  onClick={() => { if (paxCount > 1) setPaxCount(p => p - 1); }}
+                  disabled={paxCount <= 1}
+                >−</button>
+                <span className="ntbm-pax-count">{paxCount}</span>
+                <button
+                  className="ntbm-pax-btn"
+                  onClick={() => setPaxCount(p => p + 1)}
+                >+</button>
               </div>
+            </div>
 
-              {/* Departure date */}
-              <div>
-                <label className="ntbm-field-label">
-                  Departure Date <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <input
-                  type="date"
-                  className="ntbm-input"
+            {/* Departure date + tour details — calendar on the left, details on the right */}
+            <div className="ntbm-tripconfig-body ntbm-tripconfig-body-split">
+
+              <div className="ntbm-tripconfig-cal-col">
+                {isRestrictedDestination && allowedDayLabel && (
+                  <div className="ntbm-tripconfig-cal-meta">
+                    <span className="ntbm-tripconfig-hint">Available: {allowedDayLabel}</span>
+                  </div>
+                )}
+                <TripDateCalendar
                   value={departureDate}
-                  onChange={e => handleDepartureDateChange(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (isRestrictedDestination && !isDateAllowed(val)) {
+                      const label = getAllowedDayLabel();
+                      toast?.error(`This tour departs on ${label} only.`);
+                      return;
+                    }
+                    handleDepartureDateChange(val);
+                  }}
+                  durationDays={getDurationDays(selectedTour.duration)}
+                  isDateAllowed={isDateAllowed}
+                  showSelectedDisplay={false}
+                  imageUrl={selectedTour.image}
+                  imageAlt={selectedTour.title}
                 />
               </div>
+
+              <div className="ntbm-pkgdetails-col">
+                <div className="ntbm-pkgdetails-title-wrap">
+                  <h4 className="ntbm-pkgdetails-title">{selectedTour.title}</h4>
+                </div>
+
+                <div className="ntbm-pkgdetails-info">
+                  <div className="ntbm-pkgdetails-row">
+                    <MapPin size={16} className="ntbm-pkgdetails-row-icon" />
+                    <div>
+                      <span className="ntbm-pkgdetails-row-label">Destination</span>
+                      <strong>{selectedTour.destination}</strong>
+                    </div>
+                  </div>
+                  <div className="ntbm-pkgdetails-row">
+                    <Clock size={16} className="ntbm-pkgdetails-row-icon" />
+                    <div>
+                      <span className="ntbm-pkgdetails-row-label">Duration</span>
+                      <strong>
+                        {selectedTour.duration}
+                        {' '}({getDurationDays(selectedTour.duration)} Days, {Math.max(getDurationDays(selectedTour.duration) - 1, 0)} Nights)
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="ntbm-pkgdetails-row">
+                    <Tag size={16} className="ntbm-pkgdetails-row-icon" />
+                    <div>
+                      <span className="ntbm-pkgdetails-row-label">Tour Price</span>
+                      <strong className="ntbm-pkgdetails-price">
+                        ₱{(selectedTour.price || 0).toLocaleString()}
+                        <span className="ntbm-pkgdetails-price-suffix"> / per pax</span>
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {Array.isArray(selectedTour.inclusions) && selectedTour.inclusions.length > 0 && (
+                  <div className="ntbm-pkgdetails-inclusions">
+                    <div className="ntbm-pkgdetails-inclusions-title">Inclusions</div>
+                    <ul className="ntbm-pkgdetails-inclusions-list">
+                      {selectedTour.inclusions.map((item, idx) => (
+                        <li key={idx}>
+                          <CheckCircle size={14} /> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
             </div>
 
             {/* Date preview */}

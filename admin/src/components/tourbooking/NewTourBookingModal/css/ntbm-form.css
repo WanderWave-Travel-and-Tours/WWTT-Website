@@ -265,3 +265,360 @@
   border-top: 2px solid #f59e0b;
   margin-top: 4px;
 }
+
+/* ── Trip Configuration: Departure Date + Tour Details split ── */
+.ntbm-tripconfig-body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.ntbm-tripconfig-body-split {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.ntbm-tripconfig-cal-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ntbm-tripconfig-cal-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ntbm-tripconfig-hint {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+@media (max-width: 680px) {
+  .ntbm-tripconfig-body-split { flex-direction: column; }
+}
+
+/* ── Tour Details Panel (right side of Trip Configuration) ── */
+.ntbm-pkgdetails-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ntbm-pkgdetails-title-wrap {
+  padding-bottom: 12px;
+  border-bottom: 2px solid #fde68a;
+  position: relative;
+}
+
+.ntbm-pkgdetails-title-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 48px;
+  height: 2px;
+  background: #f59e0b;
+}
+
+.ntbm-pkgdetails-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #001b3e;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.ntbm-pkgdetails-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ntbm-pkgdetails-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.ntbm-pkgdetails-row:hover { background: #f8fafc; }
+
+.ntbm-pkgdetails-row:last-child { border-bottom: none; }
+
+.ntbm-pkgdetails-row-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #f59e0b;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ntbm-pkgdetails-row-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.ntbm-pkgdetails-row strong { color: #0f172a; font-weight: 700; }
+
+.ntbm-pkgdetails-price {
+  font-size: 1.15rem !important;
+  color: #f59e0b !important;
+}
+
+.ntbm-pkgdetails-price-suffix {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.ntbm-pkgdetails-price-original {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: line-through;
+  margin-right: 6px;
+}
+
+/* Inclusions checklist */
+.ntbm-pkgdetails-inclusions {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.ntbm-pkgdetails-inclusions-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.ntbm-pkgdetails-inclusions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ntbm-pkgdetails-inclusions-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #1e3a5f;
+}
+
+.ntbm-pkgdetails-inclusions-list li svg { color: #16a34a; flex-shrink: 0; }
+
+/* ── Inline Trip Date Calendar ── */
+.ntbm-tdcal { width: 100%; flex: 1; display: flex; flex-direction: column; }
+
+/* Hero photo + travel-dates overlay badge, sits above the calendar header */
+.ntbm-tdcal-hero {
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  line-height: 0;
+  margin-bottom: 14px;
+}
+
+.ntbm-tdcal-hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 160px;
+  object-fit: cover;
+}
+
+.ntbm-tdcal-hero-datebadge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(3px);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+}
+
+.ntbm-tdcal-hero-datebadge svg { flex-shrink: 0; }
+
+.ntbm-tdcal-hero-datebadge-range {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ntbm-tdcal-hero-datebadge-sub {
+  display: block;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.ntbm-tdcal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.ntbm-tdcal-month-year {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-align: center;
+}
+
+.ntbm-tdcal-nav-btn {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.ntbm-tdcal-nav-btn:hover {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.ntbm-tdcal-selected-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.ntbm-tdcal-selected-icon { color: #1d4ed8; flex-shrink: 0; }
+.ntbm-tdcal-selected-range { font-weight: 700; color: #1e3a5f; font-size: 0.9rem; }
+.ntbm-tdcal-selected-sub { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+
+.ntbm-tdcal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 6px;
+  flex: 1;
+}
+
+.ntbm-tdcal-weekday {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 0 8px;
+}
+
+.ntbm-tdcal-day {
+  width: 100%;
+  height: 100%;
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.ntbm-tdcal-day:not(.disabled):hover {
+  background: #fff7ed;
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.ntbm-tdcal-day.in-range {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border-color: #fbbf24;
+}
+
+.ntbm-tdcal-day.today {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.ntbm-tdcal-day.selected {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #fff;
+  font-weight: 800;
+  border-color: #0f172a;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+  transform: scale(1.05);
+}
+
+.ntbm-tdcal-day.disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 540px) {
+  .ntbm-tdcal-day { font-size: 0.8rem; }
+}

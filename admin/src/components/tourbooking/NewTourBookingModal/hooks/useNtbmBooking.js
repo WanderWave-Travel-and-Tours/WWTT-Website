@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '../../../toast/ToastManager';
+import {
+  RESTRICTED_DESTINATIONS,
+  detectTourTypeInfo,
+  isAllowedBookingDay,
+  getAllowedDayLabel,
+} from '../utils/bookingUtils';
 
 const API_BASE = 'https://wanderwaveph.onrender.com';
 
@@ -81,6 +87,21 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
     setFilteredTours(filtered);
     setSelectedTour(null);
   }, [selectedDestination, allTours]);
+
+  // ── Derived: joiners-tour day restriction (mirrors sales package booking) ──
+  const { isSoloJoinersPkg } = detectTourTypeInfo(selectedTour);
+  const isRestrictedDestination =
+    isSoloJoinersPkg &&
+    RESTRICTED_DESTINATIONS.some(d =>
+      (selectedDestination || '').toLowerCase().replace(/\s+/g, ' ').trim().includes(d)
+    );
+
+  // Picking a different tour resets the previously chosen date, since
+  // duration/day-restriction rules can change per tour.
+  const handleSelectTour = (tour) => {
+    setSelectedTour(tour);
+    setDepartureDate('');
+  };
 
   // ── Mirror pax count ↔ passengers array ──────────────────────────────────
   useEffect(() => {
@@ -326,7 +347,7 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
     selectedDestination,
     setSelectedDestination,
     selectedTour,
-    setSelectedTour,
+    setSelectedTour: handleSelectTour,
     destDropdownOpen,
     setDestDropdownOpen,
     destRef,
@@ -336,6 +357,7 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
     setPaxCount,
     departureDate,
     handleDepartureDateChange,
+    isRestrictedDestination,
 
     // Payment
     paymentType,
@@ -356,6 +378,8 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
     getDurationDays,
     computeEndDate,
     isDateTodayOrTomorrow,
+    isDateAllowed: (dateStr) => isAllowedBookingDay(dateStr, selectedTour, isRestrictedDestination),
+    getAllowedDayLabel: () => getAllowedDayLabel(selectedTour),
 
     // Actions
     validateStep1,

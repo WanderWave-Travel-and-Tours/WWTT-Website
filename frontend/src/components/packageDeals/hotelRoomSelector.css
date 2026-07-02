@@ -26,16 +26,18 @@
   gap: 12px;
 }
 
-/* Individual Card Styling */
+/* Individual Card Styling — horizontal layout: thumbnail | body | price block */
 .hrs-card {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1.5px solid #e5e7eb;
   border-radius: 12px;
-  padding: 16px;
+  padding: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  overflow: visible; 
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
 }
 
 .hrs-card:hover {
@@ -45,86 +47,193 @@
 
 .hrs-card.hrs-selected {
   border: 2px solid #fc9c1b;
-  background-color: #fff7ed;
-  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.1);
-  margin-bottom: 10px;
+  background-color: #fffaf3;
+  box-shadow: 0 6px 18px rgba(252, 156, 27, 0.15);
 }
 
-/* Header inside card */
-.hrs-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
+/* Thumbnail */
+.hrs-card-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 84px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
 }
 
-.hrs-card-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap; /* Wraps content on small screens */
+.hrs-card-thumb {
+  width: 100%;
+  height: 100%;
+  min-height: 84px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s ease;
 }
 
-.hrs-icon {
-  font-size: 1.2rem;
-}
+.hrs-card-thumb-wrap:hover .hrs-card-thumb { transform: scale(1.06); }
 
-.hrs-card-title-group h4 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1f2937;
-  text-transform: capitalize;
-}
-
-/* Badges */
-.hrs-badge-value {
-  background-color: #dcfce7;
-  color: #166534;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-
-.hrs-badge-selected {
-  background-color: #fc9c1b;
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-
-.hrs-checkmark {
+.hrs-card-thumb-hover {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background-color: #fc9c1b;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  z-index: 10;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-/* Details Section */
-.hrs-details {
-  padding-top: 8px;
-  border-top: 1px dashed #e5e7eb;
-  margin-top: 8px;
+.hrs-card-thumb-wrap:hover .hrs-card-thumb-hover { opacity: 1; }
+
+.hrs-card-thumb-hover svg { width: 14px; height: 14px; }
+
+.hrs-card-ribbon {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.52rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 2px 5px;
+  border-radius: 4px;
 }
 
-.hrs-label {
+.hrs-checkmark-corner {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #fc9c1b;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.45);
+  z-index: 2;
+}
+
+/* Body */
+.hrs-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+}
+
+.hrs-card-toprow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hrs-card-toprow h4 {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.25;
+}
+
+.hrs-card-subrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.hrs-card-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.hrs-amenity-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.hrs-amenity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+
+.hrs-view-details-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #059669;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hrs-view-details-link:hover { text-decoration: underline; }
+
+/* Price block */
+.hrs-card-priceblock {
+  flex-shrink: 0;
+  width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: right;
+  gap: 2px;
+  border-left: 1px dashed #e5e7eb;
+  padding-left: 8px;
+}
+
+.hrs-card-price-from { font-size: 0.62rem; color: #94a3b8; font-weight: 600; }
+
+.hrs-card-price {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #ea580c;
+  line-height: 1.15;
+}
+
+.hrs-card-price-included {
+  color: #10b981;
   font-size: 0.8rem;
-  color: #6b7280;
-  margin-right: 6px;
+}
+
+.hrs-card-price-unit {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .hrs-hotel-link {
@@ -639,22 +748,6 @@
     overflow: visible;
   }
 
-  /* Adjust Card on mobile */
-  .hrs-card-header {
-    flex-direction: row;
-    align-items: flex-start;
-    flex-wrap: nowrap;
-    gap: 8px;
-  }
-  
-  .hrs-card-title-group {
-    flex-wrap: nowrap;
-    align-items: flex-start;
-  }
-  
-  .hrs-badge-selected {
-    align-self: flex-start;
-  }
 }
 
 @media (max-width: 375px) {
@@ -700,72 +793,9 @@
 
 
 .hrs-hotel-count {
-  font-size: 0.75rem;
+  font-size: 0.66rem;
   color: #6b7280;
   font-weight: 500;
-  display: block;
-  margin-top: 2px;
-}
-
-.hrs-category-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  flex-shrink: 0;
-  white-space: nowrap;
-  min-width: 80px;
-}
-
-/* ✅ Price label + value on each hotel tier card */
-.hrs-price-tier-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.hrs-price-included-text {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: #10b981;
-  text-align: right;
-  line-height: 1.3;
-}
-
-.hrs-price-upgrade-text {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: #fc9c1b;
-  text-align: right;
-}
-
-.hrs-price-display {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1e3a5f;
-}
-
-.hrs-hotels-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.hrs-hotel-item {
-  display: flex;
-  align-items: center;
-  padding: 6px 0;
-}
-
-.hrs-hotel-price {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #6b7280;
-  margin-left: auto;
-  padding-left: 12px;
 }
 
 /* Category Card Specific */
@@ -782,35 +812,17 @@
 }
 
 @media (max-width: 640px) {
-  .hrs-category-right {
-    flex-direction: column;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    margin-top: 0;
-    white-space: normal;
-    min-width: 0;
-    max-width: 45%;
-  }
-
-  .hrs-card-header {
-    flex-wrap: nowrap;
-    align-items: flex-start;
-  }
-
-  .hrs-price-display {
-    font-size: 0.9rem;
-  }
-
-  .hrs-hotel-price {
-    font-size: 0.75rem;
-  }
-
-  .hrs-price-included-text,
-  .hrs-price-upgrade-text {
-    white-space: normal;
-    word-break: break-word;
-    font-size: 0.8rem;
-    text-align: right;
+  .hrs-card { flex-direction: column; }
+  .hrs-card-thumb-wrap { width: 100%; height: 140px; }
+  .hrs-card-priceblock {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-left: none;
+    border-top: 1px dashed #e5e7eb;
+    padding-left: 0;
+    padding-top: 12px;
+    text-align: left;
   }
 }

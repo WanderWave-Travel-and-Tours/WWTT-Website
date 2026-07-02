@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import {
   Check, Building2, X, MapPin, ChevronLeft, ChevronRight,
-  Wifi, Car, Waves, Dumbbell, Utensils, Sparkles, Wind, Shirt, Wine, Star, Eye
+  Wifi, Car, Waves, Dumbbell, Utensils, Sparkles, Wind, Shirt, Wine, Star, Eye,
+  Coffee, ShowerHead
 } from 'lucide-react';
 import './hotelRoomSelector.css';
 
@@ -288,6 +289,42 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
 
   const hasAutoSelectedRef = useRef(false);
 
+  useEffect(() => {
+    if (roomTypes && roomTypes.length > 0 && !hasAutoSelectedRef.current) {
+      hasAutoSelectedRef.current = true;
+    }
+  }, [roomTypes]);
+
+  // Amenity present if ANY partner hotel in the tier offers it
+  const AMENITY_ICONS = [
+    { key: 'wifi',            label: 'Free Wifi',   Icon: Wifi },
+    { key: 'breakfast',       label: 'Breakfast',   Icon: Coffee },
+    { key: 'bathroom',        label: 'Private Bath',Icon: ShowerHead, check: (v) => v === 'private' },
+    { key: 'airConditioning', label: 'Aircon',       Icon: Wind },
+    { key: 'pool',            label: 'Pool',         Icon: Waves },
+    { key: 'restaurant',      label: 'Restaurant',   Icon: Utensils },
+  ];
+
+  const getGroupAmenities = (group) => {
+    return AMENITY_ICONS.filter(({ key, check }) =>
+      group.hotels.some(h => {
+        const val = h.amenities?.[key];
+        return check ? check(val) : !!val;
+      })
+    );
+  };
+
+  const getGroupThumbnail = (group) => {
+    const withImage = group.hotels.find(h => h.hotelImage || (h.hotelImages && h.hotelImages.length > 0) || h.image);
+    return withImage?.hotelImage || withImage?.hotelImages?.[0] || withImage?.image || 'https://placehold.co/400x300?text=Hotel';
+  };
+
+  const getGroupRating = (group) => {
+    const ratings = group.hotels.map(h => h.hotelRating || 0).filter(r => r > 0);
+    if (ratings.length === 0) return 0;
+    return ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+  };
+
   // ✅ Per-night rate lookup based on hotel tier
   // Matches both star numbers AND tier keywords from the DB
   // Only 4-star and 5-star hotels carry an additional nightly cost.
@@ -313,25 +350,6 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   const getCategoryHotelTotal = (roomType) => {
     return getPerNightRate(roomType) * durationNights * getRoomsNeeded();
   };
-  useEffect(() => {
-    if (roomTypes && roomTypes.length > 0 && !hasAutoSelectedRef.current) {
-      hasAutoSelectedRef.current = true;
-    }
-  }, [roomTypes]);
-
-  const getHotelImages = (hotel) => {
-    if (hotel.hotelImages && hotel.hotelImages.length > 0) {
-      return hotel.hotelImages;
-    }
-    if (hotel.image) {
-      return [hotel.image];
-    }
-    return ['https://placehold.co/800x600?text=Hotel+Image'];
-  };
-
-  const getRoomTypeIcon = (type) => {
-    return '🏨';
-  };
 
   // ✨ Get generic category display name
   const getCategoryDisplayName = (roomType) => {
@@ -349,10 +367,10 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
     // ✅ Merge budget into standard
     const type = rawType.toLowerCase().includes('budget') ? 'Standard' : rawType;
     if (!acc[type]) {
-      acc[type] = { 
-        hotels: [], 
-        minPrice: Infinity, 
-        maxPrice: -Infinity 
+      acc[type] = {
+        hotels: [],
+        minPrice: Infinity,
+        maxPrice: -Infinity
       };
     }
     acc[type].hotels.push(room);
@@ -367,13 +385,13 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
     const allImages = getAllCategoryImages(group.hotels);
     const min = group.minPrice === Infinity ? 0 : group.minPrice;
     const max = group.maxPrice === -Infinity ? 0 : group.maxPrice;
-    const priceRange = min === max 
-      ? `₱${min.toLocaleString()}` 
+    const priceRange = min === max
+      ? `₱${min.toLocaleString()}`
       : `₱${min.toLocaleString()} - ₱${max.toLocaleString()}`;
-    
+
     // Get a sample room type for amenities (use first hotel)
     const sampleRoom = group.hotels[0];
-    
+
     setLightboxState({
       isOpen: true,
       categoryName: getCategoryDisplayName(roomType),
@@ -400,7 +418,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
 
   return (
     <div className="hrs-container">
-      <HotelLightbox 
+      <HotelLightbox
         isOpen={lightboxState.isOpen}
         onClose={() => setLightboxState(prev => ({ ...prev, isOpen: false }))}
         categoryName={lightboxState.categoryName}
@@ -416,11 +434,9 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
       </div>
 
       <div className="hrs-list">
-        {groupKeys.map((roomType) => {
-          
+        {groupKeys.map((roomType, idx) => {
+
           const group = groupedRoomTypes[roomType];
-          const min = group.minPrice === Infinity ? 0 : group.minPrice;
-          const max = group.maxPrice === -Infinity ? 0 : group.maxPrice;
 
           // ✅ FIX: Normalize selected room type to handle Budget→Standard merging.
           // When parent sets selectedRoomType to a BUDGET room, it should still
@@ -431,95 +447,96 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
           const isSelected = normalizedSelectedType === roomType;
 
           const categoryName = getCategoryDisplayName(roomType);
+          const amenities = getGroupAmenities(group);
+          const rating = getGroupRating(group);
+          const thumbnail = getGroupThumbnail(group);
+          const isBestValue = idx === 0;
 
           // ✅ Compute hotel cost for this category for card display
           const categoryHotelTotal = getCategoryHotelTotal(roomType);
 
           return (
-            <div 
+            <div
               key={roomType}
               className={`hrs-card hrs-category-card ${isSelected ? 'hrs-selected' : ''}`}
               onClick={() => handleCategorySelect(roomType, group.hotels[0])}
             >
-              {/* ✅ Checkmark stays OUTSIDE the card — no badge inside */}
               {isSelected && (
-                <div className="hrs-checkmark">
-                  <Check size={16} color="#fff" strokeWidth={3} />
+                <div className="hrs-checkmark-corner">
+                  <Check size={14} color="#fff" strokeWidth={3} />
                 </div>
               )}
 
-              <div className="hrs-card-header" style={{marginBottom: 0, flexDirection: 'row', alignItems: 'flex-start', flexWrap: 'nowrap'}}>
-                <div className="hrs-card-title-group" style={{flexWrap: 'nowrap', alignItems: 'flex-start'}}>
-                  <span className="hrs-icon">{getRoomTypeIcon(roomType)}</span>
-                  <div>
-                    <h4>{categoryName}</h4>
-                    <span className="hrs-hotel-count">
-                      {group.hotels.length} partner hotel{group.hotels.length !== 1 ? 's' : ''} available
-                    </span>
-                  </div>
-                </div>
-
-                {/* ✅ Price column — always rendered, no layout shift on select */}
-                <div className="hrs-category-right">
-                  <span className="hrs-price-tier-label">Price</span>
-                  {categoryHotelTotal === 0 ? (
-                    <span className="hrs-price-included-text">Included<br />in package</span>
-                  ) : (
-                    <span className="hrs-price-upgrade-text">
-                      +₱{categoryHotelTotal.toLocaleString()}
-                    </span>
-                  )}
+              <div
+                className="hrs-card-thumb-wrap"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenCategoryGallery(roomType, group);
+                }}
+              >
+                <img src={thumbnail} alt={categoryName} className="hrs-card-thumb" />
+                {isBestValue && <span className="hrs-card-ribbon">Best Value</span>}
+                <div className="hrs-card-thumb-hover">
+                  <Eye size={16} /> View Sample Hotels
                 </div>
               </div>
 
-              <div className="hrs-details" style={{borderTop: '1px dashed #e5e7eb', marginTop: '12px', paddingTop: '12px'}}>
-                <div style={{
-                  fontSize: '0.85rem',
-                  color: '#6b7280',
-                  marginBottom: '12px',
-                  lineHeight: '1.5'
-                }}>
-                  <strong>Note:</strong> These are sample hotels that may be included in this package. 
-                  The actual hotel will be confirmed upon booking based on availability.
+              <div className="hrs-card-body">
+                <div className="hrs-card-toprow">
+                  <div>
+                    <h4>{categoryName}</h4>
+                    <div className="hrs-card-subrow">
+                      {rating > 0 && (
+                        <span className="hrs-card-rating">
+                          <Star size={13} fill="#f59e0b" color="#f59e0b" /> {rating.toFixed(1)}
+                        </span>
+                      )}
+                      <span className="hrs-hotel-count">
+                        {group.hotels.length} hotel{group.hotels.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
+                {amenities.length > 0 && (
+                  <div className="hrs-amenity-row">
+                    {amenities.slice(0, 3).map(({ key, label, Icon }) => (
+                      <span key={key} className="hrs-amenity-pill">
+                        <Icon size={11} /> {label}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-                
-                {/* VIEW DETAILS BUTTON */}
                 <button
-                  className="hrs-view-details-btn"
+                  className="hrs-view-details-link"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpenCategoryGallery(roomType, group);
                   }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 16px',
-                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    transition: 'all 0.2s ease',
-                    width: '100%',
-                    justifyContent: 'center'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
                 >
-                  <Eye size={18} />
-                  View Sample Hotels Gallery
+                  <Eye size={12} /> View Sample Hotels ({group.hotels.length})
                 </button>
+              </div>
+
+              <div className="hrs-card-priceblock">
+                {categoryHotelTotal === 0 ? (
+                  <>
+                    <div className="hrs-card-price-from">&nbsp;</div>
+                    <div className="hrs-card-price hrs-card-price-included">
+                      Included
+                      <span className="hrs-card-price-unit">in package</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="hrs-card-price-from">Add</div>
+                    <div className="hrs-card-price">
+                      +₱{categoryHotelTotal.toLocaleString()}
+                      <span className="hrs-card-price-unit">total upgrade</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           );
