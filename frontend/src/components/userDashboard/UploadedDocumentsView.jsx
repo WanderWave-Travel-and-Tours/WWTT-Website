@@ -27,6 +27,7 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
                 section: 'ID Documents',
                 docType: 'ID',
                 passengerLabel,
+                passengerNumber: idx + 1,
                 isDirectLink: true,
             });
         }
@@ -40,6 +41,7 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
                 section: 'Passport Documents',
                 docType: 'Passport',
                 passengerLabel,
+                passengerNumber: idx + 1,
                 isDirectLink: true,
             });
         }
@@ -191,22 +193,25 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
         }
     };
 
-    // Group booking docs by passenger; general inquiry docs go under "General Documents"
+    // Group booking docs by passenger (keyed by passenger index, not name —
+    // passengers can share the same name); general inquiry docs go under "General Documents"
     const passengerMap = {};
     const generalDocs = [];
 
     allDocs.forEach((doc) => {
         if (doc.passengerLabel) {
-            if (!passengerMap[doc.passengerLabel]) {
-                passengerMap[doc.passengerLabel] = [];
+            const key = doc.passengerNumber ?? doc.passengerLabel;
+            if (!passengerMap[key]) {
+                passengerMap[key] = { label: doc.passengerLabel, number: doc.passengerNumber, docs: [] };
             }
-            passengerMap[doc.passengerLabel].push(doc);
+            passengerMap[key].docs.push(doc);
         } else {
             generalDocs.push(doc);
         }
     });
 
-    const passengerEntries = Object.entries(passengerMap);
+    const passengerEntries = Object.values(passengerMap)
+        .sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
 
     return (
         <div className="udv-container">
@@ -225,11 +230,11 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
 
             <div className="udv-sections">
                 {/* Per-passenger sections */}
-                {passengerEntries.map(([passengerLabel, docs], pIdx) => (
-                    <div key={passengerLabel} className="udv-section udv-passenger-section">
+                {passengerEntries.map(({ label: passengerLabel, number, docs }, pIdx) => (
+                    <div key={`${passengerLabel}-${number ?? pIdx}`} className="udv-section udv-passenger-section">
                         <div className="udv-section-header">
                             <div className="udv-passenger-title">
-                                <span className="udv-passenger-number">Passenger {pIdx + 1}</span>
+                                <span className="udv-passenger-number">Passenger {number ?? pIdx + 1}</span>
                                 <h3>{passengerLabel}</h3>
                             </div>
                             <span className="udv-section-count">{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
