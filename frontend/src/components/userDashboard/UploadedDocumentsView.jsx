@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import * as Icons from './Icons';
+import { X } from 'lucide-react';
 import './UploadedDocumentsView.css';
 
 const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
     const [loadingUrls, setLoadingUrls] = useState({});
+    const [previewDoc, setPreviewDoc] = useState(null); // { fileUrl, fileName, docType }
 
     // ── Documents embedded directly on the booking (ID/passport per passenger + proof image) ──
     // These aren't rows in the Document collection (no inquiryId), so they're
@@ -130,53 +132,81 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
         }
     };
 
+    const isImageFile = (fileName) =>
+        /\.(jpg|jpeg|png|webp|gif)$/i.test(fileName || '');
+
     // ✅ NEW: Handle view button click
     const handleViewDocument = async (e, doc) => {
         e.preventDefault();
         if (doc.isDirectLink) {
-            window.open(doc.fileUrl, '_blank', 'noopener,noreferrer');
+            if (isImageFile(doc.fileName)) {
+                setPreviewDoc(doc);
+            } else {
+                window.open(doc.fileUrl, '_blank', 'noopener,noreferrer');
+            }
             return;
         }
         const signedUrl = await getSignedUrl(doc._id, 'view');
         if (signedUrl) {
-            window.open(signedUrl, '_blank', 'noopener,noreferrer');
+            if (isImageFile(doc.fileName)) {
+                setPreviewDoc({ ...doc, fileUrl: signedUrl });
+            } else {
+                window.open(signedUrl, '_blank', 'noopener,noreferrer');
+            }
         }
+    };
+
+    const downloadViaBlob = async (url, fileName) => {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch file');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName || 'document';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
     };
 
     // ✅ NEW: Handle download button click
     const handleDownloadDocument = async (e, doc) => {
         e.preventDefault();
-        const fileName = doc.originalName;
-        if (doc.isDirectLink) {
-            const link = document.createElement('a');
-            link.href = doc.fileUrl;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            return;
-        }
-        const signedUrl = await getSignedUrl(doc._id, 'download');
-        if (signedUrl) {
-            // Create temporary link to trigger download
-            const link = document.createElement('a');
-            link.href = signedUrl;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        const fileName = doc.originalName || doc.fileName;
+        try {
+            if (doc.isDirectLink) {
+                setLoadingUrls(prev => ({ ...prev, [doc._id]: true }));
+                await downloadViaBlob(doc.fileUrl, fileName);
+                setLoadingUrls(prev => ({ ...prev, [doc._id]: false }));
+                return;
+            }
+            const signedUrl = await getSignedUrl(doc._id, 'download');
+            if (signedUrl) {
+                await downloadViaBlob(signedUrl, fileName);
+            }
+        } catch {
+            alert('Failed to download document. Please try again.');
+            setLoadingUrls(prev => ({ ...prev, [doc._id]: false }));
         }
     };
 
-    // Group documents by section
-    const groupedDocs = allDocs.reduce((acc, doc) => {
-        const section = doc.section || 'General Documents';
-        if (!acc[section]) {
-            acc[section] = [];
+    // Group booking docs by passenger; general inquiry docs go under "General Documents"
+    const passengerMap = {};
+    const generalDocs = [];
+
+    allDocs.forEach((doc) => {
+        if (doc.passengerLabel) {
+            if (!passengerMap[doc.passengerLabel]) {
+                passengerMap[doc.passengerLabel] = [];
+            }
+            passengerMap[doc.passengerLabel].push(doc);
+        } else {
+            generalDocs.push(doc);
         }
-        acc[section].push(doc);
-        return acc;
-    }, {});
+    });
+
+    const passengerEntries = Object.entries(passengerMap);
 
     return (
         <div className="udv-container">
@@ -194,10 +224,14 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
             </div>
 
             <div className="udv-sections">
-                {Object.entries(groupedDocs).map(([section, docs]) => (
-                    <div key={section} className="udv-section">
+                {/* Per-passenger sections */}
+                {passengerEntries.map(([passengerLabel, docs], pIdx) => (
+                    <div key={passengerLabel} className="udv-section udv-passenger-section">
                         <div className="udv-section-header">
-                            <h3>{section}</h3>
+                            <div className="udv-passenger-title">
+                                <span className="udv-passenger-number">Passenger {pIdx + 1}</span>
+                                <h3>{passengerLabel}</h3>
+                            </div>
                             <span className="udv-section-count">{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
                         </div>
 
@@ -211,12 +245,12 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
                                         <div className="udv-doc-badges">
                                             {doc.docType && (
                                                 <span className={`udv-doc-type-badge udv-doc-type-${doc.docType.toLowerCase()}`}>
-                                                    {doc.docType}
+                                                    {doc.docType === 'ID' ? 'Valid ID' : doc.docType}
                                                 </span>
                                             )}
-                                            {doc.passengerLabel && (
-                                                <span className="udv-doc-passenger-badge">
-                                                    {doc.passengerLabel}
+                                            {doc.section && (
+                                                <span className="udv-doc-section-badge">
+                                                    {doc.section}
                                                 </span>
                                             )}
                                         </div>
@@ -258,12 +292,113 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
                         </div>
                     </div>
                 ))}
+
+                {/* General / inquiry documents (not tied to a specific passenger) */}
+                {generalDocs.length > 0 && (
+                    <div className="udv-section">
+                        <div className="udv-section-header">
+                            <h3>General Documents</h3>
+                            <span className="udv-section-count">{generalDocs.length} file{generalDocs.length !== 1 ? 's' : ''}</span>
+                        </div>
+
+                        <div className="udv-docs-grid">
+                            {generalDocs.map((doc, idx) => (
+                                <div key={doc._id || idx} className="udv-doc-card">
+                                    <div className="udv-doc-icon">
+                                        {getFileIcon(doc.fileName)}
+                                    </div>
+                                    <div className="udv-doc-info">
+                                        <div className="udv-doc-badges">
+                                            {doc.docType && (
+                                                <span className={`udv-doc-type-badge udv-doc-type-${doc.docType.toLowerCase()}`}>
+                                                    {doc.docType}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h4 className="udv-doc-name" title={doc.fileName}>
+                                            {doc.fileName}
+                                        </h4>
+                                        <div className="udv-doc-meta">
+                                            <span className="udv-doc-size">
+                                                {formatFileSize(doc.fileSize)}
+                                            </span>
+                                            <span className="udv-doc-divider">•</span>
+                                            <span className="udv-doc-date">
+                                                {formatDate(doc.uploadedAt)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="udv-doc-actions">
+                                        <button
+                                            onClick={(e) => handleViewDocument(e, doc)}
+                                            className="udv-btn-view"
+                                            title="View document"
+                                            disabled={loadingUrls[doc._id]}
+                                        >
+                                            <Icons.Eye />
+                                            {loadingUrls[doc._id] ? 'Loading...' : 'View'}
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDownloadDocument(e, doc)}
+                                            className="udv-btn-download"
+                                            title="Download document"
+                                            disabled={loadingUrls[doc._id]}
+                                        >
+                                            <Icons.Download />
+                                            {loadingUrls[doc._id] ? 'Loading...' : 'Download'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="udv-footer-note">
                 <Icons.Info />
                 <p>These documents have been submitted for review. You can still upload additional documents using the section below.</p>
             </div>
+
+            {/* ── IMAGE PREVIEW MODAL ── */}
+            {previewDoc && (
+                <div className="udv-preview-overlay" onClick={() => setPreviewDoc(null)}>
+                    <div className="udv-preview-modal" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="udv-preview-header">
+                            <div className="udv-preview-header-info">
+                                <div className="udv-preview-header-icon">
+                                    <Icons.Image />
+                                </div>
+                                <div className="udv-preview-header-text">
+                                    <p className="udv-preview-name">{previewDoc.fileName || 'Document Preview'}</p>
+                                    <div className="udv-doc-badges">
+                                        {previewDoc.docType && (
+                                            <span className={`udv-doc-type-badge udv-doc-type-${previewDoc.docType.toLowerCase()}`}>
+                                                {previewDoc.docType === 'ID' ? 'Valid ID' : previewDoc.docType}
+                                            </span>
+                                        )}
+                                        {previewDoc.section && (
+                                            <span className="udv-doc-section-badge">{previewDoc.section}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <button className="udv-preview-close" onClick={() => setPreviewDoc(null)}>
+                                ✕
+                            </button>
+                        </div>
+                        {/* Image — fixed height so it fills predictably */}
+                        <div className="udv-preview-body">
+                            <img
+                                src={previewDoc.fileUrl}
+                                alt={previewDoc.fileName}
+                                className="udv-preview-img"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

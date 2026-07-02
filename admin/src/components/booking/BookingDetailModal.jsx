@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store, Image, File, ReceiptText } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store, Image, File, ReceiptText, Download } from 'lucide-react';
 import './BookingDetailModal.css'; 
 import VoucherPreviewModal from './VoucherPreviewModal';
 import OrderSlipModal from './OrderSlipModal';
@@ -100,6 +100,7 @@ export const BookingDetailModal = ({
     const [isLoadingDocs, setIsLoadingDocs] = useState(false);
     const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
     const [showOrderSlip, setShowOrderSlip] = useState(false);
+    const [previewDoc, setPreviewDoc] = useState(null); // { fileUrl, name }
 
     // Fetch submitted documents whenever the modal opens for a booking
     useEffect(() => {
@@ -129,38 +130,54 @@ export const BookingDetailModal = ({
 
     if (!showModal || !selectedBooking) return null;
 
+    const downloadViaBlob = async (url, fileName) => {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch file');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName || 'document';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+    };
+
     const closeModal = () => setShowModal(false);
 
-    // ── Documents embedded directly on the booking (ID/passport per passenger + proof image) ──
-    const bookingDocs = (() => {
+    // ── Documents embedded per passenger (ID/passport) grouped by passenger ──
+    const rawBooking = selectedBooking.rawData || {};
+    const passengerDocGroups = (rawBooking.passengers || []).map((p, idx) => {
+        const label = (p.firstName && p.lastName)
+            ? `${p.firstName} ${p.lastName}`
+            : `Passenger ${idx + 1}`;
         const docs = [];
-        const rawBooking = selectedBooking.rawData || {};
+        if (p.idDocument?.path) {
+            docs.push({
+                _id: `id-${idx}`,
+                fileUrl: p.idDocument.path,
+                originalName: p.idDocument.originalName,
+                fileType: 'image/*',
+                section: 'Valid ID'
+            });
+        }
+        if (p.passportDocument?.path) {
+            docs.push({
+                _id: `passport-${idx}`,
+                fileUrl: p.passportDocument.path,
+                originalName: p.passportDocument.originalName,
+                fileType: 'image/*',
+                section: 'Passport'
+            });
+        }
+        return { label, passengerNumber: idx + 1, docs };
+    }).filter(g => g.docs.length > 0);
 
-        (rawBooking.passengers || []).forEach((p, idx) => {
-            if (p.idDocument?.path) {
-                docs.push({
-                    _id: `id-${idx}`,
-                    fileUrl: p.idDocument.path,
-                    originalName: p.idDocument.originalName,
-                    fileType: 'image/*',
-                    section: 'ID'
-                });
-            }
-            if (p.passportDocument?.path) {
-                docs.push({
-                    _id: `passport-${idx}`,
-                    fileUrl: p.passportDocument.path,
-                    originalName: p.passportDocument.originalName,
-                    fileType: 'image/*',
-                    section: 'Passport'
-                });
-            }
-        });
-
-        return docs;
-    })();
-
-    const allDocs = [...bookingDocs, ...submittedDocs];
+    const allDocs = [
+        ...passengerDocGroups.flatMap(g => g.docs),
+        ...submittedDocs,
+    ];
 
     const hasDocuments = allDocs.length > 0;
 
@@ -846,7 +863,7 @@ const generateVoucherData = async (booking) => {
                             </div>
                         )}
 
-                        {/* SUBMITTED DOCUMENTS (booking-embedded ID/passport/proof image + any inquiry docs) */}
+                        {/* SUBMITTED DOCUMENTS — grouped per passenger */}
                         <div className="cnm-card">
                             <div className="cnm-card-header">
                                 <h3 className="cnm-card-title">Submitted Documents</h3>
@@ -872,87 +889,187 @@ const generateVoucherData = async (booking) => {
                                     <p style={{ margin: 0, fontSize: '14px' }}>No documents submitted yet.</p>
                                 </div>
                             ) : (
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                                    gap: '12px',
-                                    padding: '4px 0'
-                                }}>
-                                    {allDocs.map((doc, idx) => {
-                                        // Correct field names from Document model:
-                                        // fileUrl, fileName, originalName, fileType, fileSize, section
-                                        const fileUrl = doc.fileUrl || '#';
-                                        const isImage = doc.fileType?.startsWith('image/') ||
-                                            /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalName || doc.fileName || '');
-
-                                        return (
-                                            <a
-                                                key={doc._id || idx}
-                                                href={fileUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                                    border: '1px solid #e2e8f0', borderRadius: '10px',
-                                                    overflow: 'hidden', textDecoration: 'none',
-                                                    background: '#f8fafc', transition: 'box-shadow 0.2s',
-                                                    cursor: 'pointer'
-                                                }}
-                                                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
-                                                onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
-                                            >
-                                                {isImage ? (
-                                                    <div style={{ width: '100%', height: '90px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
-                                                        <img
-                                                            src={fileUrl}
-                                                            alt={doc.originalName || doc.fileName || `Doc ${idx + 1}`}
-                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                            onError={e => {
-                                                                e.target.style.display = 'none';
-                                                                e.target.nextSibling.style.display = 'flex';
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    {/* Per-passenger document groups */}
+                                    {passengerDocGroups.map((group) => (
+                                        <div key={group.label} style={{
+                                            border: '1px solid #bfdbfe',
+                                            borderRadius: '10px',
+                                            padding: '12px',
+                                            background: '#f0f7ff'
+                                        }}>
+                                            <div style={{ marginBottom: '10px' }}>
+                                                <span style={{
+                                                    fontSize: '10px', fontWeight: '700', textTransform: 'uppercase',
+                                                    letterSpacing: '0.6px', color: '#1d4ed8', display: 'block'
+                                                }}>
+                                                    Passenger {group.passengerNumber}
+                                                </span>
+                                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e3a8a' }}>
+                                                    {group.label}
+                                                </span>
+                                            </div>
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                                                gap: '10px'
+                                            }}>
+                                                {group.docs.map((doc, idx) => {
+                                                    const fileUrl = doc.fileUrl || '#';
+                                                    const isImage = doc.fileType?.startsWith('image/') ||
+                                                        /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalName || doc.fileName || '');
+                                                    return (
+                                                        <div
+                                                            key={doc._id || idx}
+                                                            onClick={() => isImage
+                                                                ? setPreviewDoc({ fileUrl, name: doc.originalName || doc.fileName, section: doc.section })
+                                                                : window.open(fileUrl, '_blank', 'noopener,noreferrer')
+                                                            }
+                                                            style={{
+                                                                display: 'flex', flexDirection: 'column',
+                                                                border: '1px solid #e2e8f0', borderRadius: '10px',
+                                                                overflow: 'hidden',
+                                                                background: '#fff', transition: 'box-shadow 0.2s', cursor: 'pointer'
                                                             }}
-                                                        />
-                                                        <div style={{
-                                                            display: 'none', width: '100%', height: '100%',
-                                                            alignItems: 'center', justifyContent: 'center',
-                                                            position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
-                                                        }}>
-                                                            <Image size={28} color="#94a3b8" />
+                                                            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+                                                            onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                                                        >
+                                                            {isImage ? (
+                                                                <div style={{ width: '100%', height: '80px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
+                                                                    <img
+                                                                        src={fileUrl}
+                                                                        alt={doc.originalName || doc.fileName}
+                                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                        onError={e => {
+                                                                            e.target.style.display = 'none';
+                                                                            e.target.nextSibling.style.display = 'flex';
+                                                                        }}
+                                                                    />
+                                                                    <div style={{
+                                                                        display: 'none', width: '100%', height: '100%',
+                                                                        alignItems: 'center', justifyContent: 'center',
+                                                                        position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
+                                                                    }}>
+                                                                        <Image size={24} color="#94a3b8" />
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+                                                                    <File size={28} color="#64748b" />
+                                                                </div>
+                                                            )}
+                                                            <div style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}>
+                                                                <p style={{
+                                                                    margin: '0 0 3px 0', fontSize: '11px', fontWeight: '600',
+                                                                    color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                                                }}>
+                                                                    {doc.originalName || doc.fileName || `Document ${idx + 1}`}
+                                                                </p>
+                                                                {doc.section && (
+                                                                    <span style={{
+                                                                        fontSize: '10px', fontWeight: '600',
+                                                                        color: doc.section === 'Valid ID' ? '#1d4ed8' : '#b45309',
+                                                                        background: doc.section === 'Valid ID' ? '#dbeafe' : '#fef3c7',
+                                                                        padding: '1px 6px', borderRadius: '4px'
+                                                                    }}>
+                                                                        {doc.section}
+                                                                    </span>
+                                                                )}
+                                                                {doc.fileSize && (
+                                                                    <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
+                                                                        {(doc.fileSize / 1024).toFixed(1)} KB
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div style={{
-                                                        width: '100%', height: '90px', display: 'flex',
-                                                        alignItems: 'center', justifyContent: 'center', background: '#f1f5f9'
-                                                    }}>
-                                                        <File size={32} color="#64748b" />
-                                                    </div>
-                                                )}
-                                                <div style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}>
-                                                    <p style={{
-                                                        margin: '0 0 2px 0', fontSize: '11px', fontWeight: '600',
-                                                        color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden',
-                                                        textOverflow: 'ellipsis'
-                                                    }}>
-                                                        {doc.originalName || doc.fileName || `Document ${idx + 1}`}
-                                                    </p>
-                                                    {doc.section && (
-                                                        <span style={{
-                                                            fontSize: '10px', color: '#f97316', fontWeight: '600',
-                                                            background: '#fff7ed', padding: '1px 6px', borderRadius: '4px'
-                                                        }}>
-                                                            {doc.section}
-                                                        </span>
-                                                    )}
-                                                    {doc.fileSize && (
-                                                        <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
-                                                            {(doc.fileSize / 1024).toFixed(1)} KB
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </a>
-                                        );
-                                    })}
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* General / inquiry documents (not tied to a specific passenger) */}
+                                    {submittedDocs.length > 0 && (
+                                        <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '12px', background: '#fafbfc' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151', display: 'block', marginBottom: '10px' }}>
+                                                General Documents
+                                            </span>
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                                                gap: '10px'
+                                            }}>
+                                                {submittedDocs.map((doc, idx) => {
+                                                    const fileUrl = doc.fileUrl || '#';
+                                                    const isImage = doc.fileType?.startsWith('image/') ||
+                                                        /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalName || doc.fileName || '');
+                                                    return (
+                                                        <div
+                                                            key={doc._id || idx}
+                                                            onClick={() => isImage
+                                                                ? setPreviewDoc({ fileUrl, name: doc.originalName || doc.fileName, section: doc.section })
+                                                                : window.open(fileUrl, '_blank', 'noopener,noreferrer')
+                                                            }
+                                                            style={{
+                                                                display: 'flex', flexDirection: 'column',
+                                                                border: '1px solid #e2e8f0', borderRadius: '10px',
+                                                                overflow: 'hidden',
+                                                                background: '#fff', transition: 'box-shadow 0.2s', cursor: 'pointer'
+                                                            }}
+                                                            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+                                                            onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                                                        >
+                                                            {isImage ? (
+                                                                <div style={{ width: '100%', height: '80px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
+                                                                    <img
+                                                                        src={fileUrl}
+                                                                        alt={doc.originalName || doc.fileName}
+                                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                        onError={e => {
+                                                                            e.target.style.display = 'none';
+                                                                            e.target.nextSibling.style.display = 'flex';
+                                                                        }}
+                                                                    />
+                                                                    <div style={{
+                                                                        display: 'none', width: '100%', height: '100%',
+                                                                        alignItems: 'center', justifyContent: 'center',
+                                                                        position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
+                                                                    }}>
+                                                                        <Image size={24} color="#94a3b8" />
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+                                                                    <File size={28} color="#64748b" />
+                                                                </div>
+                                                            )}
+                                                            <div style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}>
+                                                                <p style={{
+                                                                    margin: '0 0 3px 0', fontSize: '11px', fontWeight: '600',
+                                                                    color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                                                }}>
+                                                                    {doc.originalName || doc.fileName || `Document ${idx + 1}`}
+                                                                </p>
+                                                                {doc.section && (
+                                                                    <span style={{
+                                                                        fontSize: '10px', color: '#f97316', fontWeight: '600',
+                                                                        background: '#fff7ed', padding: '1px 6px', borderRadius: '4px'
+                                                                    }}>
+                                                                        {doc.section}
+                                                                    </span>
+                                                                )}
+                                                                {doc.fileSize && (
+                                                                    <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
+                                                                        {(doc.fileSize / 1024).toFixed(1)} KB
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1056,6 +1173,124 @@ const generateVoucherData = async (booking) => {
                     booking={selectedBooking}
                     onClose={() => setShowOrderSlip(false)}
                 />
+            )}
+
+            {/* ── IMAGE PREVIEW MODAL ── */}
+            {previewDoc && (
+                <div
+                    onClick={() => setPreviewDoc(null)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 10000,
+                        background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(30,41,59,0.9))',
+                        backdropFilter: 'blur(12px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '20px',
+                        animation: 'cnmFadeIn 0.25s ease',
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: '#f1f5f9',
+                            borderRadius: '20px',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05)',
+                            display: 'inline-flex',
+                            flexDirection: 'column',
+                            maxWidth: 'min(90vw, 820px)',
+                            animation: 'cnmSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                        }}
+                    >
+                        {/* Header */}
+                        <div style={{
+                            padding: '16px 20px',
+                            borderBottom: '1px solid #e2e8f0',
+                            background: 'linear-gradient(to bottom, #ffffff, #fafbfc)',
+                            borderRadius: '20px 20px 0 0',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                                <div style={{
+                                    width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                                    background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(245,158,11,0.2)',
+                                }}>
+                                    <Image size={16} color="#f59e0b" />
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <p style={{
+                                        margin: '0 0 3px', fontSize: '13px', fontWeight: '700', color: '#0f172a',
+                                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '420px',
+                                    }}>
+                                        {previewDoc.name || 'Document Preview'}
+                                    </p>
+                                    {previewDoc.section && (
+                                        <span style={{
+                                            fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px',
+                                            color: previewDoc.section === 'Valid ID' ? '#1d4ed8' : '#b45309',
+                                            background: previewDoc.section === 'Valid ID' ? '#dbeafe' : '#fef3c7',
+                                            padding: '2px 8px', borderRadius: '20px',
+                                            border: `1px solid ${previewDoc.section === 'Valid ID' ? '#bfdbfe' : '#fde68a'}`,
+                                        }}>
+                                            {previewDoc.section}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await downloadViaBlob(previewDoc.fileUrl, previewDoc.name);
+                                        } catch {
+                                            alert('Failed to download. Please try again.');
+                                        }
+                                    }}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none', borderRadius: '10px',
+                                        height: '36px', padding: '0 14px', display: 'flex', alignItems: 'center', gap: '6px',
+                                        cursor: 'pointer', color: '#fff', fontSize: '12px', fontWeight: '700', transition: 'all 0.2s',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                                >
+                                    <Download size={14} />
+                                    Download
+                                </button>
+                                <button
+                                    onClick={() => setPreviewDoc(null)}
+                                    style={{
+                                        background: '#f1f5f9', border: 'none', borderRadius: '10px',
+                                        width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        cursor: 'pointer', color: '#64748b', flexShrink: 0, transition: 'all 0.2s',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Image area — padding is always even; image is naturally sized */}
+                        <div style={{ padding: '20px' }}>
+                            <img
+                                src={previewDoc.fileUrl}
+                                alt={previewDoc.name}
+                                style={{
+                                    display: 'block',
+                                    maxWidth: 'min(75vw, 780px)',
+                                    maxHeight: '70vh',
+                                    width: 'auto',
+                                    height: 'auto',
+                                    borderRadius: '12px',
+                                    objectFit: 'contain',
+                                    boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );
