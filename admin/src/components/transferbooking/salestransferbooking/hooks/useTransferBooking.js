@@ -263,6 +263,7 @@ export const useTransferBooking = (isOpen, onClose) => {
         fullName:             `${primaryPax.firstName} ${primaryPax.lastName}`.trim(),
         email:                primaryPax.email,
         phone:                primaryPax.phone,
+        dateOfBirth:          primaryPax.dateOfBirth || '',
         message:              '',
         specialRequests:      totalSurcharge > 0
           ? `Late night surcharge applied: ₱${totalSurcharge.toLocaleString()} (${[arrivalSurcharge > 0 ? 'arrival' : '', departureSurcharge > 0 ? 'departure' : ''].filter(Boolean).join(' + ')} late night schedule)`

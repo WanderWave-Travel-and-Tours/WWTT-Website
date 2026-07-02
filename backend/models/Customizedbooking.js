@@ -62,6 +62,7 @@ const CustomizedBookingSchema = new mongoose.Schema(
     fullName:    { type: String, required: true, trim: true },
     email:       { type: String, required: true, trim: true },
     phone:       { type: String, default: '' },
+    birthDate:   { type: String, default: '' },   // primary passenger DOB — YYYY-MM-DD
     travelDate:  { type: String, default: '' },   // YYYY-MM-DD
     returnDate:  { type: String, default: '' },   // YYYY-MM-DD (optional)
     paxCount:    { type: Number, default: 1 },

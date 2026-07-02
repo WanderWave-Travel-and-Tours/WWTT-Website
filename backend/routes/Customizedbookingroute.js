@@ -15,6 +15,7 @@ const Transfer          = require('../models/transfer');
 const authMiddleware    = require('../middleware/auth');
 const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
 const { sendCustomBookingToGHL } = require('../utils/ghlService');
+const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-email booking lock — prevents concurrent duplicate submissions from the
@@ -202,6 +203,11 @@ router.post('/', async (req, res) => {
     // ── Required field validation ───────────────────────────────────────────
     if (!body.destination) return res.status(400).json({ success: false, message: 'destination is required.' });
     if (!body.fullName)    return res.status(400).json({ success: false, message: 'fullName is required.' });
+
+    const ageError = validatePrimaryPassengerAge(body.birthDate);
+    if (ageError) {
+      return res.status(400).json({ success: false, message: ageError });
+    }
 
     // 🔐 SECURITY: Resolve all item prices from the catalog (Tour/Transfer) by id.
     // The client-supplied per-item price is ignored entirely, closing the ₱1-booking

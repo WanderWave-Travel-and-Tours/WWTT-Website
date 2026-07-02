@@ -12,6 +12,7 @@ const Destination = require('../models/destination');
 const ActivityLog = require('../models/ActivityLog');
 const { BookingCount } = require('../models/PageView');
 const { sendNewUserToGHL, sendBookingConfirmationToGHL, sendPackageBookingToGHL } = require('../utils/ghlService');
+const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
 const authMiddleware = require('../middleware/auth');
 const verifyUserJWT = require('../middleware/verifyUserJWT');
 const { cloudinary } = require('../config/cloudinary');
@@ -704,6 +705,12 @@ router.post('/', upload.any(), async (req, res) => {
 
   if (totalPax <= 0) {
     return res.status(400).json({ success: false, message: 'Booking must include at least one passenger.' });
+  }
+
+  const primaryPassengerDob = bookingData.passengers?.[0]?.dateOfBirth;
+  const ageError = validatePrimaryPassengerAge(primaryPassengerDob);
+  if (ageError) {
+    return res.status(400).json({ success: false, message: ageError });
   }
 
   if (bookingData.paymentType === 'partial') {

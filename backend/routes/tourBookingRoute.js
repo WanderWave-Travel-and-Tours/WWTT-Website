@@ -11,6 +11,7 @@ const Tour        = require('../models/tour');
 const authMiddleware = require('../middleware/auth');
 const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
 const { sendTourBookingToGHL } = require('../utils/ghlService');
+const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
 
 // ── Multer setup ─────────────────────────────────────────────────────────────
 const uploadDir = path.join(__dirname, '../uploads');
@@ -89,6 +90,12 @@ router.post('/', upload.any(), async (req, res) => {
 
     if (tourTotalPax <= 0) {
       return res.status(400).json({ success: false, message: 'Booking must include at least one passenger.' });
+    }
+
+    const primaryPassengerDob = data.passengers?.[0]?.dateOfBirth;
+    const ageError = validatePrimaryPassengerAge(primaryPassengerDob);
+    if (ageError) {
+      return res.status(400).json({ success: false, message: ageError });
     }
 
     if (data.paymentType === 'partial') {

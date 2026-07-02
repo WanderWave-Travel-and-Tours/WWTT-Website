@@ -318,6 +318,7 @@ const TransferBookingFormModal = ({
         fullName,
         email,
         phone,
+        dateOfBirth:     birthDate || '',
         message,
         passengerCount,
         sellingPrice:    transfer.sellingPrice || 0,
