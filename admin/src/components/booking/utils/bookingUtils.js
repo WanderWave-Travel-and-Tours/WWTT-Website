@@ -38,8 +38,8 @@ export const detectPackageTypeInfo = (pkg) => {
   const titleIsSolo    = !titleIsSoloJoiners && /\bsolo\b/i.test(nameLower);
   const titleIsMinTwo  = /min\s*of\s*2|min\.?\s*2|minimum\s*2|min 2 pax/i.test(nameLower);
 
-  const isSoloPkg       = !titleIsSoloJoiners && (titleIsSolo || pkg.pax === 1);
   const isSoloJoinersPkg= titleIsSoloJoiners || pkg.tourType === 'joiners' || pkg.tourType === 'Solo/Joiners';
+  const isSoloPkg       = !isSoloJoinersPkg && (titleIsSolo || pkg.pax === 1);
   const isMinTwoPkg     = titleIsMinTwo || (pkg.tourType === 'private' && pkg.pax === 2);
 
   let initialPax = 2;
@@ -74,4 +74,10 @@ export const EMPTY_PASSENGER = {
   firstName: '', lastName: '', email: '', phone: '',
   dateOfBirth: '', dobDay: '', dobMonth: '', dobYear: '',
   age: '', gender: '', address: '', nationality: 'Filipino',
+  idFile: null, idFileName: '',
+  passportFile: null, passportFileName: '',
 };
+
+// Local packages require a valid ID; international packages require ID + Passport.
+export const isInternationalPackage = (pkg) =>
+  (pkg?.category || '').toLowerCase().startsWith('internation');

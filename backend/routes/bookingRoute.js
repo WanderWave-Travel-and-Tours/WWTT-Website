@@ -11,7 +11,7 @@ const Package = require('../models/package');
 const Destination = require('../models/destination');
 const ActivityLog = require('../models/ActivityLog');
 const { BookingCount } = require('../models/PageView');
-const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
+const { sendNewUserToGHL, sendBookingConfirmationToGHL, sendPackageBookingToGHL } = require('../utils/ghlService');
 const authMiddleware = require('../middleware/auth');
 const verifyUserJWT = require('../middleware/verifyUserJWT');
 const { cloudinary } = require('../config/cloudinary');
@@ -1308,6 +1308,14 @@ router.post('/', upload.any(), async (req, res) => {
     await newBooking.save();
 
     console.log(`💰 Booking saved successfully! ID: ${newBooking._id}`);
+
+    // Fire the booking automation webhook for walk-in/sales bookings paid via
+    // partial payment — fire-and-forget, never blocks the response.
+    if (bookingData.isWalkin && newBooking.paymentType === 'partial') {
+      sendPackageBookingToGHL(newBooking).catch((err) =>
+        console.error('⚠️ GHL package booking webhook failed (non-fatal):', err.message)
+      );
+    }
 
     try {
         const userEmail = bookingData.userEmail || bookingData.adminEmail || 'System';

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import { X } from 'lucide-react';
 import { useToast } from '../../toast/ToastManager';
 import { useBookingLogic } from '../hooks/useBookingLogic';
 import BookingProgressBar    from '../components/BookingProgressBar';
@@ -6,11 +7,35 @@ import BookingStep1          from '../components/BookingStep1';
 import BookingStep2          from '../components/BookingStep2';
 import TransferDetailsModal  from '../components/TransferDetailsModal';
 import BookingPreviewModal   from '../components/BookingPreviewModal';
+import ImageCropperModal     from '../components/ImageCropperModal';
 import './newBookingModal.css';
 
 const NewBookingModal = ({ isOpen, onClose }) => {
   const toast = useToast();
   const b     = useBookingLogic(isOpen, onClose);
+  const { handleFileUpload } = b;
+
+  // ── Image cropper state ──────────────────────────────────────────────────
+  const [cropperState, setCropperState] = useState(null);
+  // cropperState: { imageSrc, fileName, passengerIndex, type } | null
+
+  const openCropper = useCallback((passengerIndex, type, file) => {
+    const url = URL.createObjectURL(file);
+    setCropperState({ imageSrc: url, fileName: file.name, passengerIndex, type });
+  }, []);
+
+  const closeCropper = useCallback(() => {
+    if (cropperState?.imageSrc) URL.revokeObjectURL(cropperState.imageSrc);
+    setCropperState(null);
+  }, [cropperState]);
+
+  const handleCropConfirm = useCallback((croppedFile) => {
+    if (!cropperState) return;
+    handleFileUpload(cropperState.passengerIndex, cropperState.type, {
+      target: { files: [croppedFile] }
+    });
+    closeCropper();
+  }, [cropperState, handleFileUpload, closeCropper]);
 
   if (!isOpen) return null;
 
@@ -20,17 +45,10 @@ const NewBookingModal = ({ isOpen, onClose }) => {
 
         {/* ── HEADER ── */}
         <div className="nbm-header">
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#0f172a' }}>
-            Create New Booking
-          </h2>
-          <button
-            onClick={b.handleClose}
-            style={{
-              background: 'none', border: 'none', fontSize: '28px',
-              cursor: 'pointer', color: '#64748b', lineHeight: 1,
-              padding: '0 4px', borderRadius: '6px', transition: 'color 0.2s',
-            }}
-          >×</button>
+          <h2 className="nbm-header-title">Create New Booking</h2>
+          <button onClick={b.handleClose} className="nbm-header-close" aria-label="Close">
+            <X size={20} />
+          </button>
         </div>
 
         {/* ── PROGRESS BAR ── */}
@@ -62,8 +80,6 @@ const NewBookingModal = ({ isOpen, onClose }) => {
               isSoloJoinersPkg={b.isSoloJoinersPkg}
               handlePackageTypeDetect={b.handlePackageTypeDetect}
               // Pax
-              paxCount={b.paxCount}
-              setPaxCount={b.setPaxCount}
               addPassenger={b.addPassenger}
               removePassenger={b.removePassenger}
               // Date
@@ -75,8 +91,13 @@ const NewBookingModal = ({ isOpen, onClose }) => {
               // Passengers
               formData={b.formData}
               updatePassenger={b.updatePassenger}
+              handleFileUpload={b.handleFileUpload}
+              removeFile={b.removeFile}
+              openCropper={openCropper}
               handleDateOfBirthChange={b.handleDateOfBirthChange}
               handleDobPartChange={b.handleDobPartChange}
+              // Document requirements
+              isInternational={b.isInternational}
               // Toast
               toast={toast}
             />
@@ -137,7 +158,7 @@ const NewBookingModal = ({ isOpen, onClose }) => {
             <button
               className="nbm-btn nbm-btn-next"
               onClick={() => b.setShowConfirm(true)}
-              disabled={!b.selectedRoomType || b.loading}
+              disabled={b.loading}
             >
               {b.loading ? 'Creating Booking...' : 'Review & Create Booking ✓'}
             </button>
@@ -190,6 +211,16 @@ const NewBookingModal = ({ isOpen, onClose }) => {
           computeFinalTotal={b.computeFinalTotal}
           payableAmount={b.payableAmount}
           getDurationDays={b.getDurationDays}
+        />
+      )}
+
+      {/* ── IMAGE CROPPER MODAL ── */}
+      {cropperState && (
+        <ImageCropperModal
+          imageSrc={cropperState.imageSrc}
+          fileName={cropperState.fileName}
+          onConfirm={handleCropConfirm}
+          onCancel={closeCropper}
         />
       )}
 

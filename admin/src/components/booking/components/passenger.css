@@ -3,15 +3,17 @@
    ======================================== */
 
 .nbm-passenger-card {
-  border: 1.5px solid var(--nbm-border);
+  border: 2px solid var(--nbm-border);
   border-radius: var(--nbm-radius);
-  padding: 14px 16px;
-  margin-bottom: 10px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
   background: #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
   transition: border-color 0.22s, box-shadow 0.25s;
   animation: cardFadeIn 0.3s ease;
 }
+
+.nbm-passenger-card:last-child { margin-bottom: 0; }
 
 .nbm-passenger-card:focus-within {
   border-color: var(--nbm-amber);
@@ -23,7 +25,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px dashed var(--nbm-border);
 }
 
 .nbm-passenger-num {
@@ -42,6 +46,50 @@
 }
 
 .nbm-passenger-label { font-weight: 700; font-size: 0.95rem; color: var(--nbm-dark); }
+
+.nbm-passenger-primary-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--nbm-amber);
+  background: var(--nbm-amber-pale);
+  border: 1px solid var(--nbm-amber-border);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.nbm-passenger-remove-btn {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.nbm-passenger-remove-btn:hover { background: #ef4444; color: #fff; transform: scale(1.08); }
+
+.nbm-passenger-subsection-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1.5px dashed var(--nbm-border);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--nbm-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
 /* Field label inside passenger card */
 .nbm-pfield label,
@@ -113,20 +161,104 @@
 .nbm-passenger-card .nbm-pfield input,
 .nbm-passenger-card .nbm-pfield select { width: 100%; }
 
-/* Add Passenger Button */
-.nbm-btn-add-passenger {
-  background: linear-gradient(135deg, var(--nbm-amber), var(--nbm-amber-light));
-  color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.18s, box-shadow 0.2s;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+
+/* Document Upload (ID / Passport) */
+.nbm-file-upload-box {
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 10px;
+  background: var(--nbm-bg);
+  transition: border-color 0.2s, background 0.2s;
 }
 
-.nbm-btn-add-passenger:hover  { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 5px 16px rgba(245, 158, 11, 0.38); }
-.nbm-btn-add-passenger:active { transform: translateY(0); }
+.nbm-file-upload-box:hover {
+  border-color: var(--nbm-amber);
+  background: #fffbeb;
+}
+
+.nbm-file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 18px 12px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.nbm-upload-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--nbm-dark);
+}
+
+.nbm-upload-subtext {
+  font-size: 0.75rem;
+  color: var(--nbm-light-slate);
+}
+
+.nbm-file-uploaded {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 10px;
+  background: #f0fdf4;
+}
+
+.nbm-file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nbm-file-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #166534;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nbm-remove-file-btn {
+  flex-shrink: 0;
+  color: #ef4444;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Add More Passengers — sits below the last passenger card */
+.nbm-btn-add-more-passengers {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 13px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: var(--nbm-radius);
+  background: var(--nbm-bg);
+  color: var(--nbm-slate);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+
+.nbm-btn-add-more-passengers:hover {
+  border-color: var(--nbm-amber);
+  background: #fff7ed;
+  color: var(--nbm-amber);
+}
