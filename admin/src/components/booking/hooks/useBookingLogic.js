@@ -103,6 +103,25 @@ export const useBookingLogic = (isOpen, onClose) => {
   // Local packages require a valid ID; international packages require ID + Passport.
   const isInternational = isInternationalPackage(selectedPackage);
 
+  // Step 1 → Step 2 gate: every passenger needs their core details filled in
+  // before the sales agent can proceed (mirrors the checks in handleSubmit,
+  // but applied to ALL passengers, not just the primary one).
+  const isStep1Valid = !!selectedPackage && !!departureDate &&
+    formData.passengers.length > 0 &&
+    formData.passengers.every((p, i) => {
+      const hasCore = p.firstName?.trim() && p.lastName?.trim() &&
+        p.dobDay && p.dobMonth && p.dobYear &&
+        p.gender && p.address?.trim() && p.nationality?.trim();
+      if (!hasCore) return false;
+      if (i === 0) {
+        // Primary passenger also needs contact info + ID (mirrors handleSubmit).
+        const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((p.email || '').trim());
+        if (!validEmail || !p.phone?.trim() || !p.idFile) return false;
+        if (isInternational && !p.passportFile) return false;
+      }
+      return true;
+    });
+
   // ─────────────────────────────────────────────────────────────────────────
   //  CALCULATION FUNCTIONS
   // ─────────────────────────────────────────────────────────────────────────
@@ -712,6 +731,7 @@ export const useBookingLogic = (isOpen, onClose) => {
     // Derived
     isRestrictedDestination,
     isInternational,
+    isStep1Valid,
     filteredDestinations,
     payableAmount,
 

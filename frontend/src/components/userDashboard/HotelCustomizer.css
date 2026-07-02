@@ -291,12 +291,6 @@
   color: #94a3b8 !important;
 }
 
-/* ── Hide the Note disclaimer inside the booking customizer context ── */
-/* hotelRoomSelector shows the note elsewhere (e.g. admin), hide it here only */
-.hc-selector-wrap .hrs-details > div:first-child {
-  display: none;
-}
-
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .hc-save-bar {

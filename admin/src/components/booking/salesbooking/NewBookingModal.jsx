@@ -150,8 +150,14 @@ const NewBookingModal = ({ isOpen, onClose }) => {
           {b.currentStep === 1 && (
             <button
               className="nbm-btn nbm-btn-next"
-              onClick={() => b.setCurrentStep(2)}
-              disabled={!b.selectedPackage || !b.departureDate}
+              onClick={() => {
+                if (!b.isStep1Valid) {
+                  toast.error('Please complete all required passenger details before proceeding.');
+                  return;
+                }
+                b.setCurrentStep(2);
+              }}
+              disabled={!b.isStep1Valid}
             >
               Continue to Hotel &amp; Payment →
             </button>

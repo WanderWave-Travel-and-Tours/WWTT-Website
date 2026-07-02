@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNtbmBooking } from './hooks/useNtbmBooking';
+import { useToast } from '../../toast/ToastManager';
 import NtbmHeader   from './components/NtbmHeader';
 import NtbmProgress from './components/NtbmProgress';
 import NtbmFooter   from './components/NtbmFooter';
@@ -9,6 +10,7 @@ import './newTourBookingModal.css';
 import './PaymentOption.css';
 
 const NewTourBookingModal = ({ isOpen, onClose }) => {
+  const toast = useToast();
   const booking = useNtbmBooking({ isOpen, onClose });
 
   if (!isOpen) return null;
@@ -39,6 +41,9 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
               setPaxCount={booking.setPaxCount}
               departureDate={booking.departureDate}
               handleDepartureDateChange={booking.handleDepartureDateChange}
+              isRestrictedDestination={booking.isRestrictedDestination}
+              isDateAllowed={booking.isDateAllowed}
+              getAllowedDayLabel={booking.getAllowedDayLabel}
               // Payment
               paymentType={booking.paymentType}
               setPaymentType={booking.setPaymentType}
@@ -54,6 +59,8 @@ const NewTourBookingModal = ({ isOpen, onClose }) => {
               getDurationDays={booking.getDurationDays}
               computeEndDate={booking.computeEndDate}
               isDateTodayOrTomorrow={booking.isDateTodayOrTomorrow}
+              // Toast
+              toast={toast}
             />
           )}
 
