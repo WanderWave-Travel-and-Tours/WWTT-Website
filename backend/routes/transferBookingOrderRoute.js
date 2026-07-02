@@ -13,6 +13,7 @@ const authMiddleware       = require('../middleware/auth');
 const verifyAdminOrUser    = require('../middleware/verifyAdminOrUser');
 const { sendTransferBookingToGHL } = require('../utils/ghlService');
 const { syncLocations }            = require('../utils/syncLocations');       // ← ADD
+const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ router.post('/', async (req, res) => {
       fullName,
       email,
       phone,
+      dateOfBirth,
       message,
       passengerCount,
       oneWayPrice,
@@ -63,6 +65,11 @@ router.post('/', async (req, res) => {
     if (!fullName)     return res.status(400).json({ success: false, message: 'fullName is required.' });
     if (!email)        return res.status(400).json({ success: false, message: 'email is required.' });
     if (!travelDate)   return res.status(400).json({ success: false, message: 'travelDate is required.' });
+
+    const ageError = validatePrimaryPassengerAge(dateOfBirth);
+    if (ageError) {
+      return res.status(400).json({ success: false, message: ageError });
+    }
 
     const type = transferType === 'roundtrip' ? 'roundtrip' : 'oneway';
 
@@ -149,7 +156,8 @@ router.post('/', async (req, res) => {
       specialRequests: specialRequests || '',
       fullName,
       email,
-      phone:           phone   || '',
+      phone:           phone       || '',
+      dateOfBirth:     dateOfBirth || '',
       message:         message || '',
       passengerCount:  paxQty,
 

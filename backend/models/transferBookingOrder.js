@@ -47,6 +47,7 @@ const TransferBookingOrderSchema = new mongoose.Schema(
     fullName:       { type: String, required: true },
     email:          { type: String, required: true },
     phone:          { type: String, default: '' },
+    dateOfBirth:    { type: String, default: '' },        // primary passenger DOB — "YYYY-MM-DD"
     message:        { type: String, default: '' },
     specialRequests:{ type: String, default: '' },
 
