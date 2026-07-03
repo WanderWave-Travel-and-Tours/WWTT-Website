@@ -76,6 +76,11 @@
   overflow: hidden;
   padding: 20px;
   animation: nbmOverlayIn 0.25s ease;
+  transition: opacity 0.2s ease;
+}
+
+.nbm-overlay-closing {
+  opacity: 0;
 }
 
 /* ── Modal Shell ── */
@@ -92,6 +97,12 @@
   display: flex;
   flex-direction: column;
   animation: nbmModalPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.nbm-modal-closing {
+  opacity: 0;
+  transform: scale(0.97) translateY(8px);
 }
 
 /* ── Header ── */
