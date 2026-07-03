@@ -10,9 +10,9 @@ import BookingPreviewModal   from '../components/BookingPreviewModal';
 import ImageCropperModal     from '../components/ImageCropperModal';
 import './newBookingModal.css';
 
-const NewBookingModal = ({ isOpen, onClose }) => {
+const NewBookingModal = ({ isOpen, onClose, bookingMode = 'assist' }) => {
   const toast = useToast();
-  const b     = useBookingLogic(isOpen, onClose);
+  const b     = useBookingLogic(isOpen, onClose, bookingMode);
   const { handleFileUpload } = b;
 
   // ── Image cropper state ──────────────────────────────────────────────────

@@ -57,6 +57,9 @@ const CustomizedBookingSchema = new mongoose.Schema(
     bookingType:     { type: String, default: 'customized' },
     createdByType:   { type: String, enum: ['customer', 'sales', 'admin'], default: 'customer' },
 
+    // true only for sales-created walk-in bookings (vs. sales assisting a customer remotely)
+    isWalkin:        { type: Boolean, default: false },
+
     // ── Step 1 – Basic Info ─────────────────────────────────────────────────
     destination: { type: String, required: true, trim: true },
     fullName:    { type: String, required: true, trim: true },

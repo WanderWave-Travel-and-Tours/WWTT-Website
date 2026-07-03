@@ -735,7 +735,7 @@ const TourBookingFormModal = ({
               <div className="bfm-form-group">
                 <label>
                   Date of Birth {isPrimaryPassenger && <span className="bfm-required">*</span>}
-                  {isPrimaryPassenger && <span className="bfm-age-hint">(Must be 18+)</span>}
+                  {isPrimaryPassenger && <span className="bfm-age-hint">(Must be 18-100)</span>}
                 </label>
                 <CustomDatePicker
                   value={currentPassenger.dateOfBirth}
@@ -762,6 +762,11 @@ const TourBookingFormModal = ({
                 {isPrimaryPassenger && currentPassenger.age && parseInt(currentPassenger.age) < 18 && (
                   <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
                     ⚠ Primary passenger must be at least 18 years old.
+                  </span>
+                )}
+                {currentPassenger.age && parseInt(currentPassenger.age) > 100 && (
+                  <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+                    ⚠ {isPrimaryPassenger ? 'Primary passenger' : 'Passenger'} age cannot exceed 100 years.
                   </span>
                 )}
               </div>

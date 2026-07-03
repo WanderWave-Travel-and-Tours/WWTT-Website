@@ -198,13 +198,17 @@
     background-color: #e0f2fe !important;
 }
 
-.badge-sales { 
-    background: #10b981; 
-    color: white; 
+.badge-sales {
+    background: #10b981;
+    color: white;
 }
-.badge-user { 
-    background: #64748b; 
-    color: white; 
+.badge-walkin {
+    background: #FF7518;
+    color: white;
+}
+.badge-user {
+    background: #64748b;
+    color: white;
 }
 
 /* Add-Ons tag in package name cell */

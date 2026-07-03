@@ -79,6 +79,7 @@ const CustomBookingTable = ({
         const paymentBadge = getPaymentBadge(booking);
         const isSelected = selectedBookings.some(b => b.mongoId === booking.mongoId);
         const isSales = booking.isWalkin || booking.createdByType === 'sales';
+        const isWalkinBooking = booking.isWalkin === true;
 
         const addOns = booking.rawData?.addOns;
         const addOnCount = (addOns?.tours?.length || 0) + (addOns?.transfers?.length || 0);
@@ -177,8 +178,8 @@ const CustomBookingTable = ({
 
             {/* Created By */}
             <td>
-              <span className={`cbk-badge ${isSales ? 'cbk-badge-sales' : 'cbk-badge-user'}`}>
-                {isSales ? 'Sales' : 'User'}
+              <span className={`cbk-badge ${isWalkinBooking ? 'cbk-badge-walkin' : isSales ? 'cbk-badge-sales' : 'cbk-badge-user'}`}>
+                {isWalkinBooking ? 'Walk-in Application' : isSales ? 'Sales' : 'User'}
               </span>
             </td>
 

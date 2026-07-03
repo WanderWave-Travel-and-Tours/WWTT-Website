@@ -53,6 +53,7 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 // ── New Booking Form: lives in the same customizedBookingAdmin folder ─────────
 import CustomBookingForm from './CustomizedBookingForm';
+import BookingChoiceModal from '../booking/BookingChoiceModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 const API = 'https://wanderwaveph.onrender.com';
@@ -100,6 +101,8 @@ const CustomBooking = () => {
   const [showDetailModal,     setShowDetailModal]     = useState(false);
   const [selectedBooking,     setSelectedBooking]     = useState(null);
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+  const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
+  const [newBookingMode, setNewBookingMode] = useState('assist'); // 'walkin' | 'assist'
 
   // ── Bulk selection ─────────────────────────────────────────────────────────
   const [selectedBookings, setSelectedBookings] = useState([]);
@@ -159,7 +162,7 @@ const CustomBooking = () => {
             balancePaidAmount,
             balancePaidAt:        null,
             // Map DB createdByType: 'customer' → 'user' for display consistency
-            isWalkin:             b.createdByType === 'sales' ? true : false,
+            isWalkin:             b.isWalkin === true,
             createdByType:        b.createdByType === 'sales' ? 'sales' : 'user',
             passengers:           [],
             // Wrap tours & transfers under rawData.addOns so the detail modal
@@ -517,7 +520,7 @@ const CustomBooking = () => {
               <h1>{serviceInfo.title}</h1>
               <p>{serviceInfo.subtitle}</p>
             </div>
-            <button className="cbk-btn-add" onClick={() => setShowNewBookingModal(true)}>
+            <button className="cbk-btn-add" onClick={() => setShowBookingChoiceModal(true)}>
               <span style={{ fontSize: 18 }}>+</span> NEW BOOKING
             </button>
           </div>
@@ -636,10 +639,22 @@ const CustomBooking = () => {
         onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))}
       />
 
+      {/* ── Booking Type Choice Modal ─────────────────────────── */}
+      <BookingChoiceModal
+        isOpen={showBookingChoiceModal}
+        onClose={() => setShowBookingChoiceModal(false)}
+        onSelect={(mode) => {
+          setNewBookingMode(mode);
+          setShowBookingChoiceModal(false);
+          setShowNewBookingModal(true);
+        }}
+      />
+
       {/* ── New Booking Form (CustomBookingForm — same folder: customizedBookingAdmin) ── */}
       <CustomBookingForm
         isOpen={showNewBookingModal}
         onClose={() => setShowNewBookingModal(false)}
+        bookingMode={newBookingMode}
         onSuccess={() => {
           setShowNewBookingModal(false);
           fetchBookings();

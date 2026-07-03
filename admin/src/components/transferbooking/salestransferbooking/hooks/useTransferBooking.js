@@ -8,7 +8,8 @@ const BLANK_PASSENGER = {
   age: '', gender: '', address: '', nationality: 'Filipino',
 };
 
-export const useTransferBooking = (isOpen, onClose) => {
+export const useTransferBooking = (isOpen, onClose, bookingMode = 'assist') => {
+  const isWalkinBooking = bookingMode === 'walkin';
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -229,6 +230,7 @@ export const useTransferBooking = (isOpen, onClose) => {
     if (!p.email.trim())  { toast.error('Passenger 1 email is required'); return false; }
     if (!p.phone.trim())  { toast.error('Passenger 1 phone number is required'); return false; }
     if (!p.age || parseInt(p.age) < 18) { toast.error('Passenger 1 must be at least 18 years old to book.'); return false; }
+    if (parseInt(p.age) > 100) { toast.error('Passenger 1 age cannot exceed 100 years.'); return false; }
     return true;
   };
 
@@ -280,6 +282,7 @@ export const useTransferBooking = (isOpen, onClose) => {
         supplierName:         selectedTransfer.supplierName || '',
         pax:                  String(paxCount),
         createdByType:        'sales',
+        isWalkin:             isWalkinBooking,
       };
 
       const bookingRes = await fetch(`${BASE_URL}/api/transfer-bookings`, {

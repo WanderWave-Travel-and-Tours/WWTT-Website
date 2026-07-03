@@ -273,7 +273,7 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
 
   // ✅ Separate helper for hotel display line item
   // Rates: Budget/Standard = ₱0 (included), 4-Star = ₱1,660/night, 5-Star = ₱2,500/night
-  // Room allocation: Math.ceil(totalPax / 4) — 4-pax-per-room rule per spec
+  // Room allocation: Math.ceil(totalPax / selectedRoomType.capacity) — same as packages
   const getHotelPricePerNight = (roomTypeStr) => {
     const t = (roomTypeStr || '').toUpperCase();
     // Match 5-star tier: "5-STAR", "5 STAR", "5STAR", "PREMIUM", "LUXURY", "DELUXE"
@@ -286,14 +286,15 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
 
   const calculateHotelTotal = () => {
     if (!selectedRoomType) return 0;
-    const rooms = Math.ceil(basePax / 4);
+    const roomCapacity = selectedRoomType.capacity || 4;
+    const rooms = Math.ceil(basePax / roomCapacity);
     const pricePerNight = getHotelPricePerNight(selectedRoomType.type);
-    // 🔍 DEBUG — remove after confirming values are correct
     return pricePerNight * durationNights * rooms;
   };
 
   const calculateRoomsNeeded = () => {
-    return Math.ceil(totalPassengers / 4);
+    if (!selectedRoomType) return 1;
+    return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
   };
   const calculateDiscount = () => {
     if (!appliedPromo) return 0;
@@ -558,6 +559,10 @@ const handleRemoveFlight = () => {
     if (passengerStep === 1) {
       const primaryAge = parseInt(passengers[0]?.age);
       if (!primaryAge || primaryAge < 18) { toast.error('Passenger 1 must be at least 18 years old to book.'); return; }
+      if (primaryAge > 100) { toast.error('Passenger 1 age cannot exceed 100 years.'); return; }
+    } else {
+      const currentAge = parseInt(passengers[passengerStep - 1]?.age);
+      if (currentAge && currentAge > 100) { toast.error(`Passenger ${passengerStep} age cannot exceed 100 years.`); return; }
     }
     if (passengerStep < totalPassengers) { setPassengerStep(prev => prev + 1); return; }
 

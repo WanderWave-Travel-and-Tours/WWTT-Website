@@ -286,8 +286,11 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
       const md = today.getMonth() - birth.getMonth();
       if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
       if (age < 18) errs.birthDate = 'Primary booker must be at least 18 years old.';
+      else if (age > 100) errs.birthDate = 'Age cannot exceed 100 years.';
     }
     if (!info.travelDate)         errs.travelDate  = 'Travel date is required.';
+    if (info.returnDate && info.travelDate && info.returnDate <= info.travelDate)
+      errs.returnDate = 'Return date must be after the travel date.';
     if (!info.paxCount || parseInt(info.paxCount) < 1) errs.paxCount = 'At least 1 passenger required.';
     setInfoErrors(errs);
     return Object.keys(errs).length === 0;

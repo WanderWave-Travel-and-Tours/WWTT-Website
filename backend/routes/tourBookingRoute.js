@@ -11,7 +11,8 @@ const Tour        = require('../models/tour');
 const authMiddleware = require('../middleware/auth');
 const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
 const { sendTourBookingToGHL } = require('../utils/ghlService');
-const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
+const { validatePrimaryPassengerAge, validatePassengersAge } = require('../utils/ageUtils');
+const { validateEmail, validatePhone, validateNotPastDate } = require('../utils/bookingValidation');
 
 // ── Multer setup ─────────────────────────────────────────────────────────────
 const uploadDir = path.join(__dirname, '../uploads');
@@ -96,6 +97,24 @@ router.post('/', upload.any(), async (req, res) => {
     const ageError = validatePrimaryPassengerAge(primaryPassengerDob);
     if (ageError) {
       return res.status(400).json({ success: false, message: ageError });
+    }
+    const passengersAgeError = validatePassengersAge(data.passengers);
+    if (passengersAgeError) {
+      return res.status(400).json({ success: false, message: passengersAgeError });
+    }
+
+    const primaryPassenger = data.passengers?.[0] || {};
+    const emailError = validateEmail(primaryPassenger.email, { label: 'Primary passenger email' });
+    if (emailError) {
+      return res.status(400).json({ success: false, message: emailError });
+    }
+    const phoneError = validatePhone(primaryPassenger.phone, { label: 'Primary passenger phone' });
+    if (phoneError) {
+      return res.status(400).json({ success: false, message: phoneError });
+    }
+    const dateError = validateNotPastDate(data.startDate, 'Travel date');
+    if (dateError) {
+      return res.status(400).json({ success: false, message: dateError });
     }
 
     if (data.paymentType === 'partial') {

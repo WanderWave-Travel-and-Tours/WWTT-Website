@@ -17,7 +17,8 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const API_BASE = 'https://wanderwaveph.onrender.com';
 const getAdminHeaders = () => ({});
 
-export const useBookingLogic = (isOpen, onClose) => {
+export const useBookingLogic = (isOpen, onClose, bookingMode = 'assist') => {
+  const isWalkinBooking = bookingMode === 'walkin';
   const toast = useToast();
 
   const [loading, setLoading]       = useState(false);
@@ -84,7 +85,6 @@ export const useBookingLogic = (isOpen, onClose) => {
     totalAmount:          0,
     paymentType:          'full',
     initialPaymentAmount: 0,
-    isWalkin:             true,
     message:              '',
     passengers: [{ ...EMPTY_PASSENGER }],
   });
@@ -517,6 +517,10 @@ export const useBookingLogic = (isOpen, onClose) => {
       toast.error('Passenger 1 must be at least 18 years old to book.');
       return;
     }
+    if (primaryAge > 100) {
+      toast.error('Passenger 1 age cannot exceed 100 years.');
+      return;
+    }
     const primaryEmailInput = (formData.passengers?.[0]?.email || '').trim();
     if (!primaryEmailInput || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(primaryEmailInput)) {
       toast.error('Please enter a valid email for the primary passenger so the customer can view this booking in their account.');
@@ -603,7 +607,7 @@ export const useBookingLogic = (isOpen, onClose) => {
         selectedRoomType:  selectedRoomType?.type || null,
         hotelName:         selectedRoomType?.hotelName || null,
         numberOfRooms:     Math.ceil(paxCount / (selectedRoomType?.capacity || 4)),
-        isWalkin:          true,
+        isWalkin:          isWalkinBooking,
         createdByType:     'sales',
         createdByEmail:    'houston@wanderwaveph.com',
         status:            'pending',

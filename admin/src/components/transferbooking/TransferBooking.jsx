@@ -10,6 +10,7 @@ import BookingFilters from '../booking/BookingFilters';
 import PaginationControls from '../booking/PaginationControls';
 import TransferBookingDetailModal from './TransferBookingDetailModal';
 import NewTransferBookingModal from './salestransferbooking/NewTransferBookingModal';
+import BookingChoiceModal from '../booking/BookingChoiceModal';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
@@ -66,6 +67,8 @@ const TransferBookingDashboard = () => {
   const [showModal,      setShowModal]     = useState(false);
   const [selected,       setSelected]      = useState(null);
   const [showNewBooking, setShowNewBooking] = useState(false);
+  const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
+  const [newBookingMode, setNewBookingMode] = useState('assist'); // 'walkin' | 'assist'
 
   // Filters
   const [searchTerm,    setSearchTerm]    = useState('');
@@ -405,7 +408,7 @@ const TransferBookingDashboard = () => {
             </div>
             <button
               className="bkm-btn-add"
-              onClick={() => setShowNewBooking(true)}
+              onClick={() => setShowBookingChoiceModal(true)}
             >
               <Car size={16} /> + New Booking
             </button>
@@ -626,9 +629,15 @@ const TransferBookingDashboard = () => {
 
                         {/* Created By */}
                         <td>
-                          <span className={`trk-created-by-badge trk-created-by-${(booking.rawData?.createdByType || 'user').toLowerCase()}`}>
-                            {(booking.rawData?.createdByType || 'user').toUpperCase()}
-                          </span>
+                          {booking.rawData?.isWalkin ? (
+                            <span className="trk-created-by-badge trk-created-by-walkin">
+                              WALK-IN APPLICATION
+                            </span>
+                          ) : (
+                            <span className={`trk-created-by-badge trk-created-by-${(booking.rawData?.createdByType || 'user').toLowerCase()}`}>
+                              {(booking.rawData?.createdByType || 'user').toUpperCase()}
+                            </span>
+                          )}
                         </td>
 
                         {/* Actions */}
@@ -674,10 +683,22 @@ const TransferBookingDashboard = () => {
         </div>
       </main>
 
+      {/* ── Booking Type Choice Modal ─────────────────────────── */}
+      <BookingChoiceModal
+        isOpen={showBookingChoiceModal}
+        onClose={() => setShowBookingChoiceModal(false)}
+        onSelect={(mode) => {
+          setNewBookingMode(mode);
+          setShowBookingChoiceModal(false);
+          setShowNewBooking(true);
+        }}
+      />
+
       {/* ── New Transfer Booking Modal ───────────────────────── */}
       <NewTransferBookingModal
         isOpen={showNewBooking}
         onClose={() => setShowNewBooking(false)}
+        bookingMode={newBookingMode}
       />
 
       {/* ── Detail Modal ─────────────────────────────────────────── */}
