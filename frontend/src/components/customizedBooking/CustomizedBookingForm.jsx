@@ -289,6 +289,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
         - (today.getMonth() < dob.getMonth()
           || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate()) ? 1 : 0);
       if (age < 18) errs.birthDate = 'You must be at least 18 years old to book.';
+      else if (age > 100) errs.birthDate = 'Age cannot exceed 100 years.';
     }
     if (!info.travelDate)         errs.travelDate  = 'Travel date is required.';
     if (info.returnDate && info.travelDate && info.returnDate <= info.travelDate)

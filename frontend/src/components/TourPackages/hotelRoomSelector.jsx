@@ -339,16 +339,15 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
     return 0;
   };
 
-  // ✅ 4-pax-per-room rule: Math.ceil(totalPax / 4)
-  // Spec: 1–4 pax = 1 room, 5–8 = 2 rooms, 9–12 = 3 rooms, etc.
-  const getRoomsNeeded = () => {
-    return Math.ceil(numberOfPax / 4);
+  // ✅ Read actual capacity from DB (first hotel in group), fallback to 2
+  const getRoomsNeeded = (group) => {
+    const capacity = group.hotels[0]?.capacity || 2;
+    return Math.ceil(numberOfPax / capacity);
   };
 
   // ✅ Total hotel cost for a category: rate × nights × rooms
-  // Formula: pricePerNight × durationNights × Math.ceil(numberOfPax / 4)
-  const getCategoryHotelTotal = (roomType) => {
-    return getPerNightRate(roomType) * durationNights * getRoomsNeeded();
+  const getCategoryHotelTotal = (roomType, group) => {
+    return getPerNightRate(roomType) * durationNights * getRoomsNeeded(group);
   };
 
   // ✨ Get generic category display name
@@ -403,11 +402,11 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   };
 
   // ✅ Handle category selection — reports hotel total back to parent via callback
-  const handleCategorySelect = (roomType, firstHotel) => {
+  const handleCategorySelect = (roomType, firstHotel, group) => {
     onRoomTypeChange(firstHotel);
     // ✅ Fire callback so parent can add hotel cost to its total without re-implementing logic
     if (onHotelTotalChange) {
-      const hotelTotal = getCategoryHotelTotal(roomType);
+      const hotelTotal = getCategoryHotelTotal(roomType, group);
       onHotelTotalChange(hotelTotal, firstHotel);
     }
   };
@@ -453,13 +452,13 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
           const isBestValue = idx === 0;
 
           // ✅ Compute hotel cost for this category for card display
-          const categoryHotelTotal = getCategoryHotelTotal(roomType);
+          const categoryHotelTotal = getCategoryHotelTotal(roomType, group);
 
           return (
             <div
               key={roomType}
               className={`hrs-card hrs-category-card ${isSelected ? 'hrs-selected' : ''}`}
-              onClick={() => handleCategorySelect(roomType, group.hotels[0])}
+              onClick={() => handleCategorySelect(roomType, group.hotels[0], group)}
             >
               {isSelected && (
                 <div className="hrs-checkmark-corner">

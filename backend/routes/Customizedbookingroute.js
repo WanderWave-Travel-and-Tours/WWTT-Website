@@ -16,6 +16,7 @@ const authMiddleware    = require('../middleware/auth');
 const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
 const { sendCustomBookingToGHL } = require('../utils/ghlService');
 const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
+const { validateEmail, validatePhone, validateNotPastDate } = require('../utils/bookingValidation');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-email booking lock — prevents concurrent duplicate submissions from the
@@ -209,6 +210,22 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: ageError });
     }
 
+    const emailError = validateEmail(body.email, { label: 'Email' });
+    if (emailError) {
+      return res.status(400).json({ success: false, message: emailError });
+    }
+    const phoneError = validatePhone(body.phone, { required: false, label: 'Phone number' });
+    if (phoneError) {
+      return res.status(400).json({ success: false, message: phoneError });
+    }
+    const travelDateError = validateNotPastDate(body.travelDate, 'Travel date');
+    if (travelDateError) {
+      return res.status(400).json({ success: false, message: travelDateError });
+    }
+    if (body.returnDate && body.travelDate && new Date(body.returnDate) <= new Date(body.travelDate)) {
+      return res.status(400).json({ success: false, message: 'returnDate must be after travelDate.' });
+    }
+
     // 🔐 SECURITY: Resolve all item prices from the catalog (Tour/Transfer) by id.
     // The client-supplied per-item price is ignored entirely, closing the ₱1-booking
     // price-manipulation vector. Each item must reference a valid catalog id.
@@ -269,6 +286,7 @@ router.post('/', async (req, res) => {
       promoCode: body.promoCode || null,
       notes:     body.notes     || '',
       createdByType: body.createdByType || 'customer',
+      isWalkin: body.createdByType === 'sales' && body.isWalkin === true,
     });
 
     await booking.save();

@@ -14,8 +14,8 @@ import './css/previewModal.css';
 import './css/transferDetailsModal.css';
 import './PaymentOption.css';
 
-const NewTransferBookingModal = ({ isOpen, onClose }) => {
-  const booking = useTransferBooking(isOpen, onClose);
+const NewTransferBookingModal = ({ isOpen, onClose, bookingMode = 'assist' }) => {
+  const booking = useTransferBooking(isOpen, onClose, bookingMode);
 
   if (!isOpen) return null;
 

@@ -14,6 +14,7 @@ const verifyAdminOrUser    = require('../middleware/verifyAdminOrUser');
 const { sendTransferBookingToGHL } = require('../utils/ghlService');
 const { syncLocations }            = require('../utils/syncLocations');       // ← ADD
 const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
+const { validateEmail, validatePhone, validateNotPastDate } = require('../utils/bookingValidation');
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,6 +59,7 @@ router.post('/', async (req, res) => {
       supplierName,
       pax,
       createdByType,    // 'sales' | 'customer'
+      isWalkin,         // true = walk-in booking, false = assisted booking
     } = req.body;
 
     // ── Basic validation ────────────────────────────────────────────────────
@@ -71,6 +73,19 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: ageError });
     }
 
+    const emailError = validateEmail(email, { label: 'Email' });
+    if (emailError) {
+      return res.status(400).json({ success: false, message: emailError });
+    }
+    const phoneError = validatePhone(phone, { label: 'Phone number' });
+    if (phoneError) {
+      return res.status(400).json({ success: false, message: phoneError });
+    }
+    const travelDateError = validateNotPastDate(travelDate, 'Travel date');
+    if (travelDateError) {
+      return res.status(400).json({ success: false, message: travelDateError });
+    }
+
     const type = transferType === 'roundtrip' ? 'roundtrip' : 'oneway';
 
     // ── Trip-type-specific validation ───────────────────────────────────────
@@ -78,6 +93,9 @@ router.post('/', async (req, res) => {
       if (!arrivalTime)   return res.status(400).json({ success: false, message: 'arrivalTime is required for roundtrip bookings.' });
       if (!departureTime) return res.status(400).json({ success: false, message: 'departureTime is required for roundtrip bookings.' });
       if (!returnDate)    return res.status(400).json({ success: false, message: 'returnDate is required for roundtrip bookings.' });
+      if (new Date(returnDate) <= new Date(travelDate)) {
+        return res.status(400).json({ success: false, message: 'returnDate must be after travelDate.' });
+      }
     }
 
     // 🔐 SECURITY: Server-side price resolution (anti price-manipulation).
@@ -177,6 +195,9 @@ router.post('/', async (req, res) => {
 
       // 'sales' if from admin modal, 'customer' if from public booking page
       createdByType: createdByType === 'sales' ? 'sales' : 'customer',
+
+      // true only for sales-created walk-in bookings
+      isWalkin: createdByType === 'sales' && isWalkin === true,
 
       // New bookings are never archived by default
       isArchive: 'No',

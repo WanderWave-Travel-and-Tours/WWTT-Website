@@ -88,6 +88,10 @@ const TransferBookingOrderSchema = new mongoose.Schema(
       enum:    ['sales', 'customer'],
       default: 'customer',
     },
+
+    // 'true'  → sales agent booked this in person for a walk-in customer
+    // 'false' → sales agent assisted a customer remotely (call, chat, etc.)
+    isWalkin: { type: Boolean, default: false },
   },
   {
     timestamps:  true,

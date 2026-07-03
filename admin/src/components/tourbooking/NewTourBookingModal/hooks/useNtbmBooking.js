@@ -15,7 +15,8 @@ const blankPassenger = () => ({
   age: '', gender: '', address: '', nationality: 'Filipino',
 });
 
-export const useNtbmBooking = ({ isOpen, onClose }) => {
+export const useNtbmBooking = ({ isOpen, onClose, bookingMode = 'assist' }) => {
+  const isWalkinBooking = bookingMode === 'walkin';
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -257,10 +258,10 @@ export const useNtbmBooking = ({ isOpen, onClose }) => {
         paymentType:          paymentType,
         initialPaymentAmount: initialPaymentAmount,
         remainingBalance:     paymentType === 'partial' ? packageTotal - initialPaymentAmount : 0,
-        isWalkin:             true,
+        isWalkin:             isWalkinBooking,
         createdByType:        'sales',
         createdByEmail:       'houston@wanderwaveph.com',
-        bookingSource:        'walkin',
+        bookingSource:        isWalkinBooking ? 'walkin' : 'manual',
         passengers: passengers.map((p, idx) => ({
           passengerNumber: idx + 1,
           firstName:       p.firstName,

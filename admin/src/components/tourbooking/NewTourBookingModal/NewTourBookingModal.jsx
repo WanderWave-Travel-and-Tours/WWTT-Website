@@ -9,9 +9,9 @@ import NtbmStep2    from './components/NtbmStep2';
 import './newTourBookingModal.css';
 import './PaymentOption.css';
 
-const NewTourBookingModal = ({ isOpen, onClose }) => {
+const NewTourBookingModal = ({ isOpen, onClose, bookingMode = 'assist' }) => {
   const toast = useToast();
-  const booking = useNtbmBooking({ isOpen, onClose });
+  const booking = useNtbmBooking({ isOpen, onClose, bookingMode });
 
   if (!isOpen) return null;
 

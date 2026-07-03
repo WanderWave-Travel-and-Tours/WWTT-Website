@@ -10,6 +10,7 @@ import BookingFilters from '../booking/BookingFilters';
 import PaginationControls from '../booking/PaginationControls';
 import TourBookingDetailModal from './TourBookingDetailModal';
 import NewTourBookingModal from './NewTourBookingModal/NewTourBookingModal';
+import BookingChoiceModal from '../booking/BookingChoiceModal';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
@@ -81,6 +82,8 @@ const TourBookingDashboard = () => {
 
   // Confirm modal
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+  const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
+  const [newBookingMode, setNewBookingMode] = useState('assist'); // 'walkin' | 'assist'
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'primary'
@@ -340,7 +343,7 @@ const TourBookingDashboard = () => {
             </div>
             <button
               className="bkm-btn-add"
-              onClick={() => setShowNewBookingModal(true)}
+              onClick={() => setShowBookingChoiceModal(true)}
             >
               + New Booking
             </button>
@@ -503,9 +506,15 @@ const TourBookingDashboard = () => {
 
                         {/* Created By */}
                         <td>
-                          <span className={`tbk-created-by-badge tbk-created-by-${(raw.createdByType || 'user').toLowerCase()}`}>
-                            {(raw.createdByType || 'user').toUpperCase()}
-                          </span>
+                          {raw.isWalkin ? (
+                            <span className="tbk-created-by-badge tbk-created-by-walkin">
+                              WALK-IN APPLICATION
+                            </span>
+                          ) : (
+                            <span className={`tbk-created-by-badge tbk-created-by-${(raw.createdByType || 'user').toLowerCase()}`}>
+                              {(raw.createdByType || 'user').toUpperCase()}
+                            </span>
+                          )}
                         </td>
 
                         {/* Actions */}
@@ -551,10 +560,22 @@ const TourBookingDashboard = () => {
         </div>
       </main>
 
+      {/* ── Booking Type Choice Modal ─────────────────────────── */}
+      <BookingChoiceModal
+        isOpen={showBookingChoiceModal}
+        onClose={() => setShowBookingChoiceModal(false)}
+        onSelect={(mode) => {
+          setNewBookingMode(mode);
+          setShowBookingChoiceModal(false);
+          setShowNewBookingModal(true);
+        }}
+      />
+
       {/* ── New Tour Booking Modal ───────────────────────────── */}
       <NewTourBookingModal
         isOpen={showNewBookingModal}
         onClose={() => setShowNewBookingModal(false)}
+        bookingMode={newBookingMode}
       />
 
       {/* ── Detail Modal ─────────────────────────────────────────── */}

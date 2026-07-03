@@ -289,6 +289,7 @@ const TransferBookingFormModal = ({
       const md = today.getMonth() - birth.getMonth();
       if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
       if (age < 18) { toast.error('Lead contact must be at least 18 years old to book.'); return; }
+      if (age > 100) { toast.error('Lead contact age cannot exceed 100 years.'); return; }
     }
     setShowConfirmModal(true);
   };
@@ -520,11 +521,21 @@ const TransferBookingFormModal = ({
                   let age = today.getFullYear() - birth.getFullYear();
                   const md = today.getMonth() - birth.getMonth();
                   if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
-                  return age < 18 ? (
-                    <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
-                      ⚠ Lead contact must be at least 18 years old.
-                    </span>
-                  ) : null;
+                  if (age < 18) {
+                    return (
+                      <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+                        ⚠ Lead contact must be at least 18 years old.
+                      </span>
+                    );
+                  }
+                  if (age > 100) {
+                    return (
+                      <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+                        ⚠ Lead contact age cannot exceed 100 years.
+                      </span>
+                    );
+                  }
+                  return null;
                 })()}
               </div>
 

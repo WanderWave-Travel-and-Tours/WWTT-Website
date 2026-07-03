@@ -218,10 +218,9 @@ const BookingTable = ({
                         </td>
 
                         {/* Created By */}
-                        {/* Created By */}
 <td>
-  <span className={`bkm-badge ${booking.isWalkin || booking.createdByType === 'sales' ? 'badge-sales' : 'badge-user'}`}>
-    {booking.isWalkin || booking.createdByType === 'sales' ? 'Sales' : 'User'}
+  <span className={`bkm-badge ${booking.isWalkin ? 'badge-walkin' : booking.createdByType === 'sales' ? 'badge-sales' : 'badge-user'}`}>
+    {booking.isWalkin ? 'Walk-in Application' : booking.createdByType === 'sales' ? 'Sales' : 'User'}
   </span>
 </td>
 

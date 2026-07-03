@@ -159,6 +159,15 @@ const PassengerCard = ({ passenger: p, index: i, total, onUpdate, onDobChange, o
           ⚠ Primary passenger must be at least 18 years old.
         </div>
       )}
+      {p.age && parseInt(p.age) > 100 && (
+        <div style={{
+          marginTop: '6px', padding: '6px 10px', borderRadius: '6px',
+          background: '#fef2f2', border: '1px solid #fecaca',
+          color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600,
+        }}>
+          ⚠ {i === 0 ? 'Primary passenger' : 'Passenger'} age cannot exceed 100 years.
+        </div>
+      )}
     </div>
 
 

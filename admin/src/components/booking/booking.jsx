@@ -13,6 +13,7 @@ import PaginationControls from './PaginationControls';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import NewBookingModal from './salesbooking/NewBookingModal';
+import BookingChoiceModal from './BookingChoiceModal';
 
 const DESTINATION_IMAGES = {
     TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',
@@ -36,6 +37,8 @@ const Booking = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+  const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
+  const [newBookingMode, setNewBookingMode] = useState('assist'); // 'walkin' | 'assist'
   const [selectedBookings, setSelectedBookings] = useState([]);
 const [createdByFilter, setCreatedByFilter] = useState('ALL');
   const [confirmConfig, setConfirmConfig] = useState({
@@ -525,9 +528,9 @@ if (createdByFilter !== 'ALL') {
               <p>View and manage all active customer bookings</p>
             </div>
 
-            <button 
+            <button
               className="bkm-btn-add"
-              onClick={() => setShowNewBookingModal(true)}
+              onClick={() => setShowBookingChoiceModal(true)}
             >
               <span style={{ fontSize: '18px', marginRight: '6px' }}>+</span>
               NEW BOOKING
@@ -672,10 +675,22 @@ if (createdByFilter !== 'ALL') {
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
+      {/* BOOKING TYPE CHOICE MODAL */}
+      <BookingChoiceModal
+        isOpen={showBookingChoiceModal}
+        onClose={() => setShowBookingChoiceModal(false)}
+        onSelect={(mode) => {
+          setNewBookingMode(mode);
+          setShowBookingChoiceModal(false);
+          setShowNewBookingModal(true);
+        }}
+      />
+
       {/* NEW BOOKING MODAL */}
-      <NewBookingModal 
-        isOpen={showNewBookingModal} 
-        onClose={() => setShowNewBookingModal(false)} 
+      <NewBookingModal
+        isOpen={showNewBookingModal}
+        onClose={() => setShowNewBookingModal(false)}
+        bookingMode={newBookingMode}
       />
     </div>
   );
