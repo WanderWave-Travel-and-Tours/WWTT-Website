@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Car } from 'lucide-react';
 import { useTransferBooking } from './hooks/useTransferBooking';
 import LateNightSurchargeModal from './components/LateNightSurchargeModal';
@@ -14,10 +14,28 @@ import './css/previewModal.css';
 import './css/transferDetailsModal.css';
 import './PaymentOption.css';
 
+const CLOSE_DURATION = 200; // ms — must match .nbm-overlay-closing transition in modalBase.css
+
 const NewTransferBookingModal = ({ isOpen, onClose, bookingMode = 'assist' }) => {
   const booking = useTransferBooking(isOpen, onClose, bookingMode);
 
-  if (!isOpen) return null;
+  // Keep rendering briefly after isOpen flips false so the overlay/modal can
+  // fade out instead of vanishing instantly.
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      setClosing(false);
+    } else if (shouldRender) {
+      setClosing(true);
+      const timer = setTimeout(() => setShouldRender(false), CLOSE_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!shouldRender) return null;
 
   // ── Preview screen ───────────────────────────────────────────────────────
   if (booking.showPreview) {
@@ -59,8 +77,8 @@ const NewTransferBookingModal = ({ isOpen, onClose, bookingMode = 'assist' }) =>
         onClose={booking.handleLateNightClose}
       />
 
-      <div className="nbm-overlay">
-        <div className="nbm-modal">
+      <div className={`nbm-overlay ${closing ? 'nbm-overlay-closing' : ''}`}>
+        <div className={`nbm-modal ${closing ? 'nbm-modal-closing' : ''}`}>
 
           {/* ── Header ── */}
           <div className="nbm-header">

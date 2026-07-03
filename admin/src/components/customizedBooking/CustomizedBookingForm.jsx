@@ -26,6 +26,7 @@ import CustomTimePicker from '../timePicker/Clock';
 import LocationSelect   from '../location/LocationSelect';
 
 const API_BASE = 'https://wanderwaveph.onrender.com';
+const CLOSE_DURATION = 200; // ms — must match .cbf-overlay-closing transition below
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
 const fmt = (n) => Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -74,6 +75,23 @@ const STEPS = [
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CustomizedBookingForm({ isOpen, onClose, onSuccess, bookingMode = 'assist' }) {
   const isWalkinBooking = bookingMode === 'walkin';
+
+  // Keep rendering briefly after isOpen flips false so the overlay/modal can
+  // fade out instead of vanishing instantly.
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      setClosing(false);
+    } else if (shouldRender) {
+      setClosing(true);
+      const timer = setTimeout(() => setShouldRender(false), CLOSE_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Step ───────────────────────────────────────────────────────────────────
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -640,7 +658,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess, book
     }
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Step label helpers
@@ -652,8 +670,8 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess, book
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-    <div className="cbf-overlay" onClick={e => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div className="cbf-modal">
+    <div className={`cbf-overlay ${closing ? 'cbf-overlay-closing' : ''}`} onClick={e => { if (e.target === e.currentTarget) onClose?.(); }}>
+      <div className={`cbf-modal ${closing ? 'cbf-modal-closing' : ''}`}>
 
         {/* ── Header ────────────────────────────────────────────────────── */}
         <div className="cbf-header">

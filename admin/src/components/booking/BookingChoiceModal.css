@@ -3,22 +3,23 @@
     --bcm-navy: #0B1C38;
     --bcm-orange: #FF7518;
     --bcm-orange-hover: #E86005;
-    --bcm-bg-tint: #F4F7FA;
+    --bcm-blue: #3B6FD6;
+    --bcm-bg-tint: #F7F9FC;
     --bcm-text-sub: #64748B;
-    --bcm-border: #E2E8F0;
+    --bcm-border: #E7ECF2;
 }
 
 .bcm-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(11, 28, 56, 0.6);
-    backdrop-filter: blur(4px);
+    background: rgba(9, 20, 40, 0.58);
+    backdrop-filter: blur(6px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
     padding: 20px;
-    animation: bcmFadeIn 0.2s ease;
+    animation: bcmFadeIn 0.25s ease;
 }
 
 @keyframes bcmFadeIn {
@@ -27,128 +28,217 @@
 }
 
 .bcm-modal {
+    position: relative;
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(11, 28, 56, 0.25);
-    max-width: 460px;
+    border-radius: 28px;
+    box-shadow: 0 30px 70px -15px rgba(11, 28, 56, 0.32), 0 2px 8px rgba(11, 28, 56, 0.06);
+    max-width: 920px;
     width: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    animation: bcmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 36px 36px 40px;
+    animation: bcmSlideUp 0.34s cubic-bezier(0.16, 1, 0.3, 1);
     font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
 }
 
 @keyframes bcmSlideUp {
-    from { transform: translateY(30px) scale(0.95); opacity: 0; }
+    from { transform: translateY(24px) scale(0.97); opacity: 0; }
     to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .bcm-header {
-    padding: 24px 24px 8px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
+    margin-bottom: 26px;
+    padding-right: 40px;
 }
 
-.bcm-header-text h2 {
-    font-size: 18px;
+.bcm-eyebrow {
+    display: inline-block;
+    font-size: 12px;
     font-weight: 700;
-    color: var(--bcm-navy);
-    margin: 0 0 4px;
-    line-height: 1.2;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--bcm-orange);
+    background: #FFF1E6;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
 }
 
-.bcm-header-text p {
-    font-size: 14px;
-    color: var(--bcm-text-sub);
+.bcm-header h2 {
+    font-size: 27px;
+    font-weight: 800;
+    color: var(--bcm-navy);
     margin: 0;
-    line-height: 1.4;
+    line-height: 1.3;
+    letter-spacing: -0.3px;
 }
 
 .bcm-close-btn {
-    width: 28px;
-    height: 28px;
-    background: transparent;
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    width: 38px;
+    height: 38px;
+    background: #F1F5F9;
     border: none;
-    border-radius: 6px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #9ca3af;
+    color: #64748B;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    z-index: 2;
 }
 
 .bcm-close-btn:hover {
-    background: var(--bcm-bg-tint);
+    background: #E2E8F0;
     color: var(--bcm-navy);
+    transform: rotate(90deg);
 }
 
 .bcm-content {
-    padding: 16px 24px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    position: relative;
 }
 
 .bcm-option {
+    position: relative;
     display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px;
-    background: var(--bcm-bg-tint);
+    flex-direction: column;
+    background: #ffffff;
     border: 1.5px solid var(--bcm-border);
-    border-radius: 12px;
+    border-radius: 20px;
     cursor: pointer;
     text-align: left;
-    transition: all 0.18s ease;
+    overflow: hidden;
+    padding: 0;
+    isolation: isolate;
+    box-shadow: 0 1px 2px rgba(11, 28, 56, 0.04);
+    transition: transform 0.25s ease,
+                box-shadow 0.25s ease,
+                border-color 0.2s ease,
+                opacity 0.26s ease;
 }
 
 .bcm-option:hover {
-    border-color: var(--bcm-orange);
-    background: #FFF1E6;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(255, 117, 24, 0.15);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 36px -14px rgba(11, 28, 56, 0.22);
+}
+
+.bcm-option-walkin:hover  { border-color: #FFCCA0; }
+.bcm-option-assist:hover  { border-color: #AFC8EF; }
+
+.bcm-option:hover .bcm-option-arrow {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .bcm-option:active {
-    transform: scale(0.99);
+    transform: translateY(-2px) scale(0.99);
+}
+
+/* ── Selection state ──────────────────────────────────────────────────── */
+/* Kept deliberately quiet: a soft highlight + checkmark fade-in on the
+   chosen card, a gentle opacity dip on the other — no scaling, no motion. */
+.bcm-option-selected {
+    box-shadow: 0 8px 20px -6px rgba(11, 28, 56, 0.18);
+}
+
+.bcm-option-walkin.bcm-option-selected  { border-color: var(--bcm-orange); }
+.bcm-option-assist.bcm-option-selected  { border-color: var(--bcm-blue); }
+
+.bcm-option-dismissed {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.bcm-option-check {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 2;
+}
+
+.bcm-option-selected .bcm-option-check {
+    opacity: 1;
+}
+
+.bcm-option-art {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 300 / 200;
+}
+
+.bcm-art-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .bcm-option-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: #fff;
-    border: 1px solid var(--bcm-border);
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 16px rgba(11, 28, 56, 0.14);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--bcm-orange);
-    flex-shrink: 0;
 }
+
+.bcm-option-walkin .bcm-option-icon  { color: var(--bcm-orange); }
+.bcm-option-assist .bcm-option-icon  { color: var(--bcm-blue); }
 
 .bcm-option-text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
+    padding: 20px 56px 22px 22px;
+    transition: opacity 0.2s ease;
 }
 
 .bcm-option-title {
-    font-size: 14.5px;
-    font-weight: 600;
+    font-size: 19px;
+    font-weight: 750;
     color: var(--bcm-navy);
+    letter-spacing: -0.2px;
 }
 
 .bcm-option-desc {
-    font-size: 12.5px;
+    font-size: 13.5px;
     color: var(--bcm-text-sub);
-    line-height: 1.35;
+    line-height: 1.5;
 }
 
-@media (max-width: 640px) {
-    .bcm-modal { max-width: 92%; }
+.bcm-option-arrow {
+    position: absolute;
+    bottom: 22px;
+    right: 22px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.bcm-option-walkin .bcm-option-arrow { background: #FFF1E6; color: var(--bcm-orange); }
+.bcm-option-assist .bcm-option-arrow { background: #EAF1FD; color: var(--bcm-blue); }
+
+@media (max-width: 720px) {
+    .bcm-modal { max-width: 92%; padding: 26px 22px 30px; }
+    .bcm-header h2 { font-size: 21px; }
+    .bcm-content { grid-template-columns: 1fr; }
 }

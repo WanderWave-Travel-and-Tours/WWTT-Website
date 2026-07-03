@@ -16,6 +16,17 @@
   z-index: 9999;
   overflow: hidden;
   padding: 16px;
+  animation: nbmOverlayIn 0.22s ease;
+  transition: opacity 0.2s ease;
+}
+
+.nbm-overlay-closing {
+  opacity: 0;
+}
+
+@keyframes nbmOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── Modal shell ── */
@@ -30,6 +41,12 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
   overflow: hidden;
   animation: nbmModalPop 0.3s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.nbm-modal-closing {
+  opacity: 0;
+  transform: scale(0.97) translateY(8px);
 }
 
 @keyframes nbmModalPop {

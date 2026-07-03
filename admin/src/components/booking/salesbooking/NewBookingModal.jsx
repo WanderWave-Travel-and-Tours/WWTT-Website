@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useToast } from '../../toast/ToastManager';
 import { useBookingLogic } from '../hooks/useBookingLogic';
@@ -10,10 +10,28 @@ import BookingPreviewModal   from '../components/BookingPreviewModal';
 import ImageCropperModal     from '../components/ImageCropperModal';
 import './newBookingModal.css';
 
+const CLOSE_DURATION = 200; // ms — must match .nbm-overlay-closing transition below
+
 const NewBookingModal = ({ isOpen, onClose, bookingMode = 'assist' }) => {
   const toast = useToast();
   const b     = useBookingLogic(isOpen, onClose, bookingMode);
   const { handleFileUpload } = b;
+
+  // Keep rendering briefly after isOpen flips false so the overlay/modal can
+  // fade out instead of vanishing instantly.
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      setClosing(false);
+    } else if (shouldRender) {
+      setClosing(true);
+      const timer = setTimeout(() => setShouldRender(false), CLOSE_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Image cropper state ──────────────────────────────────────────────────
   const [cropperState, setCropperState] = useState(null);
@@ -37,11 +55,11 @@ const NewBookingModal = ({ isOpen, onClose, bookingMode = 'assist' }) => {
     closeCropper();
   }, [cropperState, handleFileUpload, closeCropper]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
-    <div className="nbm-overlay">
-      <div className="nbm-modal">
+    <div className={`nbm-overlay ${closing ? 'nbm-overlay-closing' : ''}`}>
+      <div className={`nbm-modal ${closing ? 'nbm-modal-closing' : ''}`}>
 
         {/* ── HEADER ── */}
         <div className="nbm-header">
