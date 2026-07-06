@@ -217,10 +217,12 @@ const ArchiveComponent = () => {
         fetchArchivedCustomizedBookings(), // ✅ NEW
       ]);
 
+      const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'TourBookings', 'TransferBookings', 'CustomizedBookings'];
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'TourBookings', 'TransferBookings', 'CustomizedBookings'];
-          console.error(`❌ ${names[index]} failed:`, result.reason);
+          console.error(`❌ [Archive] ${names[index]} failed:`, result.reason);
+        } else {
+          console.log(`%c✅ [Archive] ${names[index]} ok — ${Array.isArray(result.value) ? result.value.length : '?'} item(s)`, 'color:#66bb6a');
         }
       });
       

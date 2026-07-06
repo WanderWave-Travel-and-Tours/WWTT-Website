@@ -1294,7 +1294,9 @@ const sendCustomOnboardingToGHL = async (booking) => {
     })
     .join('\n');
 
-  const totalAmount = b.totalAmount || 0;
+  const totalAmount     = b.totalAmount || 0;
+  const toursTotal      = tours.reduce((sum, t) => sum + (t.subtotal || 0), 0);
+  const transfersTotal  = transfers.reduce((sum, tr) => sum + (tr.subtotal || 0), 0);
 
   const data = {
     type:      'CUSTOM_ONBOARDING',
@@ -1308,6 +1310,18 @@ const sendCustomOnboardingToGHL = async (booking) => {
     booking_id: b._id ? b._id.toString() : '',
     createdByType: b.createdByType || 'customer',
 
+    // ── Top-level fields expected by the GHL "Create Contact" step ──────────
+    destination: b.destination || '',
+
+    // ── details.* — matches {{inboundWebhookRequest.details.*}} mapping ─────
+    details: {
+      email:     b.email || '',
+      fullName:  fullName,
+      startDate: b.travelDate || '',
+      endDate:   b.returnDate || '',
+      status:    b.status     || '',
+    },
+
     email:      b.email || '',
     fullName,
     name:       fullName,
@@ -1315,13 +1329,15 @@ const sendCustomOnboardingToGHL = async (booking) => {
     last_name:  lastName,
     phone:      b.phone || '',
 
-    destination:  b.destination || '',
     service:      `Custom Trip — ${b.destination || ''}`.trim(),
     serviceName:  `Custom Trip — ${b.destination || ''}`.trim(),
     bookingName:  `Custom Trip — ${b.destination || ''}`.trim(),
+    booking_name: `Custom Trip — ${b.destination || ''}`.trim(),
+    booking_type: 'CUSTOM_BOOKING',
 
     travelDate:   b.travelDate || '',
     start_date:   b.travelDate || '',
+    travel_date:  b.travelDate || '',
     returnDate:   b.returnDate || '',
     end_date:     b.returnDate || '',
     travel_dates: `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
@@ -1330,16 +1346,23 @@ const sendCustomOnboardingToGHL = async (booking) => {
     transfers_count:   transfers.length,
     tours_summary:     toursFormatted,
     transfers_summary: transfersFormatted,
+    tours_total:       toursTotal,
+    transfers_total:   transfersTotal,
     tours_raw:         JSON.stringify(tours),
     transfers_raw:     JSON.stringify(transfers),
 
     passengerCount:  b.paxCount || 1,
     passenger_count: b.paxCount || 1,
     pax:             b.paxCount || 1,
+    pax_total:       b.paxCount || 1,
 
     totalAmount:  totalAmount,
     total_amount: totalAmount,
     totalAmountFormatted: `₱${(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+    initial_payment_amount: b.initialPaymentAmount || 0,
+    remaining_balance: b.remainingBalance || 0,
+
+    status: b.status || '',
 
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),
