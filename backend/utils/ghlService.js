@@ -1066,6 +1066,9 @@ const sendTourOnboardingToGHL = async (booking, packageData) => {
   const paxInfant = b.pax?.infants  || 0;
   const paxTotal  = paxAdult + paxChild + paxInfant;
 
+  const destination = packageData?.destination || b.destination || '';
+  const inclusions  = packageData?.inclusions || b.customizedInclusions || [];
+
   const data = {
     type:      'TOUR_ONBOARDING',
     bookingTypeLabel: 'Tour Onboarding',
@@ -1078,6 +1081,19 @@ const sendTourOnboardingToGHL = async (booking, packageData) => {
     booking_id: b._id ? b._id.toString() : '',
     createdByType: b.createdByType || 'customer',
 
+    // ── Top-level fields expected by the GHL "Create Contact" step ──────────
+    // (destination and details.* are read directly by the workflow mapping)
+    destination,
+
+    // ── details.* — matches {{inboundWebhookRequest.details.*}} mapping ─────
+    details: {
+      email:    b.email || '',
+      fullName: fullName,
+      startDate: b.startDate || '',
+      endDate:   b.endDate   || '',
+      status:    b.status    || '',
+    },
+
     email:      b.email || '',
     fullName,
     name:       fullName,
@@ -1088,22 +1104,35 @@ const sendTourOnboardingToGHL = async (booking, packageData) => {
     package_name: b.packageName || '',
     service:      b.packageName || '',
     serviceName:  b.packageName || '',
-    package_destination: packageData?.destination || b.destination || '',
+    package_destination: destination,
     package_image_url:   packageData?.image || '',
+    category:     b.category || '',
+    duration:     b.duration || '',
+    package_inclusions: Array.isArray(inclusions) ? inclusions.join(', ') : '',
 
     startDate:    b.startDate || '',
     start_date:   b.startDate || '',
     endDate:      b.endDate   || '',
     end_date:     b.endDate   || '',
+    travel_date:  b.startDate || '',
     travel_dates: `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
 
     passengerCount:  paxTotal,
     passenger_count: paxTotal,
     pax:             paxTotal,
+    pax_total:       paxTotal,
 
     totalAmount:  b.totalAmount || 0,
     total_amount: b.totalAmount || 0,
     totalAmountFormatted: `₱${(b.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+    package_price:   b.packagePrice || 0,
+    discount_amount: b.discountAmount || 0,
+    initial_payment_amount: b.initialPaymentAmount || 0,
+
+    status:       b.status || '',
+    booking_type: 'TOUR_BOOKING',
+    booking_name: b.packageName || '',
+    tourName:     b.packageName || '',
 
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),
