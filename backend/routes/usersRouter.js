@@ -271,7 +271,10 @@ router.put('/update-profile', verifyUserJWT, async (req, res) => {
 
         res.status(200).json({
             status: "ok",
-            data: updatedUser
+            data: {
+                ...updatedUser.toObject(),
+                id: updatedUser._id
+            }
         });
 
     } catch (err) {

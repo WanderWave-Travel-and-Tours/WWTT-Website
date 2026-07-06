@@ -67,7 +67,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
             return;
         }
 
-        if (!user || !user.id) {
+        if (!user || !(user.id || user._id)) {
             toast.error("User ID not found. Please try logging in again.");
             return;
         }
@@ -109,7 +109,12 @@ const AccountSettings = ({ user, onNavigateBack }) => {
 
             if (result.status === "ok") {
                 toast.success("Profile updated successfully");
-                localStorage.setItem('wanderwave_user', JSON.stringify(result.data));
+                const mergedUser = {
+                    ...user,
+                    ...result.data,
+                    id: result.data.id || result.data._id || user.id || user._id
+                };
+                localStorage.setItem('wanderwave_user', JSON.stringify(mergedUser));
             } else {
                 toast.error(result.message || "Failed to update profile");
             }
@@ -150,7 +155,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
             return;
         }
 
-        if (!user || !user.id) {
+        if (!user || !(user.id || user._id)) {
             toast.error("User ID not found. Please log in again.");
             return;
         }
