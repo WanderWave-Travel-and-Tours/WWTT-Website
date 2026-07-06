@@ -1168,6 +1168,7 @@ const sendTransferOnboardingToGHL = async (booking) => {
   const fullName  = b.fullName || '';
   const firstName = fullName.split(' ')[0] || '';
   const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+  const route     = [b.pickupLocation, b.dropoffLocation].filter(Boolean).join(' → ');
 
   const data = {
     type:      'TRANSFER_ONBOARDING',
@@ -1181,6 +1182,18 @@ const sendTransferOnboardingToGHL = async (booking) => {
     booking_id: b._id ? b._id.toString() : '',
     createdByType: b.createdByType || 'customer',
 
+    // ── Top-level fields expected by the GHL "Create Contact" step ──────────
+    destination: b.destination || '',
+
+    // ── details.* — matches {{inboundWebhookRequest.details.*}} mapping ─────
+    details: {
+      email:     b.email || '',
+      fullName:  fullName,
+      startDate: b.travelDate || '',
+      endDate:   b.returnDate || '',
+      status:    b.status     || '',
+    },
+
     email:      b.email || '',
     fullName,
     name:       fullName,
@@ -1192,14 +1205,16 @@ const sendTransferOnboardingToGHL = async (booking) => {
     transferName:  b.activityName || '',
     service:       b.activityName || '',
     serviceName:   b.activityName || '',
-    destination:   b.destination  || '',
     supplierName:  b.supplierName || '',
+    category:      b.category || '',
+    route:         route,
 
     transferType:  b.transferType || 'oneway',
     transfer_type: b.transferType || 'oneway',
 
     travelDate:    b.travelDate   || '',
     start_date:    b.travelDate   || '',
+    travel_date:   b.travelDate   || '',
     returnDate:    b.returnDate   || '',
     end_date:      b.returnDate   || '',
     travel_dates:  `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
@@ -1212,10 +1227,18 @@ const sendTransferOnboardingToGHL = async (booking) => {
     passengerCount:  b.passengerCount || 1,
     passenger_count: b.passengerCount || 1,
     pax:             b.passengerCount || 1,
+    pax_total:       b.passengerCount || 1,
 
     totalAmount:  b.totalAmount || 0,
     total_amount: b.totalAmount || 0,
     totalAmountFormatted: `₱${(b.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+    initial_payment_amount: b.initialPaymentAmount || 0,
+    remaining_balance: b.remainingBalance || 0,
+    promo_code: b.promoCode || '',
+
+    status:       b.status || '',
+    booking_type: 'TRANSFER_BOOKING',
+    booking_name: b.activityName || '',
 
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),

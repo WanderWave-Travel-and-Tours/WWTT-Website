@@ -1,12 +1,10 @@
-import axios from 'axios';
+import api from '../../../lib/axiosInstance';
 
-const API_URL = 'https://wanderwaveph.onrender.com/api/users';
+const API_PATH = '/api/users';
 
 export const fetchArchivedUsers = async () => {
     try {
-        const response = await axios.get(`${API_URL}/all-with-archived`, {
-            withCredentials: true
-        });
+        const response = await api.get(`${API_PATH}/all-with-archived`);
         return response.data.filter(user => user.isArchive === "Yes");
     } catch (error) {
         console.error("Error fetching archived users:", error);
@@ -16,10 +14,9 @@ export const fetchArchivedUsers = async () => {
 
 export const restoreUser = async (userId) => {
     try {
-        const response = await axios.put(
-            `${API_URL}/update-profile/${userId}`,
-            { isArchive: "No" },
-            { withCredentials: true }
+        const response = await api.put(
+            `${API_PATH}/update-profile/${userId}`,
+            { isArchive: "No" }
         );
         return response.data.status === "ok";
     } catch (error) {
