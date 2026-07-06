@@ -181,6 +181,15 @@ axios.interceptors.response.use(
   error => {
     const requestUrl = error.config?.url || '';
 
+    // 🔍 DEBUG: log every axios error the interceptor sees
+    console.log('%c[axios-interceptor] error caught', 'color:#ff5252;font-weight:bold', {
+      url: requestUrl,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      willRedirect: (error.response?.status === 401 || error.response?.data?.requiresAuth) && !isRedirecting,
+    });
+
     // ✅ FIX: Let ProtectedRoute handle /verify errors exclusively.
     if (requestUrl.includes('/api/admin/verify')) {
       return Promise.reject(error);
@@ -188,6 +197,7 @@ axios.interceptors.response.use(
 
     if ((error.response?.status === 401 || error.response?.data?.requiresAuth) && !isRedirecting) {
       isRedirecting = true;
+      console.log('%c[axios-interceptor] REDIRECTING to /admin/ because of the request above', 'color:#ff5252;font-weight:bold;font-size:14px');
       localStorage.removeItem('adminData');
       window.location.href = '/admin/';
     }
@@ -463,9 +473,13 @@ const ProtectedRoute = ({ children }) => {
   const [authState, setAuthState] = useState('loading');
   const location = useLocation();
 
+  console.log('%c[ProtectedRoute] render', 'color:#42a5f5', { path: location.pathname, authState });
+
   useEffect(() => {
     let isMounted = true;
     let retryTimeout = null;
+
+    console.log('%c[ProtectedRoute] effect fired (mount or path change)', 'color:#42a5f5;font-weight:bold', { path: location.pathname });
 
     const verifyToken = async () => {
       try {
@@ -485,9 +499,11 @@ const ProtectedRoute = ({ children }) => {
           clearTimeout(timeoutId);
         }
 
+        console.log('%c[ProtectedRoute] verify responded', 'color:#42a5f5', { path: location.pathname, status: response.status, ok: response.ok });
+
         // 401/403 = definitive auth rejection → clear session, block access.
         if (response.status === 401 || response.status === 403) {
-          console.error(`❌ Auth rejected (HTTP ${response.status}) - clearing session`);
+          console.error(`❌ [ProtectedRoute] Auth rejected (HTTP ${response.status}) on path ${location.pathname} - clearing session`);
           localStorage.removeItem('adminData');
           if (isMounted) setAuthState('unauthenticated');
           return;
