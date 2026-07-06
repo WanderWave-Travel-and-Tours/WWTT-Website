@@ -16,6 +16,7 @@ const TransferBookingOrderSchema = new mongoose.Schema(
     bookingType:  { type: String, default: 'transfer' },
     destination:  { type: String, default: '' },
     category:     { type: String, default: '' },
+    onboardingSentAt: { type: Date, default: null },
 
     // ── Trip Type ───────────────────────────────────────────────────────────
     transferType: {

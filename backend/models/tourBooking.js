@@ -35,6 +35,7 @@ const TourBookingSchema = new mongoose.Schema({
   bookingType:     { type: String, default: 'tour' },
   destination:     { type: String, default: '' },
   category:        { type: String, default: '' },
+  onboardingSentAt: { type: Date, default: null },
 
   // ── Manual / Walk-in flags ─────────────────────────────────────────
   isManual:        { type: Boolean, default: false },

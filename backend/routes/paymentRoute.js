@@ -306,26 +306,9 @@ router.post('/webhook', async (req, res) => {
           );
         }
 
-        // 🔥 Tour onboarding automation — fire-and-forget, tour bookings only
-        if (booking.bookingType === 'tour') {
-          sendTourOnboardingToGHL(booking, packageData).catch((err) =>
-            console.error('⚠️ Tour onboarding webhook failed (checkout session):', err.message)
-          );
-        }
-
-        // 🔥 Transfer onboarding automation — fire-and-forget, transfer bookings only
-        if (booking.bookingType === 'transfer') {
-          sendTransferOnboardingToGHL(booking).catch((err) =>
-            console.error('⚠️ Transfer onboarding webhook failed (checkout session):', err.message)
-          );
-        }
-
-        // 🔥 Custom booking onboarding automation — fire-and-forget, customized bookings only
-        if (booking.bookingType === 'customized') {
-          sendCustomOnboardingToGHL(booking).catch((err) =>
-            console.error('⚠️ Custom onboarding webhook failed (checkout session):', err.message)
-          );
-        }
+        // Tour/Transfer/Custom onboarding automation now fires from the frontend success
+        // page when the user clicks "Go to Dashboard" or "Close" — see
+        // POST /api/payment/trigger-onboarding/:bookingId
 
         return res.json({ received: true, bookingConfirmed: true, onboardingKitSent: true });
       }
@@ -431,26 +414,9 @@ router.post('/webhook', async (req, res) => {
         );
       }
 
-      // 🔥 Tour onboarding automation — fire-and-forget, tour bookings only
-      if (booking.bookingType === 'tour') {
-        sendTourOnboardingToGHL(booking, packageData).catch((err) =>
-          console.error('⚠️ Tour onboarding webhook failed (balance payment):', err.message)
-        );
-      }
-
-      // 🔥 Transfer onboarding automation — fire-and-forget, transfer bookings only
-      if (booking.bookingType === 'transfer') {
-        sendTransferOnboardingToGHL(booking).catch((err) =>
-          console.error('⚠️ Transfer onboarding webhook failed (balance payment):', err.message)
-        );
-      }
-
-      // 🔥 Custom booking onboarding automation — fire-and-forget, customized bookings only
-      if (booking.bookingType === 'customized') {
-        sendCustomOnboardingToGHL(booking).catch((err) =>
-          console.error('⚠️ Custom onboarding webhook failed (balance payment):', err.message)
-        );
-      }
+      // Tour/Transfer/Custom onboarding automation now fires from the frontend success
+      // page when the user clicks "Go to Dashboard" or "Close" — see
+      // POST /api/payment/trigger-onboarding/:bookingId
 
       return res.json({ received: true, balancePaymentConfirmed: true, onboardingKitSent: true });
     }
@@ -695,6 +661,53 @@ router.post('/confirm-by-booking/:bookingId', async (req, res) => {
   } catch (error) {
     console.error('❌ Confirm-by-booking error:', error.response?.data || error.message);
     res.status(500).json({ success: false, message: 'Confirm-by-booking failed', error: error.message });
+  }
+});
+
+// 🔥 Fires the tour/transfer/custom onboarding automation on demand — called from the
+// frontend success pages when the user clicks "Go to Dashboard" or "Close", instead of
+// automatically from the PayMongo webhook. Guarded by onboardingSentAt so repeated
+// clicks (or the user hitting both buttons) don't double-send.
+router.post('/trigger-onboarding/:bookingId', async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    let booking = await TourBooking.findById(bookingId).populate('packageId');
+    let packageData = booking?.packageId || null;
+
+    if (!booking) {
+      booking = await TransferBooking.findById(bookingId);
+    }
+    if (!booking) {
+      booking = await CustomizedBooking.findById(bookingId);
+    }
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (booking.onboardingSentAt) {
+      return res.json({ success: true, message: 'Onboarding already sent', alreadySent: true });
+    }
+
+    let result;
+    if (booking.bookingType === 'tour') {
+      result = await sendTourOnboardingToGHL(booking, packageData);
+    } else if (booking.bookingType === 'transfer') {
+      result = await sendTransferOnboardingToGHL(booking);
+    } else if (booking.bookingType === 'customized') {
+      result = await sendCustomOnboardingToGHL(booking);
+    } else {
+      return res.status(400).json({ success: false, message: `Unsupported bookingType: ${booking.bookingType}` });
+    }
+
+    booking.onboardingSentAt = new Date();
+    await booking.save();
+
+    return res.json({ success: true, onboardingSent: true, result });
+  } catch (error) {
+    console.error('❌ Trigger-onboarding error:', error.response?.data || error.message);
+    res.status(500).json({ success: false, message: 'Trigger-onboarding failed', error: error.message });
   }
 });
 
