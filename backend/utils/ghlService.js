@@ -962,13 +962,362 @@ const sendPackageBookingToGHL = async (booking, overrides = {}) => {
   return result;
 };
 
+// ============================================================
+// ✅ NEW: Send Sales Package Booking data to the onboarding automation
+//
+// Fires when a sales/walk-in package booking's payment is confirmed
+// (checkout session or balance payment link) — same trigger point as
+// sendBookingConfirmationToGHL, but posts to the separate onboarding
+// automation webhook.
+// ============================================================
+const GHL_SALES_ONBOARDING_WEBHOOK_URL =
+  process.env.GHL_SALES_ONBOARDING_WEBHOOK_URL ||
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/2537b614-8763-4705-8aa7-295d73a6bdf5';
+
+const sendSalesOnboardingToGHL = async (booking, packageData) => {
+  const b = booking || {};
+  const fullName  = b.fullName || `${b.passengers?.[0]?.firstName || ''} ${b.passengers?.[0]?.lastName || ''}`.trim();
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const paxAdult  = b.pax?.adult    || b.passengers?.length || 1;
+  const paxChild  = b.pax?.children || 0;
+  const paxInfant = b.pax?.infants  || 0;
+  const paxTotal  = paxAdult + paxChild + paxInfant;
+
+  const data = {
+    type:      'SALES_PACKAGE_ONBOARDING',
+    bookingTypeLabel: 'Sales Package Onboarding',
+    event:     'sales_package_payment_confirmed',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    bookingId:  b._id ? b._id.toString() : '',
+    booking_id: b._id ? b._id.toString() : '',
+    createdByType: b.createdByType || 'sales',
+    isWalkin:   b.isWalkin ? 'Yes' : 'No',
+
+    email:      b.email || '',
+    fullName,
+    name:       fullName,
+    first_name: firstName,
+    last_name:  lastName,
+
+    packageName:  b.packageName || '',
+    package_name: b.packageName || '',
+    service:      b.packageName || '',
+    serviceName:  b.packageName || '',
+    package_destination: packageData?.destination || b.destination || '',
+    package_image_url:   packageData?.image || '',
+
+    startDate:    b.startDate || '',
+    start_date:   b.startDate || '',
+    endDate:      b.endDate   || '',
+    end_date:     b.endDate   || '',
+    travel_dates: `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
+
+    passengerCount:  paxTotal,
+    passenger_count: paxTotal,
+    pax:             paxTotal,
+
+    totalAmount:  b.totalAmount || 0,
+    total_amount: b.totalAmount || 0,
+    totalAmountFormatted: `₱${(b.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+  };
+
+  console.log('📤 Sending SALES_PACKAGE_ONBOARDING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_SALES_ONBOARDING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('⚠️ Sales package onboarding webhook failed:', result.error);
+  } else {
+    console.log(`✅ Sales package onboarding synced to GHL for booking "${b._id}".`);
+  }
+
+  return result;
+};
+
+// ============================================================
+// ✅ NEW: Send Tour Booking data to the tour onboarding automation
+//
+// Fires when a tour package booking's payment is confirmed (checkout
+// session or balance payment link) — same trigger point as
+// sendBookingConfirmationToGHL, but posts to the dedicated tour
+// onboarding automation webhook.
+// ============================================================
+const GHL_TOUR_ONBOARDING_WEBHOOK_URL =
+  process.env.GHL_TOUR_ONBOARDING_WEBHOOK_URL ||
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/4AlScszDJ4FcoHxCigs1';
+
+const sendTourOnboardingToGHL = async (booking, packageData) => {
+  const b = booking || {};
+  const fullName  = b.fullName || `${b.passengers?.[0]?.firstName || ''} ${b.passengers?.[0]?.lastName || ''}`.trim();
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const paxAdult  = b.pax?.adult    || b.passengers?.length || 1;
+  const paxChild  = b.pax?.children || 0;
+  const paxInfant = b.pax?.infants  || 0;
+  const paxTotal  = paxAdult + paxChild + paxInfant;
+
+  const data = {
+    type:      'TOUR_ONBOARDING',
+    bookingTypeLabel: 'Tour Onboarding',
+    event:     'tour_payment_confirmed',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    bookingId:  b._id ? b._id.toString() : '',
+    booking_id: b._id ? b._id.toString() : '',
+    createdByType: b.createdByType || 'customer',
+
+    email:      b.email || '',
+    fullName,
+    name:       fullName,
+    first_name: firstName,
+    last_name:  lastName,
+
+    packageName:  b.packageName || '',
+    package_name: b.packageName || '',
+    service:      b.packageName || '',
+    serviceName:  b.packageName || '',
+    package_destination: packageData?.destination || b.destination || '',
+    package_image_url:   packageData?.image || '',
+
+    startDate:    b.startDate || '',
+    start_date:   b.startDate || '',
+    endDate:      b.endDate   || '',
+    end_date:     b.endDate   || '',
+    travel_dates: `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
+
+    passengerCount:  paxTotal,
+    passenger_count: paxTotal,
+    pax:             paxTotal,
+
+    totalAmount:  b.totalAmount || 0,
+    total_amount: b.totalAmount || 0,
+    totalAmountFormatted: `₱${(b.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+  };
+
+  console.log('📤 Sending TOUR_ONBOARDING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_TOUR_ONBOARDING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('⚠️ Tour onboarding webhook failed:', result.error);
+  } else {
+    console.log(`✅ Tour onboarding synced to GHL for booking "${b._id}".`);
+  }
+
+  return result;
+};
+
+// ============================================================
+// ✅ NEW: Send Transfer Booking data to the transfer onboarding automation
+//
+// Fires when a transfer booking's payment is confirmed (checkout session
+// or balance payment link) — same trigger point as sendTransferBookingToGHL,
+// but posts to the dedicated transfer onboarding automation webhook.
+// ============================================================
+const GHL_TRANSFER_ONBOARDING_WEBHOOK_URL =
+  process.env.GHL_TRANSFER_ONBOARDING_WEBHOOK_URL ||
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/RpZumBHiPveGdfy2n7Cp';
+
+const sendTransferOnboardingToGHL = async (booking) => {
+  const b = booking || {};
+  const fullName  = b.fullName || '';
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const data = {
+    type:      'TRANSFER_ONBOARDING',
+    bookingTypeLabel: 'Transfer Onboarding',
+    event:     'transfer_payment_confirmed',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    bookingId:  b._id ? b._id.toString() : '',
+    booking_id: b._id ? b._id.toString() : '',
+    createdByType: b.createdByType || 'customer',
+
+    email:      b.email || '',
+    fullName,
+    name:       fullName,
+    first_name: firstName,
+    last_name:  lastName,
+    phone:      b.phone || '',
+
+    activityName:  b.activityName || '',
+    transferName:  b.activityName || '',
+    service:       b.activityName || '',
+    serviceName:   b.activityName || '',
+    destination:   b.destination  || '',
+    supplierName:  b.supplierName || '',
+
+    transferType:  b.transferType || 'oneway',
+    transfer_type: b.transferType || 'oneway',
+
+    travelDate:    b.travelDate   || '',
+    start_date:    b.travelDate   || '',
+    returnDate:    b.returnDate   || '',
+    end_date:      b.returnDate   || '',
+    travel_dates:  `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
+    arrivalTime:   b.arrivalTime   || '',
+    departureTime: b.departureTime || '',
+
+    pickupLocation:  b.pickupLocation  || '',
+    dropoffLocation: b.dropoffLocation || '',
+
+    passengerCount:  b.passengerCount || 1,
+    passenger_count: b.passengerCount || 1,
+    pax:             b.passengerCount || 1,
+
+    totalAmount:  b.totalAmount || 0,
+    total_amount: b.totalAmount || 0,
+    totalAmountFormatted: `₱${(b.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+  };
+
+  console.log('📤 Sending TRANSFER_ONBOARDING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_TRANSFER_ONBOARDING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('⚠️ Transfer onboarding webhook failed:', result.error);
+  } else {
+    console.log(`✅ Transfer onboarding synced to GHL for booking "${b._id}".`);
+  }
+
+  return result;
+};
+
+// ============================================================
+// ✅ NEW: Send Custom Booking data to the custom onboarding automation
+//
+// Fires when a customized booking's payment is confirmed (checkout
+// session or balance payment link) — same trigger point as
+// sendCustomBookingToGHL, but posts to the dedicated custom booking
+// onboarding automation webhook.
+// ============================================================
+const GHL_CUSTOM_ONBOARDING_WEBHOOK_URL =
+  process.env.GHL_CUSTOM_ONBOARDING_WEBHOOK_URL ||
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/HLhyMvgt3sXl0p2caWzX';
+
+const sendCustomOnboardingToGHL = async (booking) => {
+  const b = booking || {};
+  const fullName  = b.fullName || '';
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const tours     = Array.isArray(b.tours)     ? b.tours     : [];
+  const transfers = Array.isArray(b.transfers) ? b.transfers : [];
+
+  const toursFormatted = tours
+    .map((t, i) => {
+      const date = t.scheduledDate ? ` (${t.scheduledDate})` : '';
+      return `${i + 1}. ${t.title || 'Tour'}${date} — ${t.paxCount || 1} pax — ₱${(t.subtotal || 0).toLocaleString('en-PH')}`;
+    })
+    .join('\n');
+
+  const transfersFormatted = transfers
+    .map((tr, i) => {
+      const route = [tr.pickupLocation, tr.dropoffLocation].filter(Boolean).join(' → ');
+      const date  = tr.travelDate ? ` (${tr.travelDate})` : '';
+      return `${i + 1}. ${tr.title || 'Transfer'} [${tr.transferType || 'oneway'}]${route ? ' ' + route : ''}${date} — ₱${(tr.subtotal || 0).toLocaleString('en-PH')}`;
+    })
+    .join('\n');
+
+  const totalAmount = b.totalAmount || 0;
+
+  const data = {
+    type:      'CUSTOM_ONBOARDING',
+    bookingTypeLabel: 'Custom Onboarding',
+    event:     'custom_payment_confirmed',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    bookingId:  b._id ? b._id.toString() : '',
+    booking_id: b._id ? b._id.toString() : '',
+    createdByType: b.createdByType || 'customer',
+
+    email:      b.email || '',
+    fullName,
+    name:       fullName,
+    first_name: firstName,
+    last_name:  lastName,
+    phone:      b.phone || '',
+
+    destination:  b.destination || '',
+    service:      `Custom Trip — ${b.destination || ''}`.trim(),
+    serviceName:  `Custom Trip — ${b.destination || ''}`.trim(),
+    bookingName:  `Custom Trip — ${b.destination || ''}`.trim(),
+
+    travelDate:   b.travelDate || '',
+    start_date:   b.travelDate || '',
+    returnDate:   b.returnDate || '',
+    end_date:     b.returnDate || '',
+    travel_dates: `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
+
+    tours_count:       tours.length,
+    transfers_count:   transfers.length,
+    tours_summary:     toursFormatted,
+    transfers_summary: transfersFormatted,
+    tours_raw:         JSON.stringify(tours),
+    transfers_raw:     JSON.stringify(transfers),
+
+    passengerCount:  b.paxCount || 1,
+    passenger_count: b.paxCount || 1,
+    pax:             b.paxCount || 1,
+
+    totalAmount:  totalAmount,
+    total_amount: totalAmount,
+    totalAmountFormatted: `₱${(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+  };
+
+  console.log('📤 Sending CUSTOM_ONBOARDING to GHL:');
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_CUSTOM_ONBOARDING_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('⚠️ Custom onboarding webhook failed:', result.error);
+  } else {
+    console.log(`✅ Custom onboarding synced to GHL for booking "${b._id}".`);
+  }
+
+  return result;
+};
+
 module.exports = {
   sendNewUserToGHL,
   sendInquiryToGHL,
   sendBookingConfirmationToGHL,
   sendDestinationToGHL,
+  sendTourOnboardingToGHL, // ✅ New export
   sendTransferBookingToGHL, // ✅ New export
   sendTourBookingToGHL,     // ✅ New export
   sendCustomBookingToGHL,   // ✅ New export
   sendPackageBookingToGHL,  // ✅ New export
+  sendSalesOnboardingToGHL, // ✅ New export
+  sendTransferOnboardingToGHL, // ✅ New export
+  sendCustomOnboardingToGHL, // ✅ New export
 };

@@ -10,7 +10,7 @@ const Inquiry = require('../models/inquiry');
 const paymentController = require('../controller/paymentController');
 
 // 🔥 IMPORT GHL SERVICE
-const { sendBookingConfirmationToGHL } = require('../utils/ghlService');
+const { sendBookingConfirmationToGHL, sendSalesOnboardingToGHL, sendTourOnboardingToGHL, sendTransferOnboardingToGHL, sendCustomOnboardingToGHL } = require('../utils/ghlService');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET;
@@ -299,6 +299,34 @@ router.post('/webhook', async (req, res) => {
           console.error('⚠️ GHL Onboarding Kit failed (checkout session):', ghlError.message);
         }
 
+        // 🔥 Sales package onboarding automation — fire-and-forget, walk-in/sales bookings only
+        if (booking.isWalkin) {
+          sendSalesOnboardingToGHL(booking, packageData).catch((err) =>
+            console.error('⚠️ Sales onboarding webhook failed (checkout session):', err.message)
+          );
+        }
+
+        // 🔥 Tour onboarding automation — fire-and-forget, tour bookings only
+        if (booking.bookingType === 'tour') {
+          sendTourOnboardingToGHL(booking, packageData).catch((err) =>
+            console.error('⚠️ Tour onboarding webhook failed (checkout session):', err.message)
+          );
+        }
+
+        // 🔥 Transfer onboarding automation — fire-and-forget, transfer bookings only
+        if (booking.bookingType === 'transfer') {
+          sendTransferOnboardingToGHL(booking).catch((err) =>
+            console.error('⚠️ Transfer onboarding webhook failed (checkout session):', err.message)
+          );
+        }
+
+        // 🔥 Custom booking onboarding automation — fire-and-forget, customized bookings only
+        if (booking.bookingType === 'customized') {
+          sendCustomOnboardingToGHL(booking).catch((err) =>
+            console.error('⚠️ Custom onboarding webhook failed (checkout session):', err.message)
+          );
+        }
+
         return res.json({ received: true, bookingConfirmed: true, onboardingKitSent: true });
       }
 
@@ -394,6 +422,34 @@ router.post('/webhook', async (req, res) => {
       } catch (ghlError) {
         console.error('⚠️ GHL Onboarding Kit failed (balance payment):', ghlError.message);
         // Huwag iblock ang webhook kahit mag-fail ang GHL email
+      }
+
+      // 🔥 Sales package onboarding automation — fire-and-forget, walk-in/sales bookings only
+      if (booking.isWalkin) {
+        sendSalesOnboardingToGHL(booking, packageData).catch((err) =>
+          console.error('⚠️ Sales onboarding webhook failed (balance payment):', err.message)
+        );
+      }
+
+      // 🔥 Tour onboarding automation — fire-and-forget, tour bookings only
+      if (booking.bookingType === 'tour') {
+        sendTourOnboardingToGHL(booking, packageData).catch((err) =>
+          console.error('⚠️ Tour onboarding webhook failed (balance payment):', err.message)
+        );
+      }
+
+      // 🔥 Transfer onboarding automation — fire-and-forget, transfer bookings only
+      if (booking.bookingType === 'transfer') {
+        sendTransferOnboardingToGHL(booking).catch((err) =>
+          console.error('⚠️ Transfer onboarding webhook failed (balance payment):', err.message)
+        );
+      }
+
+      // 🔥 Custom booking onboarding automation — fire-and-forget, customized bookings only
+      if (booking.bookingType === 'customized') {
+        sendCustomOnboardingToGHL(booking).catch((err) =>
+          console.error('⚠️ Custom onboarding webhook failed (balance payment):', err.message)
+        );
       }
 
       return res.json({ received: true, balancePaymentConfirmed: true, onboardingKitSent: true });
