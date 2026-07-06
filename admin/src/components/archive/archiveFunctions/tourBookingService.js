@@ -1,12 +1,12 @@
 // archiveFunctions/tourBookingService.js
-import axios from 'axios';
+import api from '../../../lib/axiosInstance';
 
-const BASE_URL = 'https://wanderwaveph.onrender.com/api/tour-bookings';
+const BASE_PATH = '/api/tour-bookings';
 
 export const fetchArchivedTourBookings = async () => {
     try {
-        const response = await axios.get(`${BASE_URL}/archived`);
-        
+        const response = await api.get(`${BASE_PATH}/archived`);
+
         if (response.data.success) {
             return response.data.data.map(booking => ({
                 _id: booking._id,
@@ -29,7 +29,7 @@ export const fetchArchivedTourBookings = async () => {
 
 export const restoreTourBooking = async (id) => {
     try {
-        const response = await axios.put(`${BASE_URL}/restore/${id}`);
+        const response = await api.put(`${BASE_PATH}/restore/${id}`);
         console.log("✅ Tour booking restored successfully:", response.data);
         return response.data.success;
     } catch (error) {
