@@ -21,6 +21,9 @@ const OtherServices       = lazy(() => import('./components/otherservices/others
 const UserAuth            = lazy(() => import('./components/userLogin/userLogin.jsx'));
 const Payment             = lazy(() => import('./components/payment/payment.jsx'));
 const PaymentSuccess      = lazy(() => import('./components/payment/paymentSuccess.jsx'));
+const TourPaymentSuccess     = lazy(() => import('./components/payment/TourPaymentSuccess.jsx'));
+const TransferPaymentSuccess = lazy(() => import('./components/payment/TransferPaymentSuccess.jsx'));
+const CustomPaymentSuccess   = lazy(() => import('./components/payment/CustomPaymentSuccess.jsx'));
 const UserDashboard       = lazy(() => import('./components/userDashboard/userDashboard.jsx'));
 const TourPackages        = lazy(() => import('./components/TourPackages/tourPackages.jsx'));
 const TransferPackages    = lazy(() => import('./components/transfers/transferPackages.jsx'));
@@ -463,7 +466,12 @@ function MainLayout() {
     return <UserAuth setAuthPage={handleAuthPageChange} onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const isPaymentSuccessPage = location.pathname === '/payment-success';
+  const isPaymentSuccessPage = [
+    '/payment-success',
+    '/tour-payment-success',
+    '/transfer-payment-success',
+    '/custom-payment-success',
+  ].includes(location.pathname);
   const isDashboardPage = location.pathname === '/dashboard';
 
   const handleBookNowClick = () => {
@@ -726,6 +734,9 @@ function MainLayout() {
             <Route path="/help" element={<Help />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/tour-payment-success" element={<TourPaymentSuccess />} />
+            <Route path="/transfer-payment-success" element={<TransferPaymentSuccess />} />
+            <Route path="/custom-payment-success" element={<CustomPaymentSuccess />} />
             <Route
               path="/dashboard"
               element={

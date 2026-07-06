@@ -14,6 +14,15 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 // ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
+// Each booking type gets its own payment-success page so the onboarding webhook
+// can be fired per-type from that page's "Go to Dashboard"/"Close" button.
+const getSuccessPath = (bookingType) => {
+  if (bookingType === 'tour') return '/tour-payment-success';
+  if (bookingType === 'transfer') return '/transfer-payment-success';
+  if (bookingType === 'customized') return '/custom-payment-success';
+  return '/payment-success';
+};
+
 const createInquiryCheckoutSession = async (req, res) => {
   res.locals.skipEncrypt = true;
   try {
@@ -253,7 +262,7 @@ const createBookingPaymentIntent = async (req, res) => {
             // ✅ CustomizedBooking uses 'fullName' directly (same field name, safe)
             description: `${paymentDescription} for ${booking.fullName}`,
             // ✅ IMPORTANT: Use booking_id (with underscore) to match existing success page
-            success_url: `${FRONTEND_URL}/payment-success?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
+            success_url: `${FRONTEND_URL}${getSuccessPath(booking.bookingType)}?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
             cancel_url: `${FRONTEND_URL}/packages`,
             metadata: {
               // ─── Booking Identity ─────────────────────────────────────
@@ -497,7 +506,7 @@ const createBalanceCheckoutSession = async (req, res) => {
             send_email_receipt: true,
             show_description: true,
             description: `Balance Payment for ${booking.fullName}`,
-            success_url: `${FRONTEND_URL}/payment-success?booking_id=${booking._id}&paymentType=balance`,
+            success_url: `${FRONTEND_URL}${getSuccessPath(booking.bookingType)}?booking_id=${booking._id}&paymentType=balance`,
             cancel_url: `${FRONTEND_URL}/dashboard`,
             metadata: {
               booking_id:           booking._id.toString(),
