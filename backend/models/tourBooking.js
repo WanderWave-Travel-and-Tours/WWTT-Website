@@ -141,6 +141,16 @@ const TourBookingSchema = new mongoose.Schema({
   collection: 'tourbookings',
 });
 
+// ── Auto-generate reference number before save ────────────────────────────────
+TourBookingSchema.pre('save', function (next) {
+  if (!this.referenceNumber) {
+    const ts   = Date.now().toString(36).toUpperCase();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.referenceNumber = `TB-${ts}-${rand}`;
+  }
+  next();
+});
+
 // Indexes for common queries
 TourBookingSchema.index({ tourId: 1, status: 1 });
 TourBookingSchema.index({ email: 1 });
