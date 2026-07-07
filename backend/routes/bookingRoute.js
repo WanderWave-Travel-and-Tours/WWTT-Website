@@ -1191,14 +1191,14 @@ router.post('/', upload.any(), async (req, res) => {
 
       if (bookingData.packageId) {
         pkgSnapshot = await Package.findById(bookingData.packageId)
-          .select('itinerary inclusions title')
+          .select('itinerary inclusions title destination')
           .lean();
         console.log(`🔍 Package lookup by ID (${bookingData.packageId}): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
       }
 
       if (!pkgSnapshot && bookingData.packageName) {
         pkgSnapshot = await Package.findOne({ title: bookingData.packageName })
-          .select('itinerary inclusions title')
+          .select('itinerary inclusions title destination')
           .lean();
         console.log(`🔍 Package lookup by exact title ("${bookingData.packageName}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
       }
@@ -1207,7 +1207,7 @@ router.post('/', upload.any(), async (req, res) => {
         pkgSnapshot = await Package.findOne({
           title: { $regex: new RegExp(`^${bookingData.packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
         })
-          .select('itinerary inclusions title')
+          .select('itinerary inclusions title destination')
           .lean();
         console.log(`🔍 Package lookup by case-insensitive title ("${bookingData.packageName}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
       }
@@ -1225,7 +1225,7 @@ router.post('/', upload.any(), async (req, res) => {
           pkgSnapshot = await Package.findOne({
             title: { $regex: new RegExp(coreTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
           })
-            .select('itinerary inclusions title')
+            .select('itinerary inclusions title destination')
             .lean();
           console.log(`🔍 Package lookup by stripped title ("${coreTitle}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
         }
@@ -1237,7 +1237,7 @@ router.post('/', upload.any(), async (req, res) => {
           pkgSnapshot = await Package.findOne({
             title: { $regex: new RegExp(firstSegment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
           })
-            .select('itinerary inclusions title')
+            .select('itinerary inclusions title destination')
             .lean();
           console.log(`🔍 Package lookup by first segment ("${firstSegment}"): ${pkgSnapshot ? 'FOUND' : 'NOT FOUND'}`);
         }
@@ -1275,6 +1275,7 @@ router.post('/', upload.any(), async (req, res) => {
     const newBooking = new Booking({
       packageName: bookingData.packageName,
       packageId: bookingData.packageId || null,
+      destination: bookingData.destination || pkgSnapshot?.destination || '',
       sellerPrice: bookingData.sellerPrice || 0,
       markup: bookingData.markup || 0,
       price: bookingData.price || bookingData.packageTotal || bookingData.totalAmount,

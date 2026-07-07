@@ -113,6 +113,7 @@ const addOnsSchema = new mongoose.Schema({
 
 const bookingSchema = new mongoose.Schema({
   packageName: { type: String, required: true },
+  destination: { type: String, default: '' },
 
   packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'packages' },
   sellerPrice: { type: Number, required: true },
