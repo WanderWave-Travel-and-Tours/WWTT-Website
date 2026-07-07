@@ -11,7 +11,7 @@ const Package = require('../models/package');
 const Destination = require('../models/destination');
 const ActivityLog = require('../models/ActivityLog');
 const { BookingCount } = require('../models/PageView');
-const { sendNewUserToGHL, sendBookingConfirmationToGHL, sendPackageBookingToGHL } = require('../utils/ghlService');
+const { sendNewUserToGHL, sendBookingConfirmationToGHL, sendPackageBookingToGHL, sendBookingInternalNotificationToGHL } = require('../utils/ghlService');
 const { validatePrimaryPassengerAge, validatePassengersAge } = require('../utils/ageUtils');
 const authMiddleware = require('../middleware/auth');
 const verifyUserJWT = require('../middleware/verifyUserJWT');
@@ -1336,6 +1336,13 @@ router.post('/', upload.any(), async (req, res) => {
     if (bookingData.isWalkin) {
       sendPackageBookingToGHL(newBooking).catch((err) =>
         console.error('⚠️ GHL package booking webhook failed (non-fatal):', err.message)
+      );
+    }
+
+    // Internal "new booking" notification — skipped for sales-created bookings
+    if (newBooking.createdByType !== 'sales') {
+      sendBookingInternalNotificationToGHL('package', newBooking).catch((err) =>
+        console.error('⚠️ GHL internal booking notification failed (non-fatal):', err.message)
       );
     }
 
