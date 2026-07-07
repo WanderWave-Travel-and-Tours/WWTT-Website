@@ -1185,10 +1185,9 @@ router.post('/', upload.any(), async (req, res) => {
     // ✅ ITINERARY + INCLUSIONS SNAPSHOT
     let bookingItinerary = [];
     let bookingInclusions = [];
+    let pkgSnapshot = null;
 
     try {
-      let pkgSnapshot = null;
-
       if (bookingData.packageId) {
         pkgSnapshot = await Package.findById(bookingData.packageId)
           .select('itinerary inclusions title destination')
