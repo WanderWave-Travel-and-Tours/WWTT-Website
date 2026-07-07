@@ -1556,6 +1556,51 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
     const tours     = Array.isArray(b.tours)     ? b.tours     : [];
     const transfers = Array.isArray(b.transfers) ? b.transfers : [];
 
+    // Human-readable, multi-line breakdown of EVERY tour/transfer bundled in
+    // this trip — each item gets its own full detail block (not a one-liner),
+    // since a custom booking can carry more than one of each.
+    const toursFormatted = tours.length > 0
+      ? tours
+          .map((t, i) => [
+              `Tour ${i + 1}: ${t.title || 'Tour'}`,
+              `  Destination: ${t.destination || ''}`,
+              `  Category: ${t.category || ''}`,
+              `  Duration: ${t.duration || ''}`,
+              `  Scheduled Date: ${t.scheduledDate || ''}`,
+              `  Pax: ${t.paxCount || 1}`,
+              `  Subtotal: ₱${(t.subtotal || 0).toLocaleString('en-PH')}`,
+            ].join('\n'))
+          .join('\n\n')
+      : '';
+
+    const transfersFormatted = transfers.length > 0
+      ? transfers
+          .map((tr, i) => {
+            const route = [tr.pickupLocation, tr.dropoffLocation].filter(Boolean).join(' → ');
+            return [
+                `Transfer ${i + 1}: ${tr.title || 'Transfer'}`,
+                `  Category: ${tr.category || ''}`,
+                `  Transfer Type: ${tr.transferType || 'oneway'}`,
+                `  Route: ${route}`,
+                `  Travel Date: ${tr.travelDate || ''}`,
+                `  Return Date: ${tr.returnDate || ''}`,
+                `  Arrival Time: ${tr.arrivalTime || ''}`,
+                `  Departure Time: ${tr.departureTime || ''}`,
+                `  Passengers: ${tr.passengerCount || 1}`,
+                `  Special Requests: ${tr.message || ''}`,
+                `  Subtotal: ₱${(tr.subtotal || 0).toLocaleString('en-PH')}`,
+              ].join('\n');
+          })
+          .join('\n\n')
+      : '';
+
+    // Combined special-requests text across all transfers (each may carry
+    // its own message/special request).
+    const specialRequestsFormatted = transfers
+      .map((tr) => tr.message)
+      .filter(Boolean)
+      .join('\n');
+
     details = {
       type:             'CUSTOM_BOOKING',
       bookingTypeLabel: 'Custom Booking',
@@ -1566,10 +1611,21 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
       returnDate:       b.returnDate  || '',
       travel_dates:     `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
       passengerCount:   b.paxCount || 1,
+
+      // ── Tours (full detail per item, readable + raw) ────────
       tours_count:      tours.length,
-      transfers_count:  transfers.length,
+      tours_summary:    toursFormatted,
+      tour_details:     toursFormatted,
       tours_raw:        JSON.stringify(tours),
-      transfers_raw:    JSON.stringify(transfers),
+
+      // ── Transfers (full detail per item, readable + raw) ────
+      transfers_count:      transfers.length,
+      transfers_summary:    transfersFormatted,
+      transfer_details:     transfersFormatted,
+      transfers_raw:        JSON.stringify(transfers),
+      specialRequests:      specialRequestsFormatted,
+      special_requests:     specialRequestsFormatted,
+
       message:          b.message || '',
     };
   }
