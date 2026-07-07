@@ -1474,6 +1474,31 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
       message:          b.message || '',
       specialRequests:  b.specialRequests || '',
     };
+  } else if (bookingType === 'package') {
+    const paxAdult = b.pax?.adult    || 0;
+    const paxChild = b.pax?.children || 0;
+    const paxInfant = b.pax?.infants || 0;
+
+    details = {
+      type:             'PACKAGE_BOOKING',
+      bookingTypeLabel: 'Package Booking',
+      bookingName:      b.packageName || '',
+      packageName:      b.packageName || '',
+      service:          b.packageName || '',
+      destination:      b.destination || '',
+      duration:         b.duration    || '',
+      startDate:        b.startDate   || '',
+      endDate:          b.endDate     || '',
+      travel_dates:     `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
+      passengerCount:   paxAdult + paxChild + paxInfant,
+      pax_adult:        paxAdult,
+      pax_child:        paxChild,
+      pax_infant:       paxInfant,
+      hotelName:        b.hotelName        || '',
+      selectedRoomType: b.selectedRoomType || '',
+      numberOfRooms:    b.numberOfRooms    || '',
+      message:          b.message || '',
+    };
   } else if (bookingType === 'customized') {
     const tours     = Array.isArray(b.tours)     ? b.tours     : [];
     const transfers = Array.isArray(b.transfers) ? b.transfers : [];
