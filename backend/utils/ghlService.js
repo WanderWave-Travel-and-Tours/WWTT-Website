@@ -1401,6 +1401,7 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
   const fullName  = b.fullName || b.primaryContact?.fullName || '';
   const firstName = fullName.split(' ')[0] || '';
   const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+  const phone     = b.phone || b.contactNumber || b.passengers?.[0]?.phone || '';
 
   const base = {
     event:     'new_booking_notification',
@@ -1425,7 +1426,7 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
     first_name: firstName,
     last_name:  lastName,
     email:      b.email || b.primaryContact?.email || '',
-    phone:      b.phone || '',
+    phone,
 
     bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     booking_date: new Date().toISOString(),
