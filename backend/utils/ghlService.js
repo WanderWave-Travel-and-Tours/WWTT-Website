@@ -1489,6 +1489,17 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
     const addedItems   = customizationSummary?.addedItems   || [];
     const removedItems = customizationSummary?.removedItems || [];
 
+    // Final/included inclusions — what the customer actually gets on this
+    // booking: checked customized inclusions if customized, else the
+    // original package inclusions as-is.
+    const checkedInclusions = Array.isArray(b.customizedInclusions)
+      ? b.customizedInclusions.filter(inc => inc.isChecked !== false)
+      : [];
+    const includedInclusions = (b.isCustomized && checkedInclusions.length > 0)
+      ? checkedInclusions
+      : (b.originalInclusions || []);
+    const includedInclusionsFormatted = formatInclusions(includedInclusions);
+
     const addedInclusionsFormatted = addedItems.length > 0
       ? addedItems
           .map((inc, i) => `${i + 1}. ${inc.name}${inc.price ? ` — ₱${inc.price.toLocaleString('en-PH')}` : ''}`)
@@ -1517,6 +1528,13 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
       selectedRoomType: b.selectedRoomType || '',
       numberOfRooms:    b.numberOfRooms    || '',
       message:          b.message || '',
+
+      // ── Inclusions (final list actually included in this booking) ────
+      includedInclusions:        includedInclusionsFormatted,
+      included_inclusions:       includedInclusionsFormatted,
+      includedInclusionsCount:   includedInclusions.length,
+      included_inclusions_count: includedInclusions.length,
+      includedInclusionsRaw:     JSON.stringify(includedInclusions),
 
       // ── Customization (added/removed inclusions) ────────────
       isCustomized:               b.isCustomized ? 'Yes' : 'No',
