@@ -1498,6 +1498,17 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
       ? removedItems.map((name, i) => `${i + 1}. ${name}`).join('\n')
       : '';
 
+    // Final/included inclusions — what the customer actually gets on this
+    // booking: checked customized inclusions if customized, else the
+    // original package inclusions as-is.
+    const checkedInclusions = Array.isArray(b.customizedInclusions)
+      ? b.customizedInclusions.filter(inc => inc.isChecked !== false)
+      : [];
+    const includedInclusions = (b.isCustomized && checkedInclusions.length > 0)
+      ? checkedInclusions
+      : (b.originalInclusions || []);
+    const includedInclusionsFormatted = formatInclusions(includedInclusions);
+
     details = {
       type:             'PACKAGE_BOOKING',
       bookingTypeLabel: 'Package Booking',
