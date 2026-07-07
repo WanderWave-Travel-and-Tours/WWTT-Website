@@ -1382,6 +1382,136 @@ const sendCustomOnboardingToGHL = async (booking) => {
   return result;
 };
 
+// ============================================================
+// ✅ NEW: Internal "new booking" notification webhook
+//
+// Fires for every NEW tour, transfer, and custom booking that is
+// NOT created by sales (i.e. createdByType !== 'sales'). This is a
+// separate automation from the shared booking automation webhook above —
+// it exists purely to notify the team internally whenever a customer
+// (not sales) places a booking. Sends customer details + the booked
+// item's details, differentiated by `bookingType`.
+// ============================================================
+const GHL_BOOKING_INTERNAL_NOTIFICATION_WEBHOOK_URL =
+  process.env.GHL_BOOKING_INTERNAL_NOTIFICATION_WEBHOOK_URL ||
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/dac75bfc-d3bd-4a83-948a-a70a72a91e53';
+
+const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
+  const b = booking || {};
+  const fullName  = b.fullName || b.primaryContact?.fullName || '';
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName  = fullName.split(' ').slice(1).join(' ') || '';
+
+  const base = {
+    event:     'new_booking_notification',
+    source:    'WanderWave',
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+
+    bookingId:        b._id ? b._id.toString() : '',
+    booking_id:       b._id ? b._id.toString() : '',
+    referenceNumber:  b.referenceNumber || '',
+    reference_number: b.referenceNumber || '',
+    createdByType:    b.createdByType || '',
+    status:           b.status || 'pending',
+    paymentType:      b.paymentType || 'full',
+    totalAmount:      b.totalAmount || 0,
+    total_amount:     b.totalAmount || 0,
+    totalAmountFormatted: `₱${(b.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+
+    // ── Customer details ──────────────────────────────────────
+    fullName,
+    name:       fullName,
+    first_name: firstName,
+    last_name:  lastName,
+    email:      b.email || b.primaryContact?.email || '',
+    phone:      b.phone || '',
+
+    bookingDate:  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    booking_date: new Date().toISOString(),
+  };
+
+  let details = {};
+
+  if (bookingType === 'tour') {
+    const paxAdult = b.pax?.adult    || 0;
+    const paxChild = b.pax?.children || 0;
+    const paxInfant = b.pax?.infants || 0;
+
+    details = {
+      type:             'TOUR_BOOKING',
+      bookingTypeLabel: 'Tour Booking',
+      bookingName:      b.packageName || '',
+      packageName:      b.packageName || '',
+      service:          b.packageName || '',
+      destination:      b.destination || '',
+      category:         b.category    || '',
+      startDate:        b.startDate   || '',
+      endDate:          b.endDate     || '',
+      travel_dates:     `${b.startDate || ''}${b.endDate ? ' to ' + b.endDate : ''}`,
+      passengerCount:   paxAdult + paxChild + paxInfant,
+      pax_adult:        paxAdult,
+      pax_child:        paxChild,
+      pax_infant:       paxInfant,
+      message:          b.message || '',
+    };
+  } else if (bookingType === 'transfer') {
+    details = {
+      type:             'TRANSFER_BOOKING',
+      bookingTypeLabel: 'Transfer Booking',
+      bookingName:      b.activityName || '',
+      service:          b.activityName || '',
+      destination:      b.destination  || '',
+      category:         b.category     || '',
+      transferType:     b.transferType || 'oneway',
+      travelDate:       b.travelDate   || '',
+      returnDate:       b.returnDate   || '',
+      travel_dates:     `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
+      pickupLocation:   b.pickupLocation  || '',
+      dropoffLocation:  b.dropoffLocation || '',
+      route:            [b.pickupLocation, b.dropoffLocation].filter(Boolean).join(' → '),
+      passengerCount:   b.passengerCount  || 1,
+      message:          b.message || '',
+      specialRequests:  b.specialRequests || '',
+    };
+  } else if (bookingType === 'customized') {
+    const tours     = Array.isArray(b.tours)     ? b.tours     : [];
+    const transfers = Array.isArray(b.transfers) ? b.transfers : [];
+
+    details = {
+      type:             'CUSTOM_BOOKING',
+      bookingTypeLabel: 'Custom Booking',
+      bookingName:      `Custom Trip — ${b.destination || ''}`.trim(),
+      service:          `Custom Trip — ${b.destination || ''}`.trim(),
+      destination:      b.destination || '',
+      travelDate:       b.travelDate  || '',
+      returnDate:       b.returnDate  || '',
+      travel_dates:     `${b.travelDate || ''}${b.returnDate ? ' to ' + b.returnDate : ''}`,
+      passengerCount:   b.paxCount || 1,
+      tours_count:      tours.length,
+      transfers_count:  transfers.length,
+      tours_raw:        JSON.stringify(tours),
+      transfers_raw:    JSON.stringify(transfers),
+      message:          b.message || '',
+    };
+  }
+
+  const data = { ...base, ...details };
+
+  console.log(`📤 Sending internal booking notification (${bookingType}) to GHL:`);
+  console.log(JSON.stringify(data, null, 2));
+
+  const result = await sendToGHLWebhook(GHL_BOOKING_INTERNAL_NOTIFICATION_WEBHOOK_URL, data);
+
+  if (!result.success) {
+    console.error('⚠️ GHL internal booking notification failed:', result.error);
+  } else {
+    console.log(`✅ Internal booking notification (${bookingType}) synced to GHL for booking "${b._id}".`);
+  }
+
+  return result;
+};
+
 module.exports = {
   sendNewUserToGHL,
   sendInquiryToGHL,
@@ -1395,4 +1525,5 @@ module.exports = {
   sendSalesOnboardingToGHL, // ✅ New export
   sendTransferOnboardingToGHL, // ✅ New export
   sendCustomOnboardingToGHL, // ✅ New export
+  sendBookingInternalNotificationToGHL, // ✅ New export
 };

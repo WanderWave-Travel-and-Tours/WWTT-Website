@@ -306,9 +306,26 @@ router.post('/webhook', async (req, res) => {
           );
         }
 
-        // Tour/Transfer/Custom onboarding automation now fires from the frontend success
-        // page when the user clicks "Go to Dashboard" or "Close" — see
-        // POST /api/payment/trigger-onboarding/:bookingId
+        // 🔥 Tour onboarding automation — fire-and-forget, tour bookings only
+        if (booking.bookingType === 'tour') {
+          sendTourOnboardingToGHL(booking, packageData).catch((err) =>
+            console.error('⚠️ Tour onboarding webhook failed (checkout session):', err.message)
+          );
+        }
+
+        // 🔥 Transfer onboarding automation — fire-and-forget, transfer bookings only
+        if (booking.bookingType === 'transfer') {
+          sendTransferOnboardingToGHL(booking).catch((err) =>
+            console.error('⚠️ Transfer onboarding webhook failed (checkout session):', err.message)
+          );
+        }
+
+        // 🔥 Custom booking onboarding automation — fire-and-forget, customized bookings only
+        if (booking.bookingType === 'customized') {
+          sendCustomOnboardingToGHL(booking).catch((err) =>
+            console.error('⚠️ Custom onboarding webhook failed (checkout session):', err.message)
+          );
+        }
 
         return res.json({ received: true, bookingConfirmed: true, onboardingKitSent: true });
       }
@@ -414,9 +431,26 @@ router.post('/webhook', async (req, res) => {
         );
       }
 
-      // Tour/Transfer/Custom onboarding automation now fires from the frontend success
-      // page when the user clicks "Go to Dashboard" or "Close" — see
-      // POST /api/payment/trigger-onboarding/:bookingId
+      // 🔥 Tour onboarding automation — fire-and-forget, tour bookings only
+      if (booking.bookingType === 'tour') {
+        sendTourOnboardingToGHL(booking, packageData).catch((err) =>
+          console.error('⚠️ Tour onboarding webhook failed (balance payment):', err.message)
+        );
+      }
+
+      // 🔥 Transfer onboarding automation — fire-and-forget, transfer bookings only
+      if (booking.bookingType === 'transfer') {
+        sendTransferOnboardingToGHL(booking).catch((err) =>
+          console.error('⚠️ Transfer onboarding webhook failed (balance payment):', err.message)
+        );
+      }
+
+      // 🔥 Custom booking onboarding automation — fire-and-forget, customized bookings only
+      if (booking.bookingType === 'customized') {
+        sendCustomOnboardingToGHL(booking).catch((err) =>
+          console.error('⚠️ Custom onboarding webhook failed (balance payment):', err.message)
+        );
+      }
 
       return res.json({ received: true, balancePaymentConfirmed: true, onboardingKitSent: true });
     }

@@ -11,7 +11,7 @@ const TransferBookingOrder = require('../models/transferBookingOrder');
 const Transfer             = require('../models/transfer');
 const authMiddleware       = require('../middleware/auth');
 const verifyAdminOrUser    = require('../middleware/verifyAdminOrUser');
-const { sendTransferBookingToGHL } = require('../utils/ghlService');
+const { sendTransferBookingToGHL, sendBookingInternalNotificationToGHL } = require('../utils/ghlService');
 const { syncLocations }            = require('../utils/syncLocations');       // ← ADD
 const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
 const { validateEmail, validatePhone, validateNotPastDate } = require('../utils/bookingValidation');
@@ -219,6 +219,13 @@ syncLocations({                                                                /
 sendTransferBookingToGHL(booking).catch((err) =>
   console.error('⚠️ GHL transfer booking webhook failed (non-fatal):', err.message)
 );
+
+// Internal "new booking" notification — skipped for sales-created bookings
+if (booking.createdByType !== 'sales') {
+  sendBookingInternalNotificationToGHL('transfer', booking).catch((err) =>
+    console.error('⚠️ GHL internal booking notification failed (non-fatal):', err.message)
+  );
+}
 
     return res.status(201).json({
       success:   true,
