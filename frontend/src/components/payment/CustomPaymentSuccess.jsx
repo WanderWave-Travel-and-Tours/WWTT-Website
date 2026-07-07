@@ -106,17 +106,6 @@ const CustomPaymentSuccess = () => {
     };
   };
 
-  const triggerOnboarding = async () => {
-    if (!details?.id) return;
-    try {
-      await fetch(`https://wanderwaveph.onrender.com/api/payment/trigger-onboarding/${details.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch (err) {
-    }
-  };
-
   const handleDownloadReceipt = () => {
     if (!details) {
       alert('No transaction details available');
@@ -256,8 +245,7 @@ const CustomPaymentSuccess = () => {
     printWindow.document.close();
   };
 
-  const handleGoToDashboard = async () => {
-    await triggerOnboarding();
+  const handleGoToDashboard = () => {
     if (user) {
       navigate('/dashboard');
     } else {
@@ -266,8 +254,7 @@ const CustomPaymentSuccess = () => {
     }
   };
 
-  const handleClose = async () => {
-    await triggerOnboarding();
+  const handleClose = () => {
     navigate('/');
   };
 

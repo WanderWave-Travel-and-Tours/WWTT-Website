@@ -14,7 +14,7 @@ const Tour              = require('../models/tour');
 const Transfer          = require('../models/transfer');
 const authMiddleware    = require('../middleware/auth');
 const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
-const { sendCustomBookingToGHL } = require('../utils/ghlService');
+const { sendCustomBookingToGHL, sendBookingInternalNotificationToGHL } = require('../utils/ghlService');
 const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
 const { validateEmail, validatePhone, validateNotPastDate } = require('../utils/bookingValidation');
 
@@ -296,6 +296,13 @@ router.post('/', async (req, res) => {
     sendCustomBookingToGHL(booking).catch((err) =>
       console.error('⚠️ GHL custom booking webhook failed (non-fatal):', err.message)
     );
+
+    // Internal "new booking" notification — skipped for sales-created bookings
+    if (booking.createdByType !== 'sales') {
+      sendBookingInternalNotificationToGHL('customized', booking).catch((err) =>
+        console.error('⚠️ GHL internal booking notification failed (non-fatal):', err.message)
+      );
+    }
 
     return res.status(201).json({
       success:         true,
