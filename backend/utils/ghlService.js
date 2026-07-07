@@ -1518,6 +1518,13 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
       numberOfRooms:    b.numberOfRooms    || '',
       message:          b.message || '',
 
+      // ── Inclusions (final list actually included in this booking) ────
+      includedInclusions:        includedInclusionsFormatted,
+      included_inclusions:       includedInclusionsFormatted,
+      includedInclusionsCount:   includedInclusions.length,
+      included_inclusions_count: includedInclusions.length,
+      includedInclusionsRaw:     JSON.stringify(includedInclusions),
+
       // ── Customization (added/removed inclusions) ────────────
       isCustomized:               b.isCustomized ? 'Yes' : 'No',
       is_customized:              b.isCustomized ? 'Yes' : 'No',
