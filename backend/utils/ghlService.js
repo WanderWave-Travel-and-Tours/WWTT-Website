@@ -1480,6 +1480,24 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
     const paxChild = b.pax?.children || 0;
     const paxInfant = b.pax?.infants || 0;
 
+    // Added/removed inclusions vs. the original package — uses the model's own
+    // helper (Booking#getCustomizationSummary) so this stays in sync with how
+    // the admin dashboard computes the same summary.
+    const customizationSummary = typeof b.getCustomizationSummary === 'function'
+      ? b.getCustomizationSummary()
+      : null;
+    const addedItems   = customizationSummary?.addedItems   || [];
+    const removedItems = customizationSummary?.removedItems || [];
+
+    const addedInclusionsFormatted = addedItems.length > 0
+      ? addedItems
+          .map((inc, i) => `${i + 1}. ${inc.name}${inc.price ? ` — ₱${inc.price.toLocaleString('en-PH')}` : ''}`)
+          .join('\n')
+      : '';
+    const removedInclusionsFormatted = removedItems.length > 0
+      ? removedItems.map((name, i) => `${i + 1}. ${name}`).join('\n')
+      : '';
+
     details = {
       type:             'PACKAGE_BOOKING',
       bookingTypeLabel: 'Package Booking',
@@ -1499,6 +1517,22 @@ const sendBookingInternalNotificationToGHL = async (bookingType, booking) => {
       selectedRoomType: b.selectedRoomType || '',
       numberOfRooms:    b.numberOfRooms    || '',
       message:          b.message || '',
+
+      // ── Customization (added/removed inclusions) ────────────
+      isCustomized:               b.isCustomized ? 'Yes' : 'No',
+      is_customized:              b.isCustomized ? 'Yes' : 'No',
+      customizationAdditionalPrice:  b.customizationAdditionalPrice || 0,
+      customization_additional_price: b.customizationAdditionalPrice || 0,
+      addedInclusionsCount:       addedItems.length,
+      added_inclusions_count:     addedItems.length,
+      removedInclusionsCount:     removedItems.length,
+      removed_inclusions_count:   removedItems.length,
+      addedInclusions:            addedInclusionsFormatted,
+      added_inclusions:           addedInclusionsFormatted,
+      removedInclusions:          removedInclusionsFormatted,
+      removed_inclusions:         removedInclusionsFormatted,
+      addedInclusionsRaw:         JSON.stringify(addedItems),
+      removedInclusionsRaw:       JSON.stringify(removedItems),
     };
   } else if (bookingType === 'customized') {
     const tours     = Array.isArray(b.tours)     ? b.tours     : [];
