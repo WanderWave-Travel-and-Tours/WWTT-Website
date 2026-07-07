@@ -76,6 +76,8 @@ const TransferBookingOrderSchema = new mongoose.Schema(
     supplierName:   { type: String, default: '' },
     pax:            { type: String, default: '' },
 
+    referenceNumber: { type: String, default: null },
+
     // ── Archive ─────────────────────────────────────────────────────────────
     // 'Yes' → booking is archived and hidden from the main dashboard
     isArchive: { type: String, enum: ['Yes', 'No'], default: 'No' },
@@ -119,6 +121,12 @@ TransferBookingOrderSchema.pre('save', function (next) {
     if (!this.returnDate) {
       return next(new Error('returnDate is required for roundtrip bookings.'));
     }
+  }
+
+  if (!this.referenceNumber) {
+    const ts   = Date.now().toString(36).toUpperCase();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.referenceNumber = `TR-${ts}-${rand}`;
   }
 
   next();

@@ -265,6 +265,13 @@ createdByEmail: {
 
 bookingSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+
+  if (!this.referenceNumber) {
+    const ts   = Date.now().toString(36).toUpperCase();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.referenceNumber = `PKG-${ts}-${rand}`;
+  }
+
   next();
 });
 
