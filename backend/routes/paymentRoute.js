@@ -717,10 +717,14 @@ router.post('/trigger-onboarding/:bookingId', async (req, res) => {
     }
 
     if (!booking) {
+      console.log(`⚠️ Trigger-onboarding: booking not found for ${bookingId}`);
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    console.log(`🔔 Trigger-onboarding: ${booking._id} | type=${booking.bookingType} | onboardingSentAt=${booking.onboardingSentAt}`);
+
     if (booking.onboardingSentAt) {
+      console.log(`⏭️ Trigger-onboarding: already sent at ${booking.onboardingSentAt} — skipping GHL send`);
       return res.json({ success: true, message: 'Onboarding already sent', alreadySent: true });
     }
 
@@ -732,13 +736,27 @@ router.post('/trigger-onboarding/:bookingId', async (req, res) => {
     } else if (booking.bookingType === 'customized') {
       result = await sendCustomOnboardingToGHL(booking);
     } else {
+      console.log(`⚠️ Trigger-onboarding: unsupported bookingType "${booking.bookingType}"`);
       return res.status(400).json({ success: false, message: `Unsupported bookingType: ${booking.bookingType}` });
     }
 
-    booking.onboardingSentAt = new Date();
-    await booking.save();
+    // Mark as sent only when the GHL webhook actually succeeded — otherwise a
+    // failed send would permanently block every retry via the onboardingSentAt guard.
+    if (result && result.success) {
+      booking.onboardingSentAt = new Date();
+      // Persist ONLY the guard flag — a full .save() re-validates the whole document
+      // and would throw if any other field (e.g. a legacy status value) is invalid,
+      // which is unrelated to onboarding.
+      await booking.constructor.updateOne(
+        { _id: booking._id },
+        { $set: { onboardingSentAt: booking.onboardingSentAt } }
+      );
+      console.log(`✅ Trigger-onboarding: GHL send succeeded, onboardingSentAt set for ${booking._id}`);
+    } else {
+      console.error(`❌ Trigger-onboarding: GHL send FAILED for ${booking._id} — not marking as sent so it can retry. Error:`, result?.error);
+    }
 
-    return res.json({ success: true, onboardingSent: true, result });
+    return res.json({ success: true, onboardingSent: !!(result && result.success), result });
   } catch (error) {
     console.error('❌ Trigger-onboarding error:', error.response?.data || error.message);
     res.status(500).json({ success: false, message: 'Trigger-onboarding failed', error: error.message });

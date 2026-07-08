@@ -95,7 +95,7 @@ const CustomizedBookingSchema = new mongoose.Schema(
     // ── Status ──────────────────────────────────────────────────────────────
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+      enum: ['pending', 'confirmed', 'partial_paid', 'cancelled', 'completed'],
       default: 'pending',
     },
 
