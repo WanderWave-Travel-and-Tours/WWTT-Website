@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -168,6 +168,64 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   }, []);
 
   // ---------------------------------------------------------
+  // ✅ LOGIC 0: MOBILE = ICON RAIL BY DEFAULT, OVERLAY WHEN OPENED
+  // Below 768px, pages only reserve 64px of margin for the sidebar
+  // (see the page CSS), so the full 280px panel would overlap content
+  // if it pushed layout like on desktop. Instead, on mobile the toggle
+  // button opens the sidebar as a floating overlay (with a backdrop)
+  // on top of the content instead of shifting it — see the mobile
+  // overlay rules in sidebar.css.
+  // ---------------------------------------------------------
+  const MOBILE_BREAKPOINT = 768;
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= MOBILE_BREAKPOINT);
+
+  // Refs so the resize listener (mounted once) always sees the latest
+  // values without needing to re-subscribe on every toggle.
+  const isCollapsedRef = useRef(isCollapsed);
+  const toggleSidebarRef = useRef(toggleSidebar);
+  useEffect(() => { isCollapsedRef.current = isCollapsed; }, [isCollapsed]);
+  useEffect(() => { toggleSidebarRef.current = toggleSidebar; }, [toggleSidebar]);
+
+  useEffect(() => {
+    // On mount, if we're already on mobile, start collapsed regardless of
+    // the parent's default isCollapsed state.
+    if (isMobile && !isCollapsedRef.current) {
+      toggleSidebarRef.current();
+    }
+
+    const handleResize = () => {
+      const nowMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+      setIsMobile(prevMobile => {
+        // Auto-collapse only on the desktop→mobile transition, so we don't
+        // fight a manual expand the user just made while already on mobile.
+        if (nowMobile && !prevMobile && !isCollapsedRef.current) {
+          toggleSidebarRef.current();
+        }
+        return nowMobile;
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Close the mobile overlay after navigating to a page — the user has
+  // picked their destination, so keep the sidebar out of the way there.
+  // Skips the very first run so it doesn't race with the mount-collapse
+  // effect above (both would otherwise fire on initial render).
+  const isFirstLocationRun = useRef(true);
+  useEffect(() => {
+    if (isFirstLocationRun.current) {
+      isFirstLocationRun.current = false;
+      return;
+    }
+    if (isMobile && !isCollapsedRef.current) {
+      toggleSidebarRef.current();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // ---------------------------------------------------------
   // ✅ LOGIC 1: SYNC MENU WITH URL (Corrected Dependency)
   // ---------------------------------------------------------
   useEffect(() => {
@@ -255,8 +313,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     }
   };
 
+  const isMobileOverlayOpen = isMobile && !isCollapsed;
+
   return (
-    <div className={`sidebar-container custom-scrollbar ${isCollapsed ? 'collapsed' : ''}`}>
+    <>
+      {isMobileOverlayOpen && (
+        <div className="sidebar-backdrop" onClick={toggleSidebar} />
+      )}
+      <div className={`sidebar-container custom-scrollbar ${isCollapsed ? 'collapsed' : ''} ${isMobileOverlayOpen ? 'mobile-overlay' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-brand-wrapper">
             <div className="sidebar-logo-box">
@@ -487,7 +551,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

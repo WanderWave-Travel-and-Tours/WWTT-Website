@@ -8,6 +8,7 @@ import Sidebar from '../sidebar/sidebar';
 import BookingStats from './BookingStats';
 import BookingFilters from './BookingFilters';
 import BookingTable from './BookingTable';
+import BookingCards from './BookingCards';
 import BookingDetailModal from './BookingDetailModal';
 import PaginationControls from './PaginationControls';
 import { useToast } from '../toast/ToastManager';
@@ -31,7 +32,6 @@ const Booking = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [paymentFilter, setPaymentFilter] = useState('ALL');
-  const [typeFilter, setTypeFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -40,6 +40,8 @@ const Booking = () => {
   const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
   const [newBookingMode, setNewBookingMode] = useState('assist'); // 'walkin' | 'assist'
   const [selectedBookings, setSelectedBookings] = useState([]);
+  const [showBulkBar, setShowBulkBar] = useState(false);
+  const [bulkBarClosing, setBulkBarClosing] = useState(false);
 const [createdByFilter, setCreatedByFilter] = useState('ALL');
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -57,6 +59,25 @@ const [createdByFilter, setCreatedByFilter] = useState('ALL');
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  // Keep the bulk action bar mounted briefly after the selection empties
+  // out so its exit animation can play, instead of popping off instantly.
+  useEffect(() => {
+    if (selectedBookings.length > 0) {
+      setShowBulkBar(true);
+      setBulkBarClosing(false);
+      return;
+    }
+    if (showBulkBar) {
+      setBulkBarClosing(true);
+      const timeout = setTimeout(() => {
+        setShowBulkBar(false);
+        setBulkBarClosing(false);
+      }, 220);
+      return () => clearTimeout(timeout);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBookings.length]);
 
   const fetchBookings = async () => {
     try {
@@ -154,13 +175,6 @@ const actualStatus = b.status || 'pending';   // ← Tinanggal na ang forced 'co
       }
     }
 
-    if (typeFilter !== 'ALL') {
-      if (typeFilter === 'ONLINE') {
-        filtered = filtered.filter(b => b.isWalkin === false);
-      } else if (typeFilter === 'WALK_IN') {
-        filtered = filtered.filter(b => b.isWalkin === true);
-      }
-    }
 // Created By Filter
 if (createdByFilter !== 'ALL') {
   filtered = filtered.filter(b => b.createdByType === createdByFilter.toLowerCase());
@@ -179,7 +193,7 @@ if (createdByFilter !== 'ALL') {
     setFilteredBookings(filtered);
     setCurrentPage(1);
 
-  }, [searchTerm, filterStatus, paymentFilter, typeFilter, createdByFilter, bookings]);
+  }, [searchTerm, filterStatus, paymentFilter, createdByFilter, bookings]);
 
   const askConfirmation = (title, message, onConfirm, type = "primary") => {
     setConfirmConfig({
@@ -478,11 +492,8 @@ if (createdByFilter !== 'ALL') {
   const getFilterClassName = (status) => 
     status.toLowerCase() === filterStatus.toLowerCase() ? 'active-navy' : '';
 
-  const getPaymentFilterClassName = (filter) => 
+  const getPaymentFilterClassName = (filter) =>
     filter === paymentFilter ? 'active-navy' : '';
-
-  const getTypeFilterClassName = (filter) => 
-    filter === typeFilter ? 'active-navy' : '';
 
   const statusOptions = useMemo(() => {
     const opts = ['ALL'];
@@ -496,12 +507,6 @@ if (createdByFilter !== 'ALL') {
     { value: 'PENDING_BALANCE', label: 'Pending Balance' },
     { value: 'FULLY_PAID', label: 'Fully Paid' },
     { value: 'PARTIAL_ONLY', label: 'Partial Payment' }
-  ];
-
-  const typeOptions = [
-    { value: 'ALL', label: 'All' },
-    { value: 'ONLINE', label: 'Online Payment' },
-    { value: 'WALK_IN', label: 'Pay Over the Counter' }
   ];
 
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
@@ -520,7 +525,7 @@ if (createdByFilter !== 'ALL') {
     <div className="bkm-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       
-      <main className={`bkm-main ${isSidebarCollapsed ? "expanded" : ""}`}>
+      <main className={`bkm-main ${isSidebarCollapsed ? "expanded" : ""} ${showBulkBar ? "has-bulk-bar" : ""}`}>
         <div className="bkm-container">
           <div className="bkm-header">
             <div className="bkm-title">
@@ -550,38 +555,11 @@ if (createdByFilter !== 'ALL') {
             setPaymentFilter={setPaymentFilter}
             paymentOptions={paymentOptions}
             getPaymentFilterClassName={getPaymentFilterClassName}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            typeOptions={typeOptions}
-            getTypeFilterClassName={getTypeFilterClassName}
             createdByFilter={createdByFilter}
             setCreatedByFilter={setCreatedByFilter}
           />
 
-          {selectedBookings.length > 0 && (
-  <div className="bulk-action-bar">
-    <span>
-      {selectedBookings.length} booking{selectedBookings.length > 1 ? 's' : ''} selected
-    </span>
-    
-    <button 
-      onClick={handleBulkArchiveClick}
-      disabled={actionLoading}
-    >
-      <Archive size={16} />
-      Archive Selected
-    </button>
-    
-    <button 
-      onClick={clearSelection}
-      disabled={actionLoading}
-    >
-      Clear Selection
-    </button>
-  </div>
-)}
-
-          <div className="bkm-table-container">
+          <div className="bkm-table-container bkm-desktop-table">
             <table className="bkm-table">
               <thead>
                 <tr>
@@ -593,20 +571,20 @@ if (createdByFilter !== 'ALL') {
                       onChange={selectAll}
                     />
                   </th>
-                  <th style={{ width: '50px' }}>No.</th>
+                  <th style={{ width: '36px' }}>No.</th>
                   <th>Booking ID</th>
-                  <th>Customer Details</th>
+                  <th>Customer</th>
                   <th>Package</th>
                   <th>Travel Date</th>
-                  <th>Guests</th>
+                  <th style={{ textAlign: "center" }}>Guests</th>
                   <th>Amount</th>
-                  <th>Payment Status</th>
-                  <th>Status</th>
-                  <th>Created By</th>
+                  <th style={{ textAlign: "center" }}>Payment</th>
+                  <th style={{ textAlign: "center" }}>Status</th>
+                  <th style={{ textAlign: "center" }}>Created By</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
-              
+
               <BookingTable
                 loading={loading}
                 filteredBookingsCount={filteredBookings.length}
@@ -636,6 +614,23 @@ if (createdByFilter !== 'ALL') {
             </table>
           </div>
 
+          <BookingCards
+            loading={loading}
+            filteredBookingsCount={filteredBookings.length}
+            currentBookings={currentBookings}
+            handleViewDetails={handleViewDetails}
+            handleArchive={handleArchive}
+            actionLoading={actionLoading}
+            selectedBookings={selectedBookings}
+            onToggleSelect={toggleSelect}
+            MailIcon={Mail}
+            UsersIcon={Users}
+            ArchiveIcon={Archive}
+            RotateCcwIcon={RotateCcw}
+            WalletIcon={Wallet}
+            CalendarIcon={Calendar}
+          />
+
           {filteredBookings.length > 0 && totalPages > 1 && (
             <PaginationControls 
               totalItems={filteredBookings.length}
@@ -648,6 +643,39 @@ if (createdByFilter !== 'ALL') {
           )}
         </div>
       </main>
+
+      {showBulkBar && (
+        <div className={`bulk-action-bar ${isSidebarCollapsed ? "sidebar-collapsed" : ""} ${bulkBarClosing ? "bulk-action-bar-closing" : ""}`}>
+          <div className="bulk-action-info">
+            <span className="bulk-action-count">
+              <span className="bulk-btn-label-full">{selectedBookings.length} SELECTED</span>
+              <span className="bulk-btn-label-short">{selectedBookings.length}</span>
+            </span>
+          </div>
+
+          <div className="bulk-action-buttons">
+            <button
+              className="bulk-action-btn bulk-action-btn-archive"
+              onClick={handleBulkArchiveClick}
+              disabled={actionLoading}
+            >
+              <Archive size={15} />
+              <span className="bulk-btn-label-full">Archive Selected</span>
+              <span className="bulk-btn-label-short">Archive</span>
+            </button>
+
+            <button
+              className="bulk-action-btn bulk-action-btn-clear"
+              onClick={clearSelection}
+              disabled={actionLoading}
+            >
+              <X size={15} />
+              <span className="bulk-btn-label-full">Clear Selection</span>
+              <span className="bulk-btn-label-short">Clear</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       <BookingDetailModal
         showModal={showModal}

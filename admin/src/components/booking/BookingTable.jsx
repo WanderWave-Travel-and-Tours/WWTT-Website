@@ -48,7 +48,8 @@ const BookingTable = ({
                 };
             }
             return {
-                text: 'Pending Payment',
+                text: 'Pending',
+                title: 'Pending Payment',
                 class: 'payment-badge-pending'
             };
         }
@@ -72,14 +73,16 @@ const BookingTable = ({
         // Initial payment made, balance pending
         if (initialPaid > 0 && balancePaid === 0 && remainingBalance > 0) {
             return {
-                text: `Partial (₱${remainingBalance.toLocaleString()} due)`,
+                text: 'Partial',
+                title: `₱${remainingBalance.toLocaleString()} balance due`,
                 class: 'payment-badge-partial'
             };
         }
 
         // No payment yet
         return {
-            text: 'Pending Payment',
+            text: 'Pending',
+            title: 'Pending Payment',
             class: 'payment-badge-pending'
         };
     };
@@ -155,8 +158,10 @@ const BookingTable = ({
                         <td>
                             <div className="package-name-cell">
                                 <div className="package-initials-badge">BK</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    {booking.packageName}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                                    <span className="package-name-text" title={booking.packageName}>
+                                        {booking.packageName}
+                                    </span>
                                     {(() => {
                                         const addOns = booking.rawData?.addOns;
                                         const hasTours = Array.isArray(addOns?.tours) && addOns.tours.length > 0;
@@ -177,7 +182,7 @@ const BookingTable = ({
                         <td>{booking.travelDate}</td>
 
                         {/* Guests */}
-                        <td>
+                        <td style={{ textAlign: "center" }}>
                             <div className="guests-cell">
                                 <UsersIcon size={15} />
                                 {booking.guests}
@@ -203,22 +208,25 @@ const BookingTable = ({
                         </td>
 
                         {/* Payment Status */}
-                        <td>
-                            <div className={`payment-status-badge ${paymentStatus.class}`}>
-                                <WalletIcon size={14} />
+                        <td style={{ textAlign: "center" }}>
+                            <div
+                                className={`payment-status-badge ${paymentStatus.class}`}
+                                title={paymentStatus.title}
+                            >
+                                <WalletIcon size={13} />
                                 <span>{paymentStatus.text}</span>
                             </div>
                         </td>
 
                         {/* Booking Status Badge */}
-                        <td>
+                        <td style={{ textAlign: "center" }}>
                             <span className={`bkm-badge ${getStatusBadgeClass(booking.status)}`}>
                                 {booking.status || 'pending'}
                             </span>
                         </td>
 
                         {/* Created By */}
-<td>
+<td style={{ textAlign: "center" }}>
   <span className={`bkm-badge ${booking.isWalkin ? 'badge-walkin' : booking.createdByType === 'sales' ? 'badge-sales' : 'badge-user'}`}>
     {booking.isWalkin ? 'Walk-in Application' : booking.createdByType === 'sales' ? 'Sales' : 'User'}
   </span>
@@ -238,24 +246,14 @@ const BookingTable = ({
                                     View
                                 </button>
 
-                                {/* Archive / Unarchive Button */}
+                                {/* Archive / Unarchive Button (icon-only to save table width) */}
                                 <button
-                                    className={`bkm-action-btn ${isArchived ? 'bkm-unarchive-btn' : 'bkm-archive-btn'}`}
+                                    className="bkm-action-btn bkm-archive-icon-btn"
                                     onClick={() => handleArchive(booking)}
                                     disabled={actionLoading}
                                     title={isArchived ? 'Unarchive booking' : 'Archive booking'}
                                 >
-                                    {isArchived ? (
-                                        <>
-                                            <RotateCcwIcon size={16} />
-                                            Unarchive
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ArchiveIcon size={16} />
-                                            Archive
-                                        </>
-                                    )}
+                                    {isArchived ? <RotateCcwIcon size={15} /> : <ArchiveIcon size={15} />}
                                 </button>
                             </div>
                         </td>
