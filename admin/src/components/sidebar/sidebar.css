@@ -9,7 +9,8 @@
 
   --sidebar-width-full: 280px;
   --sidebar-width-mini: 64px;
-  --sidebar-transition: 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-transition-duration: 0.32s;
+  --sidebar-transition: var(--sidebar-transition-duration) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ================= CONTAINER ================= */
@@ -36,14 +37,37 @@
   box-shadow: 2px 0 10px rgba(0,0,0,0.06);
 }
 
+/* ================= MOBILE OVERLAY =================
+   On mobile the sidebar defaults to the collapsed icon rail (see the
+   auto-collapse effect in sidebar.jsx). Opening it there doesn't push
+   page content — it floats on top as an overlay with a dimmed backdrop,
+   since there's no room to reserve a 280px margin on a phone screen. */
+.sidebar-container.mobile-overlay {
+  z-index: 1100;
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 1050;
+  animation: sidebar-backdrop-in 0.2s ease;
+}
+
+@keyframes sidebar-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* ================= HEADER ================= */
 .sidebar-header {
   background-color: var(--header-bg);
-  /* Fixed height — no flex-direction change, avoids layout jump */
   height: 90px;
   min-height: 90px;
   flex-shrink: 0;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
@@ -51,9 +75,14 @@
   transition: padding var(--sidebar-transition);
 }
 
+/* Collapsed: the 64px rail has no room for the logo and toggle button
+   side by side — stack the toggle above the logo instead so neither
+   one overlaps or gets squeezed. */
 .sidebar-container.collapsed .sidebar-header {
-  padding: 0 6px;
+  flex-direction: column;
   justify-content: center;
+  gap: 8px;
+  padding: 10px 6px;
 }
 
 /* Brand wrapper */
@@ -64,6 +93,10 @@
   overflow: hidden;
   flex: 1;
   min-width: 0;
+}
+
+.sidebar-container.collapsed .sidebar-brand-wrapper {
+  flex: 0 0 auto;
 }
 
 /* Logo box */
@@ -89,7 +122,9 @@
   object-fit: contain;
 }
 
-/* Brand text — fades and shrinks out */
+/* Brand text — sequenced so it never renders clipped mid-transition
+   (see the LABELS comment below for why max-width and opacity can't
+   share a timeline). */
 .brand-info {
   display: flex;
   flex-direction: column;
@@ -100,12 +135,15 @@
   opacity: 1;
   transition:
     max-width var(--sidebar-transition),
-    opacity 0.18s ease;
+    opacity 0.15s ease var(--sidebar-transition-duration);
 }
 
 .sidebar-container.collapsed .brand-info {
   max-width: 0;
   opacity: 0;
+  transition:
+    max-width var(--sidebar-transition) 0.12s,
+    opacity 0.12s ease;
 }
 
 .brand-info h1 {
@@ -145,6 +183,11 @@
   transition: background 0.2s ease, transform 0.18s ease;
 }
 
+/* Collapsed + stacked header: toggle sits above the logo */
+.sidebar-container.collapsed .toggle-btn {
+  order: -1;
+}
+
 .toggle-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
@@ -163,9 +206,12 @@
   transform: rotate(180deg);
 }
 
-/* ================= LABELS — fade + shrink ================= */
-/* Applied to btn-label, menu-title, sub-label via CSS,
-   no .hidden class needed in JSX */
+/* ================= LABELS — fade THEN shrink (and reverse) =================
+   Animating max-width and opacity on the same timeline makes text look
+   clipped/broken mid-transition: the label becomes visible again while
+   still only half-expanded (or gets cut off while still fading out).
+   Sequencing them fixes it — label opacity always finishes changing
+   before max-width starts moving, so it's never rendered box-clipped. */
 .btn-label,
 .sub-label {
   display: inline-block;
@@ -173,15 +219,23 @@
   white-space: nowrap;
   max-width: 180px;
   opacity: 1;
+  /* Expanding (this is the target state): width grows for the full
+     duration, opacity only fades in during the last bit of it, once
+     there's already room for the full label. */
   transition:
     max-width var(--sidebar-transition),
-    opacity 0.16s ease;
+    opacity 0.15s ease var(--sidebar-transition-duration);
 }
 
 .sidebar-container.collapsed .btn-label,
 .sidebar-container.collapsed .sub-label {
   max-width: 0;
   opacity: 0;
+  /* Collapsing (this is the target state): fade out immediately, then
+     shrink the box once the label is already invisible. */
+  transition:
+    max-width var(--sidebar-transition) 0.12s,
+    opacity 0.12s ease;
 }
 
 .menu-title {
@@ -199,13 +253,17 @@
   padding-left: 0.75rem;
   transition:
     max-width var(--sidebar-transition),
-    opacity 0.16s ease,
+    opacity 0.15s ease var(--sidebar-transition-duration),
     margin var(--sidebar-transition);
 }
 
 .sidebar-container.collapsed .menu-title {
   max-width: 0;
   opacity: 0;
+  transition:
+    max-width var(--sidebar-transition) 0.12s,
+    opacity 0.12s ease,
+    margin var(--sidebar-transition) 0.12s;
   margin-bottom: 0.25rem;
 }
 
@@ -311,6 +369,13 @@
   display: flex;
   align-items: center;
   gap: 0.8rem;
+}
+
+/* Collapsed: the label collapses to zero width but flexbox `gap` still
+   reserves space for it even at width 0, which pushes every icon off-center
+   by half a gap. Drop the gap entirely so icons sit dead-center. */
+.sidebar-container.collapsed .btn-content {
+  gap: 0;
 }
 
 .btn-icon {
@@ -448,12 +513,15 @@
   opacity: 1;
   transition:
     max-width var(--sidebar-transition),
-    opacity 0.16s ease;
+    opacity 0.15s ease var(--sidebar-transition-duration);
 }
 
 .sidebar-container.collapsed .user-details {
   max-width: 0;
   opacity: 0;
+  transition:
+    max-width var(--sidebar-transition) 0.12s,
+    opacity 0.12s ease;
 }
 
 .user-name {
@@ -487,7 +555,7 @@
   transition:
     background 0.18s,
     max-width var(--sidebar-transition),
-    opacity 0.16s ease;
+    opacity 0.15s ease var(--sidebar-transition-duration);
 }
 
 .logout-btn:hover {
@@ -498,6 +566,9 @@
   max-width: 0;
   opacity: 0;
   pointer-events: none;
+  transition:
+    max-width var(--sidebar-transition) 0.12s,
+    opacity 0.12s ease;
 }
 
 /* ================= SCROLLBAR ================= */
@@ -528,4 +599,40 @@
 @keyframes spin {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* ================= MOBILE: WIDTH TRANSITION + OVERLAY FADE =================
+   On mobile the sidebar defaults to a 64px icon rail (always visible —
+   pages reserve exactly that much margin) and expands into a floating
+   280px overlay when opened. Animate the width change between those two
+   states, and fade/scale the overlay in so opening it feels like a real
+   panel rather than an instant snap. Inner label/width transitions are
+   skipped so text doesn't visibly reflow mid-animation. */
+@media (max-width: 768px) {
+  .sidebar-container {
+    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-container * {
+    transition: none !important;
+  }
+
+  .sidebar-container.mobile-overlay {
+    animation: sidebar-overlay-in 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes sidebar-overlay-in {
+    from {
+      transform: translateX(-8px);
+      opacity: 0.6;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .sidebar-backdrop {
+    animation: sidebar-backdrop-in 0.22s ease;
+  }
 }

@@ -1268,7 +1268,7 @@ const sendTransferOnboardingToGHL = async (booking) => {
 // ============================================================
 const GHL_CUSTOM_ONBOARDING_WEBHOOK_URL =
   process.env.GHL_CUSTOM_ONBOARDING_WEBHOOK_URL ||
-  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/HLhyMvgt3sXl0p2caWzX';
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/CipJlBgGzxpRsZ24wPwX';
 
 const sendCustomOnboardingToGHL = async (booking) => {
   const b = booking || {};

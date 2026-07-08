@@ -18,17 +18,17 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 .bkm-main {
-    margin-left: 260px; 
-    width: calc(100% - 260px);
+    margin-left: 280px;
+    width: calc(100% - 280px);
     padding: 40px 60px;
     min-height: 100vh;
-    transition: all 0.3s ease;
+    transition: margin-left 0.32s cubic-bezier(0.4, 0, 0.2, 1), width 0.32s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
 }
 
-.bkm-main.expanded { 
-    margin-left: 64px !important; 
+.bkm-main.expanded {
+    margin-left: 64px !important;
     width: calc(100% - 64px) !important;
-    padding: 40px 60px; 
+    padding: 40px 60px;
 }
 
 .bkm-container { max-width: 1600px; width: 100%; margin: 0 auto; }
@@ -57,15 +57,15 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .bkm-btn-add:hover { background-color: #d97706; transform: translateY(-1px); }
 
 /* --- GLOBAL TABLE CONTAINER (bkm-) --- */
-.bkm-table-container { 
-    background: white; 
-    border-radius: 12px; 
-    border: 1px solid #e2e8f0; 
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); 
-    padding: 0; 
-    overflow: hidden; 
-    width: 100%; 
-    overflow-x: auto; 
+.bkm-table-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    padding: 0;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
 /* --- LOADING/EMPTY STATE (bkm-) --- */
@@ -135,78 +135,252 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 /* --- Responsive (bkm-) --- */
-@media (max-width: 1024px) { 
-    .bkm-main, .bkm-main.expanded { padding: 30px; } 
+@media (max-width: 1024px) {
+    .bkm-main { margin-left: 280px; width: calc(100% - 280px); padding: 30px; }
+    .bkm-main.expanded { padding: 30px; }
 }
 
-@media (max-width: 640px) { 
-    .bkm-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } 
-    .bkm-header { flex-direction: column; align-items: flex-start; } 
+/* Below this width the sidebar always renders collapsed (icon rail only,
+   see sidebar auto-collapse effect), so content only ever needs to clear
+   the 64px mini rail — never the full 280px width. */
+@media (max-width: 768px) {
+    .bkm-main,
+    .bkm-main.expanded {
+        margin-left: 64px !important;
+        width: calc(100% - 64px) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .bkm-main { padding: 20px; }
+    .bkm-header { flex-direction: column; align-items: flex-start; }
     .bkm-btn-add { width: 100%; justify-content: center; }
     .bkm-overlay { padding: 0; align-items: flex-end; }
     .bkm-modal { border-radius: 14px 14px 0 0; max-width: 100%; margin: 0; }
 }
 
-/* ====================== BULK ACTION BAR ====================== */
+/* ====================== BULK ACTION BAR ======================
+   Floating pill fixed to the bottom of the viewport (like a
+   selection toolbar), instead of an inline header above the table.
+   Centered within the content area to the right of the sidebar, and
+   shifts over when the sidebar collapses to a mini rail. Reserves
+   bottom space on the page itself (.has-bulk-bar) so the floating bar
+   never covers the last row/card in the list. */
+@keyframes bulkBarIn {
+    from { opacity: 0; transform: translate(-50%, 16px) scale(0.96); }
+    to   { opacity: 1; transform: translate(-50%, 0)    scale(1);    }
+}
+
+@keyframes bulkBarOut {
+    from { opacity: 1; transform: translate(-50%, 0)    scale(1);    }
+    to   { opacity: 0; transform: translate(-50%, 16px) scale(0.96); }
+}
+
+.bkm-main.has-bulk-bar {
+    padding-bottom: 110px;
+}
+
 .bulk-action-bar {
-    background: #0f172a;
+    position: fixed;
+    left: calc(280px + (100% - 280px) / 2);
+    bottom: 24px;
+    transform: translate(-50%, 0);
+    background: linear-gradient(135deg, #001b3e, #0a203b);
     color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    margin-bottom: 16px;
+    padding: 10px 12px 10px 6px;
+    border-radius: 999px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(0, 27, 62, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 500;
+    transition: left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: bulkBarIn 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
-.bulk-action-bar span {
-    font-weight: 600;
-    font-size: 14px;
-    flex: 1;
-    min-width: 140px;
+.bulk-action-bar.sidebar-collapsed {
+    left: calc(64px + (100% - 64px) / 2);
 }
 
-.bulk-action-bar button {
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
+.bulk-action-bar.bulk-action-bar-closing {
+    animation: bulkBarOut 0.2s ease forwards;
+}
+
+.bulk-action-info {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-left: 8px;
+}
+
+.bulk-action-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #fc9c1b;
+    color: #001b3e;
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Full label on comfortable widths; short label swaps in once space
+   gets tight (see the ≤480px rule below) so both buttons can stay on
+   one row alongside the count chip instead of stacking. */
+.bulk-btn-label-short { display: none; }
+
+.bulk-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.bulk-action-btn {
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-weight: 700;
     font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+    border: 1px solid transparent;
     display: flex;
     align-items: center;
     gap: 6px;
-    min-width: 120px;
     justify-content: center;
+    white-space: nowrap;
+    min-width: 0;
 }
 
-.bulk-action-bar button:disabled {
-    opacity: 0.6;
+.bulk-action-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.bulk-action-btn:disabled {
+    opacity: 0.55;
     cursor: not-allowed;
 }
 
-/* Primary Action - Archive */
-.bulk-action-bar button:first-of-type {
-    background: #ef4444;        /* Red - dangerous action */
+/* Primary action — archive, using the danger red (semantic, not brand) */
+.bulk-action-btn-archive {
+    background: #ef4444;
     color: white;
 }
 
-.bulk-action-bar button:first-of-type:hover:not(:disabled) {
+.bulk-action-btn-archive:hover:not(:disabled) {
     background: #dc2626;
-    transform: translateY(-1px);
 }
 
-/* Secondary Action - Clear */
-.bulk-action-bar button:last-of-type {
+/* Secondary action — outline on navy */
+.bulk-action-btn-clear {
     background: transparent;
-    color: white;
-    border: 1px solid rgba(255,255,255,0.3);
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
-.bulk-action-bar button:last-of-type:hover:not(:disabled) {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.5);
+.bulk-action-btn-clear:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Below this width the sidebar is always the 64px mini rail (see the
+   sidebar's own mobile behavior), so the bar only needs to clear that
+   — never the full 280px desktop width. It also goes full-width instead
+   of staying a compact pill, since there isn't room to center it.
+   Positioned with left/right insets (not left:50%+translateX) so its
+   width is measured against the visible content area, not the full
+   viewport behind the sidebar — otherwise it overflows off-screen. */
+@media (max-width: 768px) {
+    .bkm-main.has-bulk-bar {
+        padding-bottom: 150px;
+    }
+
+    .bulk-action-bar,
+    .bulk-action-bar.sidebar-collapsed {
+        left: 76px;
+        right: 12px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        transform: none;
+    }
+
+    @keyframes bulkBarInMobile {
+        from { opacity: 0; transform: translateY(16px) scale(0.96); }
+        to   { opacity: 1; transform: translateY(0)    scale(1);    }
+    }
+
+    @keyframes bulkBarOutMobile {
+        from { opacity: 1; transform: translateY(0)    scale(1);    }
+        to   { opacity: 0; transform: translateY(16px) scale(0.96); }
+    }
+
+    .bulk-action-bar {
+        animation: bulkBarInMobile 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+
+    .bulk-action-bar.bulk-action-bar-closing {
+        animation: bulkBarOutMobile 0.2s ease forwards;
+    }
+}
+
+/* Everything stays on one row down to phone widths — the count chip on
+   the left, both action buttons sharing the remaining space on the
+   right — instead of stacking the count above the buttons. */
+@media (max-width: 640px) {
+    .bulk-action-bar {
+        align-items: center;
+        gap: 8px;
+        padding: 8px 8px 8px 4px;
+        border-radius: 999px;
+    }
+
+    .bulk-action-info {
+        padding-left: 6px;
+    }
+
+    .bulk-action-count {
+        height: 30px;
+        padding: 0 11px;
+        font-size: 11.5px;
+    }
+
+    .bulk-action-buttons {
+        justify-content: stretch;
+        gap: 6px;
+        flex: 1;
+    }
+
+    .bulk-action-btn {
+        flex: 1;
+        height: 40px;
+        padding: 8px 8px;
+        font-size: 12px;
+        gap: 5px;
+    }
+}
+
+/* At single-row mobile widths the full labels ("Archive Selected",
+   "Clear Selection") don't fit next to the count chip no matter how
+   much padding/font-size gets squeezed — swap to short labels instead
+   of letting the row overflow past the viewport edge. */
+@media (max-width: 640px) {
+    .bulk-btn-label-full { display: none; }
+    .bulk-btn-label-short { display: inline; }
+}
+
+@media (max-width: 400px) {
+    .bulk-action-count {
+        padding: 0 9px;
+        font-size: 11px;
+    }
+
+    .bulk-action-btn {
+        padding: 8px 6px;
+        font-size: 12.5px;
+    }
 }

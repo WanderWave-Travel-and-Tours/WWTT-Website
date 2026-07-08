@@ -379,7 +379,7 @@ const generateVoucherData = async (booking) => {
     return (
         <>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            <div className="modal-overlay" onClick={closeModal}>
+            <div className="bkm-detail-modal modal-overlay" onClick={closeModal}>
                 <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                     <div className="modal-header">
                         <div className="cnm-header-content">
@@ -1075,10 +1075,14 @@ const generateVoucherData = async (booking) => {
                         </div>
                     </div>
 
-                    {/* FOOTER ACTIONS */}
+                    {/* FOOTER ACTIONS — unchanged flat row on desktop; on mobile
+                        (see @media rules in the CSS) the same buttons regroup
+                        into a prominent decision row (Confirm/Cancel) plus a
+                        compact utility row (Order Slip/Voucher/Archive) via
+                        the cnm-btn-decision / cnm-btn-utility hooks below. */}
 <div className="modal-footer">
     <button
-        className="cnm-btn"
+        className="cnm-btn cnm-btn-utility"
         style={{
             background: 'linear-gradient(135deg, #0f172a, #1e293b)',
             color: 'white',
@@ -1092,8 +1096,8 @@ const generateVoucherData = async (booking) => {
     </button>
 
     {status === 'CONFIRMED' && (
-        <button 
-            className="cnm-btn cnm-btn-primary"
+        <button
+            className="cnm-btn cnm-btn-primary cnm-btn-utility"
             onClick={() => generateVoucherData(selectedBooking)}
             disabled={isGeneratingVoucher}
         >
@@ -1104,7 +1108,7 @@ const generateVoucherData = async (booking) => {
 
     {selectedBooking && (
         <button
-            className="cnm-btn cnm-btn-outline"
+            className="cnm-btn cnm-btn-outline cnm-btn-utility"
             onClick={() => {
                 closeModal();
                 handleArchive(selectedBooking);
@@ -1127,15 +1131,15 @@ const generateVoucherData = async (booking) => {
 
     {status === 'PENDING' && (
         <>
-            <button 
-                className="cnm-btn cnm-btn-success"
+            <button
+                className="cnm-btn cnm-btn-success cnm-btn-decision"
                 onClick={() => handleConfirmAndClose(selectedBooking)}
                 disabled={actionLoading}
             >
                 <CheckIcon size={15} /> Confirm Booking
             </button>
-            <button 
-                className="cnm-btn cnm-btn-danger cnm-btn-outline"
+            <button
+                className="cnm-btn cnm-btn-danger cnm-btn-outline cnm-btn-decision"
                 onClick={() => handleCancelAndClose(selectedBooking)}
                 disabled={actionLoading}
             >
@@ -1145,8 +1149,8 @@ const generateVoucherData = async (booking) => {
     )}
 
     {status === 'CONFIRMED' && (
-        <button 
-            className="cnm-btn cnm-btn-danger cnm-btn-outline"
+        <button
+            className="cnm-btn cnm-btn-danger cnm-btn-outline cnm-btn-decision"
             onClick={() => handleCancelAndClose(selectedBooking)}
             disabled={actionLoading}
         >
