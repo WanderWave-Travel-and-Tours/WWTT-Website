@@ -51,6 +51,14 @@ const TourPaymentSuccess = () => {
     frame();
   }, [searchParams]);
 
+  const triggerOnboarding = (id) => {
+    if (!id) return;
+    fetch(`https://wanderwaveph.onrender.com/api/payment/trigger-onboarding/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {});
+  };
+
   const fetchBookingDetails = async (id, paymentType) => {
     const MAX_RETRIES = 8;
     const RETRY_DELAY = 1800;
@@ -110,6 +118,8 @@ const TourPaymentSuccess = () => {
       alert('No transaction details available');
       return;
     }
+
+    triggerOnboarding(details?.id);
 
     const receiptHTML = `
 <!DOCTYPE html>
@@ -237,6 +247,7 @@ const TourPaymentSuccess = () => {
   };
 
   const handleGoToDashboard = () => {
+    triggerOnboarding(details?.id);
     if (user) {
       navigate('/dashboard');
     } else {
@@ -246,6 +257,7 @@ const TourPaymentSuccess = () => {
   };
 
   const handleClose = () => {
+    triggerOnboarding(details?.id);
     navigate('/');
   };
 
