@@ -1053,7 +1053,7 @@ const sendSalesOnboardingToGHL = async (booking, packageData) => {
 // ============================================================
 const GHL_TOUR_ONBOARDING_WEBHOOK_URL =
   process.env.GHL_TOUR_ONBOARDING_WEBHOOK_URL ||
-  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/4AlScszDJ4FcoHxCigs1';
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/0YWL2s4wKDnjEQbB8vos';
 
 const sendTourOnboardingToGHL = async (booking, packageData) => {
   const b = booking || {};
@@ -1161,7 +1161,7 @@ const sendTourOnboardingToGHL = async (booking, packageData) => {
 // ============================================================
 const GHL_TRANSFER_ONBOARDING_WEBHOOK_URL =
   process.env.GHL_TRANSFER_ONBOARDING_WEBHOOK_URL ||
-  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/RpZumBHiPveGdfy2n7Cp';
+  'https://services.leadconnectorhq.com/hooks/yTzQYPFRZAWXGWiXtIt2/webhook-trigger/UE0TrrPQitshymUDRfTR';
 
 const sendTransferOnboardingToGHL = async (booking) => {
   const b = booking || {};
