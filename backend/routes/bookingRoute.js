@@ -631,7 +631,11 @@ router.put('/:id/confirm', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/:id', authMiddleware, async (req, res) => {
+// ⚠️ Public (no authMiddleware): the payment-success page fetches this right after
+// a PayMongo redirect, when the browser may have no valid session token. Matches the
+// public GET /:id on tour/transfer/customized booking routes. Read-only, and requires
+// the exact non-guessable booking _id.
+router.get('/:id', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
       .populate('packageId')
