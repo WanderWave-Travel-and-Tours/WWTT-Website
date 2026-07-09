@@ -233,7 +233,7 @@ const BookingTable = ({
 </td>
 
                         {/* Actions */}
-                        <td style={{ textAlign: "right" }}>
+                        <td className="bkm-actions-cell" style={{ textAlign: "right" }}>
                             <div className="bkm-action-group">
 
                                 {/* View Button */}

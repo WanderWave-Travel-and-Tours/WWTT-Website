@@ -110,7 +110,7 @@ const CustomizedBookingVoucherModal = ({ booking, onClose }) => {
   };
 
   return (
-    <div className="voucher-modal-overlay" onClick={onClose}>
+    <div className="voucher-modal-overlay cb-voucher" onClick={onClose}>
       <div className="voucher-modal-container" onClick={(e) => e.stopPropagation()}>
 
         {/* ACTION BAR */}
