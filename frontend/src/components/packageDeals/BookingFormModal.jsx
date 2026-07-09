@@ -966,9 +966,9 @@ const BookingFormModal = ({
                         style={{display: 'none'}}
                       />
                       <label htmlFor={`id-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={28} color="#94a3b8"/>
-                        <span className="bfm-upload-text">Click to upload ID</span>
-                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+                        <span className="bfm-upload-icon"><Upload size={18}/></span>
+                        <span className="bfm-upload-text">Click to upload <span className="bfm-upload-text-accent">ID</span></span>
+                        <span className="bfm-upload-subtext">PNG, JPG or PDF · Max 5MB</span>
                       </label>
                     </div>
                   )}
@@ -1018,9 +1018,9 @@ const BookingFormModal = ({
                         style={{display: 'none'}}
                       />
                       <label htmlFor={`passport-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={28} color="#94a3b8"/>
-                        <span className="bfm-upload-text">Click to upload Passport</span>
-                        <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+                        <span className="bfm-upload-icon"><Upload size={18}/></span>
+                        <span className="bfm-upload-text">Click to upload <span className="bfm-upload-text-accent">Passport</span></span>
+                        <span className="bfm-upload-subtext">PNG, JPG or PDF · Max 5MB</span>
                       </label>
                     </div>
                   )}

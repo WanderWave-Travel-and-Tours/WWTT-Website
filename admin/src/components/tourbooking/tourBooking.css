@@ -23,8 +23,12 @@
 .tbk-type-joiners  { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 
 /* ── Package cell in table ── */
-.tbk-package-cell { display: flex; flex-direction: column; gap: 4px; }
-.tbk-package-name { font-weight: 700; color: #0f172a; font-size: 14px; }
+.tbk-package-cell { display: flex; flex-direction: column; gap: 4px; max-width: 160px; min-width: 0; }
+.tbk-package-name {
+  font-weight: 700; color: #0f172a; font-size: 14px;
+  display: block; max-width: 105px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
 .tbk-package-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 /* ── Partial amount display ── */

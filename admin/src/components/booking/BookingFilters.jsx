@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, RefreshCw, ClipboardList, CreditCard, User, X } from 'lucide-react';
+import { Search, Filter, RefreshCw, ClipboardList, CreditCard, User, X, Tag } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 import './BookingFilters.css';
 
@@ -12,14 +12,19 @@ const BookingFilters = ({
   paymentFilter,
   setPaymentFilter,
   paymentOptions,
+  typeFilter,
+  setTypeFilter,
+  typeOptions,
   createdByFilter,
   setCreatedByFilter
 }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const hasTypeFilter = Array.isArray(typeOptions) && typeOptions.length > 0;
 
   const handleReset = () => {
     setFilterStatus('ALL');
     setPaymentFilter('ALL');
+    if (hasTypeFilter) setTypeFilter('ALL');
     setCreatedByFilter('ALL');
     setSearchTerm('');
   };
@@ -27,6 +32,7 @@ const BookingFilters = ({
   const hasActiveFilters =
     filterStatus !== 'ALL' ||
     paymentFilter !== 'ALL' ||
+    (hasTypeFilter && typeFilter !== 'ALL') ||
     createdByFilter !== 'ALL' ||
     searchTerm.trim() !== '';
 
@@ -39,6 +45,10 @@ const BookingFilters = ({
     value: option.value,
     label: option.label.toUpperCase()
   }));
+
+  const typeSelectOptions = hasTypeFilter
+    ? typeOptions.map((option) => ({ value: option.value, label: option.label.toUpperCase() }))
+    : [];
 
   const createdBySelectOptions = [
     { value: 'ALL', label: 'ALL' },
@@ -122,6 +132,23 @@ const BookingFilters = ({
                         />
                     </div>
                 </div>
+
+                {/* Type Filter — optional, only shown when the page passes typeOptions */}
+                {hasTypeFilter && (
+                    <div className="bkm-filter-item">
+                        <div className="bkm-filter-item-icon bkm-icon-type">
+                            <Tag size={18} strokeWidth={2.2} />
+                        </div>
+                        <div className="bkm-filter-item-body">
+                            <label>Type</label>
+                            <CustomSelect
+                                value={typeFilter}
+                                onChange={setTypeFilter}
+                                options={typeSelectOptions}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* Created By Filter */}
                 <div className="bkm-filter-item">

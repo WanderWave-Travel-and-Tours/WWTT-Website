@@ -115,13 +115,12 @@ const PassengerCard = ({
         Date of Birth <span style={{ color: '#ef4444' }}>*</span>
       </label>
 
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div className="nbm-dob-row">
         {/* Day */}
         <select
-          className="nbm-dob-select"
+          className="nbm-dob-select dob-day"
           value={p.dobDay}
           onChange={e => handleDobPartChange(i, 'dobDay', e.target.value)}
-          style={{ width: '72px', textAlign: 'left' }}
         >
           <option value="">DD</option>
           {Array.from({ length: 31 }, (_, n) => n + 1).map(d => (
@@ -131,10 +130,9 @@ const PassengerCard = ({
 
         {/* Month */}
         <select
-          className="nbm-dob-select"
+          className="nbm-dob-select dob-month"
           value={p.dobMonth}
           onChange={e => handleDobPartChange(i, 'dobMonth', e.target.value)}
-          style={{ width: '92px', textAlign: 'left' }}
         >
           <option value="">Month</option>
           {MONTHS.map((m, idx) => (
@@ -144,10 +142,9 @@ const PassengerCard = ({
 
         {/* Year */}
         <select
-          className="nbm-dob-select"
+          className="nbm-dob-select dob-year"
           value={p.dobYear}
           onChange={e => handleDobPartChange(i, 'dobYear', e.target.value)}
-          style={{ width: '82px', textAlign: 'left' }}
         >
           <option value="">Year</option>
           {Array.from(
@@ -159,10 +156,7 @@ const PassengerCard = ({
         </select>
 
         {/* Age Badge */}
-        <div
-          className={`nbm-age-badge${p.age ? '' : ' nbm-age-badge-empty'}`}
-          style={{ minWidth: '68px', textAlign: 'center' }}
-        >
+        <div className={`nbm-age-badge${p.age ? '' : ' nbm-age-badge-empty'}`}>
           {p.age ? (
             <>{p.age} <span style={{ fontSize: '0.73rem', opacity: 0.85 }}>yrs</span></>
           ) : '—'}
@@ -256,9 +250,9 @@ const PassengerCard = ({
             style={{ display: 'none' }}
           />
           <label htmlFor={`nbm-id-upload-${i}`} className="nbm-file-upload-label">
-            <Upload size={24} color="#94a3b8" />
-            <span className="nbm-upload-text">Click to upload ID</span>
-            <span className="nbm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+            <span className="nbm-upload-icon"><Upload size={18} /></span>
+            <span className="nbm-upload-text">Click to upload <span className="nbm-upload-text-accent">ID</span></span>
+            <span className="nbm-upload-subtext">PNG, JPG or PDF · Max 5MB</span>
           </label>
         </div>
       )}
@@ -294,9 +288,9 @@ const PassengerCard = ({
               style={{ display: 'none' }}
             />
             <label htmlFor={`nbm-passport-upload-${i}`} className="nbm-file-upload-label">
-              <Upload size={24} color="#94a3b8" />
-              <span className="nbm-upload-text">Click to upload Passport</span>
-              <span className="nbm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
+              <span className="nbm-upload-icon"><Upload size={18} /></span>
+              <span className="nbm-upload-text">Click to upload <span className="nbm-upload-text-accent">Passport</span></span>
+              <span className="nbm-upload-subtext">PNG, JPG or PDF · Max 5MB</span>
             </label>
           </div>
         )}

@@ -149,7 +149,7 @@ const TourBookingDetailModal = ({
 
   return (
     <>
-      <div className="modal-overlay" onClick={closeModal}>
+      <div className="modal-overlay bkm-detail-modal" onClick={closeModal}>
         <div className="modal-content" onClick={e => e.stopPropagation()}>
 
           {/* ── HEADER ──────────────────────────────────────────── */}
@@ -497,79 +497,73 @@ const TourBookingDetailModal = ({
 
           {/* ── FOOTER ──────────────────────────────────────────── */}
           <div className="modal-footer">
-            {/* LEFT GROUP */}
-            <div className="modal-footer-left">
-              {/* ✅ ORDER SLIP BUTTON — available for all bookings */}
+            {/* ✅ ORDER SLIP BUTTON — available for all bookings */}
+            <button
+              className="cnm-btn cnm-btn-utility"
+              style={{
+                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
+              }}
+              onClick={() => setShowOrderSlip(true)}
+            >
+              <ReceiptText size={14} />
+              Order Slip
+            </button>
+
+            {/* ✅ EDIT BOOKING BUTTON */}
+            <button
+              className="cnm-btn cnm-btn-utility"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(245,158,11,0.25)',
+              }}
+              onClick={() => {
+                setShowModal(false);
+                navigate(`/EditTourBooking/${b.mongoId}`);
+              }}
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+
+            {/* ✅ View Voucher — confirmed status lang */}
+            {status === 'CONFIRMED' && (
               <button
-                className="cnm-btn"
-                style={{
-                  background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
-                }}
-                onClick={() => setShowOrderSlip(true)}
+                className="cnm-btn cnm-btn-voucher cnm-btn-utility"
+                onClick={generateVoucherData}
+                disabled={isGeneratingVoucher}
               >
-                <ReceiptText size={14} />
-                Order Slip
+                <FileText size={14} />
+                {isGeneratingVoucher ? 'Loading...' : 'Voucher'}
               </button>
-            </div>
+            )}
 
-            {/* RIGHT GROUP */}
-            <div className="modal-footer-right">
-              {/* ✅ EDIT BOOKING BUTTON */}
+            {/* Confirm — pending only */}
+            {status === 'PENDING' && (
               <button
-                className="cnm-btn"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(245,158,11,0.25)',
-                }}
-                onClick={() => {
-                  setShowModal(false);
-                  navigate(`/EditTourBooking/${b.mongoId}`);
-                }}
+                className="cnm-btn cnm-btn-success cnm-btn-decision"
+                onClick={() => handleConfirm(selectedBooking)}
+                disabled={actionLoading}
               >
-                <Pencil size={14} />
-                Edit
+                {actionLoading
+                  ? <><span className="cnm-spinner" /> Processing...</>
+                  : <><Check size={14} /> Confirm</>
+                }
               </button>
+            )}
 
-              {/* ✅ View Voucher — confirmed status lang */}
-              {status === 'CONFIRMED' && (
-                <button
-                  className="cnm-btn cnm-btn-voucher"
-                  onClick={generateVoucherData}
-                  disabled={isGeneratingVoucher}
-                >
-                  <FileText size={14} />
-                  {isGeneratingVoucher ? 'Loading...' : 'Voucher'}
-                </button>
-              )}
-
-              {/* Cancel — pending or confirmed */}
-              {(status === 'PENDING' || status === 'CONFIRMED') && (
-                <button
-                  className="cnm-btn cnm-btn-danger cnm-btn-outline"
-                  onClick={() => handleCancel(selectedBooking)}
-                  disabled={actionLoading}
-                >
-                  <X size={14} /> Cancel
-                </button>
-              )}
-
-              {/* Confirm — pending only */}
-              {status === 'PENDING' && (
-                <button
-                  className="cnm-btn cnm-btn-success"
-                  onClick={() => handleConfirm(selectedBooking)}
-                  disabled={actionLoading}
-                >
-                  {actionLoading
-                    ? <><span className="cnm-spinner" /> Processing...</>
-                    : <><Check size={14} /> Confirm</>
-                  }
-                </button>
-              )}
-            </div>
+            {/* Cancel — pending or confirmed */}
+            {(status === 'PENDING' || status === 'CONFIRMED') && (
+              <button
+                className="cnm-btn cnm-btn-danger cnm-btn-outline cnm-btn-decision"
+                onClick={() => handleCancel(selectedBooking)}
+                disabled={actionLoading}
+              >
+                <X size={14} /> Cancel
+              </button>
+            )}
           </div>
 
         </div>

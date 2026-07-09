@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Calendar, Users, Eye, CheckCircle, AlertCircle, Mail,
   ChevronLeft, ChevronRight, FileText, CreditCard,
-  Wallet, Archive, Car, MapPin, Clock, Navigation
+  Wallet, Archive, Car, MapPin, Clock, Navigation, RotateCcw, X, Plus
 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import BookingStats from '../booking/BookingStats';
 import BookingFilters from '../booking/BookingFilters';
 import PaginationControls from '../booking/PaginationControls';
+import BookingCards from '../booking/BookingCards';
 import TransferBookingDetailModal from './TransferBookingDetailModal';
 import NewTransferBookingModal from './salestransferbooking/NewTransferBookingModal';
 import BookingChoiceModal from '../booking/BookingChoiceModal';
@@ -16,6 +17,7 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 import '../booking/booking.css';
 import '../booking/BookingTable.css';
+import '../booking/BookingCards.css';
 import './transferBooking.css';
 
 const BASE_URL = 'https://wanderwaveph.onrender.com';
@@ -79,7 +81,12 @@ const TransferBookingDashboard = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   // Confirm modal
   const [confirmConfig, setConfirmConfig] = useState({
@@ -88,6 +95,27 @@ const TransferBookingDashboard = () => {
 
   // ── Bulk Selection ────────────────────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkBar, setShowBulkBar] = useState(false);
+  const [bulkBarClosing, setBulkBarClosing] = useState(false);
+
+  // Keep the bulk action bar mounted briefly after the selection empties
+  // out so its exit animation can play, instead of popping off instantly.
+  useEffect(() => {
+    if (selectedIds.size > 0) {
+      setShowBulkBar(true);
+      setBulkBarClosing(false);
+      return;
+    }
+    if (showBulkBar) {
+      setBulkBarClosing(true);
+      const timeout = setTimeout(() => {
+        setShowBulkBar(false);
+        setBulkBarClosing(false);
+      }, 220);
+      return () => clearTimeout(timeout);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIds.size]);
 
   const toggleSelectAll = () => {
     setSelectedIds(prev => {
@@ -392,12 +420,14 @@ const TransferBookingDashboard = () => {
     return                             { cls: 'trk-type-default',  label: type || 'Transfer'  };
   };
 
+  const isAnyModalOpen = showModal || showBookingChoiceModal || showNewBooking || confirmConfig.isOpen;
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="bkm-page">
+    <div className={`bkm-page ${isAnyModalOpen ? 'bkm-modal-open' : ''}`}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main className={`bkm-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+      <main className={`bkm-main ${isSidebarCollapsed ? 'expanded' : ''} ${showBulkBar ? 'has-bulk-bar' : ''}`}>
         <div className="bkm-container">
 
           {/* ── Header ───────────────────────────────────────────── */}
@@ -414,6 +444,16 @@ const TransferBookingDashboard = () => {
             </button>
           </div>
 
+          {/* MOBILE ONLY: Floating "New Booking" button */}
+          <button
+            type="button"
+            className="bkm-fab-add"
+            onClick={() => setShowBookingChoiceModal(true)}
+            aria-label="New booking"
+          >
+            <Plus size={22} strokeWidth={2.5} />
+          </button>
+
           {/* ── Stats ────────────────────────────────────────────── */}
           <BookingStats stats={stats} />
 
@@ -429,39 +469,8 @@ const TransferBookingDashboard = () => {
             createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
           />
 
-          {/* ── Bulk Action Bar ───────────────────────────────────── */}
-          {selectedIds.size > 0 && (
-            <div className="trk-bulk-bar">
-              <div className="trk-bulk-bar-left">
-                <div className="trk-bulk-count-pill">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <rect x="1" y="1" width="12" height="12" rx="3" fill="#6366f1" />
-                    <path d="M4 7l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>{selectedIds.size}</span>
-                </div>
-                <span className="trk-bulk-label">
-                  booking{selectedIds.size !== 1 ? 's' : ''} selected
-                </span>
-              </div>
-              <div className="trk-bulk-bar-actions">
-                <button
-                  className="trk-bulk-archive-btn"
-                  onClick={handleBulkArchive}
-                  disabled={actionLoading}
-                >
-                  <Archive size={14} />
-                  Archive Selected
-                </button>
-                <button className="trk-bulk-clear-btn" onClick={clearSelection}>
-                  ✕ Clear Selection
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* ── Table ────────────────────────────────────────────── */}
-          <div className="bkm-table-container">
+          <div className="bkm-table-container bkm-desktop-table">
             <table className="bkm-table">
               <thead>
                 <tr>
@@ -668,13 +677,37 @@ const TransferBookingDashboard = () => {
             </table>
           </div>
 
+          {/* ── Mobile Cards ─────────────────────────────────────── */}
+          <BookingCards
+            loading={loading}
+            filteredBookingsCount={filteredBookings.length}
+            currentBookings={currentBookings.map(b => ({
+              ...b,
+              packageName: `${getTransferTypeBadge(b.transferType).label.replace(/^\S+\s/, '')}: ${b.pickupLocation} → ${b.dropoffLocation}`,
+              travelDate: b.pickupDate,
+              guests: b.passengers,
+            }))}
+            handleViewDetails={handleViewDetails}
+            handleArchive={handleArchive}
+            actionLoading={actionLoading}
+            selectedBookings={currentBookings.filter(b => selectedIds.has(b.mongoId || b.id))}
+            onToggleSelect={(booking) => toggleSelectOne(booking.mongoId || booking.id)}
+            MailIcon={Mail}
+            UsersIcon={Users}
+            ArchiveIcon={Archive}
+            RotateCcwIcon={RotateCcw}
+            WalletIcon={Wallet}
+            CalendarIcon={Calendar}
+          />
+
           {/* ── Pagination ───────────────────────────────────────── */}
-          {filteredBookings.length > itemsPerPage && (
+          {filteredBookings.length > 0 && (
             <PaginationControls
               totalItems={filteredBookings.length}
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               onPageChange={p => setCurrentPage(p)}
+              onItemsPerPageChange={handleItemsPerPageChange}
               ChevronLeftIcon={ChevronLeft}
               ChevronRightIcon={ChevronRight}
             />
@@ -682,6 +715,39 @@ const TransferBookingDashboard = () => {
 
         </div>
       </main>
+
+      {showBulkBar && (
+        <div className={`bulk-action-bar ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${bulkBarClosing ? 'bulk-action-bar-closing' : ''}`}>
+          <div className="bulk-action-info">
+            <span className="bulk-action-count">
+              <span className="bulk-btn-label-full">{selectedIds.size} SELECTED</span>
+              <span className="bulk-btn-label-short">{selectedIds.size}</span>
+            </span>
+          </div>
+
+          <div className="bulk-action-buttons">
+            <button
+              className="bulk-action-btn bulk-action-btn-archive"
+              onClick={handleBulkArchive}
+              disabled={actionLoading}
+            >
+              <Archive size={15} />
+              <span className="bulk-btn-label-full">Archive Selected</span>
+              <span className="bulk-btn-label-short">Archive</span>
+            </button>
+
+            <button
+              className="bulk-action-btn bulk-action-btn-clear"
+              onClick={clearSelection}
+              disabled={actionLoading}
+            >
+              <X size={15} />
+              <span className="bulk-btn-label-full">Clear Selection</span>
+              <span className="bulk-btn-label-short">Clear</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Booking Type Choice Modal ─────────────────────────── */}
       <BookingChoiceModal

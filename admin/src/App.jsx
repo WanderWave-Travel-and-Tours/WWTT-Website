@@ -4,7 +4,7 @@ import ToastProvider from './components/toast/ToastManager';
 import axios from 'axios';
 
 // Main Components 
-import Login from './components/login/login.jsx'; 
+import Login from './components/login/login.jsx';
 import Dashboard from './components/dashboard/dashboard.jsx'; 
 import Booking from './components/booking/booking.jsx';
 import Settings from './components/settings/settings.jsx'; 
@@ -572,7 +572,7 @@ function App() {
           <Route path="/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
           <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
           <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
-          
+
           <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
           <Route path="/activity-logs" element={<ProtectedRoute><ActivityLogs /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

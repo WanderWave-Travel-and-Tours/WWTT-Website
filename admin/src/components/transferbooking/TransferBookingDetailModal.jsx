@@ -96,7 +96,7 @@ const TransferBookingDetailModal = ({
   return (
     <>
       {/* ── Overlay ──────────────────────────────────────────── */}
-      <div className="modal-overlay" onClick={closeModal}>
+      <div className="modal-overlay bkm-detail-modal" onClick={closeModal}>
         <div className="modal-content trd-modal-content" onClick={e => e.stopPropagation()}>
 
           {/* ── Header ─────────────────────────────────────── */}
@@ -349,14 +349,9 @@ const TransferBookingDetailModal = ({
           {/* ── Footer Actions ──────────────────────────── */}
           <div className="modal-footer">
 
-            {/* Edit */}
-            <button className="cnm-btn trd-btn-edit" onClick={handleEdit} title="Edit booking">
-              <Pencil size={14} /> Edit
-            </button>
-
             {/* Order Slip */}
             <button
-              className="cnm-btn"
+              className="cnm-btn cnm-btn-utility"
               style={{
                 background: 'linear-gradient(135deg, #0f172a, #1e293b)',
                 color: 'white',
@@ -367,32 +362,37 @@ const TransferBookingDetailModal = ({
               <Receipt size={14} /> Order Slip
             </button>
 
+            {/* Edit */}
+            <button className="cnm-btn trd-btn-edit cnm-btn-utility" onClick={handleEdit} title="Edit booking">
+              <Pencil size={14} /> Edit
+            </button>
+
             {/* Voucher */}
             {status === 'CONFIRMED' && (
-              <button className="cnm-btn cnm-btn-primary" onClick={() => setShowVoucher(true)}>
+              <button className="cnm-btn cnm-btn-primary cnm-btn-utility" onClick={() => setShowVoucher(true)}>
                 <Ticket size={14} /> View Voucher
-              </button>
-            )}
-
-            {/* Cancel */}
-            {canCancel && (
-              <button
-                className="cnm-btn cnm-btn-danger cnm-btn-outline"
-                onClick={() => { closeModal(); handleCancel(b); }}
-                disabled={actionLoading}
-              >
-                <XCircle size={14} /> Cancel Booking
               </button>
             )}
 
             {/* Confirm */}
             {canConfirm && (
               <button
-                className="cnm-btn cnm-btn-success"
+                className="cnm-btn cnm-btn-success cnm-btn-decision"
                 onClick={() => { closeModal(); handleConfirm(b); }}
                 disabled={actionLoading}
               >
                 <CheckCircle size={14} /> Confirm Booking
+              </button>
+            )}
+
+            {/* Cancel */}
+            {canCancel && (
+              <button
+                className="cnm-btn cnm-btn-danger cnm-btn-outline cnm-btn-decision"
+                onClick={() => { closeModal(); handleCancel(b); }}
+                disabled={actionLoading}
+              >
+                <XCircle size={14} /> Cancel Booking
               </button>
             )}
           </div>

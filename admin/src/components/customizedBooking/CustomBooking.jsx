@@ -14,7 +14,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   FileText, Wallet, CheckCircle, CreditCard,
-  Archive, ChevronLeft, ChevronRight,
+  Archive, ChevronLeft, ChevronRight, Plus, X, Mail, Users, Calendar, RotateCcw,
 } from 'lucide-react';
 import './CustomBooking.css';
 
@@ -36,10 +36,16 @@ const SERVICE_LABELS = {
 
 // Sub-components (new customized versions)
 import CustomBookingStats        from './CustomBookingStats';
-import CustomBookingFilters      from './CustomBookingFilters';
 import CustomBookingTable        from './CustomBookingTable';
 import CustomBookingDetailModal  from './CustomBookingDetailModal';
-import CustomBookingPagination   from './CustomBookingPagination';
+
+// Filters, mobile card view + pagination — reused from the general Booking
+// Management page so all booking dashboards share the same layout,
+// including the mobile filter FAB / bottom-sheet panel.
+import BookingFilters from '../booking/BookingFilters';
+import BookingCards from '../booking/BookingCards';
+import '../booking/BookingCards.css';
+import PaginationControls from '../booking/PaginationControls';
 
 // ── Sidebar: reuse the project's existing sidebar ────────────────────────────
 // If your sidebar lives somewhere else, update this import path.
@@ -96,6 +102,12 @@ const CustomBooking = () => {
 
   // ── Pagination ─────────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   // ── Modals ─────────────────────────────────────────────────────────────────
   const [showDetailModal,     setShowDetailModal]     = useState(false);
@@ -106,6 +118,27 @@ const CustomBooking = () => {
 
   // ── Bulk selection ─────────────────────────────────────────────────────────
   const [selectedBookings, setSelectedBookings] = useState([]);
+  const [showBulkBar, setShowBulkBar] = useState(false);
+  const [bulkBarClosing, setBulkBarClosing] = useState(false);
+
+  // Keep the bulk action bar mounted briefly after the selection empties
+  // out so its exit animation can play, instead of popping off instantly.
+  useEffect(() => {
+    if (selectedBookings.length > 0) {
+      setShowBulkBar(true);
+      setBulkBarClosing(false);
+      return;
+    }
+    if (showBulkBar) {
+      setBulkBarClosing(true);
+      const timeout = setTimeout(() => {
+        setShowBulkBar(false);
+        setBulkBarClosing(false);
+      }, 220);
+      return () => clearTimeout(timeout);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBookings.length]);
 
   // ── Confirm dialog ─────────────────────────────────────────────────────────
   const [confirmConfig, setConfirmConfig] = useState({
@@ -398,11 +431,11 @@ const CustomBooking = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // SELECTION
   // ═══════════════════════════════════════════════════════════════════════════
-  const totalPages     = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
+  const totalPages     = Math.ceil(filteredBookings.length / itemsPerPage);
   const currentBookings = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredBookings.slice(start, start + ITEMS_PER_PAGE);
-  }, [currentPage, filteredBookings]);
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredBookings.slice(start, start + itemsPerPage);
+  }, [currentPage, itemsPerPage, filteredBookings]);
 
   const toggleSelect = (booking) => {
     setSelectedBookings(prev =>
@@ -502,16 +535,18 @@ const CustomBooking = () => {
     { value: 'WALK_IN', label: 'Walk-in / Counter' },
   ];
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+
+  const isAnyModalOpen = showDetailModal || showBookingChoiceModal || showNewBookingModal || confirmConfig.isOpen;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="cbk-page">
+    <div className={`cbk-page ${isAnyModalOpen ? 'cbk-modal-open bkm-modal-open' : ''}`}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main className={`cbk-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+      <main className={`cbk-main ${isSidebarCollapsed ? 'expanded' : ''} ${showBulkBar ? 'has-bulk-bar' : ''}`}>
         <div className="cbk-container">
 
           {/* ── Header ── */}
@@ -525,11 +560,21 @@ const CustomBooking = () => {
             </button>
           </div>
 
+          {/* MOBILE ONLY: Floating "New Booking" button */}
+          <button
+            type="button"
+            className="cbk-fab-add"
+            onClick={() => setShowBookingChoiceModal(true)}
+            aria-label="New booking"
+          >
+            <Plus size={22} strokeWidth={2.5} />
+          </button>
+
           {/* ── Stats ── */}
           <CustomBookingStats stats={stats} />
 
           {/* ── Filters ── */}
-          <CustomBookingFilters
+          <BookingFilters
             searchTerm={searchTerm}        setSearchTerm={setSearchTerm}
             filterStatus={filterStatus}    setFilterStatus={setFilterStatus}
             statusOptions={statusOptions}
@@ -540,38 +585,15 @@ const CustomBooking = () => {
             createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
           />
 
-          {/* ── Bulk Action Bar ── */}
-          {selectedBookings.length > 0 && (
-            <div className="cbk-bulk-bar">
-              <span data-count={selectedBookings.length}>
-                {selectedBookings.length} booking{selectedBookings.length > 1 ? 's' : ''} selected
-              </span>
-              <button
-                className="cbk-bulk-archive-btn"
-                onClick={handleBulkArchive}
-                disabled={actionLoading}
-              >
-                <Archive size={15} /> Archive Selected
-              </button>
-              <button
-                className="cbk-bulk-clear-btn"
-                onClick={() => setSelectedBookings([])}
-                disabled={actionLoading}
-              >
-                Clear Selection
-              </button>
-            </div>
-          )}
-
           {/* ── Table ── */}
-          <div className="cbk-table-container">
+          <div className="cbk-table-container bkm-desktop-table">
             <table className="cbk-table">
               <thead>
                 <tr>
                   <th style={{ width: 48, textAlign: 'center' }}>
                     <input
                       type="checkbox"
-                      style={{ accentColor: '#059669', cursor: 'pointer' }}
+                      style={{ accentColor: '#f59e0b', cursor: 'pointer' }}
                       checked={currentBookings.length > 0 && selectedBookings.length === currentBookings.length}
                       onChange={selectAll}
                     />
@@ -604,18 +626,72 @@ const CustomBooking = () => {
             </table>
           </div>
 
+          {/* ── Mobile Cards ── */}
+          <BookingCards
+            loading={loading}
+            filteredBookingsCount={filteredBookings.length}
+            currentBookings={currentBookings}
+            handleViewDetails={handleViewDetails}
+            handleArchive={handleArchive}
+            actionLoading={actionLoading}
+            selectedBookings={selectedBookings}
+            onToggleSelect={toggleSelect}
+            MailIcon={Mail}
+            UsersIcon={Users}
+            ArchiveIcon={Archive}
+            RotateCcwIcon={RotateCcw}
+            WalletIcon={Wallet}
+            CalendarIcon={Calendar}
+          />
+
           {/* ── Pagination ── */}
-          {filteredBookings.length > 0 && totalPages > 1 && (
-            <CustomBookingPagination
+          {filteredBookings.length > 0 && (
+            <PaginationControls
               totalItems={filteredBookings.length}
-              itemsPerPage={ITEMS_PER_PAGE}
+              itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               onPageChange={(p) => { if (p >= 1 && p <= totalPages) setCurrentPage(p); }}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              ChevronLeftIcon={ChevronLeft}
+              ChevronRightIcon={ChevronRight}
             />
           )}
 
         </div>
       </main>
+
+      {showBulkBar && (
+        <div className={`cbk-bulk-bar ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${bulkBarClosing ? 'bulk-action-bar-closing' : ''}`}>
+          <div className="cbk-bulk-bar-info">
+            <span className="cbk-bulk-bar-count">
+              <span className="bulk-btn-label-full">{selectedBookings.length} SELECTED</span>
+              <span className="bulk-btn-label-short">{selectedBookings.length}</span>
+            </span>
+          </div>
+
+          <div className="cbk-bulk-bar-buttons">
+            <button
+              className="cbk-bulk-archive-btn"
+              onClick={handleBulkArchive}
+              disabled={actionLoading}
+            >
+              <Archive size={15} />
+              <span className="bulk-btn-label-full">Archive Selected</span>
+              <span className="bulk-btn-label-short">Archive</span>
+            </button>
+
+            <button
+              className="cbk-bulk-clear-btn"
+              onClick={() => setSelectedBookings([])}
+              disabled={actionLoading}
+            >
+              <X size={15} />
+              <span className="bulk-btn-label-full">Clear Selection</span>
+              <span className="bulk-btn-label-short">Clear</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Detail Modal ── */}
       <CustomBookingDetailModal
