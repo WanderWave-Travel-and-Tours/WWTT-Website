@@ -777,10 +777,8 @@
   .os-flight-grid { grid-template-columns: repeat(2, 1fr); }
   .os-balance-box { flex-direction: column; align-items: flex-start; }
   .os-ft-label { width: 35%; font-size: 11px; }
-  .os-pax-table th:nth-child(5),
-  .os-pax-table td:nth-child(5),
-  .os-pax-table th:nth-child(6),
-  .os-pax-table td:nth-child(6) { display: none; }
+  /* NATIONALITY/CONTACT columns stay visible on mobile now — the guest
+     table is sized to fit all six columns (see VoucherPreviewModal.css). */
   .os-toolbar { border-radius: 0; }
   .os-slip { border-radius: 0; }
 }

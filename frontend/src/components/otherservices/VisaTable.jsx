@@ -247,6 +247,17 @@ const VisaTable = ({ onSelectVisa, onClose }) => {
                                         <span className="download-label" title={formLabel}>{shortLabel}</span>
                                       )}
                                     </div>
+                                    {fullUrl && (
+                                      <button
+                                        type="button"
+                                        className="download-action-btn"
+                                        onClick={(e) => handleDownloadClick(e, fullUrl, formLabel)}
+                                        aria-label={`Download ${formLabel}`}
+                                        title="Download"
+                                      >
+                                        <Download size={16} />
+                                      </button>
+                                    )}
                                   </li>
                                 );
                               })}

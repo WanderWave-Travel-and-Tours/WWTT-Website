@@ -37,6 +37,39 @@ a, button, input, select, textarea, [role="button"], [tabindex] {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Disable the accidental text/element selection highlight when tapping on
+   mobile browsers (Android Chrome / iOS Safari). Applied app-wide but
+   re-enabled below for anything the user actually needs to select or copy. */
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Re-enable selection where it matters: form fields, editable regions and
+   any element explicitly opted back in with the `selectable` class. */
+input,
+textarea,
+[contenteditable="true"],
+.selectable,
+.selectable * {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Lucide icons (close X, chevrons, etc.) render as inline SVGs sized via their
+   width/height attributes. Inside flex containers the default flex-shrink: 1
+   can collapse them to 0 width on some mobile browsers, so the icon disappears
+   (e.g. blank close buttons). Stop them from being shrunk away. */
+svg.lucide {
+  flex-shrink: 0;
+}
+
 html {
   margin: 0;
   padding: 0;
