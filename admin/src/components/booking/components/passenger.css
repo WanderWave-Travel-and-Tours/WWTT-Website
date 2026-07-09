@@ -128,8 +128,9 @@
   outline: none !important;
 }
 
-.nbm-dob-select.dob-day  { flex: 0 0 72px; }
-.nbm-dob-select.dob-year { flex: 0 0 88px; }
+.nbm-dob-select.dob-day   { flex: 0 0 72px; }
+.nbm-dob-select.dob-month { flex: 1 1 92px; min-width: 0; }
+.nbm-dob-select.dob-year  { flex: 0 0 88px; }
 
 /* Age Badge */
 .nbm-age-badge {
@@ -157,6 +158,30 @@
   font-size: 0.85rem;
 }
 
+/* ── Responsive: Mobile ──
+   <select> elements have a browser-enforced minimum content width (they won't
+   shrink below their widest option, e.g. "September"), so a single row of
+   three selects + the age badge cannot be squeezed to fit narrow screens.
+   Switch to a 2x2 grid instead: Day/Month on row 1, Year/Age on row 2. */
+@media (max-width: 480px) {
+  .nbm-dob-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .nbm-dob-select.dob-day,
+  .nbm-dob-select.dob-month,
+  .nbm-dob-select.dob-year {
+    flex: unset;
+    width: 100% !important;
+    min-width: 0;
+  }
+  .nbm-age-badge {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 /* Full-width inputs inside passenger card */
 .nbm-passenger-card .nbm-pfield input,
 .nbm-passenger-card .nbm-pfield select { width: 100%; }
@@ -164,37 +189,77 @@
 
 /* Document Upload (ID / Passport) */
 .nbm-file-upload-box {
+  position: relative;
   border: 1.5px dashed #cbd5e1;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--nbm-bg);
-  transition: border-color 0.2s, background 0.2s;
+  overflow: hidden;
+  transition: border-color 0.22s, background 0.22s, box-shadow 0.22s, transform 0.15s;
 }
 
 .nbm-file-upload-box:hover {
   border-color: var(--nbm-amber);
   background: #fffbeb;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.14);
+  transform: translateY(-1px);
 }
 
-.nbm-file-upload-label {
+.nbm-file-upload-box:has(input:focus-visible) {
+  border-color: var(--nbm-amber);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+
+.nbm-file-upload-box .nbm-file-upload-label {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 18px 12px;
+  gap: 6px;
+  padding: 22px 14px;
   cursor: pointer;
   text-align: center;
+  width: 100%;
+}
+
+.nbm-file-upload-label .nbm-upload-text,
+.nbm-file-upload-label .nbm-upload-subtext {
+  display: block;
+}
+
+.nbm-file-upload-label .nbm-upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--nbm-amber-pale);
+  color: var(--nbm-amber);
+  margin-bottom: 2px;
+  transition: background 0.22s, transform 0.22s;
+}
+
+.nbm-file-upload-box:hover .nbm-upload-icon {
+  background: var(--nbm-amber);
+  color: #fff;
+  transform: scale(1.06);
 }
 
 .nbm-upload-text {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 700;
   color: var(--nbm-dark);
 }
 
+.nbm-upload-text .nbm-upload-text-accent {
+  color: var(--nbm-amber);
+}
+
 .nbm-upload-subtext {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
+  font-weight: 600;
   color: var(--nbm-light-slate);
+  letter-spacing: 0.02em;
 }
 
 .nbm-file-uploaded {
@@ -202,17 +267,22 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border: 1.5px solid #bbf7d0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f0fdf4;
+  animation: cardFadeIn 0.25s ease;
 }
 
 .nbm-file-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
+}
+
+.nbm-file-info svg {
+  flex-shrink: 0;
 }
 
 .nbm-file-name {
@@ -235,6 +305,13 @@
   padding: 5px 12px;
   cursor: pointer;
   font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.nbm-remove-file-btn:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
 }
 
 /* Add More Passengers — sits below the last passenger card */
@@ -261,4 +338,20 @@
   border-color: var(--nbm-amber);
   background: #fff7ed;
   color: var(--nbm-amber);
+}
+
+@media (max-width: 640px) {
+  .nbm-file-upload-box .nbm-file-upload-label {
+    padding: 16px 10px;
+  }
+  .nbm-file-upload-label .nbm-upload-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .nbm-upload-text {
+    font-size: 0.8rem;
+  }
+  .nbm-upload-subtext {
+    font-size: 0.68rem;
+  }
 }
