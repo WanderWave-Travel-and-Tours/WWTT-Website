@@ -315,7 +315,7 @@ const TransferOrderSlipModal = ({ booking, onClose }) => {
                 {/* ── PASSENGER INFO ── */}
                 <div className="voucher-section">
                   <div className="table-responsive">
-                    <table className="voucher-table os-pax-table">
+                    <table className="voucher-table os-pax-table os-pax-transfer">
                       <thead>
                         <tr>
                           <th style={{ width: '5%' }}>#</th>

@@ -52,7 +52,7 @@ const [createdByFilter, setCreatedByFilter] = useState('ALL');
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
 
@@ -513,10 +513,15 @@ if (createdByFilter !== 'ALL') {
   const currentBookings = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredBookings.slice(start, start + itemsPerPage);
-  }, [currentPage, filteredBookings]);
+  }, [currentPage, itemsPerPage, filteredBookings]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -593,7 +598,7 @@ if (createdByFilter !== 'ALL') {
                   <th style={{ textAlign: "center" }}>Payment</th>
                   <th style={{ textAlign: "center" }}>Status</th>
                   <th style={{ textAlign: "center" }}>Created By</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
+                  <th className="bkm-actions-header"></th>
                 </tr>
               </thead>
 
@@ -643,12 +648,13 @@ if (createdByFilter !== 'ALL') {
             CalendarIcon={Calendar}
           />
 
-          {filteredBookings.length > 0 && totalPages > 1 && (
-            <PaginationControls 
+          {filteredBookings.length > 0 && (
+            <PaginationControls
               totalItems={filteredBookings.length}
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
               ChevronLeftIcon={ChevronLeft}
               ChevronRightIcon={ChevronRight}
             />

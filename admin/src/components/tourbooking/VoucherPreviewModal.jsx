@@ -126,7 +126,7 @@ const VoucherPreviewModal = ({ voucherData, onClose, onEdit }) => {
                                     <Save size={16} /> Save Changes
                                 </button>
                                 <button className="voucher-btn voucher-btn-cancel" onClick={handleCancel}>
-                                    Cancel
+                                    <X size={16} /> Cancel
                                 </button>
                             </>
                         )}

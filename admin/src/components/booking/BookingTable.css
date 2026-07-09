@@ -92,6 +92,17 @@
 .payment-badge-partial { background: #fef3c7; color: #b45309; }
 .payment-badge-pending { background: #fee2e2; color: #b91c1c; }
 
+/* Actions column: header and body cell share the same right padding so
+   "Actions" lines up exactly with the right edge of the action buttons. */
+.bkm-table th.bkm-actions-header {
+    text-align: right;
+    letter-spacing: normal;
+    padding-right: 10px;
+}
+.bkm-table td.bkm-actions-cell {
+    padding-right: 10px;
+}
+
 /* Action Button Group */
 .bkm-action-group {
     display: flex;

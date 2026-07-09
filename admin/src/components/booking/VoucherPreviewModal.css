@@ -635,17 +635,29 @@
     }
 
     .header-left {
-        flex: 1 1 auto;
+        flex: 1 1 60%;
         min-width: 0;
         width: auto;
     }
 
     .header-right {
         flex: 0 0 auto;
+        max-width: 40%;
         width: auto;
         border-top: none;
         padding-top: 0;
         margin-top: 0;
+    }
+
+    /* In edit mode the client-name/email/phone <input>s have no intrinsic
+       width, so without a basis the left column collapses and the boxes look
+       cramped. Keep a comfortable share and let inputs fill it. */
+    .header-left .voucher-edit-input {
+        width: 100%;
+    }
+    .header-date-box {
+        width: 100%;
+        box-sizing: border-box;
     }
 
     /* Desktop-scale type (26px client name, 36px brand) overwhelms a
@@ -700,6 +712,42 @@
 
     .voucher-table-payment td {
         font-size: 11px;
+    }
+
+    /* EDIT MODE: the <input>s that replace the static text inherit the cell's
+       10px font but their default 6px/10px padding + border overflow the
+       shrunken mobile cells (nationality/age get clipped). Tighten them so
+       they fit inside the fixed-layout columns. */
+    .voucher-edit-input {
+        padding: 4px 5px;
+        font-size: 10px;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    /* Number inputs (age, guests, rate) show a spinner that eats width in
+       narrow cells — drop it so the value stays visible. */
+    .voucher-table .voucher-edit-input[type="number"] {
+        padding-right: 2px;
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    .voucher-table .voucher-edit-input[type="number"]::-webkit-outer-spin-button,
+    .voucher-table .voucher-edit-input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Header "Issued To" inputs: give them room and readable size instead of
+       the cramped narrow boxes. The header-left column takes the full width
+       it needs; the brand/date column stays compact on the right. */
+    .header-left .voucher-edit-input {
+        font-size: 12px;
+        padding: 5px 7px;
+    }
+    .header-date-box .voucher-edit-input {
+        font-size: 10px;
+        padding: 4px 5px;
     }
 
     /* Guest list table: only the first two <th> get an explicit inline
