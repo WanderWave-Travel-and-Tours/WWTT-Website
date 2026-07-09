@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Calendar, Users, Eye, CheckCircle, AlertCircle, Mail,
   ChevronLeft, ChevronRight, FileText, CreditCard,
-  Wallet, Map, Plane, Archive
+  Wallet, Map, Plane, Archive, RotateCcw, X, Plus
 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import BookingStats from '../booking/BookingStats';
 import BookingFilters from '../booking/BookingFilters';
 import PaginationControls from '../booking/PaginationControls';
+import BookingCards from '../booking/BookingCards';
 import TourBookingDetailModal from './TourBookingDetailModal';
 import NewTourBookingModal from './NewTourBookingModal/NewTourBookingModal';
 import BookingChoiceModal from '../booking/BookingChoiceModal';
@@ -17,6 +18,7 @@ import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 // Reuse the same base CSS as booking (bkm- classes) + tour additions
 import '../booking/booking.css';
 import '../booking/BookingTable.css';
+import '../booking/BookingCards.css';
 import './tourBooking.css';
 
 const BASE_URL = 'https://wanderwaveph.onrender.com';
@@ -78,7 +80,12 @@ const TourBookingDashboard = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   // Confirm modal
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
@@ -89,7 +96,31 @@ const TourBookingDashboard = () => {
     isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'primary'
   });
 
+  // Bulk selection
+  const [selectedBookings, setSelectedBookings] = useState([]);
+  const [showBulkBar, setShowBulkBar] = useState(false);
+  const [bulkBarClosing, setBulkBarClosing] = useState(false);
+
   const toggleSidebar = () => setIsSidebarCollapsed(p => !p);
+
+  // Keep the bulk action bar mounted briefly after the selection empties
+  // out so its exit animation can play, instead of popping off instantly.
+  useEffect(() => {
+    if (selectedBookings.length > 0) {
+      setShowBulkBar(true);
+      setBulkBarClosing(false);
+      return;
+    }
+    if (showBulkBar) {
+      setBulkBarClosing(true);
+      const timeout = setTimeout(() => {
+        setShowBulkBar(false);
+        setBulkBarClosing(false);
+      }, 220);
+      return () => clearTimeout(timeout);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBookings.length]);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchBookings = async () => {
@@ -291,6 +322,63 @@ const TourBookingDashboard = () => {
     );
   };
 
+  // ── Bulk selection ────────────────────────────────────────────────────────
+  const toggleSelect = (booking) => {
+    setSelectedBookings(prev =>
+      prev.some(b => b.mongoId === booking.mongoId)
+        ? prev.filter(b => b.mongoId !== booking.mongoId)
+        : [...prev, booking]
+    );
+  };
+
+  const selectAll = () => {
+    setSelectedBookings(prev =>
+      prev.length === currentBookings.length ? [] : [...currentBookings]
+    );
+  };
+
+  const clearSelection = () => setSelectedBookings([]);
+
+  const handleBulkArchiveClick = () => {
+    if (selectedBookings.length === 0) return;
+    const count = selectedBookings.length;
+
+    askConfirmation(
+      'Archive Selected Bookings',
+      `Are you sure you want to archive ${count} booking${count > 1 ? 's' : ''}? This action cannot be undone.`,
+      async () => {
+        setActionLoading(true);
+        try {
+          await Promise.all(
+            selectedBookings.map(async (booking) => {
+              const res = await fetch(`${BASE_URL}/api/tour-bookings/archive/${booking.mongoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+              });
+              if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || `Failed to archive booking ${booking.id}`);
+              }
+            })
+          );
+          await fetchBookings();
+          clearSelection();
+          toast.success(
+            `${count} booking${count > 1 ? 's' : ''} archived successfully.`,
+            'Bulk Archive Completed',
+            4000
+          );
+        } catch (err) {
+          toast.error(err.message || 'Failed to archive some bookings.', 'Bulk Archive Failed', 5000);
+          await fetchBookings();
+        } finally {
+          setActionLoading(false);
+        }
+      },
+      'danger'
+    );
+  };
+
   // ── Filters config ────────────────────────────────────────────────────────
   const statusOptions = useMemo(() => {
     const opts = ['ALL'];
@@ -327,12 +415,14 @@ const TourBookingDashboard = () => {
   const startIndex      = (currentPage - 1) * itemsPerPage;
   const currentBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
+  const isAnyModalOpen = showModal || showBookingChoiceModal || showNewBookingModal || confirmConfig.isOpen;
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="bkm-page">
+    <div className={`bkm-page ${isAnyModalOpen ? 'bkm-modal-open' : ''}`}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main className={`bkm-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+      <main className={`bkm-main ${isSidebarCollapsed ? 'expanded' : ''} ${showBulkBar ? 'has-bulk-bar' : ''}`}>
         <div className="bkm-container">
 
           {/* ── Header ───────────────────────────────────────────── */}
@@ -348,6 +438,16 @@ const TourBookingDashboard = () => {
               + New Booking
             </button>
           </div>
+
+          {/* MOBILE ONLY: Floating "New Booking" button */}
+          <button
+            type="button"
+            className="bkm-fab-add"
+            onClick={() => setShowBookingChoiceModal(true)}
+            aria-label="New booking"
+          >
+            <Plus size={22} strokeWidth={2.5} />
+          </button>
 
           {/* ── Stats ────────────────────────────────────────────── */}
           <BookingStats stats={stats} />
@@ -365,10 +465,17 @@ const TourBookingDashboard = () => {
           />
 
           {/* ── Table ────────────────────────────────────────────── */}
-          <div className="bkm-table-container">
+          <div className="bkm-table-container bkm-desktop-table">
             <table className="bkm-table">
               <thead>
                 <tr>
+                  <th style={{ width: '50px', textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={currentBookings.length > 0 && selectedBookings.length === currentBookings.length}
+                      onChange={selectAll}
+                    />
+                  </th>
                   <th style={{ width: 50 }}>No.</th>
                   <th>Booking ID</th>
                   <th>Customer</th>
@@ -386,13 +493,13 @@ const TourBookingDashboard = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="12" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       Loading tour bookings...
                     </td>
                   </tr>
                 ) : currentBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="12" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                       No tour bookings found
                     </td>
                   </tr>
@@ -402,9 +509,19 @@ const TourBookingDashboard = () => {
                     const tourType   = (raw.tourType || '').toLowerCase();
                     const payBadge   = getPaymentBadge(booking);
                     const hasAirfare = raw.includesAirfare;
+                    const isSelected = selectedBookings.some(b => b.mongoId === booking.mongoId);
 
                     return (
-                      <tr key={booking.mongoId || booking.id}>
+                      <tr key={booking.mongoId || booking.id} className={isSelected ? 'selected-row' : ''}>
+                        {/* Checkbox */}
+                        <td style={{ textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelect(booking)}
+                          />
+                        </td>
+
                         {/* No. */}
                         <td style={{ fontWeight: 700, color: '#0f172a', textAlign: 'center' }}>
                           {startIndex + i + 1}
@@ -545,13 +662,32 @@ const TourBookingDashboard = () => {
             </table>
           </div>
 
+          {/* ── Mobile Cards ─────────────────────────────────────── */}
+          <BookingCards
+            loading={loading}
+            filteredBookingsCount={filteredBookings.length}
+            currentBookings={currentBookings}
+            handleViewDetails={handleViewDetails}
+            handleArchive={handleArchive}
+            actionLoading={actionLoading}
+            selectedBookings={selectedBookings}
+            onToggleSelect={toggleSelect}
+            MailIcon={Mail}
+            UsersIcon={Users}
+            ArchiveIcon={Archive}
+            RotateCcwIcon={RotateCcw}
+            WalletIcon={Wallet}
+            CalendarIcon={Calendar}
+          />
+
           {/* ── Pagination ───────────────────────────────────────── */}
-          {filteredBookings.length > itemsPerPage && (
+          {filteredBookings.length > 0 && (
             <PaginationControls
               totalItems={filteredBookings.length}
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               onPageChange={p => setCurrentPage(p)}
+              onItemsPerPageChange={handleItemsPerPageChange}
               ChevronLeftIcon={ChevronLeft}
               ChevronRightIcon={ChevronRight}
             />
@@ -559,6 +695,39 @@ const TourBookingDashboard = () => {
 
         </div>
       </main>
+
+      {showBulkBar && (
+        <div className={`bulk-action-bar ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${bulkBarClosing ? 'bulk-action-bar-closing' : ''}`}>
+          <div className="bulk-action-info">
+            <span className="bulk-action-count">
+              <span className="bulk-btn-label-full">{selectedBookings.length} SELECTED</span>
+              <span className="bulk-btn-label-short">{selectedBookings.length}</span>
+            </span>
+          </div>
+
+          <div className="bulk-action-buttons">
+            <button
+              className="bulk-action-btn bulk-action-btn-archive"
+              onClick={handleBulkArchiveClick}
+              disabled={actionLoading}
+            >
+              <Archive size={15} />
+              <span className="bulk-btn-label-full">Archive Selected</span>
+              <span className="bulk-btn-label-short">Archive</span>
+            </button>
+
+            <button
+              className="bulk-action-btn bulk-action-btn-clear"
+              onClick={clearSelection}
+              disabled={actionLoading}
+            >
+              <X size={15} />
+              <span className="bulk-btn-label-full">Clear Selection</span>
+              <span className="bulk-btn-label-short">Clear</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Booking Type Choice Modal ─────────────────────────── */}
       <BookingChoiceModal

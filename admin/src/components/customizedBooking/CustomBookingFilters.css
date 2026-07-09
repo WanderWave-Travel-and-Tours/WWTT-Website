@@ -31,10 +31,10 @@
   border-right: 1px solid #e2e8f0;
 }
 
-.cbk-filter-brand-icon { color: #059669; }
+.cbk-filter-brand-icon { color: #f59e0b; }
 
 .cbk-filter-brand-label {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
@@ -42,7 +42,7 @@
   color: #0f172a;
 }
 
-.cbk-filter-brand-label span { color: #059669; margin-left: 4px; }
+.cbk-filter-brand-label span { color: #f59e0b; margin-left: 4px; }
 
 /* Controls */
 .cbk-filter-controls {
@@ -87,7 +87,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 7px;
   padding: 7px 28px 7px 10px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #334155;
@@ -99,8 +99,8 @@
 
 .cbk-select:focus {
   outline: none;
-  border-color: #059669;
-  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
 }
 
 .cbk-select-icon {
@@ -124,7 +124,7 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 7px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px;
   color: #0f172a;
   padding: 0 12px 0 34px;
@@ -134,8 +134,8 @@
 .cbk-search-input:focus {
   outline: none;
   background: white;
-  border-color: #059669;
-  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
 }
 
 .cbk-search-icon {

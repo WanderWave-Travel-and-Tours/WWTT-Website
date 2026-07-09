@@ -1,17 +1,39 @@
 /* ========================================
    CUSTOM BOOKING MANAGEMENT - BASE STYLES
-   Font: Outfit (headings) + DM Sans (body)
-   Accent: Emerald #059669 | Dark: #0f172a
+   Matches Booking Management (bkm-) design system:
+   Font: Plus Jakarta Sans | Accent: Orange #f59e0b | Dark: #0f172a
    ======================================== */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; overflow-x: hidden; }
 
+/* Shared utility classes used by BookingCards.jsx (mobile view), mirrored
+   from BookingTable.css so the mobile cards render correctly without
+   pulling in the whole bkm-table stylesheet. */
+.guests-cell {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #0f172a; font-weight: 600;
+}
+.payment-status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 20px;
+  font-size: 10.5px; font-weight: 700; white-space: nowrap;
+}
+.payment-badge-full { background: #d1fae5; color: #047857; }
+.payment-badge-partial { background: #fef3c7; color: #b45309; }
+.payment-badge-pending { background: #fee2e2; color: #b91c1c; }
+.addon-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
+  border-radius: 20px; font-size: 11px; font-weight: 700;
+  padding: 2px 8px; white-space: nowrap; letter-spacing: 0.2px;
+}
+
 /* --- MAIN LAYOUT --- */
 .cbk-page {
-  font-family: 'DM Sans', sans-serif;
-  background: #eef2f7;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #f8fafc;
   min-height: 100vh;
   width: 100%;
   display: flex;
@@ -19,16 +41,17 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 }
 
 .cbk-main {
-  margin-left: 260px;
-  width: calc(100% - 260px);
-  padding: 36px 48px;
+  margin-left: 280px;
+  width: calc(100% - 280px);
+  padding: 40px 60px;
   min-height: 100vh;
-  transition: all 0.3s ease;
+  transition: margin-left 0.32s cubic-bezier(0.4, 0, 0.2, 1), width 0.32s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
 }
 
 .cbk-main.expanded {
   margin-left: 64px !important;
   width: calc(100% - 64px) !important;
+  padding: 40px 60px;
 }
 
 .cbk-container { max-width: 1600px; width: 100%; margin: 0 auto; }
@@ -38,15 +61,15 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
   gap: 16px;
 }
 
 .cbk-title h1 {
-  font-family: 'Outfit', sans-serif;
-  font-size: 26px;
-  font-weight: 800;
+  font-family: 'Arial Black', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.5px;
   margin: 0;
@@ -55,126 +78,71 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
 .cbk-title p {
   color: #64748b;
-  font-size: 13px;
+  font-size: 14px;
   margin: 4px 0 0 0;
-  font-weight: 500;
 }
 
 .cbk-btn-add {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background-color: #f59e0b;
   color: white;
   border: none;
-  padding: 11px 22px;
-  border-radius: 8px;
-  font-family: 'Outfit', sans-serif;
+  padding: 12px 24px;
+  border-radius: 6px;
   font-weight: 700;
-  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2);
   transition: all 0.2s;
+  text-transform: uppercase;
+  font-size: 13px;
 }
 
 .cbk-btn-add:hover {
+  background-color: #d97706;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+}
+
+/* MOBILE ONLY: floating "New Booking" button, mirrors .bkm-fab-add */
+.cbk-fab-add { display: none; }
+
+@media (max-width: 768px) {
+  .cbk-btn-add { display: none; }
+
+  .cbk-fab-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 18px;
+    bottom: 92px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    cursor: pointer;
+    z-index: 1010;
+  }
+
+  .cbk-fab-add:hover { background: #d97706; }
+
+  .cbk-modal-open .cbk-fab-add { display: none; }
 }
 
 /* --- TABLE CONTAINER --- */
 .cbk-table-container {
   background: white;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  padding: 0;
   width: 100%;
   overflow-x: auto;
-}
-
-/* --- BULK ACTION BAR --- */
-.cbk-bulk-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px 10px 16px;
-  margin-bottom: 12px;
-  background: #0f172a;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* Count pill on the left */
-.cbk-bulk-bar > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: #f8fafc;
-  letter-spacing: 0.1px;
-  flex: 1;
-}
-
-.cbk-bulk-bar > span::before {
-  content: attr(data-count);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 8px;
-  background: #059669;
-  color: #fff;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 800;
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: 0;
-}
-
-.cbk-bulk-bar button {
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 7px;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.18s;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.cbk-bulk-bar button:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.cbk-bulk-archive-btn {
-  background: #ef4444;
-  color: #fff;
-  letter-spacing: 0.2px;
-}
-
-.cbk-bulk-archive-btn:hover:not(:disabled) {
-  background: #dc2626;
-}
-
-.cbk-bulk-clear-btn {
-  background: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-}
-
-.cbk-bulk-clear-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  overflow-y: hidden;
 }
 
 /* --- LOADING / EMPTY --- */
@@ -189,7 +157,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   width: 44px;
   height: 44px;
   border: 3px solid #e2e8f0;
-  border-top-color: #059669;
+  border-top-color: #f59e0b;
   border-radius: 50%;
   animation: cbk-spin 0.75s linear infinite;
   margin-bottom: 16px;
@@ -201,8 +169,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .cbk-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(3px);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -213,30 +181,176 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
 .cbk-modal-shell {
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
   width: 100%;
-  max-width: 680px;
+  max-width: 700px;
   margin: auto;
-  animation: cbk-modal-in 0.2s ease;
-  font-family: 'DM Sans', sans-serif;
+  animation: cbk-modal-in 0.22s ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 @keyframes cbk-modal-in {
-  from { opacity: 0; transform: translateY(-14px) scale(0.98); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateY(-16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* --- RESPONSIVE --- */
 @media (max-width: 1024px) {
-  .cbk-main, .cbk-main.expanded { padding: 28px; }
+  .cbk-main, .cbk-main.expanded { padding: 30px; }
+}
+
+@media (max-width: 768px) {
+  .cbk-main,
+  .cbk-main.expanded {
+    margin-left: 64px !important;
+    width: calc(100% - 64px) !important;
+  }
 }
 
 @media (max-width: 640px) {
-  .cbk-main { margin-left: 0 !important; width: 100% !important; padding: 16px; }
+  .cbk-main { padding: 20px; }
   .cbk-header { flex-direction: column; align-items: flex-start; }
-  .cbk-btn-add { width: 100%; justify-content: center; }
   .cbk-overlay { padding: 0; align-items: flex-end; }
-  .cbk-modal-shell { border-radius: 16px 16px 0 0; max-width: 100%; margin: 0; }
-  .cbk-bulk-bar { flex-wrap: wrap; }
+  .cbk-modal-shell { border-radius: 14px 14px 0 0; max-width: 100%; margin: 0; }
+}
+
+@media (max-width: 600px) {
+  .cbk-main { padding-bottom: 168px; }
+  .cbk-main.has-bulk-bar { padding-bottom: 168px; }
+}
+
+/* --- FLOATING BULK ACTION BAR (mirrors .bulk-action-bar in booking.css) --- */
+@keyframes cbkBulkBarIn {
+  from { opacity: 0; transform: translate(-50%, 16px) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, 0)    scale(1);    }
+}
+
+@keyframes cbkBulkBarOut {
+  from { opacity: 1; transform: translate(-50%, 0)    scale(1);    }
+  to   { opacity: 0; transform: translate(-50%, 16px) scale(0.96); }
+}
+
+.cbk-main.has-bulk-bar { padding-bottom: 110px; }
+
+.cbk-bulk-bar {
+  position: fixed;
+  left: calc(280px + (100% - 280px) / 2);
+  bottom: 24px;
+  transform: translate(-50%, 0);
+  background: linear-gradient(135deg, #001b3e, #0a203b);
+  color: white;
+  padding: 10px 12px 10px 6px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 30px rgba(0, 27, 62, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 500;
+  transition: left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: cbkBulkBarIn 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.cbk-bulk-bar.sidebar-collapsed {
+  left: calc(64px + (100% - 64px) / 2);
+}
+
+.cbk-bulk-bar.bulk-action-bar-closing {
+  animation: cbkBulkBarOut 0.2s ease forwards;
+}
+
+.cbk-bulk-bar-info {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+.cbk-bulk-bar-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #fc9c1b;
+  color: #001b3e;
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cbk-bulk-bar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Full label on comfortable widths; short label swaps in once space
+   gets tight (see the ≤640px rule below). */
+.cbk-bulk-bar .bulk-btn-label-short { display: none; }
+@media (max-width: 640px) {
+  .cbk-bulk-bar .bulk-btn-label-full { display: none; }
+  .cbk-bulk-bar .bulk-btn-label-short { display: inline; }
+}
+
+.cbk-bulk-bar button {
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.cbk-bulk-bar button:active:not(:disabled) { transform: scale(0.97); }
+.cbk-bulk-bar button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.cbk-bulk-archive-btn { background: #ef4444; color: white; }
+.cbk-bulk-archive-btn:hover:not(:disabled) { background: #dc2626; }
+
+.cbk-bulk-clear-btn {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+.cbk-bulk-clear-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+@media (max-width: 768px) {
+  .cbk-main.has-bulk-bar { padding-bottom: 150px; }
+
+  .cbk-bulk-bar,
+  .cbk-bulk-bar.sidebar-collapsed {
+    left: 76px;
+    right: 12px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .cbk-bulk-bar {
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px 8px 4px;
+    border-radius: 999px;
+  }
+  .cbk-bulk-bar-info { padding-left: 6px; }
+  .cbk-bulk-bar-count { height: 30px; padding: 0 11px; font-size: 11.5px; }
+  .cbk-bulk-bar-buttons { justify-content: stretch; gap: 6px; flex: 1; }
+  .cbk-bulk-bar button { flex: 1; height: 40px; padding: 8px 8px; font-size: 12px; gap: 5px; }
 }

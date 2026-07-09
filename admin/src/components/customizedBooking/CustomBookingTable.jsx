@@ -123,8 +123,8 @@ const CustomBookingTable = ({
             <td>
               <div className="cbk-pkg-cell">
                 <span className="cbk-pkg-badge">BK</span>
-                <div>
-                  <div>{booking.packageName}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="cbk-pkg-name" title={booking.packageName}>{booking.packageName}</div>
                   {addOnCount > 0 && (
                     <span className="cbk-addon-tag">
                       ✦ {addOnCount} Add-On{addOnCount !== 1 ? 's' : ''}

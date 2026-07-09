@@ -474,6 +474,11 @@
         color: #7c3aed;
     }
 
+    .bkm-icon-type {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
     .bkm-filter-item-body {
         display: flex;
         flex-direction: column;

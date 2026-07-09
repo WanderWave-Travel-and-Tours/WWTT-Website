@@ -435,30 +435,18 @@
 
 /* ===== FOOTER ===== */
 .modal-footer {
-  padding: 12px 20px;
+  padding: 16px 28px;
   border-top: 2px solid #e2e8f0;
   background: linear-gradient(to top, #fafbfc, #ffffff);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 10px;
   border-radius: 0 0 20px 20px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
-.modal-footer-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.modal-footer-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
+.cnm-btn-left { margin-right: auto; }
 
 /* ===== BUTTONS ===== */
 .cnm-btn {
@@ -499,11 +487,17 @@
   display: inline-block;
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== RESPONSIVE MEDIA QUERIES (COMPLETE OVERHAUL) =====
+   Mirrors BookingDetailModal.css exactly, scoped to .bkm-detail-modal
+   (the class added to this modal's overlay root) so it always wins
+   over other global .modal-footer / .cnm-card rules in the bundle. */
+
+/* Tablet and Small Laptops (max-width: 1024px) */
 @media (max-width: 1024px) {
   .modal-content { width: 95%; }
 }
 
+/* Tablet / Large Phones (max-width: 768px) */
 @media (max-width: 768px) {
   .modal-header, .modal-body, .modal-footer { padding: 20px; }
   .modal-header h2 { font-size: 18px; }
@@ -512,32 +506,338 @@
   .cnm-status-badge { width: 100%; margin-top: 10px; }
   .cnm-payment-header { flex-direction: column; align-items: flex-start; }
   .cnm-payment-badge { margin-top: 5px; }
-  .modal-footer { flex-wrap: wrap; padding: 10px 16px; }
-  .modal-footer-left, .modal-footer-right { gap: 5px; }
-  .cnm-btn { font-size: 11px; padding: 6px 9px; }
+
+  .bkm-detail-modal .modal-footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 8px;
+      padding: 14px 16px;
+  }
+  .bkm-detail-modal .modal-footer .cnm-btn {
+      width: 100%;
+      min-width: 0;
+      flex: none;
+      margin: 0;
+      justify-content: center;
+  }
+  .bkm-detail-modal .cnm-btn-left { margin-right: 0; }
 }
 
+/* Standard Mobile (max-width: 576px) — bottom-sheet redesign */
 @media (max-width: 576px) {
-  .modal-content { max-height: 95dvh; border-radius: 16px; }
-  .modal-body { padding: 16px; }
-  .cnm-card { padding: 16px; }
-  .cnm-grid { grid-template-columns: 1fr; gap: 16px; }
-  .modal-header { padding: 16px; }
-  .modal-header .cnm-meta { flex-direction: column; align-items: flex-start; gap: 2px; }
-  .modal-header .cnm-divider { display: none; }
-  .cnm-payment-body { padding: 16px; }
-  .cnm-payment-row { flex-direction: column; align-items: flex-start; gap: 6px; }
-  .cnm-payment-value { text-align: left; }
-  .cnm-payment-status-box { flex-direction: column; text-align: center; padding: 16px; }
-  .cnm-payment-status-left { align-items: center; }
-  .cnm-payment-status-icon { margin-top: 5px; }
+  .bkm-detail-modal.modal-overlay {
+      align-items: flex-end;
+      padding: 0;
+  }
+  .bkm-detail-modal .modal-content {
+      max-height: 94dvh;
+      border-radius: 22px 22px 0 0;
+      background: #ffffff;
+      animation: cnmSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .bkm-detail-modal .modal-content::before {
+      content: "";
+      position: absolute;
+      top: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 38px;
+      height: 4px;
+      border-radius: 999px;
+      background: #d1d5db;
+      z-index: 20;
+  }
+
+  .bkm-detail-modal .modal-body {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 12px;
+      background: #f9fafb;
+  }
+  .bkm-detail-modal .cnm-card {
+      padding: 16px;
+      margin-bottom: 0;
+      border-radius: 14px;
+      border: 1px solid #eceef1;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  }
+  .bkm-detail-modal .cnm-card:hover { border-color: #eceef1; }
+  .bkm-detail-modal .cnm-card-header { margin-bottom: 14px; }
+  .bkm-detail-modal .cnm-card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #8a93a2;
+  }
+
+  .bkm-detail-modal .cnm-badge {
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      box-shadow: none;
+      padding: 4px 10px;
+      font-size: 10px;
+      border-radius: 999px;
+  }
+  .bkm-detail-modal .cnm-badge-amber {
+      background: #fff7ed;
+      color: #b45309;
+      border: 1px solid #fed7aa;
+  }
+  .bkm-detail-modal .cnm-badge-green {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+  }
+  .bkm-detail-modal .cnm-badge-blue {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+  }
+
+  .bkm-detail-modal .modal-header {
+      padding: 20px 16px 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 12px;
+      border-bottom: 1px solid #eceef1;
+      background: #ffffff;
+  }
+  .bkm-detail-modal .modal-header h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.2px; color: #111318; }
+  .bkm-detail-modal .modal-header .cnm-header-content { display: contents; }
+  .bkm-detail-modal .modal-header .cnm-title-group {
+      order: 1;
+      flex: 1;
+      min-width: 0;
+      gap: 4px;
+  }
+  .bkm-detail-modal .modal-header .cnm-meta {
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #9ca3af;
+      flex-wrap: nowrap;
+  }
+  .bkm-detail-modal .modal-header .cnm-ref { font-weight: 500; font-family: inherit; color: #6b7280; }
+  .bkm-detail-modal .modal-header .cnm-divider { color: #d1d5db; }
+  .bkm-detail-modal .modal-header .cnm-date { color: #9ca3af; }
+  .bkm-detail-modal .modal-close {
+      order: 2;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid #eceef1;
+      background: #f9fafb;
+      color: #6b7280;
+      margin-left: 0;
+      flex-shrink: 0;
+  }
+  .bkm-detail-modal .modal-close:hover { background: #fee2e2; color: #dc2626; transform: none; }
+
+  .bkm-detail-modal .cnm-status-badge {
+      order: 3;
+      flex-basis: 100%;
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      margin-top: 0;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border-width: 1px;
+      text-align: left;
+  }
+  .bkm-detail-modal .cnm-status-amber { background: #fff7ed; border-color: #fed7aa; color: #b45309; }
+  .bkm-detail-modal .cnm-status-green { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+  .bkm-detail-modal .cnm-status-red   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+  .bkm-detail-modal .cnm-status-blue  { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
+  .bkm-detail-modal .cnm-status-icon,
+  .bkm-detail-modal .cnm-status-amber .cnm-status-icon,
+  .bkm-detail-modal .cnm-status-green .cnm-status-icon,
+  .bkm-detail-modal .cnm-status-red .cnm-status-icon,
+  .bkm-detail-modal .cnm-status-blue .cnm-status-icon {
+      display: flex;
+      width: auto;
+      height: auto;
+      background: none;
+      box-shadow: none;
+      color: inherit;
+      flex-shrink: 0;
+  }
+  .bkm-detail-modal .cnm-status-content { align-items: flex-start; gap: 2px; }
+  .bkm-detail-modal .cnm-status-label { font-size: 12px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+  .bkm-detail-modal .cnm-status-desc { display: block; font-size: 11px; font-weight: 400; opacity: 0.9; white-space: normal; }
+
+  .bkm-detail-modal .cnm-grid { grid-template-columns: 1fr; gap: 4px; }
+  .bkm-detail-modal .cnm-info-item {
+      gap: 12px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+  }
+  .bkm-detail-modal .cnm-info-item:last-child { border-bottom: none; }
+  .bkm-detail-modal .cnm-info-icon {
+      width: 36px; height: 36px; border-radius: 10px; box-shadow: none;
+      background: #fff7ed; color: #d97706;
+  }
+  .bkm-detail-modal .cnm-info-icon svg { width: 17px; height: 17px; }
+  .bkm-detail-modal .cnm-info-label { font-size: 11px; font-weight: 500; letter-spacing: 0.3px; text-transform: uppercase; color: #9ca3af; }
+  .bkm-detail-modal .cnm-info-value { font-size: 14px; font-weight: 600; color: #111318; }
+  .bkm-detail-modal .cnm-val-amount { font-size: 16px; font-weight: 700; color: #16a34a; }
+
+  /* Passenger cards (Tour uses .cnm-pax-card / .cnm-pax-list, not the
+     .cnm-passenger-* names from the general Booking modal) */
+  .bkm-detail-modal .cnm-pax-card {
+      border: 1px solid #eceef1;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: none;
+  }
+  .bkm-detail-modal .cnm-pax-card-header {
+      gap: 10px;
+      padding: 12px;
+      flex-wrap: nowrap;
+      align-items: center;
+      background: #fff7ed;
+      border-bottom: 1px solid #fed7aa;
+  }
+  .bkm-detail-modal .cnm-pax-card .cnm-pax-number {
+      width: 26px; height: 26px; border-radius: 10px;
+      box-shadow: none;
+      background: #ef9f27;
+      color: #412402;
+      flex-shrink: 0;
+  }
+  .bkm-detail-modal .cnm-pax-name { font-size: 14px; font-weight: 700; color: #b45309; }
+  .bkm-detail-modal .cnm-pax-card .cnm-grid { padding: 14px 12px; grid-template-columns: 1fr; gap: 12px; }
+  .bkm-detail-modal .cnm-grid-teal .cnm-info-icon { background: #fff7ed; color: #d97706; box-shadow: none; }
+  .bkm-detail-modal .cnm-grid-teal .cnm-info-label { color: #9ca3af; }
+
+  /* --- Payment card --- */
+  .bkm-detail-modal .cnm-payment-card {
+      border: 1px solid #eceef1;
+      border-radius: 14px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+      background: #ffffff;
+      margin-bottom: 0;
+  }
+  .bkm-detail-modal .cnm-payment-header {
+      padding: 14px;
+      flex-direction: row;
+      align-items: center;
+      background: transparent;
+      border-bottom: 1px solid #eceef1;
+  }
+  .bkm-detail-modal .cnm-payment-title { font-size: 11px; gap: 6px; font-weight: 700; letter-spacing: 0.6px; color: #8a93a2; }
+  .bkm-detail-modal .cnm-payment-badge { padding: 4px 10px; font-size: 10px; margin-top: 0; box-shadow: none; border-radius: 999px; }
+  .bkm-detail-modal .cnm-payment-badge.partial { background: #fff7ed; color: #b45309; border: 1px solid #fed7aa; }
+  .bkm-detail-modal .cnm-payment-badge.full { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .bkm-detail-modal .cnm-payment-body { padding: 14px; }
+  .bkm-detail-modal .cnm-payment-section { margin-bottom: 12px; }
+  .bkm-detail-modal .cnm-payment-row { padding: 5px 0; border-bottom: none; }
+  .bkm-detail-modal .cnm-payment-label { font-size: 13px; min-width: 0; color: #4b5563; font-weight: 400; }
+  .bkm-detail-modal .cnm-payment-value { font-size: 13px; font-weight: 600; color: #111318; }
+  .bkm-detail-modal .cnm-payment-divider { margin: 6px 0; height: 1px; background: #eceef1; }
+
+  .bkm-detail-modal .cnm-payment-status-box {
+      padding: 12px 14px;
+      border-width: 1px;
+      margin-top: 0;
+      border-radius: 12px;
+  }
+  .bkm-detail-modal .cnm-payment-status-box.paid { background: #f0fdf4; border-color: #bbf7d0; }
+  .bkm-detail-modal .cnm-payment-status-box.pending { background: #fef2f2; border-color: #fecaca; }
+  .bkm-detail-modal .cnm-payment-status-title { font-size: 10px; font-weight: 700; letter-spacing: 0.4px; }
+  .bkm-detail-modal .cnm-payment-status-amount { font-size: 18px; font-weight: 700; }
+  .bkm-detail-modal .cnm-payment-status-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
+  .bkm-detail-modal .cnm-payment-status-box.pending .cnm-payment-status-icon { background: #dc2626; color: #ffffff; }
+  .bkm-detail-modal .cnm-payment-status-box.paid .cnm-payment-status-icon { background: #16a34a; color: #ffffff; }
+
+  .bkm-detail-modal .cnm-message-box {
+      padding: 14px;
+      background: #f9fafb;
+      border: 1px solid #f1f2f4;
+      border-radius: 12px;
+      color: #4b5563;
+  }
+
+  /* --- Flight row --- */
+  .bkm-detail-modal .cnm-flight-row { padding: 10px; border-radius: 10px; }
+  .bkm-detail-modal .cnm-flight-icon { width: 34px; height: 34px; }
+
+  /* --- Footer --- */
+  .bkm-detail-modal .modal-footer {
+      padding: 12px 12px 16px;
+      gap: 8px;
+      background: #ffffff;
+      border-top: 1px solid #eceef1;
+  }
 }
 
+/* Small Mobile / Fold Phones (max-width: 380px) */
 @media (max-width: 380px) {
-  .cnm-info-icon { width: 36px; height: 36px; }
-  .cnm-info-icon svg { width: 16px; height: 16px; }
-  .cnm-info-value { font-size: 14px; }
-  .cnm-val-amount { font-size: 16px; }
-  .modal-header h2 { font-size: 16px; }
-  .cnm-btn { font-size: 13px; padding: 10px; }
+  .bkm-detail-modal .cnm-info-icon { width: 34px; height: 34px; }
+  .bkm-detail-modal .cnm-info-icon svg { width: 16px; height: 16px; }
+  .bkm-detail-modal .cnm-info-value { font-size: 14px; }
+  .bkm-detail-modal .cnm-val-amount { font-size: 15px; }
+  .bkm-detail-modal .modal-header h2 { font-size: 17px; }
+  .bkm-detail-modal .cnm-btn { font-size: 12px; padding: 10px; }
+}
+
+/* ===== MOBILE FOOTER ORDER (max-width: 576px) =====
+   2x2 grid: Confirm/Cancel form the top decision row; Order Slip / Edit /
+   Voucher fill the utility rows below, two per row. */
+@media (max-width: 576px) {
+  .bkm-detail-modal .modal-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .bkm-detail-modal .modal-footer .cnm-btn {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+    margin: 0;
+    grid-column: auto;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  .bkm-detail-modal .cnm-btn-decision.cnm-btn-success {
+    order: 1;
+    background: #16a34a;
+  }
+  .bkm-detail-modal .cnm-btn-decision.cnm-btn-danger {
+    order: 2;
+    background: #ffffff;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+  }
+  .bkm-detail-modal .cnm-btn-utility { order: 3; }
+  .bkm-detail-modal .cnm-btn-utility.cnm-btn-outline {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #111318;
+  }
+  .bkm-detail-modal .cnm-btn-utility.cnm-btn-primary,
+  .bkm-detail-modal .cnm-btn-utility.cnm-btn-voucher {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+  }
+
+  .bkm-detail-modal .modal-footer .cnm-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
