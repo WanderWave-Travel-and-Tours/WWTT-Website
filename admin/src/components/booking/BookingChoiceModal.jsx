@@ -10,6 +10,19 @@ import './BookingChoiceModal.css';
 const BookingChoiceModal = ({ isOpen, onClose, onSelect }) => {
   const [selectedMode, setSelectedMode] = useState(null); // null | 'walkin' | 'assist'
 
+  // The component stays mounted between opens (the parent toggles `isOpen`
+  // rather than conditionally rendering it), so selectedMode would
+  // otherwise persist from the previous session and reopen already
+  // "selected" and locked (handleSelect ignores clicks once set). Reset it
+  // during render on the closed→open transition, per React's guidance for
+  // adjusting state from props instead of doing it in an effect
+  // (https://react.dev/reference/react/useState#storing-information-from-previous-renders).
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) setSelectedMode(null);
+  }
+
   if (!isOpen) return null;
 
   const handleSelect = (mode) => {

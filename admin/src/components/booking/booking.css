@@ -154,9 +154,60 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 @media (max-width: 640px) {
     .bkm-main { padding: 20px; }
     .bkm-header { flex-direction: column; align-items: flex-start; }
-    .bkm-btn-add { width: 100%; justify-content: center; }
     .bkm-overlay { padding: 0; align-items: flex-end; }
     .bkm-modal { border-radius: 14px 14px 0 0; max-width: 100%; margin: 0; }
+}
+
+/* MOBILE ONLY: reserve space below the pagination bar (last item in the
+   page) so it doesn't end up sitting underneath the floating Add/Filter
+   FAB stack (right: 18px, spans bottom 24px-148px) once scrolled into view. */
+@media (max-width: 600px) {
+    .bkm-main {
+        padding-bottom: 168px;
+    }
+
+    .bkm-main.has-bulk-bar {
+        padding-bottom: 168px;
+    }
+}
+
+
+/* MOBILE ONLY: replace the inline "New Booking" button with a floating
+   action button (mirrors the filter FAB in BookingFilters.css), fixed to
+   the bottom-right corner, just left of the filter FAB. */
+.bkm-fab-add { display: none; }
+
+@media (max-width: 768px) {
+    .bkm-btn-add { display: none; }
+
+    .bkm-fab-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        right: 18px;
+        bottom: 92px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #f59e0b;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+        cursor: pointer;
+        z-index: 1010;
+    }
+
+    .bkm-fab-add:hover {
+        background: #d97706;
+    }
+
+    /* Hide the Add FAB while any modal (booking details, new booking,
+       confirm dialogs, etc.) is open — it has no business floating on
+       top of a modal that already covers the screen. */
+    .bkm-modal-open .bkm-fab-add {
+        display: none;
+    }
 }
 
 /* ====================== BULK ACTION BAR ======================

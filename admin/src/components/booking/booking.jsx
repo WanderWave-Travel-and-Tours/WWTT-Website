@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
+import {
   Calendar, Users, Search, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
-  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw, Wallet, 
+  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw, Wallet, Plus,
 } from 'lucide-react';
 import './booking.css';
 import Sidebar from '../sidebar/sidebar';
@@ -521,8 +521,10 @@ if (createdByFilter !== 'ALL') {
 
   const startIndex = (currentPage - 1) * itemsPerPage;
 
+  const isAnyModalOpen = showModal || showBookingChoiceModal || showNewBookingModal || confirmConfig.isOpen;
+
   return (
-    <div className="bkm-page">
+    <div className={`bkm-page ${isAnyModalOpen ? 'bkm-modal-open' : ''}`}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       
       <main className={`bkm-main ${isSidebarCollapsed ? "expanded" : ""} ${showBulkBar ? "has-bulk-bar" : ""}`}>
@@ -541,6 +543,16 @@ if (createdByFilter !== 'ALL') {
               NEW BOOKING
             </button>
           </div>
+
+          {/* MOBILE ONLY: Floating "New Booking" button */}
+          <button
+            type="button"
+            className="bkm-fab-add"
+            onClick={() => setShowBookingChoiceModal(true)}
+            aria-label="New booking"
+          >
+            <Plus size={22} strokeWidth={2.5} />
+          </button>
 
           <BookingStats stats={stats} />
           

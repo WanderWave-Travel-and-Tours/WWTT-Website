@@ -55,6 +55,19 @@
     margin-left: 4px;
 }
 
+/* Reset button + Apply Filters button: mobile-only, hidden by default */
+.bkm-reset-btn,
+.bkm-apply-btn {
+    display: none;
+}
+
+/* Floating toggle button, backdrop, close button: mobile-only, hidden by default */
+.bkm-fab,
+.bkm-backdrop,
+.bkm-close-btn {
+    display: none;
+}
+
 /* --- CONTROLS ROW: dropdowns + search, wraps as needed --- */
 .bkm-controls-group {
     display: flex;
@@ -84,45 +97,118 @@
     white-space: nowrap;
 }
 
-/* Custom Select Dropdown */
-.bkm-select-wrapper {
+/* Icon box: mobile-only, hidden by default (desktop keeps plain label+select) */
+.bkm-filter-item-icon {
+    display: none;
+}
+
+/* Body wrapper: on desktop it must not introduce a column stack, so it
+   mimics the old flat layout via contents; mobile overrides this to a
+   real flex column (see 768px breakpoint) so label+select can stretch. */
+.bkm-filter-item-body {
+    display: contents;
+}
+
+/* Custom Select Dropdown (replaces the native <select> so the open
+   options list can be styled to match the filter panel's theme) */
+.bkm-cselect {
     position: relative;
     width: 170px;
 }
 
-.bkm-select {
-    appearance: none;
-    -webkit-appearance: none;
+.bkm-cselect-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     width: 100%;
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    padding: 7px 28px 7px 10px;
+    padding: 7px 10px;
     font-size: 13px;
     font-weight: 600;
+    font-family: inherit;
     color: #334155;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-align: left;
 }
 
-.bkm-select:hover {
+.bkm-cselect-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bkm-cselect-trigger:hover {
     background-color: #f1f5f9;
     border-color: #cbd5e1;
 }
 
-.bkm-select:focus {
+.bkm-cselect-trigger:focus-visible {
     outline: none;
     border-color: #f59e0b;
     box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
 }
 
-.bkm-select-icon {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+.bkm-cselect-icon {
+    flex: 0 0 auto;
     color: #94a3b8;
-    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+.bkm-cselect-icon-open {
+    transform: rotate(180deg);
+}
+
+.bkm-cselect-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    padding: 6px;
+    margin: 0;
+    list-style: none;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 40;
+}
+
+.bkm-cselect-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.bkm-cselect-option:hover {
+    background: #f1f5f9;
+}
+
+.bkm-cselect-option-active {
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.bkm-cselect-option-active:hover {
+    background: #fef3c7;
+}
+
+.bkm-cselect-check {
+    flex: 0 0 auto;
+    color: #f59e0b;
 }
 
 /* --- SEARCH BOX: shares the controls row, grows into leftover space --- */
@@ -182,7 +268,7 @@
         gap: 14px;
     }
 
-    .bkm-select-wrapper {
+    .bkm-cselect {
         width: 150px;
     }
 
@@ -192,67 +278,244 @@
     }
 }
 
-/* Tablet: two dropdowns per row so labels/selects have breathing room */
+/* Mobile: card-style layout — each filter on its own row with an icon
+   swatch, plus a Reset link in the header and an Apply Filters button
+   at the bottom (mirrors the mobile filter-sheet mockup).
+
+   The panel itself is collapsed off-screen by default and only takes over
+   the viewport when toggled open via the floating filter button (FAB) —
+   this keeps booking cards visible immediately instead of pushing them
+   below a tall filter block. */
 @media (max-width: 768px) {
+    /* Floating toggle button, fixed to the bottom-right corner */
+    .bkm-fab {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        right: 18px;
+        bottom: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        cursor: pointer;
+        /* Must clear the sidebar's collapsed rail (z-index: 1000 in
+           sidebar.css) but stay below its mobile-overlay/backdrop
+           (1050/1100) so an opened sidebar still wins if both are open. */
+        z-index: 1010;
+    }
+
+    .bkm-fab:hover {
+        background: #1d4ed8;
+    }
+
+    /* Hide the Filter FAB while any modal (booking details, new booking,
+       confirm dialogs, etc.) is open — it has no business floating on
+       top of a modal that already covers the screen. */
+    .bkm-modal-open .bkm-fab {
+        display: none;
+    }
+
+    .bkm-fab-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #f59e0b;
+        border: 2px solid white;
+    }
+
+    /* Dimmed backdrop behind the open panel */
+    .bkm-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 1015;
+    }
+
+    /* Panel itself: hidden off-screen (below the viewport) until opened */
     .bkm-filter-card {
-        padding: 14px;
-        margin-bottom: 18px;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: 85vh;
+        overflow-y: auto;
+        margin-bottom: 0;
+        padding: 20px;
+        transform: translateY(100%);
+        transition: transform 0.25s ease;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 1020;
+    }
+
+    .bkm-filter-card-open {
+        transform: translateY(0);
     }
 
     .bkm-brand-section {
-        gap: 8px;
-        padding-bottom: 10px;
+        gap: 10px;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    /* Close button, pinned to the far right of the header row */
+    .bkm-close-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+    }
+
+    .bkm-close-btn:hover {
+        background: #e2e8f0;
+        color: #334155;
     }
 
     .bkm-brand-icon svg {
-        width: 15px;
-        height: 15px;
+        width: 20px;
+        height: 20px;
+        color: #1e293b;
     }
 
     .bkm-brand-label {
-        font-size: 12px;
-        letter-spacing: 0.4px;
+        font-size: 20px;
+        letter-spacing: 0.2px;
+        color: #1e293b;
+    }
+
+    .bkm-brand-label span {
+        color: #f59e0b;
+    }
+
+    /* Reset link, pinned to the far right of the header row */
+    .bkm-reset-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+        background: none;
+        border: none;
+        padding: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2563eb;
+        cursor: pointer;
+    }
+
+    .bkm-reset-btn:hover {
+        color: #1d4ed8;
     }
 
     .bkm-controls-group {
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
+        gap: 14px;
+        margin-top: 18px;
     }
 
+    /* One filter per row, not a 2-column grid */
     .bkm-filters-row {
         width: 100%;
-        gap: 12px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        display: flex;
+        flex-direction: column;
     }
 
-    /* Stack label above the select so both have room to read fully */
     .bkm-filter-item {
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        min-width: 0;
+        background: #f8fafc;
+        border: 1px solid #eef1f5;
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .bkm-filter-item-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+    }
+
+    .bkm-icon-status {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .bkm-icon-payment {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .bkm-icon-createdby {
+        background: #ede9fe;
+        color: #7c3aed;
+    }
+
+    .bkm-filter-item-body {
+        display: flex;
         flex-direction: column;
-        align-items: stretch;
-        gap: 5px;
+        gap: 8px;
+        flex: 1 1 auto;
         min-width: 0;
     }
 
     .bkm-filter-item label {
-        font-size: 11px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1e293b;
     }
 
-    .bkm-select-wrapper {
+    .bkm-cselect {
         width: 100%;
     }
 
-    .bkm-select {
+    .bkm-cselect-trigger {
         width: 100%;
-        font-size: 12px;
-        padding: 8px 26px 8px 10px;
+        background: white;
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+        padding: 12px 12px;
+        border-radius: 10px;
     }
 
-    .bkm-select-icon {
-        width: 13px;
-        height: 13px;
-        right: 8px;
+    .bkm-cselect-icon {
+        width: 15px;
+        height: 15px;
+    }
+
+    .bkm-cselect-menu {
+        border-radius: 12px;
+        padding: 8px;
+    }
+
+    .bkm-cselect-option {
+        padding: 12px 12px;
+        font-size: 14px;
+        border-radius: 8px;
     }
 
     .bkm-search-box {
@@ -262,152 +525,160 @@
     }
 
     .bkm-search-input {
-        height: 36px;
-        font-size: 12px;
-        padding-left: 32px;
+        height: 46px;
+        font-size: 14px;
+        padding-left: 38px;
+        border-radius: 10px;
     }
 
     .bkm-search-icon {
-        width: 14px;
-        height: 14px;
-        left: 10px;
+        width: 16px;
+        height: 16px;
+        left: 12px;
+    }
+
+    /* Apply Filters button */
+    .bkm-apply-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        height: 50px;
+        margin-top: 4px;
+        background: #2563eb;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .bkm-apply-btn:hover {
+        background: #1d4ed8;
     }
 }
 
-/* Mobile: tighten spacing further, same 2-column grid */
+/* Mobile: tighten card padding slightly, keep the spacious filter-card design */
 @media (max-width: 480px) {
     .bkm-filter-card {
-        padding: 10px;
-        margin-bottom: 16px;
-        border-radius: 8px;
-    }
-
-    .bkm-brand-section {
-        gap: 7px;
-        padding-bottom: 8px;
+        padding: 16px;
+        border-radius: 20px 20px 0 0;
     }
 
     .bkm-brand-icon svg {
-        width: 13px;
-        height: 13px;
+        width: 18px;
+        height: 18px;
     }
 
     .bkm-brand-label {
-        font-size: 10px;
-        letter-spacing: 0.2px;
+        font-size: 18px;
+    }
+
+    .bkm-reset-btn {
+        font-size: 13px;
     }
 
     .bkm-controls-group {
-        gap: 8px;
+        gap: 12px;
+        margin-top: 16px;
     }
 
     .bkm-filters-row {
-        gap: 8px;
+        gap: 12px;
     }
 
     .bkm-filter-item {
-        gap: 5px;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .bkm-filter-item-icon {
+        width: 40px;
+        height: 40px;
     }
 
     .bkm-filter-item label {
-        font-size: 10px;
-        font-weight: 700;
+        font-size: 14px;
     }
 
-    .bkm-select {
-        font-size: 11px;
-        padding: 7px 24px 7px 8px;
-        border-radius: 4px;
+    .bkm-cselect-trigger {
+        font-size: 13px;
+        padding: 11px;
     }
 
-    .bkm-select-icon {
-        width: 11px;
-        height: 11px;
-        right: 6px;
+    .bkm-cselect-option {
+        font-size: 13px;
     }
 
     .bkm-search-input {
-        height: 32px;
-        font-size: 11px;
-        padding-left: 28px;
-        padding-right: 8px;
-        border-radius: 4px;
+        height: 44px;
+        font-size: 13px;
     }
 
-    .bkm-search-icon {
-        width: 12px;
-        height: 12px;
-        left: 7px;
+    .bkm-apply-btn {
+        height: 48px;
+        font-size: 14px;
     }
 }
 
-/* Mobile small: final tightening */
+/* Mobile small: final tightening, same card design */
 @media (max-width: 360px) {
     .bkm-filter-card {
-        padding: 8px;
-        margin-bottom: 14px;
-        border-radius: 6px;
-    }
-
-    .bkm-brand-section {
-        gap: 6px;
-        padding-bottom: 6px;
+        padding: 14px;
+        border-radius: 18px 18px 0 0;
     }
 
     .bkm-brand-icon svg {
-        width: 12px;
-        height: 12px;
+        width: 17px;
+        height: 17px;
     }
 
     .bkm-brand-label {
-        font-size: 9px;
-        letter-spacing: 0.1px;
-    }
-
-    .bkm-controls-group {
-        gap: 6px;
-    }
-
-    .bkm-filters-row {
-        gap: 6px;
+        font-size: 16px;
     }
 
     .bkm-filter-item {
-        gap: 4px;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .bkm-filter-item-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .bkm-filter-item-icon svg {
+        width: 16px;
+        height: 16px;
     }
 
     .bkm-filter-item label {
-        font-size: 8px;
-        font-weight: 700;
+        font-size: 13px;
     }
 
-    .bkm-select {
-        font-size: 9px;
-        padding: 4px 22px 4px 7px;
-        border-radius: 4px;
+    .bkm-cselect-trigger {
+        font-size: 12px;
+        padding: 10px;
     }
 
-    .bkm-select-icon {
-        width: 10px;
-        height: 10px;
-        right: 5px;
+    .bkm-cselect-option {
+        font-size: 12px;
     }
 
     .bkm-search-input {
-        height: 26px;
-        font-size: 9px;
-        padding-left: 26px;
-        padding-right: 7px;
-        border-radius: 4px;
-    }
-
-    .bkm-search-icon {
-        width: 11px;
-        height: 11px;
-        left: 6px;
+        height: 42px;
+        font-size: 12px;
     }
 
     .bkm-search-input::placeholder {
-        font-size: 8px;
+        font-size: 12px;
+    }
+
+    .bkm-apply-btn {
+        height: 46px;
+        font-size: 13px;
     }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store, Image, File, ReceiptText, Download } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store, Image, File, ReceiptText, Download, ImageOff } from 'lucide-react';
 import './BookingDetailModal.css'; 
 import VoucherPreviewModal from './VoucherPreviewModal';
 import OrderSlipModal from './OrderSlipModal';
@@ -101,6 +101,32 @@ export const BookingDetailModal = ({
     const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
     const [showOrderSlip, setShowOrderSlip] = useState(false);
     const [previewDoc, setPreviewDoc] = useState(null); // { fileUrl, name }
+    const [packageImage, setPackageImage] = useState(null);
+    const [packageImageFailed, setPackageImageFailed] = useState(false);
+
+    // Fetch the booked package's cover image (not included in the /active list payload)
+    useEffect(() => {
+        if (!showModal || !selectedBooking?.mongoId) {
+            setPackageImage(null);
+            setPackageImageFailed(false);
+            return;
+        }
+        let cancelled = false;
+        setPackageImageFailed(false);
+        const fetchPackageImage = async () => {
+            try {
+                const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${selectedBooking.mongoId}`);
+                const data = await res.json();
+                const image = data?.packageId?.image || null;
+                if (!cancelled) setPackageImage(image);
+            } catch (err) {
+                console.error('Error fetching package image:', err);
+                if (!cancelled) setPackageImage(null);
+            }
+        };
+        fetchPackageImage();
+        return () => { cancelled = true; };
+    }, [showModal, selectedBooking?.mongoId]);
 
     // Fetch submitted documents whenever the modal opens for a booking
     useEffect(() => {
@@ -405,6 +431,45 @@ const generateVoucherData = async (booking) => {
                     </div>
                     
                     <div className="modal-body">
+                        {/* PACKAGE IMAGE — inline-styled (not the .cnm-package-image-wrap CSS
+                            class) because the external stylesheet rule for that class was not
+                            taking effect in the deployed app despite being present in the CSS
+                            file; inline styles guarantee the banner always paints. */}
+                        <div style={{
+                            position: 'relative', width: '100%', height: '200px',
+                            borderRadius: '16px', overflow: 'hidden', marginBottom: '15px',
+                            border: '2px solid #e2e8f0',
+                        }}>
+                            {packageImage && !packageImageFailed ? (
+                                <img
+                                    src={packageImage}
+                                    alt={selectedBooking.packageName || 'Booked package'}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                    onError={() => setPackageImageFailed(true)}
+                                />
+                            ) : (
+                                <div style={{
+                                    width: '100%', height: '100%', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'center',
+                                    background: 'linear-gradient(135deg, #fef3c7, #fde68a)', color: '#d97706',
+                                }}>
+                                    <ImageOff size={28} />
+                                </div>
+                            )}
+                            <div style={{
+                                position: 'absolute', left: 0, right: 0, bottom: 0,
+                                padding: '32px 20px 14px',
+                                background: 'linear-gradient(to top, rgba(15,23,42,0.85), rgba(15,23,42,0))',
+                            }}>
+                                <span style={{
+                                    color: '#ffffff', fontSize: '15px', fontWeight: '800',
+                                    textShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                                }}>
+                                    {selectedBooking.packageName || 'solo/joiners'}
+                                </span>
+                            </div>
+                        </div>
+
                         {/* CLIENT/BOOKING INFORMATION */}
                         <div className="cnm-card">
                             <div className="cnm-card-header">

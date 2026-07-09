@@ -7,6 +7,8 @@
   border-radius: 24px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .visa-list-header {
@@ -57,8 +59,10 @@
   max-height: 65vh;
   overflow-y: auto;
   overflow-x: visible;
-  padding-right: 0.5rem;
   padding-top: 0.5rem;
+  /* Hide the scrollbar (Firefox / IE) while keeping scroll functionality */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* CLOSE BUTTON STYLES */
@@ -122,6 +126,7 @@
 
 .visa-item-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -132,6 +137,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
 }
 
 .visa-header-left {
@@ -163,6 +169,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .visa-title {
@@ -196,6 +204,7 @@
   padding-top: 1rem;
   border-top: 1px solid #e0e0e0;
   animation: slideDown 0.3s ease-out;
+  min-width: 0;
 }
 
 @keyframes slideDown {
@@ -420,23 +429,11 @@
   transform: scale(0.95);
 }
 
-/* Scrollbar styling */
+/* Hide scrollbar (Chrome / Safari / Edge) while keeping scroll functionality */
 .visa-list-wrapper::-webkit-scrollbar {
-  width: 8px;
-}
-
-.visa-list-wrapper::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.visa-list-wrapper::-webkit-scrollbar-thumb {
-  background: #0a203b;
-  border-radius: 10px;
-}
-
-.visa-list-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #fc9c1b;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* Mobile Responsive */
@@ -612,6 +609,7 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  min-width: 0;
 }
 
 .visa-accordion-header {
@@ -669,19 +667,24 @@
   text-align: left;
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   font-size: 13px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .visa-accordion-icon {
   color: #fc9c1b;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .visa-accordion-chevron {
   transition: transform 0.3s ease;
   color: #94a3b8;
+  flex-shrink: 0;
 }
 
 .visa-accordion-chevron.rotate {
@@ -767,9 +770,8 @@
 }
 
 .download-file-info {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  max-width: calc(100% - 28px);
   overflow: hidden;
 }
 
@@ -781,6 +783,33 @@
   color: #334155;
   font-size: 0.83rem;
   max-width: 100%;
+}
+
+/* Dedicated download button so the file name has room and the tap target is clear */
+.download-action-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fc9c1b 0%, #e88a0a 100%);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(252, 156, 27, 0.35);
+}
+
+.download-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(252, 156, 27, 0.5);
+}
+
+.download-action-btn:active {
+  transform: translateY(0);
 }
 
 /* Steps List */
@@ -836,7 +865,7 @@
 
   .visa-accordion-title {
     font-size: 12px;
-    gap: 8px;
+    gap: 6px 8px;
   }
 
   .visa-accordion-count {
@@ -852,6 +881,20 @@
   .visa-step-item {
     padding: 10px 12px;
     font-size: 0.85rem;
+  }
+
+  .visa-download-item {
+    gap: 8px;
+  }
+
+  .download-link,
+  .download-label {
+    font-size: 0.8rem;
+  }
+
+  .download-action-btn {
+    width: 32px;
+    height: 32px;
   }
 
   .step-number {

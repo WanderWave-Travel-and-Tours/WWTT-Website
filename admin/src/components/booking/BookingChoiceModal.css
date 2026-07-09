@@ -238,7 +238,57 @@
 .bcm-option-assist .bcm-option-arrow { background: #EAF1FD; color: var(--bcm-blue); }
 
 @media (max-width: 720px) {
-    .bcm-modal { max-width: 92%; padding: 26px 22px 30px; }
-    .bcm-header h2 { font-size: 21px; }
-    .bcm-content { grid-template-columns: 1fr; }
+    .bcm-overlay {
+        align-items: center;
+        padding: 12px;
+        overflow-y: auto;
+    }
+    .bcm-modal {
+        max-width: 420px;
+        width: 100%;
+        max-height: calc(100vh - 24px);
+        overflow-y: auto;
+        border-radius: 20px;
+        padding: 16px 14px 16px;
+        margin: auto;
+    }
+    .bcm-header { margin-bottom: 10px; padding-right: 34px; }
+    .bcm-eyebrow { font-size: 9px; padding: 3px 9px; margin-bottom: 6px; }
+    .bcm-header h2 { font-size: 16px; }
+    .bcm-close-btn { top: 14px; right: 14px; width: 28px; height: 28px; }
+    .bcm-content { grid-template-columns: 1fr; gap: 10px; }
+
+    /* Full-width picture strips (aspect-ratio 300/200) are what forced the
+       scroll — two of them ate the whole viewport. Mobile keeps the
+       illustration (card still "feels" like the desktop version) but
+       reflows it into a small square thumbnail beside the text instead
+       of a full-width banner above it, so both cards fit without scroll. */
+    .bcm-option {
+        flex-direction: row;
+        align-items: stretch;
+        padding: 10px;
+        gap: 12px;
+    }
+    .bcm-option-art {
+        position: relative;
+        width: 84px;
+        aspect-ratio: 1 / 1;
+        flex: 0 0 auto;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .bcm-option-icon {
+        top: 6px;
+        left: 6px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+    }
+    .bcm-option-icon svg { width: 15px; height: 15px; }
+    .bcm-option-text { padding: 2px 30px 2px 0; gap: 3px; flex: 1 1 auto; min-width: 0; justify-content: center; }
+    .bcm-option-title { font-size: 14.5px; }
+    .bcm-option-desc { font-size: 12px; line-height: 1.35; }
+    .bcm-option-check { top: 6px; right: 6px; }
+    .bcm-option-check svg { width: 20px; height: 20px; }
+    .bcm-option-arrow { display: none; }
 }

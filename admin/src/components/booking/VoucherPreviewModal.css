@@ -64,6 +64,7 @@
     border-bottom: 1px solid #e2e8f0;
     flex-wrap: wrap;
     gap: 15px;
+    position: relative;
 }
 
 .voucher-action-title {
@@ -542,10 +543,10 @@
 
     .voucher-page {
         width: 100%;
-        height: auto; 
+        height: auto;
         min-height: 297mm;
     }
-    
+
     .voucher-section {
         padding: 10px 25px;
     }
@@ -555,101 +556,212 @@
     }
 }
 
+/* On phones the A4 min-height leaves a huge blank gap below the short
+   amount of content — let the page size to its content instead of
+   pretending to be a sheet of paper. */
 @media (max-width: 600px) {
+    .voucher-page {
+        min-height: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    /* Compact single-row toolbar: title + icon-only buttons, no stacking */
     .voucher-action-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-        padding: 40px 20px 20px 20px;
-        position: relative; 
+        padding: 12px 14px;
+        gap: 8px;
+        flex-wrap: nowrap;
     }
 
     .voucher-action-left {
-        width: 100%;
-        padding-right: 0; 
+        min-width: 0;
+        flex: 1;
     }
 
     .voucher-action-title {
-        font-size: 18px;
+        font-size: 15px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        gap: 6px;
     }
 
     .voucher-action-buttons {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding-bottom: 5px;
+        flex-shrink: 0;
+        gap: 6px;
     }
 
+    /* Icon-only buttons — the label is a bare text node (no wrapping
+       span in the JSX), so collapse it with font-size:0 and let the
+       icon's own SVG width/height (set via lucide's size prop, not em)
+       keep it visible and centered. */
     .voucher-btn {
-        width: 100%;
+        width: 38px;
+        height: 38px;
+        padding: 0;
         justify-content: center;
-        height: 42px;
-    }
-
-    .voucher-btn-download {
-        grid-column: auto; 
+        border-radius: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        font-size: 0;
+        gap: 0;
     }
 
     .voucher-btn-close {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        width: 36px;
-        height: 36px;
-        background: #f1f5f9; 
-        border-radius: 50%; 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10;
-        width: 36px !important; 
+        width: 38px !important;
+        height: 38px;
+        margin-left: 0;
     }
-    
+
     .voucher-content-wrapper {
         padding: 10px;
     }
-    
+
     .voucher-header-compact {
-        height: 140px;
-    }
-    
-    .simple-header-container {
-        flex-direction: column;
-        gap: 15px;
-        padding: 20px;
-    }
-    
-    .header-left, .header-right {
-        width: 100%;
-        text-align: left;
-        align-items: flex-start;
-    }
-    
-    .header-right {
-        border-top: 1px dashed #e2e8f0;
-        padding-top: 15px;
-        margin-top: 5px;
-    }
-    
-    .voucher-two-col {
-        grid-template-columns: 1fr;
-        gap: 20px;
+        height: 120px;
     }
 
+    /* Header stays side-by-side (info left, brand right) — it fits fine
+       at this scale and matches the printed voucher layout. Each side
+       sizes to its own content instead of stretching via flex-grow
+       (the base rule's flex:1.5/flex:1 + space-between was forcing both
+       columns to fill the row and wrapping "Houston Sarmiento" early). */
+    .simple-header-container {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 14px;
+    }
+
+    .header-left {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: auto;
+    }
+
+    .header-right {
+        flex: 0 0 auto;
+        width: auto;
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+    }
+
+    /* Desktop-scale type (26px client name, 36px brand) overwhelms a
+       phone width — scale everything down so it fits in one row.
+       Client name truncates instead of wrapping to 2 lines; email/ref
+       lines can legitimately be long so they wrap normally instead. */
+    .header-label { font-size: 8.5px; margin-bottom: 3px; }
+    .header-client-name {
+        font-size: 16px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+    .header-brand { font-size: 18px; }
+    .header-sub-brand { font-size: 8px; letter-spacing: 1.5px; margin-bottom: 5px; }
+    .header-text, .header-invoice { font-size: 10px; margin-top: 1px; word-break: break-word; }
+    .header-date-box { padding: 4px 8px; }
+    .header-date-label { font-size: 8px; }
+    .header-date-value { font-size: 10.5px; white-space: nowrap; }
+
+    .voucher-section { padding: 8px 14px; }
+
+    .voucher-section-title { font-size: 18px; }
+
+    /* Tables: shrink to fit the viewport instead of forcing horizontal
+       scroll — small font + tight padding, no min-width floor. */
+    .table-responsive { overflow-x: visible; margin: 10px 0; }
+
+    .voucher-table {
+        min-width: 0;
+        font-size: 10px;
+        table-layout: fixed;
+    }
+
+    .voucher-table th {
+        padding: 6px 4px;
+        font-size: 7.5px;
+        letter-spacing: 0;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.25;
+        vertical-align: bottom;
+    }
+
+    .voucher-table td {
+        padding: 7px 5px;
+        font-size: 10px;
+        word-break: break-word;
+    }
+
+    .voucher-table-payment td {
+        font-size: 11px;
+    }
+
+    /* Guest list table: only the first two <th> get an explicit inline
+       width (5% / 30%) from the JSX. Under table-layout:fixed the four
+       remaining columns (AGE/GENDER/NATIONALITY/CONTACT) don't share
+       the leftover 65% evenly — long header text can collapse a column
+       to 0. Give them explicit shares so all six columns stay visible.
+       OrderSlipModal.css sets `.os-pax-table th { white-space: nowrap }`
+       unconditionally and loads after this file, so it wins the cascade
+       at equal specificity — override it here explicitly. */
+    .os-pax-table th {
+        white-space: normal !important;
+        word-break: break-word;
+    }
+    .os-pax-table th:nth-child(3), .os-pax-table td:nth-child(3) { width: 11%; }
+    .os-pax-table th:nth-child(4), .os-pax-table td:nth-child(4) { width: 14%; }
+    .os-pax-table th:nth-child(5), .os-pax-table td:nth-child(5) { width: 20%; }
+    .os-pax-table th:nth-child(6), .os-pax-table td:nth-child(6) { width: 20%; }
+
+    .voucher-two-col {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .voucher-box-title { font-size: 10px; padding: 8px 14px; }
+    .os-inclusions-grid { padding: 10px 14px !important; }
+    .os-inclusion-item { font-size: 11px; }
+
+    .os-status-banner { padding: 8px 12px; font-size: 11px; }
+    .os-status-text { font-size: 11px; }
+    .os-status-type { font-size: 9px; }
+
+    .os-balance-box { padding: 10px 14px; }
+    .os-balance-amount { font-size: 18px; }
+    .os-balance-label { font-size: 10px; }
+    .os-balance-note { font-size: 10.5px; }
+
+    .voucher-footer-bar { padding: 12px 16px; }
     .voucher-footer-contacts {
         flex-direction: column;
-        gap: 8px;
+        align-items: flex-start;
+        gap: 6px;
     }
-    
+    .voucher-footer-contacts span { font-size: 10px; }
+
     .voucher-footer-bottom {
+        padding: 6px 16px;
         flex-direction: column;
-        gap: 5px;
+        gap: 3px;
         text-align: center;
+        font-size: 9px;
     }
+}
+
+@media (max-width: 400px) {
+    .header-client-name { font-size: 13px; }
+    .header-brand { font-size: 17px; }
+    .voucher-section { padding: 8px 12px; }
+    .simple-header-container { padding: 12px; }
+    .voucher-table { font-size: 9px; }
+    .voucher-table th { font-size: 8px; padding: 5px; }
+    .voucher-table td { padding: 6px 5px; font-size: 9.5px; }
 }
 
 @media print {
