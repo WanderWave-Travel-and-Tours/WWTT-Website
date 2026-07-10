@@ -145,15 +145,6 @@
   font-size: 13px;
 }
 
-/* ── Amount display (reused from tourBooking) ── */
-.tbk-amount-paid   { font-weight: 700; color: #059669; font-size: 14px; }
-.tbk-amount-total  { font-size: 12px; color: #94a3b8; }
-.tbk-balance-due {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 11px; color: #d97706; font-weight: 600;
-  background: #fffbeb; padding: 2px 8px; border-radius: 20px; margin-top: 2px;
-}
-
 /* ── Compact Checkbox + No. column ── */
 .trk-th-check-no,
 .trk-td-check-no {
@@ -244,19 +235,6 @@
   background: #ede9fe !important;
 }
 
-.bkm-archive-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 6px 12px; border-radius: 6px;
-  font-size: 12px; font-weight: 700;
-  border: 1px solid #fca5a5;
-  background: #fff1f2; color: #dc2626;
-  cursor: pointer; transition: all 0.2s;
-}
-.bkm-archive-btn:hover:not(:disabled) {
-  background: #fee2e2; border-color: #f87171; transform: translateY(-1px);
-}
-.bkm-archive-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
 /* ── Stat subtext ── */
 .stat-subtext {
   display: block;
@@ -264,15 +242,3 @@
   opacity: 0.75;
   margin-top: 2px;
 }
-/* ── Created By badges ── */
-.trk-created-by-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 4px 10px; border-radius: 20px;
-  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-.trk-created-by-user   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-.trk-created-by-sales  { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
-.trk-created-by-admin  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.trk-created-by-manual { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
-.trk-created-by-walkin { background: #FFE3CC; color: #9A3B00; border: 1px solid #FFCBA0; }

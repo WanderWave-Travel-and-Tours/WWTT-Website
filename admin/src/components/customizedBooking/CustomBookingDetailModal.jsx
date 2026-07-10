@@ -149,6 +149,33 @@ const CustomBookingDetailModal = ({
           {/* ── BODY ────────────────────────────────────────────── */}
           <div className="modal-body">
 
+            {/* DESTINATION BANNER */}
+            <div style={{
+              position: 'relative', width: '100%', height: '200px',
+              borderRadius: '16px', overflow: 'hidden', marginBottom: '15px',
+              border: '2px solid #e2e8f0',
+            }}>
+              <div style={{
+                width: '100%', height: '100%', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                background: 'linear-gradient(135deg, #fef3c7, #fde68a)', color: '#d97706',
+              }}>
+                <MapPin size={28} />
+              </div>
+              <div style={{
+                position: 'absolute', left: 0, right: 0, bottom: 0,
+                padding: '32px 20px 14px',
+                background: 'linear-gradient(to top, rgba(15,23,42,0.85), rgba(15,23,42,0))',
+              }}>
+                <span style={{
+                  color: '#ffffff', fontSize: '15px', fontWeight: '800',
+                  textShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                }}>
+                  {destination || 'Customized Trip'}
+                </span>
+              </div>
+            </div>
+
             {/* BOOKING INFORMATION */}
             <div className="cnm-card">
               <div className="cnm-card-header">

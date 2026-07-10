@@ -424,13 +424,13 @@
 
 /* ===== FOOTER ===== */
 .modal-footer {
-  padding: 12px 20px;
+  padding: 16px 28px;
   border-top: 2px solid #e2e8f0;
   background: linear-gradient(to top, #fafbfc, #ffffff);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 10px;
   border-radius: 0 0 20px 20px;
   flex-wrap: wrap;
 }
