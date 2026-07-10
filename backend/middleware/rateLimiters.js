@@ -15,10 +15,14 @@ const authLimiter = rateLimit({
     },
 });
 
-// Global limiter applied to all /api/ routes — 100 requests per 15-minute window per IP
+// Global limiter applied to all /api/ routes — 600 requests per 15-minute window per IP.
+// A single page load fans out many calls (packages, promos, tours, images, session-hint,
+// page-view beacons, etc.), and shared IPs (offices, campuses) multiply that further.
+// 100 was exhausted by normal browsing within minutes; 600 gives real headroom while
+// still bounding abusive traffic.
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 600,
     standardHeaders: true,
     legacyHeaders: false,
     message: {

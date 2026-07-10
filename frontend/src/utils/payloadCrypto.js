@@ -76,7 +76,15 @@ let _keyPromise = null;
 
 async function fetchAndDeriveKey() {
     const res  = await fetch(`${API_BASE}/api/crypto/session-hint`);
-    const hint = await res.json();
+    const hint = await res.json().catch(() => null);
+
+    if (!res.ok || typeof hint?.salt !== 'string') {
+        const reason = res.status === 429
+            ? 'rate limited — too many requests from this network'
+            : `HTTP ${res.status}`;
+        throw new Error(`Failed to fetch crypto session hint (${reason})`);
+    }
+
     return deriveFromHint(hint.salt, hint.iter ?? 300_000);
 }
 
