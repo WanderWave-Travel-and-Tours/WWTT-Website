@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X, CheckCircle, AlertCircle, XCircle, Check,
   User, Mail, Calendar, Users, MapPin, Clock,
-  CreditCard, Wallet, Plane, Tag, FileText, PhoneCall, ReceiptText, Pencil
+  CreditCard, Wallet, Plane, Tag, FileText, PhoneCall, ReceiptText, Pencil,
+  Archive, RotateCcw, Image as ImageIcon, File, ImageOff, Download,
 } from 'lucide-react';
 import './TourBookingDetailModal.css';
 import VoucherPreviewModal from '../booking/VoucherPreviewModal';
@@ -56,6 +57,7 @@ const TourBookingDetailModal = ({
   setShowModal,
   handleConfirm,
   handleCancel,
+  handleArchive,
   actionLoading,
 }) => {
   const navigate = useNavigate();
@@ -63,6 +65,58 @@ const TourBookingDetailModal = ({
   const [voucherData, setVoucherData] = useState(null);
   const [isGeneratingVoucher, setIsGeneratingVoucher] = useState(false);
   const [showOrderSlip, setShowOrderSlip] = useState(false);
+  const [submittedDocs, setSubmittedDocs] = useState([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const [packageImage, setPackageImage] = useState(null);
+  const [packageImageFailed, setPackageImageFailed] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
+
+  // Fetch the booked package's cover image
+  useEffect(() => {
+    if (!showModal || !selectedBooking?.mongoId) {
+      setPackageImage(null);
+      setPackageImageFailed(false);
+      return;
+    }
+    let cancelled = false;
+    setPackageImageFailed(false);
+    const fetchPackageImage = async () => {
+      try {
+        const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${selectedBooking.mongoId}`);
+        const data = await res.json();
+        const booking = data?.data || data;
+        const image = booking?.packageId?.image || null;
+        if (!cancelled) setPackageImage(image);
+      } catch (err) {
+        console.error('Error fetching package image:', err);
+        if (!cancelled) setPackageImage(null);
+      }
+    };
+    fetchPackageImage();
+    return () => { cancelled = true; };
+  }, [showModal, selectedBooking?.mongoId]);
+
+  // Fetch submitted documents whenever the modal opens for a booking
+  useEffect(() => {
+    if (!showModal || !selectedBooking?.mongoId) {
+      setSubmittedDocs([]);
+      return;
+    }
+    const fetchDocs = async () => {
+      setIsLoadingDocs(true);
+      try {
+        const res = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${selectedBooking.mongoId}`);
+        const data = await res.json();
+        setSubmittedDocs(data.success ? (data.documents || []) : []);
+      } catch (err) {
+        console.error('Error fetching booking documents:', err);
+        setSubmittedDocs([]);
+      } finally {
+        setIsLoadingDocs(false);
+      }
+    };
+    fetchDocs();
+  }, [showModal, selectedBooking?.mongoId]);
 
   if (!showModal || !selectedBooking) return null;
 
@@ -89,6 +143,20 @@ const TourBookingDetailModal = ({
   const flight     = raw.flightDetails || null;
 
   const closeModal = () => setShowModal(false);
+
+  const downloadViaBlob = async (url, fileName) => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch file');
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = fileName || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  };
 
   // ── Voucher Generation ──────────────────────────────────────────────
   const generateVoucherData = async () => {
@@ -149,6 +217,7 @@ const TourBookingDetailModal = ({
 
   return (
     <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div className="modal-overlay bkm-detail-modal" onClick={closeModal}>
         <div className="modal-content" onClick={e => e.stopPropagation()}>
 
@@ -179,8 +248,41 @@ const TourBookingDetailModal = ({
           {/* ── BODY ────────────────────────────────────────────── */}
           <div className="modal-body">
 
-            {/* Tour Hero Strip */}
-            
+            {/* PACKAGE IMAGE BANNER */}
+            <div style={{
+              position: 'relative', width: '100%', height: '200px',
+              borderRadius: '16px', overflow: 'hidden', marginBottom: '15px',
+              border: '2px solid #e2e8f0',
+            }}>
+              {packageImage && !packageImageFailed ? (
+                <img
+                  src={packageImage}
+                  alt={b.packageName || 'Booked tour package'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  onError={() => setPackageImageFailed(true)}
+                />
+              ) : (
+                <div style={{
+                  width: '100%', height: '100%', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  background: 'linear-gradient(135deg, #fef3c7, #fde68a)', color: '#d97706',
+                }}>
+                  <ImageOff size={28} />
+                </div>
+              )}
+              <div style={{
+                position: 'absolute', left: 0, right: 0, bottom: 0,
+                padding: '32px 20px 14px',
+                background: 'linear-gradient(to top, rgba(15,23,42,0.85), rgba(15,23,42,0))',
+              }}>
+                <span style={{
+                  color: '#ffffff', fontSize: '15px', fontWeight: '800',
+                  textShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                }}>
+                  {b.packageName || 'Tour Package'}
+                </span>
+              </div>
+            </div>
 
             {/* BOOKING INFORMATION */}
             <div className="cnm-card">
@@ -216,7 +318,7 @@ const TourBookingDetailModal = ({
                     <span className="cnm-info-value">{b.endDate ? formatDate(b.endDate) : '—'}</span>
                   </div>
                 </div>
-<div className="cnm-info-item">
+                <div className="cnm-info-item">
                   <div className="cnm-info-icon"><Clock size={18} /></div>
                   <div className="cnm-info-content">
                     <label className="cnm-info-label">Duration</label>
@@ -234,7 +336,7 @@ const TourBookingDetailModal = ({
                     </span>
                   </div>
                 </div>
-{b.promoCode && (
+                {b.promoCode && (
                   <div className="cnm-info-item">
                     <div className="cnm-info-icon"><Tag size={18} /></div>
                     <div className="cnm-info-content">
@@ -452,6 +554,39 @@ const TourBookingDetailModal = ({
               </div>
             </div>
 
+            {/* PACKAGE DETAILS */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Package Details</h3>
+                <span className="cnm-badge cnm-badge-amber">{b.guests} PAX</span>
+              </div>
+              <div className="cnm-message-box">
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '17px', fontWeight: '700' }}>
+                  {b.packageName || 'Tour Package'}
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px 20px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Destination</label>
+                    <p style={{ margin: '4px 0 0 0', fontWeight: '700', color: '#0f172a' }}>
+                      {b.destination || 'Philippines'}
+                    </p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Duration</label>
+                    <p style={{ margin: '4px 0 0 0', fontWeight: '700', color: '#0f172a' }}>
+                      {b.duration || '4D3N'}
+                    </p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Reference No.</label>
+                    <p style={{ margin: '4px 0 0 0', fontWeight: '600', color: '#475569', fontFamily: 'monospace' }}>
+                      {raw.referenceNumber || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* FLIGHT DETAILS (if airfare included) */}
             {hasAirfare && flight && (
               <div className="cnm-card">
@@ -493,6 +628,111 @@ const TourBookingDetailModal = ({
               </div>
             )}
 
+            {/* SUBMITTED DOCUMENTS */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Submitted Documents</h3>
+                {!isLoadingDocs && (
+                  <span className="cnm-badge cnm-badge-amber">
+                    {submittedDocs.length} file{submittedDocs.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+
+              {isLoadingDocs ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                  <div style={{
+                    width: '32px', height: '32px', border: '3px solid #e2e8f0',
+                    borderTop: '3px solid #f97316', borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite', margin: '0 auto 8px'
+                  }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>Loading documents...</p>
+                </div>
+              ) : submittedDocs.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
+                  <FileText size={32} style={{ marginBottom: '8px', opacity: 0.4 }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>No documents submitted yet.</p>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '10px'
+                }}>
+                  {submittedDocs.map((doc, idx) => {
+                    const fileUrl = doc.fileUrl || '#';
+                    const isImage = doc.fileType?.startsWith('image/') ||
+                      /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalName || doc.fileName || '');
+                    return (
+                      <div
+                        key={doc._id || idx}
+                        onClick={() => isImage
+                          ? setPreviewDoc({ fileUrl, name: doc.originalName || doc.fileName, section: doc.section })
+                          : window.open(fileUrl, '_blank', 'noopener,noreferrer')
+                        }
+                        style={{
+                          display: 'flex', flexDirection: 'column',
+                          border: '1px solid #e2e8f0', borderRadius: '10px',
+                          overflow: 'hidden',
+                          background: '#fff', transition: 'box-shadow 0.2s', cursor: 'pointer'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+                        onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                      >
+                        {isImage ? (
+                          <div style={{ width: '100%', height: '80px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
+                            <img
+                              src={fileUrl}
+                              alt={doc.originalName || doc.fileName}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={e => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div style={{
+                              display: 'none', width: '100%', height: '100%',
+                              alignItems: 'center', justifyContent: 'center',
+                              position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
+                            }}>
+                              <ImageIcon size={24} color="#94a3b8" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+                            <File size={28} color="#64748b" />
+                          </div>
+                        )}
+                        <div style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}>
+                          <p style={{
+                            margin: '0 0 3px 0', fontSize: '11px', fontWeight: '600',
+                            color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                          }}>
+                            {doc.originalName || doc.fileName || `Document ${idx + 1}`}
+                          </p>
+                          {doc.section && (
+                            <span style={{
+                              fontSize: '10px', fontWeight: '600',
+                              color: doc.section === 'Valid ID' ? '#1d4ed8' : '#b45309',
+                              background: doc.section === 'Valid ID' ? '#dbeafe' : '#fef3c7',
+                              padding: '1px 6px', borderRadius: '4px'
+                            }}>
+                              {doc.section}
+                            </span>
+                          )}
+                          {doc.fileSize && (
+                            <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
+                              {(doc.fileSize / 1024).toFixed(1)} KB
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* ── FOOTER ──────────────────────────────────────────── */}
@@ -527,6 +767,21 @@ const TourBookingDetailModal = ({
               <Pencil size={14} />
               Edit
             </button>
+
+            {/* ✅ ARCHIVE / UNARCHIVE BUTTON */}
+            {handleArchive && (
+              <button
+                className="cnm-btn cnm-btn-outline cnm-btn-utility"
+                onClick={() => { closeModal(); handleArchive(selectedBooking); }}
+                disabled={actionLoading}
+              >
+                {b.isArchive === 'Yes' ? (
+                  <><RotateCcw size={14} /> Unarchive</>
+                ) : (
+                  <><Archive size={14} /> Archive</>
+                )}
+              </button>
+            )}
 
             {/* ✅ View Voucher — confirmed status lang */}
             {status === 'CONFIRMED' && (
@@ -584,6 +839,106 @@ const TourBookingDetailModal = ({
           booking={selectedBooking}
           onClose={() => setShowOrderSlip(false)}
         />
+      )}
+
+      {/* ── IMAGE PREVIEW MODAL ── */}
+      {previewDoc && (
+        <div
+          onClick={() => setPreviewDoc(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(30,41,59,0.9))',
+            backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px',
+            animation: 'cnmFadeIn 0.25s ease',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#f1f5f9',
+              borderRadius: '20px',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05)',
+              display: 'inline-flex',
+              flexDirection: 'column',
+              maxWidth: 'min(90vw, 820px)',
+              animation: 'cnmSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+            }}
+          >
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #e2e8f0',
+              background: 'linear-gradient(to bottom, #ffffff, #fafbfc)',
+              borderRadius: '20px 20px 0 0',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(245,158,11,0.2)',
+                }}>
+                  <ImageIcon size={16} color="#f59e0b" />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{
+                    margin: '0 0 3px', fontSize: '13px', fontWeight: '700', color: '#0f172a',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '420px',
+                  }}>
+                    {previewDoc.name || 'Document Preview'}
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                <button
+                  onClick={async () => {
+                    try {
+                      await downloadViaBlob(previewDoc.fileUrl, previewDoc.name);
+                    } catch {
+                      alert('Failed to download. Please try again.');
+                    }
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none', borderRadius: '10px',
+                    height: '36px', padding: '0 14px', display: 'flex', alignItems: 'center', gap: '6px',
+                    cursor: 'pointer', color: '#fff', fontSize: '12px', fontWeight: '700', transition: 'all 0.2s',
+                  }}
+                >
+                  <Download size={14} />
+                  Download
+                </button>
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  style={{
+                    background: '#f1f5f9', border: 'none', borderRadius: '10px',
+                    width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: '#64748b', flexShrink: 0, transition: 'all 0.2s',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <img
+                src={previewDoc.fileUrl}
+                alt={previewDoc.name}
+                style={{
+                  display: 'block',
+                  maxWidth: 'min(75vw, 780px)',
+                  maxHeight: '70vh',
+                  width: 'auto',
+                  height: 'auto',
+                  borderRadius: '12px',
+                  objectFit: 'contain',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

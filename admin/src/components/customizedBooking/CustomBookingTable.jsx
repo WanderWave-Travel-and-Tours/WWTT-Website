@@ -15,7 +15,7 @@ const getPaymentBadge = (booking) => {
     if (booking.status === 'confirmed' || booking.status === 'fully_paid') {
       return { text: 'Paid in Full', cls: 'cbk-payment-full' };
     }
-    return { text: 'Pending Payment', cls: 'cbk-payment-pending' };
+    return { text: 'Pending', cls: 'cbk-payment-pending', title: 'Pending Payment' };
   }
 
   const totalAmount      = booking.totalAmount      || 0;
@@ -27,9 +27,9 @@ const getPaymentBadge = (booking) => {
     return { text: 'Fully Paid', cls: 'cbk-payment-full' };
   }
   if (initialPaid > 0 && balancePaid === 0 && remainingBalance > 0) {
-    return { text: `Partial (₱${remainingBalance.toLocaleString()} due)`, cls: 'cbk-payment-partial' };
+    return { text: 'Partial', cls: 'cbk-payment-partial', title: `₱${remainingBalance.toLocaleString()} balance due` };
   }
-  return { text: 'Pending Payment', cls: 'cbk-payment-pending' };
+  return { text: 'Pending', cls: 'cbk-payment-pending', title: 'Pending Payment' };
 };
 
 const CustomBookingTable = ({
@@ -138,7 +138,7 @@ const CustomBookingTable = ({
             <td>{booking.travelDate}</td>
 
             {/* Guests */}
-            <td>
+            <td style={{ textAlign: 'center' }}>
               <div className="cbk-guests-cell">
                 <Users size={14} />
                 {booking.guests}
@@ -162,29 +162,29 @@ const CustomBookingTable = ({
             </td>
 
             {/* Payment Status */}
-            <td>
-              <span className={`cbk-payment-badge ${paymentBadge.cls}`}>
+            <td style={{ textAlign: 'center' }}>
+              <span className={`cbk-payment-badge ${paymentBadge.cls}`} title={paymentBadge.title}>
                 <Wallet size={12} />
                 {paymentBadge.text}
               </span>
             </td>
 
             {/* Booking Status */}
-            <td>
+            <td style={{ textAlign: 'center' }}>
               <span className={`cbk-badge ${getStatusBadgeClass(booking.status)}`}>
                 {booking.status || 'pending'}
               </span>
             </td>
 
             {/* Created By */}
-            <td>
+            <td style={{ textAlign: 'center' }}>
               <span className={`cbk-badge ${isWalkinBooking ? 'cbk-badge-walkin' : isSales ? 'cbk-badge-sales' : 'cbk-badge-user'}`}>
                 {isWalkinBooking ? 'Walk-in Application' : isSales ? 'Sales' : 'User'}
               </span>
             </td>
 
             {/* Actions */}
-            <td>
+            <td style={{ textAlign: 'right' }}>
               <div className="cbk-actions">
                 <button
                   className="cbk-btn-view"
@@ -196,16 +196,12 @@ const CustomBookingTable = ({
                 </button>
 
                 <button
-                  className={`cbk-btn-archive ${isArchived ? 'cbk-btn-unarchive' : ''}`}
+                  className={`cbk-btn-archive-icon ${isArchived ? 'cbk-btn-unarchive' : ''}`}
                   onClick={() => handleArchive(booking)}
                   disabled={actionLoading}
-                  title={isArchived ? 'Unarchive' : 'Archive'}
+                  title={isArchived ? 'Unarchive booking' : 'Archive booking'}
                 >
-                  {isArchived ? (
-                    <><RotateCcw size={14} /> Restore</>
-                  ) : (
-                    <><Archive size={14} /> Archive</>
-                  )}
+                  {isArchived ? <RotateCcw size={14} /> : <Archive size={14} />}
                 </button>
               </div>
             </td>

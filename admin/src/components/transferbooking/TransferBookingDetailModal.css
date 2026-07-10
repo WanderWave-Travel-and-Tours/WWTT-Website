@@ -422,7 +422,7 @@
   background: linear-gradient(to top, #fafbfc, #ffffff);
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 10px;
   border-radius: 0 0 20px 20px;
   flex-wrap: wrap;

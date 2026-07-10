@@ -47,16 +47,16 @@ const getPaymentBadge = (booking) => {
   const { paymentType, status, totalAmount = 0, remainingBalance = 0 } = booking;
   if (paymentType === 'full') {
     return status === 'confirmed' || status === 'completed'
-      ? { text: 'Paid in Full',     cls: 'payment-badge-full'    }
-      : { text: 'Pending Payment',  cls: 'payment-badge-pending' };
+      ? { text: 'Paid in Full', cls: 'payment-badge-full' }
+      : { text: 'Pending',     cls: 'payment-badge-pending', title: 'Pending Payment' };
   }
   // partial
   const initialPaid = totalAmount - remainingBalance;
   if (remainingBalance <= 0 && initialPaid > 0)
-    return { text: 'Fully Paid',                                      cls: 'payment-badge-full'    };
+    return { text: 'Fully Paid', cls: 'payment-badge-full' };
   if (initialPaid > 0 && remainingBalance > 0)
-    return { text: `Partial (₱${remainingBalance.toLocaleString()} due)`, cls: 'payment-badge-partial' };
-  return { text: 'Pending Payment', cls: 'payment-badge-pending' };
+    return { text: 'Partial', cls: 'payment-badge-partial', title: `₱${remainingBalance.toLocaleString()} balance due` };
+  return { text: 'Pending', cls: 'payment-badge-pending', title: 'Pending Payment' };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -459,8 +459,6 @@ const TourBookingDashboard = () => {
             statusOptions={statusOptions}
             paymentFilter={paymentFilter}   setPaymentFilter={setPaymentFilter}
             paymentOptions={paymentOptions}
-            typeFilter={typeFilter}         setTypeFilter={setTypeFilter}
-            typeOptions={typeOptions}
             createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
           />
 
@@ -476,17 +474,17 @@ const TourBookingDashboard = () => {
                       onChange={selectAll}
                     />
                   </th>
-                  <th style={{ width: 50 }}>No.</th>
+                  <th style={{ width: '36px' }}>No.</th>
                   <th>Booking ID</th>
                   <th>Customer</th>
                   <th>Tour Package</th>
                   <th>Travel Date</th>
-                  <th>Guests</th>
+                  <th style={{ textAlign: 'center' }}>Guests</th>
                   <th>Amount</th>
-                  <th>Payment</th>
-                  <th>Status</th>
-                  <th>Created By</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ textAlign: 'center' }}>Payment</th>
+                  <th style={{ textAlign: 'center' }}>Status</th>
+                  <th style={{ textAlign: 'center' }}>Created By</th>
+                  <th className="bkm-actions-header"></th>
                 </tr>
               </thead>
 
@@ -580,7 +578,7 @@ const TourBookingDashboard = () => {
                         </td>
 
                         {/* Guests */}
-                        <td>
+                        <td style={{ textAlign: 'center' }}>
                           <div className="guests-cell">
                             <Users size={15} />
                             {booking.guests}
@@ -589,53 +587,46 @@ const TourBookingDashboard = () => {
 
                         {/* Amount */}
                         <td>
-                          {booking.paymentType === 'partial' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                              <span className="tbk-amount-paid">
-                                ₱{(booking.totalAmount - booking.remainingBalance).toLocaleString()}
-                              </span>
-                              <span className="tbk-amount-total">of ₱{booking.totalAmount.toLocaleString()}</span>
-                              {booking.remainingBalance > 0 && (
-                                <span className="tbk-balance-due">
-                                  <Wallet size={10} /> ₱{booking.remainingBalance.toLocaleString()} due
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {booking.paymentType === 'partial' ? (
+                              <>
+                                <strong style={{ color: '#059669' }}>
+                                  ₱{(booking.totalAmount - booking.remainingBalance).toLocaleString()}
+                                </strong>
+                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                  of ₱{booking.totalAmount.toLocaleString()}
                                 </span>
-                              )}
-                            </div>
-                          ) : (
-                            <strong>₱{booking.totalAmount.toLocaleString()}</strong>
-                          )}
+                              </>
+                            ) : (
+                              <strong>₱{booking.totalAmount.toLocaleString()}</strong>
+                            )}
+                          </div>
                         </td>
 
                         {/* Payment Status */}
-                        <td>
-                          <div className={`payment-status-badge ${payBadge.cls}`}>
+                        <td style={{ textAlign: 'center' }}>
+                          <div className={`payment-status-badge ${payBadge.cls}`} title={payBadge.title}>
                             <Wallet size={13} />
                             <span>{payBadge.text}</span>
                           </div>
                         </td>
 
                         {/* Status */}
-                        <td>
+                        <td style={{ textAlign: 'center' }}>
                           <span className={`bkm-badge ${getStatusBadgeClass(booking.status)}`}>
                             {booking.status || 'pending'}
                           </span>
                         </td>
 
                         {/* Created By */}
-                        <td>
-                          {raw.isWalkin ? (
-                            <span className="tbk-created-by-badge tbk-created-by-walkin">
-                              WALK-IN APPLICATION
-                            </span>
-                          ) : (
-                            <span className={`tbk-created-by-badge tbk-created-by-${(raw.createdByType || 'user').toLowerCase()}`}>
-                              {(raw.createdByType || 'user').toUpperCase()}
-                            </span>
-                          )}
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`bkm-badge ${raw.isWalkin ? 'badge-walkin' : raw.createdByType === 'sales' ? 'badge-sales' : 'badge-user'}`}>
+                            {raw.isWalkin ? 'Walk-in Application' : raw.createdByType === 'sales' ? 'Sales' : 'User'}
+                          </span>
                         </td>
 
                         {/* Actions */}
-                        <td style={{ textAlign: 'right' }}>
+                        <td className="bkm-actions-cell" style={{ textAlign: 'right' }}>
                           <div className="bkm-action-group">
                             <button
                               className="bkm-action-btn bkm-view-btn"
@@ -645,12 +636,12 @@ const TourBookingDashboard = () => {
                               <Eye size={16} /> View
                             </button>
                             <button
-                              className="bkm-action-btn bkm-archive-btn"
+                              className="bkm-action-btn bkm-archive-icon-btn"
                               onClick={() => handleArchive(booking)}
                               disabled={actionLoading}
-                              title="Archive Booking"
+                              title="Archive booking"
                             >
-                              <Archive size={16} /> Archive
+                              <Archive size={15} />
                             </button>
                           </div>
                         </td>
@@ -754,6 +745,7 @@ const TourBookingDashboard = () => {
         setShowModal={setShowModal}
         handleConfirm={handleConfirm}
         handleCancel={handleCancel}
+        handleArchive={handleArchive}
         actionLoading={actionLoading}
       />
 

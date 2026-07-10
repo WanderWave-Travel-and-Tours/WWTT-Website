@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X, CheckCircle, AlertCircle, XCircle,
   User, Mail, Calendar, MapPin, Clock,
   CreditCard, Wallet, Car, PhoneCall, Navigation,
   FileText, Check, Tag, Truck, ArrowLeftRight,
-  Receipt, Ticket, Pencil, DollarSign
+  Receipt, Ticket, Pencil, DollarSign, Archive, RotateCcw,
+  Image as ImageIcon, File, Download,
 } from 'lucide-react';
 import './TransferBookingDetailModal.css';
 import TransferOrderSlipModal from './TransferOrderSlipModal';
@@ -49,11 +50,38 @@ const TransferBookingDetailModal = ({
   setShowModal,
   handleConfirm,
   handleCancel,
+  handleArchive,
   actionLoading,
 }) => {
   const navigate = useNavigate();
   const [showOrderSlip, setShowOrderSlip] = useState(false);
   const [showVoucher,   setShowVoucher]   = useState(false);
+  const [submittedDocs, setSubmittedDocs] = useState([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
+
+  // Fetch submitted documents whenever the modal opens for a booking
+  useEffect(() => {
+    const mongoId = selectedBooking?._id || selectedBooking?.id;
+    if (!showModal || !mongoId) {
+      setSubmittedDocs([]);
+      return;
+    }
+    const fetchDocs = async () => {
+      setIsLoadingDocs(true);
+      try {
+        const res = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${mongoId}`);
+        const data = await res.json();
+        setSubmittedDocs(data.success ? (data.documents || []) : []);
+      } catch (err) {
+        console.error('Error fetching booking documents:', err);
+        setSubmittedDocs([]);
+      } finally {
+        setIsLoadingDocs(false);
+      }
+    };
+    fetchDocs();
+  }, [showModal, selectedBooking?._id, selectedBooking?.id]);
 
   if (!showModal || !selectedBooking) return null;
 
@@ -72,6 +100,7 @@ const TransferBookingDetailModal = ({
   const canConfirm = status === 'PENDING';
   const canCancel  = status === 'PENDING' || status === 'CONFIRMED';
   const isRoundtrip = b.transferType === 'roundtrip';
+  const isArchived  = b.isArchive === 'Yes';
 
   /* ── Payment status badge ───────────────────────────────────── */
   const paymentStatusMap = {
@@ -93,8 +122,34 @@ const TransferBookingDetailModal = ({
 
   const modalBooking = { id: b._id || b.id, rawData: b.rawData || b };
 
+  const handleArchiveClick = () => {
+    if (!handleArchive) return;
+    closeModal();
+    handleArchive({
+      mongoId: b._id || b.mongoId || b.id,
+      id: b.id || b._id,
+      customerName: b.fullName || b.customerName || 'Customer',
+      isArchive: b.isArchive,
+    });
+  };
+
+  const downloadViaBlob = async (url, fileName) => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch file');
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = fileName || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  };
+
   return (
     <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       {/* ── Overlay ──────────────────────────────────────────── */}
       <div className="modal-overlay bkm-detail-modal" onClick={closeModal}>
         <div className="modal-content trd-modal-content" onClick={e => e.stopPropagation()}>
@@ -344,6 +399,111 @@ const TransferBookingDetailModal = ({
               </div>
             </div>
 
+            {/* ── Submitted Documents ─────────────────────── */}
+            <div className="cnm-card">
+              <div className="cnm-card-header">
+                <h3 className="cnm-card-title">Submitted Documents</h3>
+                {!isLoadingDocs && (
+                  <span className="cnm-badge cnm-badge-amber">
+                    {submittedDocs.length} file{submittedDocs.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+
+              {isLoadingDocs ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                  <div style={{
+                    width: '32px', height: '32px', border: '3px solid #e2e8f0',
+                    borderTop: '3px solid #f97316', borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite', margin: '0 auto 8px'
+                  }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>Loading documents...</p>
+                </div>
+              ) : submittedDocs.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
+                  <FileText size={32} style={{ marginBottom: '8px', opacity: 0.4 }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>No documents submitted yet.</p>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '10px'
+                }}>
+                  {submittedDocs.map((doc, idx) => {
+                    const fileUrl = doc.fileUrl || '#';
+                    const isImage = doc.fileType?.startsWith('image/') ||
+                      /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalName || doc.fileName || '');
+                    return (
+                      <div
+                        key={doc._id || idx}
+                        onClick={() => isImage
+                          ? setPreviewDoc({ fileUrl, name: doc.originalName || doc.fileName, section: doc.section })
+                          : window.open(fileUrl, '_blank', 'noopener,noreferrer')
+                        }
+                        style={{
+                          display: 'flex', flexDirection: 'column',
+                          border: '1px solid #e2e8f0', borderRadius: '10px',
+                          overflow: 'hidden',
+                          background: '#fff', transition: 'box-shadow 0.2s', cursor: 'pointer'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+                        onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                      >
+                        {isImage ? (
+                          <div style={{ width: '100%', height: '80px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
+                            <img
+                              src={fileUrl}
+                              alt={doc.originalName || doc.fileName}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={e => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div style={{
+                              display: 'none', width: '100%', height: '100%',
+                              alignItems: 'center', justifyContent: 'center',
+                              position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
+                            }}>
+                              <ImageIcon size={24} color="#94a3b8" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+                            <File size={28} color="#64748b" />
+                          </div>
+                        )}
+                        <div style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}>
+                          <p style={{
+                            margin: '0 0 3px 0', fontSize: '11px', fontWeight: '600',
+                            color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                          }}>
+                            {doc.originalName || doc.fileName || `Document ${idx + 1}`}
+                          </p>
+                          {doc.section && (
+                            <span style={{
+                              fontSize: '10px', fontWeight: '600',
+                              color: doc.section === 'Valid ID' ? '#1d4ed8' : '#b45309',
+                              background: doc.section === 'Valid ID' ? '#dbeafe' : '#fef3c7',
+                              padding: '1px 6px', borderRadius: '4px'
+                            }}>
+                              {doc.section}
+                            </span>
+                          )}
+                          {doc.fileSize && (
+                            <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
+                              {(doc.fileSize / 1024).toFixed(1)} KB
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>{/* /modal-body */}
 
           {/* ── Footer Actions ──────────────────────────── */}
@@ -366,6 +526,21 @@ const TransferBookingDetailModal = ({
             <button className="cnm-btn trd-btn-edit cnm-btn-utility" onClick={handleEdit} title="Edit booking">
               <Pencil size={14} /> Edit
             </button>
+
+            {/* Archive / Unarchive */}
+            {handleArchive && (
+              <button
+                className="cnm-btn cnm-btn-outline cnm-btn-utility"
+                onClick={handleArchiveClick}
+                disabled={actionLoading}
+              >
+                {isArchived ? (
+                  <><RotateCcw size={14} /> Unarchive</>
+                ) : (
+                  <><Archive size={14} /> Archive</>
+                )}
+              </button>
+            )}
 
             {/* Voucher */}
             {status === 'CONFIRMED' && (
@@ -406,6 +581,106 @@ const TransferBookingDetailModal = ({
       )}
       {showVoucher && (
         <TransferVoucherModal booking={modalBooking} onClose={() => setShowVoucher(false)} />
+      )}
+
+      {/* ── IMAGE PREVIEW MODAL ── */}
+      {previewDoc && (
+        <div
+          onClick={() => setPreviewDoc(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(30,41,59,0.9))',
+            backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px',
+            animation: 'cnmFadeIn 0.25s ease',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#f1f5f9',
+              borderRadius: '20px',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05)',
+              display: 'inline-flex',
+              flexDirection: 'column',
+              maxWidth: 'min(90vw, 820px)',
+              animation: 'cnmSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+            }}
+          >
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #e2e8f0',
+              background: 'linear-gradient(to bottom, #ffffff, #fafbfc)',
+              borderRadius: '20px 20px 0 0',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(245,158,11,0.2)',
+                }}>
+                  <ImageIcon size={16} color="#f59e0b" />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{
+                    margin: '0 0 3px', fontSize: '13px', fontWeight: '700', color: '#0f172a',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '420px',
+                  }}>
+                    {previewDoc.name || 'Document Preview'}
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                <button
+                  onClick={async () => {
+                    try {
+                      await downloadViaBlob(previewDoc.fileUrl, previewDoc.name);
+                    } catch {
+                      alert('Failed to download. Please try again.');
+                    }
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none', borderRadius: '10px',
+                    height: '36px', padding: '0 14px', display: 'flex', alignItems: 'center', gap: '6px',
+                    cursor: 'pointer', color: '#fff', fontSize: '12px', fontWeight: '700', transition: 'all 0.2s',
+                  }}
+                >
+                  <Download size={14} />
+                  Download
+                </button>
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  style={{
+                    background: '#f1f5f9', border: 'none', borderRadius: '10px',
+                    width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: '#64748b', flexShrink: 0, transition: 'all 0.2s',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <img
+                src={previewDoc.fileUrl}
+                alt={previewDoc.name}
+                style={{
+                  display: 'block',
+                  maxWidth: 'min(75vw, 780px)',
+                  maxHeight: '70vh',
+                  width: 'auto',
+                  height: 'auto',
+                  borderRadius: '12px',
+                  objectFit: 'contain',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

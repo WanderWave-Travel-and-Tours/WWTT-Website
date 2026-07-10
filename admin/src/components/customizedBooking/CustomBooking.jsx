@@ -580,8 +580,6 @@ const CustomBooking = () => {
             statusOptions={statusOptions}
             paymentFilter={paymentFilter}  setPaymentFilter={setPaymentFilter}
             paymentOptions={paymentOptions}
-            typeFilter={typeFilter}        setTypeFilter={setTypeFilter}
-            typeOptions={typeOptions}
             createdByFilter={createdByFilter} setCreatedByFilter={setCreatedByFilter}
           />
 
@@ -601,14 +599,14 @@ const CustomBooking = () => {
                   <th style={{ width: 48 }}>No.</th>
                   <th>Booking ID</th>
                   <th>Customer</th>
-                  <th>Package</th>
+                  <th>Destination</th>
                   <th>Travel Date</th>
-                  <th>Guests</th>
+                  <th style={{ textAlign: 'center' }}>Guests</th>
                   <th>Amount</th>
-                  <th>Payment</th>
-                  <th>Status</th>
-                  <th>Created By</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ textAlign: 'center' }}>Payment</th>
+                  <th style={{ textAlign: 'center' }}>Status</th>
+                  <th style={{ textAlign: 'center' }}>Created By</th>
+                  <th className="bkm-actions-header"></th>
                 </tr>
               </thead>
               <CustomBookingTable
