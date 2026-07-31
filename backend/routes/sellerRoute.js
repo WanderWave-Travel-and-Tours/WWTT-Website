@@ -5,6 +5,12 @@ const SellerRate = require('../models/sellerRate');
 const authMiddleware = require('../middleware/auth');
 const requireSameOrigin = require('../middleware/requireSameOrigin');
 
+// Internal cost/margin fields. The public GET / is consumed by the customer
+// booking customizers, which only need the sell price — exposing supplier cost
+// and markup there leaks negotiated supplier rates and profit margin to anyone
+// who opens the booking page. Mirrors PUBLIC_SELECT in packageRoute.js.
+const PUBLIC_RATE_SELECT = '-supplierRate -markup -markupType -notes -__v';
+
 // 🎯 IMPORT ACTIVITY LOGGER
 const { 
     logCreate,
@@ -59,6 +65,7 @@ router.get('/', requireSameOrigin, async (req, res) => {
     }
 
     const rates = await SellerRate.find(filter)
+      .select(PUBLIC_RATE_SELECT)
       .sort({ dateAdded: -1 });
 
     // 🎯 LOG FETCH

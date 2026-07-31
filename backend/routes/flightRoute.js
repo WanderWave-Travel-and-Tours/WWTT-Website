@@ -24,15 +24,20 @@ const {
 
 const { searchFlightsHybrid } = require('../controller/hybridController');
 const { searchDomesticFlights } = require('../controller/serpApiController');
+const authMiddleware = require('../middleware/auth');
 
-router.get('/verify-amadeus', verifyCredentials);
+// Ops/diagnostic endpoint — reports whether Amadeus credentials are valid.
+// Admin-only: no frontend caller, and it confirms credential state to anyone.
+router.get('/verify-amadeus', authMiddleware, verifyCredentials);
 router.get('/search-prices', searchFlightsHybrid);
 router.get('/search-prices-amadeus-only', searchFlightOffers);
 
 router.get('/airports', getAirports);              
 router.get('/airlines', getAirlines);            
-router.get('/airports/cache/status', getCacheStatus);   
-router.post('/airports/cache/refresh', refreshAirportsCache); 
+router.get('/airports/cache/status', authMiddleware, getCacheStatus);
+// Admin-only: a full airport-cache rebuild burns paid AviationStack API quota,
+// so an anonymous caller could run up the bill by hammering this.
+router.post('/airports/cache/refresh', authMiddleware, refreshAirportsCache);
 
 router.get('/search-aviationstack', searchFlightsAviationstack);
 
