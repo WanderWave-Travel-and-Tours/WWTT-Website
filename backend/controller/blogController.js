@@ -563,7 +563,22 @@ const createFromSEOAutopilot = async (req, res) => {
         const incomingKey = req.headers['x-api-key'];
         const mySecret = process.env.SEO_AUTOPILOT_SECRET;
 
-        if (!incomingKey || incomingKey !== mySecret) {
+        // Fail closed when the secret is not configured. Without this, an empty
+        // or unset SEO_AUTOPILOT_SECRET could be matched by a crafted request
+        // and turn this into an unauthenticated blog-publishing endpoint.
+        if (!mySecret || mySecret.trim() === '') {
+            console.error("❌ SEO_AUTOPILOT_SECRET is not configured — refusing webhook.");
+            return res.status(503).json({ success: false, message: "Webhook not configured" });
+        }
+
+        // Constant-time compare so the secret can't be recovered byte-by-byte
+        // via response-timing differences.
+        const crypto = require('crypto');
+        const a = Buffer.from(String(incomingKey || ''));
+        const b = Buffer.from(String(mySecret));
+        const keyOk = a.length === b.length && crypto.timingSafeEqual(a, b);
+
+        if (!keyOk) {
             console.error("❌ Unauthorized: Invalid API Key");
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }

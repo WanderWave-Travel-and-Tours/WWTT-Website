@@ -13,6 +13,7 @@ const router   = express.Router();
 
 // ── Adjust this path to wherever your Package model lives ──
 const Package  = require('../models/package');
+const authMiddleware = require('../middleware/auth');
 
 // ── GHL webhook URL ────────────────────────────────────────
 const GHL_WEBHOOK_URL =
@@ -231,7 +232,10 @@ function escapeHtml(str = '') {
 //    synced_at        : ISO string
 //  }
 // ──────────────────────────────────────────────────────────
-router.post('/:id/sync-email', async (req, res) => {
+// Admin-only: forwards an arbitrary caller-supplied email address to the GHL
+// marketing webhook. Left open, this is a spam/abuse relay — anyone could push
+// mail to any address through the company's automation. No frontend caller.
+router.post('/:id/sync-email', authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { email } = req.body;
 

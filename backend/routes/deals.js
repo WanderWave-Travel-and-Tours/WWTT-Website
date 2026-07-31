@@ -1,3 +1,9 @@
+// ⚠️ NOT MOUNTED. server.js never calls app.use('/api/deals', ...), and no
+// caller exists in the public frontend or the admin bundle, so every route in
+// this file is currently unreachable (requests return 404 from the API
+// catch-all). Auth is applied below anyway so that mounting it later is safe
+// by default. Decide to either wire it up or delete the file + controller +
+// model — leaving it half-present invites someone mounting it unguarded.
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');

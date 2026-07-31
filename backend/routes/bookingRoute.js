@@ -1083,6 +1083,29 @@ router.post('/', upload.any(), async (req, res) => {
     // ── Add-on summary is logged after sanitizedAddOns is built below ──
 
     // ✅ SANITIZE CUSTOMIZED INCLUSIONS
+    // Cost fields (supplierRate/markup/markupType) are no longer sent to the
+    // browser by GET /api/seller-rates, so re-read them server-side from the
+    // referenced SellerRate. This keeps margin reporting accurate AND stops a
+    // crafted request from writing fake cost figures into the booking record.
+    let sellerRateCostMap = {};
+    if (bookingData.customizedInclusions && Array.isArray(bookingData.customizedInclusions)) {
+      const rateIds = [...new Set(
+        bookingData.customizedInclusions.map(i => i.sellerRateId).filter(Boolean)
+      )];
+      if (rateIds.length > 0) {
+        try {
+          const SellerRate = require('../models/sellerRate');
+          const rateDocs = await SellerRate.find({ _id: { $in: rateIds } })
+            .select('supplierRate markup markupType')
+            .lean();
+          rateDocs.forEach(r => { sellerRateCostMap[r._id.toString()] = r; });
+          console.log(`💰 Re-derived cost data for ${rateDocs.length}/${rateIds.length} seller rate(s)`);
+        } catch (rateErr) {
+          console.warn('⚠️ Seller-rate cost lookup failed (non-fatal):', rateErr.message);
+        }
+      }
+    }
+
     let sanitizedCustomizedInclusions = [];
     if (bookingData.customizedInclusions && Array.isArray(bookingData.customizedInclusions)) {
       sanitizedCustomizedInclusions = bookingData.customizedInclusions.map(inclusion => {
@@ -1094,13 +1117,26 @@ router.post('/', upload.any(), async (req, res) => {
           }
         }
         
+        // Prefer server-side cost from the referenced SellerRate; fall back to
+        // whatever the client sent only when there is no sellerRateId to look up
+        // (e.g. package-sourced inclusions that carry their own figures).
+        const authoritativeCost = inclusion.sellerRateId
+          ? sellerRateCostMap[String(inclusion.sellerRateId)]
+          : null;
+
         return {
           id: inclusion.id || `inc-${Date.now()}-${Math.random()}`,
           name: inclusion.name || 'Unknown Inclusion',
           price: inclusion.price || 0,
-          supplierRate: inclusion.supplierRate || null,
-          markup: inclusion.markup || null,
-          markupType: inclusion.markupType || null,
+          supplierRate: authoritativeCost
+            ? authoritativeCost.supplierRate
+            : (inclusion.supplierRate || null),
+          markup: authoritativeCost
+            ? authoritativeCost.markup
+            : (inclusion.markup || null),
+          markupType: authoritativeCost
+            ? authoritativeCost.markupType
+            : (inclusion.markupType || null),
           supplier: inclusion.supplier || null,
           destination: inclusion.destination || null,
           pax: inclusion.pax || null,
