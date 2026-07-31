@@ -7,11 +7,15 @@ const {
   updatePSA,
   deletePSA
 } = require('../controller/psaController');
+const authMiddleware = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
-router.get('/', getPSADocuments);
-router.get('/:id', getPSADocument);
-router.post('/', createPSA);
-router.put('/:id', updatePSA);
-router.delete('/:id', deletePSA);
+// Public PSA-service catalog — read by the public /other-services page.
+// Same-origin gate only; mutations are admin-only.
+router.get('/', requireSameOrigin, getPSADocuments);
+router.get('/:id', requireSameOrigin, getPSADocument);
+router.post('/', authMiddleware, createPSA);
+router.put('/:id', authMiddleware, updatePSA);
+router.delete('/:id', authMiddleware, deletePSA);
 
 module.exports = router;

@@ -6,6 +6,7 @@ const ActivityLog = require('../models/ActivityLog');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const authMiddleware = require('../middleware/auth');
 
 // ✅ 1. CLOUDINARY CONFIG
 cloudinary.config({
@@ -65,7 +66,9 @@ router.get('/search-packages', async (req, res) => {
 });
 
 // 1. ADD PROMO (WITH CLOUDINARY & LOGGING & TARGET PACKAGES)
-router.post('/add', upload.single('image'), async (req, res) => {
+// Promo CRUD is admin-only. Public promo reads (/all, /, /:id, /validate/:code)
+// and /claim/:id (customer redeeming a promo) stay open.
+router.post('/add', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const {
             userEmail, adminId,
@@ -223,7 +226,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // 5. UPDATE PROMO (WITH CLOUDINARY & DETAILED LOGGING & TARGET PACKAGES)
-router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const {
             userEmail, adminId, existingImagePublicId, changes,
@@ -331,7 +334,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 });
 
 // 6. ARCHIVE/RESTORE PROMO (Modified to handle Toggle logic)
-router.post('/:id/archive', async (req, res) => {
+router.post('/:id/archive', authMiddleware, async (req, res) => {
     try {
         const { userEmail, adminId } = req.body;
         const logUserId = getValidAdminId(adminId);

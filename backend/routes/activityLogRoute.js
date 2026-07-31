@@ -3,6 +3,11 @@ const router = express.Router();
 const ActivityLog = require('../models/ActivityLog');
 const path = require('path');
 const fs = require('fs');
+const authMiddleware = require('../middleware/auth');
+
+// Every route in this file is internal admin tooling (audit trail, PDF export)
+// with no public/customer-facing caller — gate the whole router behind admin auth.
+router.use(authMiddleware);
 
 // Try to import Admin model, but don't fail if it doesn't exist
 let Admin = null;

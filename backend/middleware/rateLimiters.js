@@ -7,7 +7,7 @@ const AUTH_MAX_ATTEMPTS = 5;
 const authLimiter = rateLimit({
     windowMs: AUTH_WINDOW_MS,
     max: AUTH_MAX_ATTEMPTS,
-    standardHeaders: true,
+    standardHeaders: false,
     legacyHeaders: false,
     message: {
         success: false,
@@ -23,7 +23,7 @@ const authLimiter = rateLimit({
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 600,
-    standardHeaders: true,
+    standardHeaders: false,
     legacyHeaders: false,
     message: {
         success: false,
@@ -39,7 +39,7 @@ const apiLimiter = rateLimit({
 const telemetryLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 50,
-    standardHeaders: true,
+    standardHeaders: false,
     legacyHeaders: false,
     message: {
         success: false,
@@ -55,7 +55,7 @@ const telemetryLimiter = rateLimit({
 const feedbackLimiter = rateLimit({
     windowMs: 10 * 60 * 1000, // 10 minutes
     max: 5,
-    standardHeaders: true,
+    standardHeaders: false,
     legacyHeaders: false,
     // Shared MongoDB counter so the cap of 5 holds across ALL server instances,
     // not 5-per-instance like the default in-memory store would give on Render.

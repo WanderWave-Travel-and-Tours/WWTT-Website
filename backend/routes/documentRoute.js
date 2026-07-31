@@ -13,6 +13,8 @@ const {
   getSignedDownloadUrl
 } = require('../controller/documentController');
 const { uploadDocument } = require('../config/cloudinary');
+const authMiddleware = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
 const router = express.Router();
 
@@ -30,21 +32,28 @@ const handleUpload = (req, res, next) => {
   });
 };
 
-// Main upload route - multiple documents
-router.post('/upload', handleUpload, uploadDocuments);
+// Main upload route - multiple documents — customer-facing (booking flow),
+// same-origin gate only.
+router.post('/upload', requireSameOrigin, handleUpload, uploadDocuments);
 
-// ⭐⭐⭐ FIX: ADD THESE TWO ROUTES FOR SIGNED URLS ⭐⭐⭐
-router.get('/:documentId/view', getSignedViewUrl);
-router.get('/:documentId/download', getSignedDownloadUrl);
+// Signed view/download URLs — read unauthenticated by the customer dashboard
+// for the customer's OWN uploaded documents (booking evidence, IDs, passports).
+// Same-origin gate only; a real per-user ownership check would need the
+// caller to be tied to a session, which these routes don't currently carry.
+router.get('/:documentId/view', requireSameOrigin, getSignedViewUrl);
+router.get('/:documentId/download', requireSameOrigin, getSignedDownloadUrl);
 
 // Get routes
-router.get('/inquiry/:inquiryId', getDocumentsByInquiry);
-router.get('/user/:userId', getUserDocuments);
-router.get('/', getAllDocuments);
+// /inquiry/:inquiryId is read unauthenticated by the customer dashboard for
+// the customer's own inquiry's documents — same-origin only.
+// /user/:userId and the full list are admin/back-office views — admin-gated.
+router.get('/inquiry/:inquiryId', requireSameOrigin, getDocumentsByInquiry);
+router.get('/user/:userId', authMiddleware, getUserDocuments);
+router.get('/', authMiddleware, getAllDocuments);
 
-// Update and delete routes
-router.put('/:id/status', updateDocumentStatus);
-router.delete('/:documentId', deleteDocument);
-router.delete('/:id', deleteDocument);
+// Update and delete routes — admin only
+router.put('/:id/status', authMiddleware, updateDocumentStatus);
+router.delete('/:documentId', authMiddleware, deleteDocument);
+router.delete('/:id', authMiddleware, deleteDocument);
 
 module.exports = router;

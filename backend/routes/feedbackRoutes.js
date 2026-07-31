@@ -3,6 +3,7 @@ const router = express.Router();
 const Feedback = require('../models/Feedback');
 const ActivityLog = require('../models/ActivityLog');
 const { feedbackLimiter } = require('../middleware/rateLimiters');
+const authMiddleware = require('../middleware/auth');
 
 // Server-side input ceilings. The frontend enforces these via maxLength / file-size
 // checks, but a direct API call bypasses the UI entirely, so we re-validate here.
@@ -172,7 +173,9 @@ router.post('/', feedbackLimiter, async (req, res) => {
 // ============================================
 // GET - Fetch All Feedbacks
 // ============================================
-router.get('/', async (req, res) => {
+// Reading/managing submitted feedback is a back-office view — admin-only.
+// (POST / stays public: that's the customer feedback widget.)
+router.get('/', authMiddleware, async (req, res) => {
   try {
     // Kinukuha lang ang feedbacks pero HINDI na nagla-log sa ActivityLog
     const feedbacks = await Feedback.find().sort({ createdAt: -1 }).lean();
@@ -187,7 +190,7 @@ router.get('/', async (req, res) => {
 // ============================================
 // PATCH - Archive Feedback
 // ============================================
-router.patch('/:id/archive', async (req, res) => {
+router.patch('/:id/archive', authMiddleware, async (req, res) => {
   try {
     const feedback = await Feedback.findByIdAndUpdate(
       req.params.id,
@@ -249,7 +252,7 @@ router.patch('/:id/archive', async (req, res) => {
 // ============================================
 // PATCH - Restore Feedback
 // ============================================
-router.patch('/:id/restore', async (req, res) => {
+router.patch('/:id/restore', authMiddleware, async (req, res) => {
   try {
     const feedback = await Feedback.findByIdAndUpdate(
       req.params.id,
@@ -308,7 +311,7 @@ router.patch('/:id/restore', async (req, res) => {
 // ============================================
 // DELETE - Permanently Delete Feedback
 // ============================================
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const feedback = await Feedback.findByIdAndDelete(req.params.id);
     
@@ -356,7 +359,7 @@ router.delete('/:id', async (req, res) => {
 // ============================================
 // GET - Admin Stats
 // ============================================
-router.get('/admin/stats', async (req, res) => {
+router.get('/admin/stats', authMiddleware, async (req, res) => {
   try {
     const matchQuery = { isArchive: { $ne: 'Yes' } };
 

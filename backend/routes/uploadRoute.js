@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { uploadGeneric } = require('../config/cloudinary');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
-router.post('/documents', uploadGeneric.single('file'), (req, res) => {
+// Open upload sink to Cloudinary — no frontend caller found, but gated with
+// same-origin rather than admin auth in case an untracked client uses it.
+// Prevents anonymous abuse of the storage quota.
+router.post('/documents', requireSameOrigin, uploadGeneric.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });

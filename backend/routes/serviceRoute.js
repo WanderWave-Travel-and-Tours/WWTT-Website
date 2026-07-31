@@ -12,6 +12,7 @@ const {
   deleteService,
   getAllServicesForAdmin
 } = require('../controller/serviceController');
+const authMiddleware = require('../middleware/auth');
 
 // --- MULTER CONFIGURATION ---
 const storage = multer.diskStorage({
@@ -33,13 +34,13 @@ router.get('/category/:category', getServicesByCategory);
 router.get('/:id', getService);
 
 // Admin Routes
-router.get('/admin/all', getAllServicesForAdmin);
+router.get('/admin/all', authMiddleware, getAllServicesForAdmin);
 
 // Create & Update (Need upload middleware for image)
-router.post('/', upload.single('image'), createService);
-router.put('/:id', upload.single('image'), updateService);
+router.post('/', authMiddleware, upload.single('image'), createService);
+router.put('/:id', authMiddleware, upload.single('image'), updateService);
 
 // Delete
-router.delete('/:id', deleteService);
+router.delete('/:id', authMiddleware, deleteService);
 
 module.exports = router;

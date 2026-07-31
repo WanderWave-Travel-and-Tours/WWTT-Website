@@ -13,6 +13,7 @@ const CustomizedBooking = require('../models/Customizedbooking');
 const Tour              = require('../models/tour');
 const Transfer          = require('../models/transfer');
 const authMiddleware    = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
 const { sendCustomBookingToGHL, sendBookingInternalNotificationToGHL } = require('../utils/ghlService');
 const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
@@ -387,8 +388,10 @@ router.get('/archived', authMiddleware, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/customized-bookings/:id
+// Public (same-origin only): read by CustomPaymentSuccess.jsx right after a
+// PayMongo redirect, when the browser may have no valid session token yet.
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireSameOrigin, async (req, res) => {
   try {
     const booking = await CustomizedBooking.findById(req.params.id).select('-__v');
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });

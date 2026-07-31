@@ -7,11 +7,15 @@ const {
   updateCENOMAR,
   deleteCENOMAR
 } = require('../controller/cenomarController');
+const authMiddleware = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
-router.get('/', getCENOMARDocuments);
-router.get('/:id', getCENOMARDocument);
-router.post('/', createCENOMAR);
-router.put('/:id', updateCENOMAR);
-router.delete('/:id', deleteCENOMAR);
+// Public CENOMAR-service catalog — read by the public /other-services page.
+// Same-origin gate only; mutations are admin-only.
+router.get('/', requireSameOrigin, getCENOMARDocuments);
+router.get('/:id', requireSameOrigin, getCENOMARDocument);
+router.post('/', authMiddleware, createCENOMAR);
+router.put('/:id', authMiddleware, updateCENOMAR);
+router.delete('/:id', authMiddleware, deleteCENOMAR);
 
 module.exports = router;

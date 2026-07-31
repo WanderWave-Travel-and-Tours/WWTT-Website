@@ -695,9 +695,11 @@ router.delete('/delete/:id', authMiddleware, isMainAdmin, async (req, res) => {
 
 // ============================================================
 // ACTIVITY LOG ROUTES - PDF MANAGEMENT
+// No public/customer caller exists for any /admin/activity-logs/* route —
+// gate the whole block behind admin auth (mirrors routes/activityLogRoute.js).
 // ============================================================
 
-router.post('/activity-logs/upload-pdf', async (req, res) => {
+router.post('/activity-logs/upload-pdf', authMiddleware, async (req, res) => {
     try {
         const { fileName, fileData } = req.body;
 
@@ -739,7 +741,7 @@ router.post('/activity-logs/upload-pdf', async (req, res) => {
     }
 });
 
-router.get('/activity-logs/download-pdf/:fileName', (req, res) => {
+router.get('/activity-logs/download-pdf/:fileName', authMiddleware, (req, res) => {
     try {
         const { fileName } = req.params;
         const filePath = path.join(exportsDir, fileName);
@@ -777,7 +779,7 @@ router.get('/activity-logs/download-pdf/:fileName', (req, res) => {
 // ACTIVITY LOG ROUTES - CRUD OPERATIONS
 // ============================================================
 
-router.post('/activity-logs', async (req, res) => {
+router.post('/activity-logs', authMiddleware, async (req, res) => {
     try {
         const {
             action, module, entity, entityId, user, userId, adminId,
@@ -832,7 +834,7 @@ router.post('/activity-logs', async (req, res) => {
     }
 });
 
-router.get('/activity-logs', async (req, res) => {
+router.get('/activity-logs', authMiddleware, async (req, res) => {
     try {
         const {
             page = 1,
@@ -924,7 +926,7 @@ router.get('/activity-logs', async (req, res) => {
     }
 });
 
-router.get('/activity-logs/:id', async (req, res) => {
+router.get('/activity-logs/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -975,7 +977,7 @@ router.get('/activity-logs/:id', async (req, res) => {
     }
 });
 
-router.get('/activity-logs/stats/summary', async (req, res) => {
+router.get('/activity-logs/stats/summary', authMiddleware, async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -1016,7 +1018,7 @@ router.get('/activity-logs/stats/summary', async (req, res) => {
     }
 });
 
-router.get('/activity-logs/module/:module', async (req, res) => {
+router.get('/activity-logs/module/:module', authMiddleware, async (req, res) => {
     try {
         const { module } = req.params;
         const { limit = 100 } = req.query;
@@ -1044,7 +1046,7 @@ router.get('/activity-logs/module/:module', async (req, res) => {
     }
 });
 
-router.get('/activity-logs/user/:userId', async (req, res) => {
+router.get('/activity-logs/user/:userId', authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
         const { limit = 100 } = req.query;
@@ -1077,7 +1079,7 @@ router.get('/activity-logs/user/:userId', async (req, res) => {
     }
 });
 
-router.delete('/activity-logs/:id', async (req, res) => {
+router.delete('/activity-logs/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -1114,7 +1116,7 @@ router.delete('/activity-logs/:id', async (req, res) => {
     }
 });
 
-router.delete('/activity-logs/cleanup/old', async (req, res) => {
+router.delete('/activity-logs/cleanup/old', authMiddleware, async (req, res) => {
     try {
         const { days = 90 } = req.query;
         
@@ -1140,7 +1142,7 @@ router.delete('/activity-logs/cleanup/old', async (req, res) => {
     }
 });
 
-router.delete('/activity-logs/clear/all', async (req, res) => {
+router.delete('/activity-logs/clear/all', authMiddleware, async (req, res) => {
     try {
         const result = await ActivityLog.deleteMany({});
 

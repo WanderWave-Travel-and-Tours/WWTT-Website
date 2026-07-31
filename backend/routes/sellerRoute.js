@@ -2,6 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const SellerRate = require('../models/sellerRate');
+const authMiddleware = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
 // 🎯 IMPORT ACTIVITY LOGGER
 const { 
@@ -26,8 +28,12 @@ const safeParseFloat = (value, defaultValue = 0) => {
 
 // ============================================
 // GET ALL RATES (Filtered for isArchive)
+// Public: read live during checkout by PackageCustomizer/BookingCustomizer
+// to price add-on activities. Same-origin gate only — everything else in
+// this file (archived list, single-rate lookup, mutations, stats) is
+// admin-only cost/margin data and stays behind authMiddleware.
 // ============================================
-router.get('/', async (req, res) => {
+router.get('/', requireSameOrigin, async (req, res) => {
   const startTime = Date.now();
   try {
     const { destination, activity, supplier, status } = req.query;
@@ -101,7 +107,7 @@ router.get('/', async (req, res) => {
 // ============================================
 // GET ARCHIVED RATES (isArchive = "Yes")
 // ============================================
-router.get('/archived', async (req, res) => {
+router.get('/archived', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const archivedRates = await SellerRate.find({ isArchive: 'Yes' })
@@ -160,7 +166,7 @@ router.get('/archived', async (req, res) => {
 // ============================================
 // GET ALL RATES INCLUDING ARCHIVED
 // ============================================
-router.get('/all-with-archived', async (req, res) => {
+router.get('/all-with-archived', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const rates = await SellerRate.find({})
@@ -219,7 +225,7 @@ router.get('/all-with-archived', async (req, res) => {
 // ============================================
 // GET SINGLE RATE BY ID
 // ============================================
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const rate = await SellerRate.findById(req.params.id);
@@ -274,7 +280,7 @@ router.get('/:id', async (req, res) => {
 // ============================================
 // CREATE NEW RATE
 // ============================================
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const {
@@ -348,7 +354,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.post('/bulk', async (req, res) => {
+router.post('/bulk', authMiddleware, async (req, res) => {
   try {
     const rates = req.body;
 
@@ -431,11 +437,11 @@ router.post('/bulk', async (req, res) => {
 // ============================================
 // UPDATE RATE - ✅ FIXED TO HANDLE 0 VALUES
 // ============================================
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const rate = await SellerRate.findById(req.params.id);
-    
+
     if (!rate) {
       return res.status(404).json({ message: 'Rate not found' });
     }
@@ -524,7 +530,7 @@ router.put('/:id', async (req, res) => {
 // ============================================
 // DELETE RATE
 // ============================================
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const deletedRate = await SellerRate.findByIdAndDelete(req.params.id);
@@ -566,7 +572,7 @@ router.delete('/:id', async (req, res) => {
 // ============================================
 // ARCHIVE RATE (Set isArchive = "Yes")
 // ============================================
-router.patch('/:id/archive', async (req, res) => {
+router.patch('/:id/archive', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const archivedRate = await SellerRate.findByIdAndUpdate(
@@ -641,7 +647,7 @@ router.patch('/:id/archive', async (req, res) => {
 // ============================================
 // RESTORE RATE (Set isArchive = "No")
 // ============================================
-router.patch('/:id/restore', async (req, res) => {
+router.patch('/:id/restore', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const restoredRate = await SellerRate.findByIdAndUpdate(
@@ -716,7 +722,7 @@ router.patch('/:id/restore', async (req, res) => {
 // ============================================
 // GET STATISTICS
 // ============================================
-router.get('/stats/summary', async (req, res) => {
+router.get('/stats/summary', authMiddleware, async (req, res) => {
   const startTime = Date.now();
   try {
     const statsFilter = { status: 'active', isArchive: { $ne: 'Yes' } };

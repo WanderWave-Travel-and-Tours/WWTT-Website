@@ -82,7 +82,6 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset'],
 };
 
 // PayMongo webhook is an external service — skip CORS for it
@@ -169,6 +168,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Global API rate limiter — 100 req / 15 min per IP; skips the raw PayMongo webhook
 const { apiLimiter } = require('./middleware/rateLimiters');
+const authMiddleware = require('./middleware/auth');
 app.use('/api/', (req, res, next) => {
   if (req.path === '/payment/webhook') return next();
   apiLimiter(req, res, next);
@@ -330,7 +330,9 @@ const Blog = require('./models/blog');
 const ServiceModel = require('./models/service');
 const User = require('./models/user');
 
-app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
+// Admin-only: writes an arbitrary uploaded file to disk. Registered before
+// app.use('/api/visas', ...) so it shadows the router and needs its own gate.
+app.post('/api/visas/upload', authMiddleware, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ 
@@ -362,7 +364,9 @@ app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-app.post('/api/cenomar/upload', upload.single('file'), async (req, res) => {
+// Admin-only: writes an arbitrary uploaded file to disk. Registered before
+// app.use('/api/cenomar', ...) so it shadows the router and needs its own gate.
+app.post('/api/cenomar/upload', authMiddleware, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ 
@@ -394,7 +398,10 @@ app.post('/api/cenomar/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-app.post('/api/services', upload.single('image'), async (req, res) => {
+// NOTE: this inline handler is registered BEFORE app.use('/api/services',
+// serviceRoutes) below, so it shadows the router's POST / for this path.
+// It therefore needs its own auth gate — creating a service is admin-only.
+app.post('/api/services', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const imageFilename = req.file ? req.file.filename : null;
         
@@ -596,7 +603,10 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
-app.get('/api/admin/bookings', async (req, res) => {
+// Admin-only: returns every booking with full customer PII. Not shadowed by
+// routes/adminRoute.js (which defines no /bookings path), so this inline
+// handler is live and must be gated.
+app.get('/api/admin/bookings', authMiddleware, async (req, res) => {
   try {
     const bookings = await Booking.find()
       .sort({ createdAt: -1 }) 
@@ -609,7 +619,7 @@ app.get('/api/admin/bookings', async (req, res) => {
   }
 });
 
-app.put('/api/admin/bookings/:id/confirm', async (req, res) => {
+app.put('/api/admin/bookings/:id/confirm', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -663,7 +673,7 @@ app.put('/api/admin/bookings/:id/confirm', async (req, res) => {
   }
 });
 
-app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
+app.put('/api/admin/bookings/:id/cancel', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -712,7 +722,8 @@ app.get('/api/blogs', async (req, res) => {
   res.json(blogs);
 });
 
-app.get('/api/admin/statistics', async (req, res) => {
+// Admin-only: exposes revenue, seller cost and profit-margin figures.
+app.get('/api/admin/statistics', authMiddleware, async (req, res) => {
   try {
     const confirmedBookings = await Booking.find({ status: 'confirmed' });
     const statistics = confirmedBookings.reduce((acc, booking) => {
@@ -842,7 +853,19 @@ if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html')))
 
   app.use(express.static(distPath));
 
-  // ←←← UPDATED CATCH-ALL: app.get('*') — mas reliable para sa React + basename="/admin"
+  // Well-known probe paths that must never return the admin shell. The
+  // assessment fingerprinted the admin client by hitting /health, /swagger,
+  // /graphql, /metrics, /openapi.json etc. and getting a 200 "WTT Admin Page"
+  // response for each (F-04). Denying just these keeps the SPA's own routes
+  // working — they live in a separate repo and change often, so an allowlist
+  // of admin routes would silently 404 real pages on the next deploy.
+  const PROBE_PATHS = new Set([
+    '/health', '/healthz', '/status', '/version',
+    '/docs', '/api-docs', '/swagger', '/swagger.json',
+    '/openapi.json', '/graphql', '/metrics',
+    '/.env', '/config.json', '/actuator',
+  ]);
+
   app.get('/{*path}', (req, res) => {
     // Huwag i-serve ang index.html sa API, uploads, at social redirects
     if (req.path.startsWith('/api/') ||
@@ -851,6 +874,10 @@ if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html')))
         req.path.startsWith('/fb') ||      // social redirects
         req.path.startsWith('/ig') ||
         req.path.startsWith('/tiktok')) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    if (PROBE_PATHS.has(req.path.toLowerCase())) {
       return res.status(404).json({ error: 'Not found' });
     }
 
