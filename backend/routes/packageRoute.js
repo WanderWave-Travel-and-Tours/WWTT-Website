@@ -7,6 +7,7 @@ const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const authMiddleware = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
 // Fields that must NEVER leave the server in a public response.
 // sellerPrice / markup / markupType are internal cost data — exposing them
@@ -382,7 +383,7 @@ router.get('/admin/:id', authMiddleware, async (req, res) => {
 // skipEncrypt: static GHL HTML sections (travel deals, booking form) cannot
 // run AES-GCM decryption. React frontend checks isEncryptedPayload() first
 // and passes plain JSON through unchanged, so this is safe for both clients.
-router.get('/all', async (req, res) => {
+router.get('/all', requireSameOrigin, async (req, res) => {
     res.locals.skipEncrypt = true;
     for (let attempt = 1; attempt <= 2; attempt++) {
         try {
@@ -424,7 +425,7 @@ router.get('/init-archive', async (req, res) => {
 });
 
 // 7. FETCH ALL ACTIVE PACKAGES ENRICHED WITH TOUR AVAILABILITY
-router.get('/with-tours', async (req, res) => {
+router.get('/with-tours', requireSameOrigin, async (req, res) => {
     try {
         const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
         const tours = await Tour.find({ isArchive: 'No' }, { destination: 1, title: 1, tourType: 1, price: 1 });
@@ -484,7 +485,7 @@ router.get('/with-tours', async (req, res) => {
 //    for the landing page display — pkg.price is always shown.
 //  - Only return active (non-archived) packages
 // ============================================================
-router.get('/search', async (req, res) => {
+router.get('/search', requireSameOrigin, async (req, res) => {
     try {
         // Public funnel endpoint consumed by static GHL custom-code (no decryption
         // there) — return plain JSON. Only the React app decrypts; it never calls /search.
@@ -626,7 +627,7 @@ router.get('/search', async (req, res) => {
 //
 // Response: { status:'ok', data:[ { name, count }, ... ] }
 // ============================================================
-router.get('/destinations', async (req, res) => {
+router.get('/destinations', requireSameOrigin, async (req, res) => {
     try {
         // Public funnel endpoint consumed by static GHL custom-code — return plain JSON.
         res.locals.skipEncrypt = true;
@@ -665,7 +666,7 @@ router.get('/destinations', async (req, res) => {
 });
 
 // 8. FETCH SINGLE PACKAGE — public, no cost data (Generic ID routes must be last)
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireSameOrigin, async (req, res) => {
     try {
         const pkg = await Package.findById(req.params.id).select(PUBLIC_SELECT);
         if (!pkg) return res.status(404).json({ status: 'error', error: 'Package not found.' });
