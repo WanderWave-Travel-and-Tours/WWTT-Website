@@ -10,6 +10,7 @@ const Package     = require('../models/package');
 const Tour        = require('../models/tour');
 const authMiddleware = require('../middleware/auth');
 const verifyAdminOrUser = require('../middleware/verifyAdminOrUser');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 const { sendTourBookingToGHL, sendBookingInternalNotificationToGHL } = require('../utils/ghlService');
 const { validatePrimaryPassengerAge, validatePassengersAge } = require('../utils/ageUtils');
 const { validateEmail, validatePhone, validateNotPastDate } = require('../utils/bookingValidation');
@@ -402,8 +403,11 @@ router.put('/restore/:id', authMiddleware, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/tour-bookings/:id
+// Public (same-origin only): read right after a PayMongo redirect, when the
+// browser may have no valid session token yet — matches the pattern in
+// bookingRoute.js and the sibling transfer/customized booking routes.
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireSameOrigin, async (req, res) => {
   console.log(`\n🔵 [GET /api/tour-bookings/${req.params.id}] Fetching single booking`);
   try {
     const booking = await TourBooking.findById(req.params.id).select('-__v');

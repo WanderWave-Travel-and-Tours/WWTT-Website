@@ -4,6 +4,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { addImage, getAllImages, archiveImage } = require('../controller/imageController');
+const authMiddleware = require('../middleware/auth');
 
 // ✅ 1. CLOUDINARY CONFIG (same as package route)
 cloudinary.config({
@@ -28,8 +29,9 @@ const upload = multer({
 });
 
 // ✅ 3. ROUTES (CLEAN - NO DUPLICATES)
-router.post('/add', upload.single('image'), addImage);
+// Read stays public (gallery images render on the site); writes are admin-only.
+router.post('/add', authMiddleware, upload.single('image'), addImage);
 router.get('/', getAllImages);
-router.patch('/:id', archiveImage); 
+router.patch('/:id', authMiddleware, archiveImage);
 
 module.exports = router;

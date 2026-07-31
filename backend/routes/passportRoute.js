@@ -8,12 +8,16 @@ const {
   deletePassport,
   initializePassport
 } = require('../controller/passportController');
+const authMiddleware = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
-router.get('/', getPassports);
-router.get('/:id', getPassport);
-router.post('/', createPassport);
-router.put('/:id', updatePassport);
-router.delete('/:id', deletePassport);
-router.post('/initialize', initializePassport);
+// Public passport-service catalog — read by the public /other-services page.
+// Same-origin gate only; mutations are admin-only.
+router.get('/', requireSameOrigin, getPassports);
+router.get('/:id', requireSameOrigin, getPassport);
+router.post('/', authMiddleware, createPassport);
+router.put('/:id', authMiddleware, updatePassport);
+router.delete('/:id', authMiddleware, deletePassport);
+router.post('/initialize', authMiddleware, initializePassport);
 
 module.exports = router;

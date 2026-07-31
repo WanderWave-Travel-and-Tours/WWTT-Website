@@ -63,7 +63,7 @@ const parsePaxPrice = (value) => {
 // ============================================
 
 // 1. ADD PACKAGE (WITH CLOUDINARY & LOGGING)
-router.post('/add', upload.single('image'), async (req, res) => {
+router.post('/add', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const { 
             title, destination, sellerPrice, markup, markupType,
@@ -151,7 +151,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
 });
 
 // 2. EDIT PACKAGE (WITH CLOUDINARY & LOGGING)
-router.put('/edit/:id', upload.single('image'), async (req, res) => {
+router.put('/edit/:id', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const { 
             title, destination, sellerPrice, markup, markupType, duration, 
@@ -283,7 +283,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
 });
 
 // 3. ARCHIVE TOGGLE
-router.post('/:id/archive', async (req, res) => {
+router.post('/:id/archive', authMiddleware, async (req, res) => {
     try {
         const { userEmail, adminId } = req.body; 
         const logUserId = getValidAdminId(adminId);
@@ -411,8 +411,8 @@ router.get('/archived-list', authMiddleware, async (req, res) => {
     }
 });
 
-// 6. INITIALIZE ARCHIVE STATUS
-router.get('/init-archive', async (req, res) => {
+// 6. INITIALIZE ARCHIVE STATUS — one-off data migration, admin-only
+router.get('/init-archive', authMiddleware, async (req, res) => {
     try {
         const result = await Package.updateMany(
             { isArchive: { $exists: false } },

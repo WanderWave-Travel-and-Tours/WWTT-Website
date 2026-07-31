@@ -19,6 +19,8 @@ const {
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const authMiddleware = require('../middleware/auth');
+const requireSameOrigin = require('../middleware/requireSameOrigin');
 
 // 🔥 HELPER: MAP INQUIRY TYPE TO SPECIFIC MODULE NAME
 const getModuleFromInquiryType = (inquiryType, serviceName) => {
@@ -67,35 +69,41 @@ const uploadDocuments = multer({
 const upload = multer({ storage: documentStorage });
 const router = express.Router();
 
-// Analytics and Stats Routes
-router.get('/analytics', getInquiryAnalytics);
-router.get('/by-date-range', getInquiriesByDateRange);
-router.get('/stats', getInquiryStats);
+// Analytics and Stats Routes — admin dashboard only
+router.get('/analytics', authMiddleware, getInquiryAnalytics);
+router.get('/by-date-range', authMiddleware, getInquiriesByDateRange);
+router.get('/stats', authMiddleware, getInquiryStats);
 
-// Creation Routes
-router.post('/', createInquiry);
-router.post('/upload-application', upload.any(), createInquiryWithUploads); 
+// Creation Routes — public inquiry forms (otherservices, flight booking modal)
+router.post('/', requireSameOrigin, createInquiry);
+router.post('/upload-application', requireSameOrigin, upload.any(), createInquiryWithUploads);
 
 // Retrieval and Delete Routes
-router.get('/email/:email', getInquiriesByEmail);
-router.get('/', getAllInquiries);
-router.get('/:id', getInquiry);
-router.delete('/:id', deleteInquiry);
+// /email/:email and /:id are read by the customer dashboard / payment-success
+// page for the customer's OWN records — kept public (same-origin only) rather
+// than admin-gated. Full list + delete are admin-only.
+router.get('/email/:email', requireSameOrigin, getInquiriesByEmail);
+router.get('/', authMiddleware, getAllInquiries);
+router.get('/:id', requireSameOrigin, getInquiry);
+router.delete('/:id', authMiddleware, deleteInquiry);
 
-// ✅ UPDATE ROUTE
-router.put('/update/:id', upload.any(), updateInquiry);
+// ✅ UPDATE ROUTE — admin only
+router.put('/update/:id', authMiddleware, upload.any(), updateInquiry);
 
-// Archive and Status Routes
-router.put('/:id/archive', toggleArchive); 
-router.put('/:id/status', uploadEvidence.single('evidence'), updateInquiryStatus);
+// Archive and Status Routes — admin only
+router.put('/:id/archive', authMiddleware, toggleArchive);
+router.put('/:id/status', authMiddleware, uploadEvidence.single('evidence'), updateInquiryStatus);
 
 // Payment and Document Delivery Routes
-router.put('/:id/pay', markAsPaid);
-router.put('/:id/confirm-payment', confirmPayment);
-router.put('/:id/deliver-documents', uploadDocuments.array('documents', 10), deliverDocuments);
+// /:id/pay is hit unauthenticated by the customer dashboard right after a
+// PayMongo redirect (no session token available yet) — kept public
+// (same-origin only). Confirm/deliver are admin actions.
+router.put('/:id/pay', requireSameOrigin, markAsPaid);
+router.put('/:id/confirm-payment', authMiddleware, confirmPayment);
+router.put('/:id/deliver-documents', authMiddleware, uploadDocuments.array('documents', 10), deliverDocuments);
 
 // ✅✅✅ REQUEST PAYMENT ROUTE (WITH SPECIFIC MODULE SUPPORT) ✅✅✅
-router.post('/:id/request-payment', async (req, res) => {
+router.post('/:id/request-payment', authMiddleware, async (req, res) => {
   try {
     const { userEmail, adminId } = req.body;
     

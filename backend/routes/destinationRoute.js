@@ -3,6 +3,7 @@ const Destination = require('../models/destination');
 const ActivityLog = require('../models/ActivityLog');
 const Package = require('../models/package');
 const { sendDestinationToGHL } = require('../utils/ghlService'); // ✅ Import
+const authMiddleware = require('../middleware/auth');
 
 // HELPER: Sanitize Admin ID
 const getValidAdminId = (id) => {
@@ -30,7 +31,8 @@ const parseTips = (raw) => {
 // 1. ADD DESTINATION
 // POST /api/destinations/add
 // ============================================================
-router.post('/add', async (req, res) => {
+// Destination reads stay public (used by the site); writes are admin-only.
+router.post('/add', authMiddleware, async (req, res) => {
     try {
         const {
             name, country,
@@ -102,7 +104,7 @@ router.post('/add', async (req, res) => {
 // 2. EDIT DESTINATION
 // PUT /api/destinations/edit/:id
 // ============================================================
-router.put('/edit/:id', async (req, res) => {
+router.put('/edit/:id', authMiddleware, async (req, res) => {
     try {
         const {
             name, country,
@@ -185,7 +187,7 @@ router.put('/edit/:id', async (req, res) => {
 // 3. ARCHIVE TOGGLE
 // POST /api/destinations/:id/archive
 // ============================================================
-router.post('/:id/archive', async (req, res) => {
+router.post('/:id/archive', authMiddleware, async (req, res) => {
     try {
         const { userEmail, adminId } = req.body;
         const logUserId = getValidAdminId(adminId);
@@ -304,7 +306,7 @@ router.get('/webhook-payload', async (req, res) => {
 // EXTRA: SYNC UNIQUE DESTINATIONS FROM PACKAGES
 // POST /api/destinations/sync-packages
 // ============================================================
-router.post('/sync-packages', async (req, res) => {
+router.post('/sync-packages', authMiddleware, async (req, res) => {
     try {
         const { userEmail, adminId } = req.body;
         const logUserId = getValidAdminId(adminId);
@@ -403,7 +405,7 @@ router.get('/:id', async (req, res) => {
 // 9. DELETE DESTINATION (permanent)
 // DELETE /api/destinations/:id
 // ============================================================
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const { userEmail, adminId } = req.body;
         const logUserId = getValidAdminId(adminId);

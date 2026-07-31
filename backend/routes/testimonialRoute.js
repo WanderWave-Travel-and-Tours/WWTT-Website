@@ -11,6 +11,7 @@ const {
     updateTestimonial, 
     archiveTestimonial 
 } = require('../controller/testimonialController');
+const authMiddleware = require('../middleware/auth');
 
 // --- MULTER CONFIGURATION ---
 // Ito ang bahala sa pag-save ng image sa 'uploads' folder
@@ -29,7 +30,8 @@ const upload = multer({ storage: storage });
 
 // 1. Create Testimonial (with Image Upload)
 // Ang logic ay nasa 'addTestimonial' sa controller
-router.post('/', upload.single('customerImage'), addTestimonial);
+// Admin-authored testimonials (admin dashboard), not public submissions.
+router.post('/', authMiddleware, upload.single('customerImage'), addTestimonial);
 
 // 2. Get All Testimonials
 router.get('/', getAllTestimonials);
@@ -38,9 +40,9 @@ router.get('/', getAllTestimonials);
 router.get('/:id', getTestimonialById);
 
 // 4. Update Testimonial (with Image Upload)
-router.put('/update/:id', upload.single('customerImage'), updateTestimonial);
+router.put('/update/:id', authMiddleware, upload.single('customerImage'), updateTestimonial);
 
 // 5. Archive / Restore Testimonial
-router.patch('/:id', archiveTestimonial);
+router.patch('/:id', authMiddleware, archiveTestimonial);
 
 module.exports = router;

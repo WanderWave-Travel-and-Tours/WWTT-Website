@@ -11,6 +11,7 @@ const TransferBookingOrder = require('../models/transferBookingOrder');
 const Transfer             = require('../models/transfer');
 const authMiddleware       = require('../middleware/auth');
 const verifyAdminOrUser    = require('../middleware/verifyAdminOrUser');
+const requireSameOrigin    = require('../middleware/requireSameOrigin');
 const { sendTransferBookingToGHL, sendBookingInternalNotificationToGHL } = require('../utils/ghlService');
 const { syncLocations }            = require('../utils/syncLocations');       // ← ADD
 const { validatePrimaryPassengerAge } = require('../utils/ageUtils');
@@ -289,8 +290,10 @@ router.get('/', verifyAdminOrUser, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/transfer-bookings/:id
+// Public (same-origin only): read by TransferPaymentSuccess.jsx right after a
+// PayMongo redirect, when the browser may have no valid session token yet.
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireSameOrigin, async (req, res) => {
   try {
     const booking = await TransferBookingOrder.findById(req.params.id).select('-__v');
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
