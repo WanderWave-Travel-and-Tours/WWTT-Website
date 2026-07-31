@@ -32,6 +32,22 @@ app.set('trust proxy', 1);
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
 // 2. Security headers — applied to every response before CORS and routing.
+// CSP allowlist mirrors the <meta> policy injected at build time in
+// frontend/vite.config.js (cspPlugin) — kept in sync manually since the
+// meta tag only covers the SPA's own HTML, not this server's other responses.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://*.leadconnectorhq.com https://translate.google.com https://translate.googleapis.com https://www.google.com https://www.gstatic.com https://cdnjs.cloudflare.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com",
+  "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https://wanderwaveph.onrender.com https://api.ipify.org https://*.leadconnectorhq.com https://translate.googleapis.com https://fonts.googleapis.com",
+  "frame-src https://checkout.paymongo.com https://*.leadconnectorhq.com https://www.google.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self' https://checkout.paymongo.com",
+].join('; ');
+
 app.use((req, res, next) => {
   // Prevent browsers from MIME-sniffing the content type
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -43,6 +59,10 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Restrict access to sensitive browser features
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Force HTTPS on all future requests
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Allowlist of sources the browser may load scripts/styles/frames/etc. from
+  res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
   next();
 });
 
