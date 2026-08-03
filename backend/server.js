@@ -6,10 +6,20 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-// Initialise PBKDF2 session key synchronously at startup (one-time cost ~300ms)
-const { initSession } = require('./utils/payloadCrypto');
-initSession();
-const encryptResponse = require('./middleware/encryptResponse');
+// NOTE: the previous AES-256-GCM response-encryption layer (payloadCrypto /
+// encryptResponse) has been removed. It could never provide real confidentiality:
+// the PBKDF2 client key ships inside the public frontend/admin JS bundles (Vite
+// inlines any VITE_-prefixed env var into the build), and the salt/iteration
+// count were served from an unauthenticated bootstrap endpoint by necessity
+// (the browser needs them before it can decrypt anything, including the login
+// page's own traffic). Anyone with a browser could derive the key exactly as
+// the app itself does — confirmed in practice when a third party fully
+// reconstructed /api/transfers from the public salt + bundled key. Real
+// protection for sensitive routes (/api/users, /api/admin/*) comes from JWT
+// auth (middleware/auth.js, middleware/verifyUserJWT.js), which this layer
+// never added anything to. Data that's meant to be publicly visible (tours,
+// transfers, promos, services) now travels as plain JSON, matching what it
+// always effectively was.
 
 // DNS resolvers for the MongoDB Atlas SRV lookup. We APPEND public resolvers
 // as fallbacks instead of REPLACING the system resolver — forcing only Google
@@ -174,13 +184,7 @@ app.use('/api/', (req, res, next) => {
   apiLimiter(req, res, next);
 });
 
-// Encrypt all 2xx JSON responses. Must come AFTER body-parsing, BEFORE routes.
-// Routes that must skip encryption (e.g. /api/crypto/session-hint) set res.locals.skipEncrypt = true.
-app.use(encryptResponse);
-
 // Rewrite Cloudinary URLs in every JSON response so browsers never see the cloud name.
-// This wrapper runs BEFORE encryptResponse (outer wrap = first called), so URL rewriting
-// happens on the plain data before encryption.
 function _replaceCloudinaryUrls(obj, proxyBase) {
   if (typeof obj === 'string') {
     return obj.replace(/https:\/\/res\.cloudinary\.com\/[^/]+\//g, `${proxyBase}/img/`);
@@ -307,7 +311,6 @@ const locationRoute             = require('./routes/locationRoute');           /
 const activityLogRoutes         = require('./routes/activityLogRoute');
 const feedbackRoutes            = require('./routes/feedbackRoutes');
 const favoriteRoutes            = require('./routes/favoriteRoute');
-const cryptoRoute               = require('./routes/cryptoRoute');
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -492,7 +495,6 @@ app.use('/api/customized-bookings', customizedBookingRoute); // ✅ ADDED: Custo
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/favorites', favoriteRoutes);
-app.use('/api/crypto',    cryptoRoute);
 // ✅ Single mount — transferBookingRoute duplicate removed
 
 
