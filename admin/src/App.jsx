@@ -483,9 +483,8 @@ const ProtectedRoute = ({ children }) => {
 
     const verifyToken = async () => {
       try {
-        // Use fetch (not axios) so the global decrypting wrapper in main.jsx
-        // auto-decrypts the encrypted verify response before we read it.
-        // Credentials (HttpOnly cookie) are injected automatically by the fetch override.
+        // Use fetch (not axios) — credentials (HttpOnly cookie) are injected
+        // automatically by the global fetch override in main.jsx.
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 

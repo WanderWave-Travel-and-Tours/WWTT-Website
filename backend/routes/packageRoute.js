@@ -380,11 +380,7 @@ router.get('/admin/:id', authMiddleware, async (req, res) => {
 // ============================================================
 
 // 4. FETCH ALL ACTIVE (public — no cost data)
-// skipEncrypt: static GHL HTML sections (travel deals, booking form) cannot
-// run AES-GCM decryption. React frontend checks isEncryptedPayload() first
-// and passes plain JSON through unchanged, so this is safe for both clients.
 router.get('/all', requireSameOrigin, async (req, res) => {
-    res.locals.skipEncrypt = true;
     for (let attempt = 1; attempt <= 2; attempt++) {
         try {
             const packages = await Package.find({ isArchive: 'No' })
@@ -487,10 +483,6 @@ router.get('/with-tours', requireSameOrigin, async (req, res) => {
 // ============================================================
 router.get('/search', requireSameOrigin, async (req, res) => {
     try {
-        // Public funnel endpoint consumed by static GHL custom-code (no decryption
-        // there) — return plain JSON. Only the React app decrypts; it never calls /search.
-        res.locals.skipEncrypt = true;
-
         const { destination, duration, pax, category, title } = req.query;
         const paxNum = parseInt(pax) || 1;
 
@@ -629,9 +621,6 @@ router.get('/search', requireSameOrigin, async (req, res) => {
 // ============================================================
 router.get('/destinations', requireSameOrigin, async (req, res) => {
     try {
-        // Public funnel endpoint consumed by static GHL custom-code — return plain JSON.
-        res.locals.skipEncrypt = true;
-
         const { category } = req.query;
         const match = { isArchive: 'No' };
 

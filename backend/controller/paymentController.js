@@ -24,7 +24,6 @@ const getSuccessPath = (bookingType) => {
 };
 
 const createInquiryCheckoutSession = async (req, res) => {
-  res.locals.skipEncrypt = true;
   try {
     console.log('=== INQUIRY PAYMENT START ===');
     console.log('Request Body:', req.body);
@@ -138,7 +137,6 @@ const createInquiryCheckoutSession = async (req, res) => {
 
 // ✅ UPDATED: Changed from Payment Link to Checkout Session
 const createBookingPaymentIntent = async (req, res) => {
-  res.locals.skipEncrypt = true;
   try {
     console.log('=======================================');
     console.log('BOOKING PAYMENT CHECKOUT SESSION START');
@@ -422,7 +420,6 @@ const createBookingPaymentIntent = async (req, res) => {
 
 // ✅ UPDATED: Balance payment now uses Checkout Session (consistent with initial payment)
 const createBalanceCheckoutSession = async (req, res) => {
-  res.locals.skipEncrypt = true;
   try {
     console.log('=======================================');
     console.log('BALANCE PAYMENT CHECKOUT SESSION START');

@@ -438,9 +438,13 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     }
 
     // ── Pricing ─────────────────────────────────────────────────────────────
-    if (body.toursTotal     !== undefined) booking.toursTotal     = parseNum(body.toursTotal);
-    if (body.transfersTotal !== undefined) booking.transfersTotal = parseNum(body.transfersTotal);
-    if (body.totalAmount    !== undefined) booking.totalAmount    = parseNum(body.totalAmount);
+    // 🔐 SECURITY: Floor all client-supplied monetary fields at 0. Without this,
+    // a crafted negative totalAmount/initialPaymentAmount can satisfy
+    // amountPaid >= totalAmount checks elsewhere and flip a booking to a false
+    // "fully paid" state while recording a negative balance.
+    if (body.toursTotal     !== undefined) booking.toursTotal     = Math.max(0, parseNum(body.toursTotal));
+    if (body.transfersTotal !== undefined) booking.transfersTotal = Math.max(0, parseNum(body.transfersTotal));
+    if (body.totalAmount    !== undefined) booking.totalAmount    = Math.max(0, parseNum(body.totalAmount));
 
     // ── Payment ─────────────────────────────────────────────────────────────
     const allowedPaymentStatus = ['pending', 'paid', 'partial', 'failed', 'refunded'];
@@ -449,8 +453,8 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     if (body.currency             !== undefined) booking.currency             = body.currency;
     if (body.paymentType          !== undefined && allowedPaymentType.includes(body.paymentType))
       booking.paymentType = body.paymentType;
-    if (body.initialPaymentAmount !== undefined) booking.initialPaymentAmount = parseNum(body.initialPaymentAmount);
-    if (body.remainingBalance     !== undefined) booking.remainingBalance     = parseNum(body.remainingBalance);
+    if (body.initialPaymentAmount !== undefined) booking.initialPaymentAmount = Math.max(0, parseNum(body.initialPaymentAmount));
+    if (body.remainingBalance     !== undefined) booking.remainingBalance     = Math.max(0, parseNum(body.remainingBalance));
     if (body.paymentStatus        !== undefined && allowedPaymentStatus.includes(body.paymentStatus))
       booking.paymentStatus = body.paymentStatus;
 
