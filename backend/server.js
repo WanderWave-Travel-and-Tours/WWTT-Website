@@ -46,7 +46,7 @@ app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 // frontend/vite.config.js (cspPlugin) — kept in sync manually since the
 // meta tag only covers the SPA's own HTML, not this server's other responses.
 const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
+  "default-src 'none'",
   "script-src 'self' 'unsafe-inline' https://*.leadconnectorhq.com https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.google.com https://www.gstatic.com https://cdnjs.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com https://fonts.bunny.net https://*.leadconnectorhq.com",
   "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net",
