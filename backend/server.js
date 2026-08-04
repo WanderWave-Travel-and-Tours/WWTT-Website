@@ -56,6 +56,7 @@ const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://checkout.paymongo.com",
+  "frame-ancestors 'none'",
 ].join('; ');
 
 app.use((req, res, next) => {
