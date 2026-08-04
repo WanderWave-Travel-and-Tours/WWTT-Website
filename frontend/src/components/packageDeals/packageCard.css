@@ -89,6 +89,19 @@
   height: 20px !important;
 }
 
+/* ✅ Favorite button — transform state (was inline style) */
+.pcard-favorite-btn {
+  transition: all 0.3s ease;
+}
+
+.pcard-favorite-btn--active {
+  transform: scale(1.1);
+}
+
+.pcard-favorite-btn--inactive {
+  transform: scale(1);
+}
+
 /* Card Image */
 .card-image {
   width: 100%;
@@ -131,6 +144,24 @@
 
 .package-card:hover .rubber-stamp-svg {
   transform: rotate(0deg);
+}
+
+/* ✅ Limited-time offer badge overlay (was inline style) */
+.pcard-limited-offer-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: #001b3e;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0, 27, 62, 0.5);
+  letter-spacing: 0.3px;
 }
 
 /* Card Body */
@@ -303,6 +334,12 @@
   letter-spacing: 0.3px;
 }
 
+/* ✅ Dark variant of inclusions-more badge (was inline style override) */
+.pcard-inclusions-more--dark {
+  background: #001b3e;
+  color: #fff;
+}
+
 /* Footer & Price */
 .card-footer {
   display: flex;
@@ -405,6 +442,28 @@
 /* Seller Rate price uses a distinct muted accent color */
 .price-value.seller-rate {
   color: #0f766e;
+}
+
+/* ✅ Strikethrough original price shown above the live price (was inline style) */
+.pcard-price-strike {
+  font-size: 0.92rem;
+  color: #64748b;
+  text-decoration: line-through;
+  text-decoration-color: #ef4444;
+  text-decoration-thickness: 1.5px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+/* ✅ Price value color states — active (timer running) vs default (was inline style) */
+.pcard-price-value--active {
+  color: #f97316;
+}
+
+.pcard-price-value--default {
+  /* No override — falls back to .price-value's own color (#ea580c or #0f766e for seller-rate) */
 }
 
 /* --- RESPONSIVE BOOK BUTTON --- */

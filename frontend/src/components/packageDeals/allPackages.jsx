@@ -212,7 +212,7 @@ function AllPackages({
       </div>
 
       {onPromoBookNow && (
-        <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+        <div className="ap-promo-section-wrapper">
           <Suspense fallback={null}>
             <PromoSection onBookNow={onPromoBookNow} />
           </Suspense>
@@ -225,7 +225,7 @@ function AllPackages({
           Col 2, Row 1:   → filter bar  (level with sidebar header)
           Col 2, Row 2:   → main content (cards + pagination)
       ============================================================ */}
-      <div className="all-packages-layout" style={{ position: 'relative' }}>
+      <div className="all-packages-layout ap-layout-relative">
 
         {/* ── SIDEBAR — col 1, spans both rows ── */}
         <aside className={`side-filter ${isMobileFilterOpen ? 'mobile-open' : ''}`}>
@@ -292,7 +292,7 @@ function AllPackages({
                   <Map size={13} />With Tours
                 </button>
               </div>
-              <label className="filter-label" style={{ marginTop: '4px' }}>Sort by Price</label>
+              <label className="filter-label ap-mt-4">Sort by Price</label>
               <div className="mobile-sort-row">
                 <button
                   className={`mobile-sort-btn ${sortOrder === 'price-asc' ? 'active' : ''}`}
@@ -384,8 +384,7 @@ function AllPackages({
 
             {isMobileFilterOpen && isFilterActive && (
               <button
-                className="reset-btn"
-                style={{ background: '#FF8C00', marginTop: '10px', width: '100%', padding: '12px' }}
+                className="reset-btn ap-clear-filters-btn-mobile"
                 onClick={clearSidebarFilters}
               >
                 Clear All Filters
@@ -487,59 +486,19 @@ function AllPackages({
                 </div>
               ))
             ) : showLoginPrompt ? (
-              <div className="login-required-message" style={{
-                gridColumn: '1 / -1',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '60px 20px',
-                textAlign: 'center',
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{ 
-                  fontSize: '80px', 
-                  marginBottom: '24px',
-                  filter: 'drop-shadow(0 4px 8px rgba(255, 140, 0, 0.3))'
-                }}>
+              <div className="login-required-message ap-login-required-message">
+                <div className="ap-login-required-emoji">
                   ❤️
                 </div>
-                <h3 style={{ 
-                  color: '#1f2937', 
-                  margin: '0 0 12px 0',
-                  fontSize: '28px',
-                  fontWeight: '700'
-                }}>
+                <h3 className="ap-login-required-title">
                   Login Required
                 </h3>
-                <p style={{ 
-                  color: '#6b7280', 
-                  margin: '0 0 32px 0',
-                  fontSize: '16px',
-                  maxWidth: '500px',
-                  lineHeight: '1.6'
-                }}>
+                <p className="ap-login-required-text">
                   Please log in to view and manage your favorite packages. Create your personalized wishlist and never lose track of your dream destinations!
                 </p>
                 <button
                   onClick={onLoginRequired}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '14px 32px',
-                    backgroundColor: '#FF8C00',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 12px rgba(255, 140, 0, 0.3)'
-                  }}
+                  className="ap-login-required-btn"
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = '#e67e00';
                     e.target.style.transform = 'translateY(-2px)';
@@ -572,31 +531,14 @@ function AllPackages({
                 </div>
               ))
             ) : (
-              <div className="no-results" style={{
-                gridColumn: '1 / -1',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '60px 20px'
-              }}>
-                <XCircle size={64} color="#cbd5e1" strokeWidth={1.5} style={{ marginBottom: '24px' }} />
-                <h3 style={{ color: '#1f2937', margin: '0 0 12px 0', fontSize: '24px' }}>No packages found</h3>
-                <p style={{ color: '#6b7280', margin: '0 0 24px 0', fontSize: '15px' }}>
+              <div className="no-results ap-no-results">
+                <XCircle size={64} color="#cbd5e1" strokeWidth={1.5} className="ap-no-results-icon" />
+                <h3 className="ap-no-results-title">No packages found</h3>
+                <p className="ap-no-results-text">
                   Try adjusting your filters or search for something else.
                 </p>
                 <button
-                  style={{ 
-                    padding: '12px 24px',
-                    color: '#FF8C00', 
-                    background: 'none', 
-                    border: '2px solid #FF8C00', 
-                    borderRadius: '8px',
-                    fontWeight: '600', 
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s'
-                  }}
+                  className="ap-clear-filters-btn"
                   onClick={clearSidebarFilters}
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = '#FF8C00';

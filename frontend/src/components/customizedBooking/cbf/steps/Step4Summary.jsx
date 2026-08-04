@@ -275,8 +275,7 @@ export default function Step4Summary({
         )}
 
         <div
-          className="bfm-payment-options"
-          style={!isPartialPaymentAllowed ? { gridTemplateColumns: '1fr' } : {}}
+          className={`bfm-payment-options ${!isPartialPaymentAllowed ? 'bfm-payment-options-single' : ''}`}
         >
           {/* Pay in Full */}
           <div
@@ -285,14 +284,9 @@ export default function Step4Summary({
           >
             <div
               className="bfm-payment-card-header"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: '8px', marginBottom: '12px', flexWrap: 'nowrap',
-              }}
             >
               <div
                 className="bfm-pch-left"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}
               >
                 <div className="bfm-payment-radio">
                   <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
@@ -304,17 +298,13 @@ export default function Step4Summary({
               {!isPartialPaymentAllowed && (
                 <div
                   className="bfm-card-header-price"
-                  style={{
-                    textAlign: 'right', flexShrink: 0,
-                    display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-                  }}
                 >
                   <span className="bfm-chp-amount">₱{fmt(grandTotal)}</span>
                   <span className="bfm-chp-label">TOTAL AMOUNT</span>
                 </div>
               )}
             </div>
-            <div className="bfm-payment-card-body" style={{ paddingLeft: 0, paddingTop: 0 }}>
+            <div className="bfm-payment-card-body">
               {isPartialPaymentAllowed && (
                 <div className="bfm-payment-amount">₱{fmt(grandTotal)}</div>
               )}
@@ -337,14 +327,9 @@ export default function Step4Summary({
             >
               <div
                 className="bfm-payment-card-header"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '8px', marginBottom: '12px', flexWrap: 'nowrap',
-                }}
               >
                 <div
                   className="bfm-pch-left"
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}
                 >
                   <div className="bfm-payment-radio">
                     <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />

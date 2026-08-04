@@ -285,6 +285,7 @@
 
 .bfm-progress-bar-fill {
   height: 100%;
+  width: var(--progress-pct);
   background: linear-gradient(90deg, #fc9c1b, #f97316);
   transition: width 0.3s ease;
   border-radius: 4px;
@@ -2221,3 +2222,78 @@
     gap: 8px;
   }
 }
+
+/* ============================================
+   CSP hardening: classes replacing inline style={{}} objects
+   ============================================ */
+
+/* --- BookingCompletedModal --- */
+.tbfm-completed-overlay { z-index: 10001; }
+
+.tbfm-completed-modal-card {
+  max-width: 400px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.tbfm-completed-icon-wrap { margin-bottom: 1.5rem; }
+
+.tbfm-completed-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.tbfm-completed-text {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* --- Trip summary price / promo --- */
+.tbfm-price-strikethrough {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-right: 8px;
+}
+
+.tbfm-promo-applied-subtext {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.tbfm-inline-plane-icon {
+  display: inline;
+  margin-right: 4px;
+}
+
+/* --- Age field --- */
+.tbfm-age-input-readonly {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.tbfm-age-warning-text {
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+
+/* --- Payment options section wrapper --- */
+.tbfm-payment-options-wrapper {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.tbfm-section-header-spaced {
+  margin-top: 8px;
+}
+
+/* --- Submit button flex variants --- */
+.tbfm-submit-flex-1 { flex: 1; }
+.tbfm-submit-flex-2 { flex: 2; }

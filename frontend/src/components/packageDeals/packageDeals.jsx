@@ -687,22 +687,15 @@ function PackageDealsContent() {
 
   if (error) {
     return (
-      <div className="error-screen" style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px',
-        color: '#ef4444'
-      }}>
+      <div className="error-screen">
         Error: {error}
       </div>
     );
   }
-  
+
   if (currentView === 'booking' && selectedPackageForBooking) {
     return (
-      <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="ww-route-spinner" /></div>}>
+      <Suspense fallback={<div className="app-route-spinner-wrapper"><div className="ww-route-spinner" /></div>}>
         <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} currency={currency} exchangeRate={exchangeRate} currentUser={currentUser} />
       </Suspense>
     );

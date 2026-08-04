@@ -1812,3 +1812,223 @@
     max-height: none;
   }
 }
+
+/* --- CSP hardening: classes replacing inline style={{}} objects --- */
+
+.brf-restricted-day-notice {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+.brf-restricted-day-notice-icon { font-size: 1rem; }
+
+.brf-selected-date-title { font-weight: 600; color: #1f2937; }
+.brf-selected-date-subtitle { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
+
+.brf-row-flex-8 { display: flex; align-items: center; gap: 8px; }
+.brf-row-flex-8-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.brf-badge-green {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.brf-badge-blue {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.brf-pax-note { font-size: 0.8rem; color: #6b7280; margin-top: 4px; }
+.brf-pax-solo-count { font-weight: 800; font-size: 1.1rem; color: #1f2937; min-width: 32px; text-align: center; }
+
+.brf-min2-price-row { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.brf-min2-price-badge {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 3px 10px;
+}
+
+.brf-quantity-btn-disabled { opacity: 0.4; cursor: not-allowed; }
+.brf-qty-icon { min-width: 18px; min-height: 18px; stroke: #000000; }
+
+.brf-hotel-loading { padding: 1rem; background: #fef3c7; border-radius: 8px; margin-bottom: 1rem; }
+
+.brf-no-hotel-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #92400e;
+  font-weight: 500;
+}
+.brf-no-hotel-icon { font-size: 1rem; }
+
+.brf-hotel-preference-notice {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: #166534;
+  line-height: 1.5;
+}
+.brf-hotel-preference-icon { font-size: 1.1rem; margin-top: 1px; }
+
+.brf-flight-added-box { background: #fff7ed; border: 2px solid #fc9c1b; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.brf-flight-added-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.brf-flight-added-title { color: #1f2937; font-size: 0.95rem; }
+.brf-flight-remove-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+.brf-flight-details { font-size: 0.9rem; color: #374151; line-height: 1.6; }
+.brf-flight-time { color: #6b7280; font-size: 0.85rem; }
+.brf-flight-price { margin-top: 8px; font-weight: 700; color: #fc9c1b; font-size: 1rem; }
+
+.brf-promo-error-box {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background-color: #fee2e2;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  line-height: 1.5;
+}
+
+.brf-promo-flex-1 { flex: 1; }
+.brf-promo-limited-note { color: #d97706; margin-left: 6px; font-size: 0.78rem; font-weight: 600; }
+.brf-promo-usage-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  line-height: 1.4;
+}
+.brf-promo-usage-warning-icon { margin-top: 1px; }
+
+.brf-total-flex-8 { display: flex; align-items: center; gap: 8px; }
+.brf-total-strikethrough { text-decoration: line-through; color: #9ca3af; font-size: 0.9rem; }
+.brf-total-amount-active { color: #10b981; }
+.brf-total-amount-inactive { color: #1f2937; }
+
+.brf-min2-breakdown {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: #1e40af;
+  line-height: 1.6;
+}
+.brf-min2-breakdown-row { display: flex; justify-content: space-between; }
+.brf-fw-700 { font-weight: 700; }
+
+.brf-hotel-row { font-size: 0.82rem; color: #6b7280; margin-top: 4px; }
+.brf-hotel-row-label { display: flex; align-items: center; gap: 5px; }
+.brf-hotel-room-badge {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 1px 7px;
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 600;
+}
+.brf-hotel-row-value { font-weight: 600; color: #475569; }
+.brf-hotel-row-incl { font-weight: 400; font-size: 0.75rem; }
+
+.brf-discount-row { color: #10b981; font-size: 0.9rem; }
+.brf-discount-col { display: flex; flex-direction: column; gap: 2px; }
+.brf-discount-sub { font-size: 0.78rem; color: #6b7280; }
+.brf-discount-partial-note { color: #d97706; margin-left: 4px; }
+.brf-discount-usage-note { font-size: 0.75rem; color: #9ca3af; }
+
+.brf-discounted-total-row { font-size: 0.95rem; color: #374151; }
+.brf-airfare-row { font-size: 0.9rem; color: #6b7280; }
+.brf-grand-total-row {
+  border-top: 2px solid #fc9c1b;
+  padding-top: 12px;
+  margin-top: 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1f2937;
+}
+.brf-grand-total-value { color: #fc9c1b; }
+
+.brf-invalid-total-notice {
+  margin-top: 12px;
+  padding: 16px;
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #92400e;
+}
+.brf-invalid-total-icon { font-size: 24px; }
+.brf-invalid-total-title { display: block; margin-bottom: 4px; }
+.brf-invalid-total-text { font-size: 0.9rem; }
+
+.brf-walk-in-btn-styled {
+  width: 100%;
+  background-color: #3b82f6;
+  color: white;
+  padding: 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.brf-no-payment-note { text-align: center; font-size: 0.8rem; color: #9ca3af; margin-top: 12px; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.9; }
+}

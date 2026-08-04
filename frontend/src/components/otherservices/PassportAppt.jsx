@@ -5,7 +5,7 @@ import {
   Plus, BookOpen, Calendar, CheckCircle, RotateCcw, 
   Edit2, Trash2, Save, X, FileText, List, Settings 
 } from 'lucide-react';
-//import './PassportAppt.css';
+import './PassportAppt.css';
 
 const PassportAppt = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -159,12 +159,11 @@ const PassportAppt = () => {
                             <h1>Passport Appointment</h1>
                             <p>DFA Slot Management & Requirements</p>
                         </div>
-                        <div style={{display:'flex', gap:'12px'}}>
+                        <div className="passport-header-actions">
                             {!passportData && (
-                                <button 
-                                    className="passport-btn-add" 
+                                <button
+                                    className="passport-btn-add passport-btn-initialize"
                                     onClick={handleInitialize}
-                                    style={{background:'#10b981'}}
                                 >
                                     <Plus size={18}/> Initialize Data
                                 </button>
@@ -191,27 +190,27 @@ const PassportAppt = () => {
 
                     {/* Requirements Summary Card */}
                     {passportData && (
-                        <div className="passport-card" style={{marginBottom:'24px', padding:'24px'}}>
-                            <div style={{width:'100%'}}>
-                                <h3 style={{margin:'0 0 16px 0', fontSize:'18px', fontWeight:'800', color:'#0f172a'}}>
+                        <div className="passport-card passport-summary-card">
+                            <div className="passport-summary-body">
+                                <h3 className="passport-summary-title">
                                     📋 Current Requirements Configuration
                                 </h3>
-                                <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'16px'}}>
+                                <div className="passport-summary-grid">
                                     <div>
-                                        <span style={{fontSize:'12px', color:'#64748b', fontWeight:'600'}}>Primary Requirements</span>
-                                        <p style={{fontSize:'24px', fontWeight:'800', color:'#0f172a', margin:'4px 0 0'}}>
+                                        <span className="passport-summary-label">Primary Requirements</span>
+                                        <p className="passport-summary-value">
                                             {passportData.requirements[0]?.items.length || 0}
                                         </p>
                                     </div>
                                     <div>
-                                        <span style={{fontSize:'12px', color:'#64748b', fontWeight:'600'}}>Additional Documents</span>
-                                        <p style={{fontSize:'24px', fontWeight:'800', color:'#0f172a', margin:'4px 0 0'}}>
+                                        <span className="passport-summary-label">Additional Documents</span>
+                                        <p className="passport-summary-value">
                                             {passportData.additionalDocuments[0]?.items.length || 0}
                                         </p>
                                     </div>
                                     <div>
-                                        <span style={{fontSize:'12px', color:'#64748b', fontWeight:'600'}}>Process Steps</span>
-                                        <p style={{fontSize:'24px', fontWeight:'800', color:'#0f172a', margin:'4px 0 0'}}>
+                                        <span className="passport-summary-label">Process Steps</span>
+                                        <p className="passport-summary-value">
                                             {passportData.stepsProcess?.length || 0}
                                         </p>
                                     </div>
@@ -230,19 +229,19 @@ const PassportAppt = () => {
                                     <th>DFA Site</th>
                                     <th>Date & Time</th>
                                     <th>Status</th>
-                                    <th style={{textAlign:'right'}}>Actions</th>
+                                    <th className="passport-th-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {appointments.map((item) => (
                                     <tr key={item.id}>
-                                        <td style={{fontWeight:'700', color:'#0f172a'}}>{item.id}</td>
+                                        <td className="passport-td-bold">{item.id}</td>
                                         <td>{item.client}</td>
                                         <td>{item.type}</td>
                                         <td>{item.site}</td>
-                                        <td>{item.date} <br/><span style={{fontSize:'12px', color:'#64748b'}}>{item.time}</span></td>
-                                        <td><span style={{background:'#dcfce7', color:'#166534', padding:'4px 10px', borderRadius:'6px', fontSize:'11px', fontWeight:'700', textTransform:'uppercase'}}>{item.status}</span></td>
-                                        <td style={{textAlign:'right'}}>
+                                        <td>{item.date} <br/><span className="passport-td-time">{item.time}</span></td>
+                                        <td><span className="passport-status-badge">{item.status}</span></td>
+                                        <td className="passport-td-right">
                                             <button className="passport-action-btn">View</button>
                                         </td>
                                     </tr>
@@ -255,87 +254,73 @@ const PassportAppt = () => {
 
             {/* EDIT MODAL */}
             {showEditModal && editData && (
-                <div className="modal-overlay" onClick={() => setShowEditModal(false)} style={{
-                    position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.5)', 
-                    display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:'20px'
-                }}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{
-                        background:'white', borderRadius:'16px', maxWidth:'900px', width:'100%', 
-                        maxHeight:'90vh', overflow:'auto', padding:'32px'
-                    }}>
-                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px'}}>
-                            <h2 style={{margin:0, fontSize:'24px', fontWeight:'800', color:'#0f172a'}}>
+                <div className="modal-overlay passport-modal-overlay" onClick={() => setShowEditModal(false)}>
+                    <div className="modal-content passport-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="passport-modal-header">
+                            <h2 className="passport-modal-title">
                                 Edit Passport Requirements
                             </h2>
-                            <button onClick={() => setShowEditModal(false)} style={{
-                                background:'none', border:'none', cursor:'pointer', padding:'8px'
-                            }}>
+                            <button onClick={() => setShowEditModal(false)} className="passport-modal-close-btn">
                                 <X size={24} color="#64748b"/>
                             </button>
                         </div>
 
                         {/* Basic Info */}
-                        <div style={{marginBottom:'24px'}}>
-                            <label style={{display:'block', fontSize:'12px', fontWeight:'700', color:'#64748b', marginBottom:'8px'}}>
+                        <div className="passport-field-group">
+                            <label className="passport-field-label">
                                 SERVICE NAME
                             </label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={editData.serviceName}
                                 onChange={(e) => setEditData(prev => ({...prev, serviceName: e.target.value}))}
-                                style={{width:'100%', padding:'12px', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'14px'}}
+                                className="passport-field-input"
                             />
                         </div>
 
-                        <div style={{marginBottom:'24px'}}>
-                            <label style={{display:'block', fontSize:'12px', fontWeight:'700', color:'#64748b', marginBottom:'8px'}}>
+                        <div className="passport-field-group">
+                            <label className="passport-field-label">
                                 DESCRIPTION
                             </label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={editData.description}
                                 onChange={(e) => setEditData(prev => ({...prev, description: e.target.value}))}
-                                style={{width:'100%', padding:'12px', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'14px'}}
+                                className="passport-field-input"
                             />
                         </div>
 
-                        <div style={{marginBottom:'24px'}}>
-                            <label style={{display:'block', fontSize:'12px', fontWeight:'700', color:'#64748b', marginBottom:'8px'}}>
+                        <div className="passport-field-group">
+                            <label className="passport-field-label">
                                 SERVICE FEE (₱)
                             </label>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 value={editData.price}
                                 onChange={(e) => setEditData(prev => ({...prev, price: parseFloat(e.target.value)}))}
-                                style={{width:'100%', padding:'12px', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'14px'}}
+                                className="passport-field-input"
                             />
                         </div>
 
                         {/* PRIMARY REQUIREMENTS */}
-                        <div style={{marginBottom:'24px'}}>
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px'}}>
-                                <label style={{fontSize:'14px', fontWeight:'800', color:'#0f172a'}}>
+                        <div className="passport-field-group">
+                            <div className="passport-section-header">
+                                <label className="passport-section-label">
                                     PRIMARY REQUIREMENTS
                                 </label>
-                                <button onClick={handleAddRequirement} style={{
-                                    background:'#3b82f6', color:'white', border:'none', padding:'6px 12px',
-                                    borderRadius:'6px', fontSize:'12px', fontWeight:'600', cursor:'pointer'
-                                }}>
+                                <button onClick={handleAddRequirement} className="passport-add-btn">
                                     + Add Item
                                 </button>
                             </div>
                             {editData.requirements[0]?.items.map((item, index) => (
-                                <div key={index} style={{display:'flex', gap:'8px', marginBottom:'8px'}}>
-                                    <input 
+                                <div key={index} className="passport-list-item-row">
+                                    <input
                                         type="text"
                                         value={item}
                                         onChange={(e) => updateRequirementItem(index, e.target.value)}
-                                        style={{flex:1, padding:'10px', border:'1px solid #e2e8f0', borderRadius:'6px', fontSize:'13px'}}
+                                        className="passport-list-item-input"
                                     />
-                                    <button onClick={() => handleRemoveRequirement(index)} style={{
-                                        background:'#ef4444', color:'white', border:'none', padding:'8px 12px',
-                                        borderRadius:'6px', cursor:'pointer'
-                                    }}>
+                                    <button onClick={() => handleRemoveRequirement(index)} className="passport-remove-btn">
                                         <Trash2 size={14}/>
                                     </button>
                                 </div>
@@ -343,30 +328,24 @@ const PassportAppt = () => {
                         </div>
 
                         {/* ADDITIONAL DOCUMENTS */}
-                        <div style={{marginBottom:'24px'}}>
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px'}}>
-                                <label style={{fontSize:'14px', fontWeight:'800', color:'#0f172a'}}>
+                        <div className="passport-field-group">
+                            <div className="passport-section-header">
+                                <label className="passport-section-label">
                                     ADDITIONAL DOCUMENTS (SPECIAL CASES)
                                 </label>
-                                <button onClick={handleAddAdditionalDoc} style={{
-                                    background:'#3b82f6', color:'white', border:'none', padding:'6px 12px',
-                                    borderRadius:'6px', fontSize:'12px', fontWeight:'600', cursor:'pointer'
-                                }}>
+                                <button onClick={handleAddAdditionalDoc} className="passport-add-btn">
                                     + Add Item
                                 </button>
                             </div>
                             {editData.additionalDocuments[0]?.items.map((item, index) => (
-                                <div key={index} style={{display:'flex', gap:'8px', marginBottom:'8px'}}>
-                                    <input 
+                                <div key={index} className="passport-list-item-row">
+                                    <input
                                         type="text"
                                         value={item}
                                         onChange={(e) => updateAdditionalDocItem(index, e.target.value)}
-                                        style={{flex:1, padding:'10px', border:'1px solid #e2e8f0', borderRadius:'6px', fontSize:'13px'}}
+                                        className="passport-list-item-input"
                                     />
-                                    <button onClick={() => handleRemoveAdditionalDoc(index)} style={{
-                                        background:'#ef4444', color:'white', border:'none', padding:'8px 12px',
-                                        borderRadius:'6px', cursor:'pointer'
-                                    }}>
+                                    <button onClick={() => handleRemoveAdditionalDoc(index)} className="passport-remove-btn">
                                         <Trash2 size={14}/>
                                     </button>
                                 </div>
@@ -374,31 +353,25 @@ const PassportAppt = () => {
                         </div>
 
                         {/* STEPS PROCESS */}
-                        <div style={{marginBottom:'24px'}}>
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px'}}>
-                                <label style={{fontSize:'14px', fontWeight:'800', color:'#0f172a'}}>
+                        <div className="passport-field-group">
+                            <div className="passport-section-header">
+                                <label className="passport-section-label">
                                     STEPS AND PROCESS
                                 </label>
-                                <button onClick={handleAddStep} style={{
-                                    background:'#3b82f6', color:'white', border:'none', padding:'6px 12px',
-                                    borderRadius:'6px', fontSize:'12px', fontWeight:'600', cursor:'pointer'
-                                }}>
+                                <button onClick={handleAddStep} className="passport-add-btn">
                                     + Add Step
                                 </button>
                             </div>
                             {editData.stepsProcess?.map((step, index) => (
-                                <div key={index} style={{display:'flex', gap:'8px', marginBottom:'8px'}}>
-                                    <span style={{padding:'10px', fontWeight:'700', color:'#64748b'}}>{index + 1}.</span>
-                                    <input 
+                                <div key={index} className="passport-list-item-row">
+                                    <span className="passport-step-number">{index + 1}.</span>
+                                    <input
                                         type="text"
                                         value={step}
                                         onChange={(e) => updateStepItem(index, e.target.value)}
-                                        style={{flex:1, padding:'10px', border:'1px solid #e2e8f0', borderRadius:'6px', fontSize:'13px'}}
+                                        className="passport-list-item-input"
                                     />
-                                    <button onClick={() => handleRemoveStep(index)} style={{
-                                        background:'#ef4444', color:'white', border:'none', padding:'8px 12px',
-                                        borderRadius:'6px', cursor:'pointer'
-                                    }}>
+                                    <button onClick={() => handleRemoveStep(index)} className="passport-remove-btn">
                                         <Trash2 size={14}/>
                                     </button>
                                 </div>
@@ -406,18 +379,11 @@ const PassportAppt = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div style={{display:'flex', gap:'12px', justifyContent:'flex-end', marginTop:'32px'}}>
-                            <button onClick={() => setShowEditModal(false)} style={{
-                                background:'white', color:'#64748b', border:'1px solid #e2e8f0', 
-                                padding:'12px 24px', borderRadius:'8px', fontWeight:'600', cursor:'pointer'
-                            }}>
+                        <div className="passport-modal-actions">
+                            <button onClick={() => setShowEditModal(false)} className="passport-cancel-btn">
                                 Cancel
                             </button>
-                            <button onClick={handleSaveEdit} style={{
-                                background:'#3b82f6', color:'white', border:'none', 
-                                padding:'12px 24px', borderRadius:'8px', fontWeight:'600', cursor:'pointer',
-                                display:'flex', alignItems:'center', gap:'8px'
-                            }}>
+                            <button onClick={handleSaveEdit} className="passport-save-btn">
                                 <Save size={18}/> Save Changes
                             </button>
                         </div>

@@ -217,7 +217,7 @@ const AppointmentModal = ({
               <strong className="bfm-summary-value bfm-price">
                 {appliedPromo ? (
                   <>
-                    <span style={{textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem', marginRight: '8px'}}>
+                    <span className="am-strikethrough-price">
                       ₱{packageTotal.toLocaleString()}
                     </span>
                     ₱{finalPackageTotal.toLocaleString()}
@@ -227,7 +227,7 @@ const AppointmentModal = ({
                 )}
               </strong>
               {appliedPromo && (
-                <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
+                <span className="bfm-summary-subtext am-promo-applied-text">
                   {appliedPromo.code} applied (-₱{discountAmount.toLocaleString()})
                 </span>
               )}
@@ -253,7 +253,7 @@ const AppointmentModal = ({
           </div>
 
           {/* WALK-IN INFO BOX */}
-          <div className="bfm-doc-req-box" style={{background: 'rgba(239, 246, 255, 0.95)', borderColor: '#3b82f6', color: '#1e40af'}}>
+          <div className="bfm-doc-req-box am-walkin-info-box">
             <strong>Walk-in Service:</strong> Visit our office to complete booking. Bring valid ID and payment.
           </div>
         </div>
@@ -262,13 +262,13 @@ const AppointmentModal = ({
         <div className="bfm-form-wrapper">
           <form className="bfm-form" onSubmit={handleSubmit}>
             <div className="bfm-form-section-header">
-              <span className="bfm-passenger-badge" style={{background: '#3b82f6'}}>Contact Information</span>
+              <span className="bfm-passenger-badge am-contact-badge">Contact Information</span>
             </div>
 
             <div className="bfm-form-grid">
               <div className="bfm-form-group">
                 <label>
-                  <User size={14} style={{display: 'inline', marginRight: '4px'}} />
+                  <User size={14} className="am-label-icon" />
                   First Name <span className="bfm-required">*</span>
                 </label>
                 <input 
@@ -282,7 +282,7 @@ const AppointmentModal = ({
 
               <div className="bfm-form-group">
                 <label>
-                  <User size={14} style={{display: 'inline', marginRight: '4px'}} />
+                  <User size={14} className="am-label-icon" />
                   Last Name <span className="bfm-required">*</span>
                 </label>
                 <input 
@@ -296,7 +296,7 @@ const AppointmentModal = ({
 
               <div className="bfm-form-group">
                 <label>
-                  <Mail size={14} style={{display: 'inline', marginRight: '4px'}} />
+                  <Mail size={14} className="am-label-icon" />
                   Email Address <span className="bfm-required">*</span>
                 </label>
                 <input 
@@ -310,7 +310,7 @@ const AppointmentModal = ({
 
               <div className="bfm-form-group">
                 <label>
-                  <Phone size={14} style={{display: 'inline', marginRight: '4px'}} />
+                  <Phone size={14} className="am-label-icon" />
                   Phone Number <span className="bfm-required">*</span>
                 </label>
                 <input 
@@ -324,7 +324,7 @@ const AppointmentModal = ({
 
               <div className="bfm-form-group bfm-full-width">
                 <label>
-                  <MapPin size={14} style={{display: 'inline', marginRight: '4px'}} />
+                  <MapPin size={14} className="am-label-icon" />
                   Complete Address <span className="bfm-required">*</span>
                 </label>
                 <input 
@@ -343,15 +343,7 @@ const AppointmentModal = ({
                   onChange={(e) => handleInputChange('notes', e.target.value)}
                   placeholder="Any special requests or questions..."
                   rows="3"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    fontSize: '0.9rem',
-                    fontFamily: 'inherit',
-                    resize: 'vertical'
-                  }}
+                  className="am-notes-textarea"
                 />
               </div>
             </div>
@@ -367,13 +359,9 @@ const AppointmentModal = ({
               </button>
               
               <button 
-                type="submit" 
+                type="submit"
                 disabled={loading}
-                className="bfm-submit-btn"
-                style={{
-                  background: loading ? '#94a3b8' : '#3b82f6',
-                  flex: 2
-                }}
+                className={`bfm-submit-btn am-appointment-submit-btn ${loading ? 'am-submit-loading' : ''}`}
               >
                 {loading ? 'PROCESSING...' : 'CONFIRM APPOINTMENT'}
               </button>

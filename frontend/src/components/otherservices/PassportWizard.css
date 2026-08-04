@@ -27,6 +27,11 @@
 }
 
 /* Step 1 Styles */
+.pw-step-title {
+    text-align: center;
+    color: #0a203b;
+}
+
 .type-cards {
     display: flex;
     gap: 20px;

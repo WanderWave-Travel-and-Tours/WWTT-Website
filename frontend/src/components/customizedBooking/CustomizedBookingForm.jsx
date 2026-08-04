@@ -606,7 +606,7 @@ export default function CustomizedBookingForm({ isOpen, onClose, onSuccess }) {
 
             {/* Progress bar */}
             <div className="cbf-progress-bar-wrap">
-              <div className="cbf-progress-bar-fill" style={{ width: `${progressPct}%` }} />
+              <div className="cbf-progress-bar-fill" style={{ '--progress-pct': `${progressPct}%` }} />
             </div>
           </div>
 

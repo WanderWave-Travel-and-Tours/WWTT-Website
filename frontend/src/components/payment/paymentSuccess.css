@@ -144,6 +144,26 @@
   font-size: 1.25rem;
 }
 
+.ps-info-value-reference {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.tps-info-value-reference {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.tops-info-value-reference {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.cps-info-value-reference {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
 /* ✅ NEW: Payment Notice Box */
 .payment-notice {
   background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
@@ -263,6 +283,30 @@
 
 .btn-link:hover {
   color: #764ba2;
+}
+
+.ps-home-icon {
+  margin-right: 4px;
+  display: inline-block;
+  vertical-align: text-bottom;
+}
+
+.tps-home-icon {
+  margin-right: 4px;
+  display: inline-block;
+  vertical-align: text-bottom;
+}
+
+.tops-home-icon {
+  margin-right: 4px;
+  display: inline-block;
+  vertical-align: text-bottom;
+}
+
+.cps-home-icon {
+  margin-right: 4px;
+  display: inline-block;
+  vertical-align: text-bottom;
 }
 
 /* Loading State */

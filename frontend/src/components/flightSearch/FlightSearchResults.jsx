@@ -51,8 +51,7 @@ const FlightCard = ({ flight, searchParams, onFlightSelect, roundTripStep, onOut
               : null
             }
             <div
-              className="airline-logo-placeholder"
-              style={{ display: flight.airline?.logo ? 'none' : 'flex' }}
+              className={`airline-logo-placeholder ${flight.airline?.logo ? '' : 'visible'}`}
             >
               ✈️
             </div>
@@ -182,30 +181,12 @@ const FlightSearchResults = ({
     return (
       <div className="results-section">
         <div className="results-content">
-          <div style={{
-            background: 'white',
-            borderRadius: '20px',
-            padding: '60px 40px',
-            maxWidth: '560px',
-            margin: '80px auto 0',
-            textAlign: 'center',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-            border: '1px solid #f1f5f9'
-          }}>
-            <div style={{ fontSize: '78px', marginBottom: '20px' }}>🌍</div>
-            <h3 style={{
-              fontSize: '1.65rem',
-              fontWeight: 700,
-              color: '#0f172a',
-              marginBottom: '8px'
-            }}>
+          <div className="no-flights-card">
+            <div className="no-flights-emoji">🌍</div>
+            <h3 className="no-flights-title">
               Start searching for flights
             </h3>
-            <p style={{
-              color: '#64748b',
-              fontSize: '1.05rem',
-              lineHeight: 1.5
-            }}>
+            <p className="no-flights-desc">
               Search airports worldwide — Philippines, USA, Europe, Asia, and more!
             </p>
           </div>

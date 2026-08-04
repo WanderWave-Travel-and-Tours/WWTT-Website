@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { X, ZoomIn, ZoomOut, RotateCw, Check } from 'lucide-react';
+import './ImageCropperModal.css';
 
 const createImage = (url) =>
   new Promise((resolve, reject) => {
@@ -68,42 +69,28 @@ const ImageCropperModal = ({ imageSrc, fileName, onConfirm, onCancel }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 999999,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(0,0,0,0.75)'
-    }}>
-      <div style={{
-        background: '#fff', borderRadius: '16px', width: '92%', maxWidth: '520px',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
-      }}>
+    <div className="icm-overlay">
+      <div className="icm-card">
         {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 20px', borderBottom: '1px solid #e2e8f0'
-        }}>
+        <div className="icm-header">
           <div>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+            <h3 className="icm-header-title">
               Preview &amp; Crop
             </h3>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
+            <p className="icm-header-subtitle">
               Drag to reposition · Scroll to zoom
             </p>
           </div>
           <button
             onClick={onCancel}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '6px', borderRadius: '8px', color: '#64748b'
-            }}
+            className="icm-close-btn"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Crop area */}
-        <div style={{ position: 'relative', width: '100%', height: '320px', background: '#0f172a' }}>
+        <div className="icm-crop-area">
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -117,43 +104,33 @@ const ImageCropperModal = ({ imageSrc, fileName, onConfirm, onCancel }) => {
         </div>
 
         {/* Controls */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid #e2e8f0' }}>
+        <div className="icm-controls">
           {/* Zoom slider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+          <div className="icm-zoom-row">
             <ZoomOut size={16} color="#94a3b8" />
             <input
               type="range"
               min={1} max={3} step={0.05}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
-              style={{ flex: 1, accentColor: '#f97316' }}
+              className="icm-zoom-slider"
             />
             <ZoomIn size={16} color="#94a3b8" />
           </div>
 
           {/* Rotate + action buttons */}
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="icm-actions-row">
             <button
               type="button"
               onClick={() => setRotation((r) => (r + 90) % 360)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '10px 16px', border: '1px solid #e2e8f0',
-                borderRadius: '8px', background: '#f8fafc',
-                cursor: 'pointer', fontSize: '13px', color: '#475569', fontWeight: '600'
-              }}
+              className="icm-rotate-btn"
             >
               <RotateCw size={15} /> Rotate
             </button>
             <button
               type="button"
               onClick={onCancel}
-              style={{
-                flex: 1, padding: '10px 16px',
-                border: '1px solid #e2e8f0', borderRadius: '8px',
-                background: '#f8fafc', cursor: 'pointer',
-                fontSize: '13px', color: '#475569', fontWeight: '600'
-              }}
+              className="icm-cancel-btn"
             >
               Cancel
             </button>
@@ -161,14 +138,7 @@ const ImageCropperModal = ({ imageSrc, fileName, onConfirm, onCancel }) => {
               type="button"
               onClick={handleConfirm}
               disabled={confirming}
-              style={{
-                flex: 2, padding: '10px 16px', border: 'none',
-                borderRadius: '8px', background: '#f97316',
-                color: '#fff', cursor: confirming ? 'not-allowed' : 'pointer',
-                fontSize: '13px', fontWeight: '700',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                opacity: confirming ? 0.7 : 1
-              }}
+              className={`icm-confirm-btn ${confirming ? 'icm-confirm-btn-busy' : 'icm-confirm-btn-idle'}`}
             >
               <Check size={15} />
               {confirming ? 'Processing...' : 'Use This Image'}

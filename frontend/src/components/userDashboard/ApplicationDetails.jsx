@@ -245,7 +245,7 @@ const ApplicationDetails = ({
                     <h1 className="ad-title">{getBookingDisplayTitle()}</h1>
                     <div className="ad-id-badge">ID: {inquiry._id.slice(-8).toUpperCase()}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="ad-header-actions">
                     <div className={`ad-status-pill ${getStatusClass(inquiry.status)}`}>
                         {inquiry.status?.replace('_', ' ') || 'PENDING'}
                     </div>
@@ -253,28 +253,7 @@ const ApplicationDetails = ({
                         <button 
                             onClick={handleCancelBooking}
                             disabled={isCancelling}
-                            className="ad-cancel-booking-btn"
-                            style={{
-                                padding: '5px 12px',
-                                fontSize: '0.72rem',
-                                background: isCancelling 
-                                    ? 'linear-gradient(135deg, #fca5a5 0%, #f87171 100%)' 
-                                    : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: 'white',
-                                border: '1.5px solid #fca5a5',
-                                borderRadius: '8px',
-                                cursor: isCancelling ? 'not-allowed' : 'pointer',
-                                opacity: isCancelling ? 0.7 : 1,
-                                transition: 'all 0.2s ease',
-                                fontWeight: '700',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                whiteSpace: 'nowrap',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.3px',
-                                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.2)'
-                            }}
+                            className={`ad-cancel-booking-btn ${isCancelling ? 'ad-cancel-booking-btn--cancelling' : ''}`}
                             onMouseEnter={(e) => {
                                 if (!isCancelling) {
                                     e.target.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
@@ -290,15 +269,7 @@ const ApplicationDetails = ({
                         >
                             {isCancelling ? (
                                 <>
-                                    <span style={{
-                                        display: 'inline-block',
-                                        width: '14px',
-                                        height: '14px',
-                                        border: '2px solid white',
-                                        borderTopColor: 'transparent',
-                                        borderRadius: '50%',
-                                        animation: 'spin 0.6s linear infinite'
-                                    }}></span>
+                                    <span className="ad-cancel-spinner"></span>
                                     Cancelling...
                                 </>
                             ) : (

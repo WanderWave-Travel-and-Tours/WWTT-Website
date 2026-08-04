@@ -505,7 +505,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 </div>
                                 <div className="bd-info-row-text">
                                     <span className="bd-info-row-label">Email</span>
-                                    <span className="bd-info-row-value" style={{ fontSize: '0.82rem', wordBreak: 'break-all' }}>{booking.email}</span>
+                                    <span className="bd-info-row-value bd-info-row-value--email">{booking.email}</span>
                                 </div>
                             </div>
                         )}
@@ -565,7 +565,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         )}
                         {/* Currency */}
                         <div className="bd-info-row">
-                            <div className="bd-info-row-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                            <div className="bd-info-row-icon bd-info-row-icon--currency">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                                 </svg>
@@ -577,7 +577,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         </div>
                         {/* Booked On */}
                         <div className="bd-info-row">
-                            <div className="bd-info-row-icon" style={{ background: '#fdf4ff', color: '#9333ea' }}>
+                            <div className="bd-info-row-icon bd-info-row-icon--booked-on">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                                 </svg>
@@ -590,14 +590,14 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         {/* Promo Code — only shown if present */}
                         {booking.promoCode && (
                             <div className="bd-info-row">
-                                <div className="bd-info-row-icon" style={{ background: '#fefce8', color: '#ca8a04' }}>
+                                <div className="bd-info-row-icon bd-info-row-icon--promo">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
                                     </svg>
                                 </div>
                                 <div className="bd-info-row-text">
                                     <span className="bd-info-row-label">Promo Code</span>
-                                    <span className="bd-info-row-value" style={{ color: '#7c3aed', fontWeight: 800 }}>{booking.promoCode}</span>
+                                    <span className="bd-info-row-value bd-info-row-value--promo">{booking.promoCode}</span>
                                 </div>
                             </div>
                         )}
@@ -605,17 +605,17 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
                     {/* ── Message / Special Request ── */}
                     {booking.message && (
-                        <div style={{ padding: '0 0 4px' }}>
-                            <div className="bd-customized-section-label" style={{ marginTop: 0 }}>Special Request / Message</div>
+                        <div className="bd-customized-block">
+                            <div className="bd-customized-section-label bd-customized-section-label--flush">Special Request / Message</div>
                             <div className="bd-customized-message-box">{booking.message}</div>
                         </div>
                     )}
 
                     {/* ── Internal Notes ── */}
                     {booking.notes && (
-                        <div style={{ padding: '0 0 4px' }}>
-                            <div className="bd-customized-section-label" style={{ marginTop: 0 }}>Internal Notes</div>
-                            <div className="bd-customized-message-box" style={{ background: '#fefce8', borderColor: '#fde68a', color: '#713f12' }}>{booking.notes}</div>
+                        <div className="bd-customized-block">
+                            <div className="bd-customized-section-label bd-customized-section-label--flush">Internal Notes</div>
+                            <div className="bd-customized-message-box bd-customized-message-box--notes">{booking.notes}</div>
                         </div>
                     )}
 
@@ -623,7 +623,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                     {booking.tours && booking.tours.length > 0 && (
                         <>
                             <div className="bd-customized-section-label">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:5}}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="bd-section-icon--spaced">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
                                 </svg>
                                 Tours
@@ -656,7 +656,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                     {booking.transfers && booking.transfers.length > 0 && (
                         <>
                             <div className="bd-customized-section-label">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:5}}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="bd-section-icon--spaced">
                                     <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
                                 </svg>
                                 Transfers
@@ -673,7 +673,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                                 <span className="bd-customized-service-price">₱{(tr.subtotal || 0).toLocaleString()}</span>
                                             </div>
                                             <div className="bd-customized-service-meta">
-                                                <span className="bd-customized-meta-chip" style={{textTransform:'capitalize'}}>
+                                                <span className="bd-customized-meta-chip bd-meta-chip--capitalize">
                                                     {tr.transferType === 'oneway' ? 'One Way' : 'Round Trip'}
                                                 </span>
                                                 {tr.travelDate && <span className="bd-customized-meta-chip">📅 {formatDate(tr.travelDate)}</span>}
@@ -744,7 +744,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                 </div>
                                 <div className="bd-info-row-text">
                                     <span className="bd-info-row-label">Transfer Type</span>
-                                    <span className="bd-info-row-value" style={{ textTransform: 'capitalize' }}>
+                                    <span className="bd-info-row-value bd-info-row-value--capitalize">
                                         {booking.transferType === 'oneway' ? 'One Way' : booking.transferType === 'roundtrip' ? 'Round Trip' : booking.transferType}
                                     </span>
                                 </div>
@@ -818,7 +818,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                     </div>
 
                     {(booking.fullName || booking.email || booking.phone || booking.message || booking.specialRequests) && (
-                        <div className="bd-info-rows" style={{ borderTop: '1px solid var(--bd-border, #e5e7eb)', marginTop: '0.5rem', paddingTop: '0.75rem' }}>
+                        <div className="bd-info-rows bd-info-rows--bordered-top">
                             {booking.fullName && (
                                 <div className="bd-info-row">
                                     <div className="bd-info-row-icon bd-info-icon-pax">
@@ -1130,13 +1130,10 @@ const BookingDetails = ({ booking, onUpdate }) => {
                             onClick={() => setShowPassengers(!showPassengers)}
                         >
                             {showPassengers ? 'Hide Details' : 'Show Details'}
-                            <svg 
-                                width="16" height="16" viewBox="0 0 24 24" 
+                            <svg
+                                width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" strokeWidth="2.5"
-                                style={{ 
-                                    transform: showPassengers ? 'rotate(180deg)' : 'rotate(0deg)',
-                                    transition: 'transform 0.25s'
-                                }}
+                                className={`bd-toggle-chevron ${showPassengers ? 'bd-toggle-chevron--open' : 'bd-toggle-chevron--closed'}`}
                             >
                                 <polyline points="6 9 12 15 18 9"/>
                             </svg>
@@ -1461,7 +1458,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                     .filter(inc => inc.isChecked !== false)
                                     .map((inc, idx) => (
                                         <div key={inc.id || idx} className="bd-inclusion-summary-item">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#10b981', flexShrink: 0, marginTop: 2 }}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="bd-inclusion-check-icon">
                                                 <polyline points="20 6 9 17 4 12"/>
                                             </svg>
                                             <span>{inc.name}</span>

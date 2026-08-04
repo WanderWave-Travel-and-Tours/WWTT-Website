@@ -50,6 +50,34 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* --- Booking Completed Notification Modal --- */
+.bfm-overlay-completed {
+  z-index: 10001;
+}
+
+.bfm-modal-card-completed {
+  max-width: 400px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.bfm-completed-icon-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.bfm-completed-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.bfm-completed-subtext {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
 /* --- Close Button --- */
 .bfm-close-btn {
   position: absolute;
@@ -179,6 +207,23 @@
 .bfm-price { color: #10b981; font-size: 0.95rem; }
 .bfm-accent-color { color: #fc9c1b; }
 
+.bfm-original-price-strike {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-right: 8px;
+}
+
+.bfm-promo-applied-subtext {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.bfm-inline-plane-icon {
+  display: inline;
+  margin-right: 4px;
+}
+
 .bfm-grand-total {
   background: #fff7ed;
   border: 1px solid #fc9c1b;
@@ -306,6 +351,7 @@
 
 .bfm-progress-bar-fill {
   height: 100%;
+  width: var(--progress-pct);
   background: linear-gradient(90deg, #fc9c1b, #f97316);
   transition: width 0.3s ease;
   border-radius: 4px;
@@ -409,9 +455,18 @@
   box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
 }
 
-.bfm-required { 
-  color: #ef4444; 
-  margin-left: 2px; 
+.bfm-required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.bfm-age-input-readonly {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.bfm-hidden-file-input {
+  display: none;
 }
 
 .bfm-upload-hint {
@@ -1007,10 +1062,14 @@
   background: #cbd5e1;
 }
 
-.bfm-submit-btn { 
-  flex: 2; 
-  background: #fc9c1b; 
-  color: white; 
+.bfm-submit-btn {
+  flex: 2;
+  background: #fc9c1b;
+  color: white;
+}
+
+.bfm-submit-btn-flex-equal {
+  flex: 1;
 }
 
 .bfm-submit-btn:hover:not(:disabled) {
@@ -1241,6 +1300,35 @@
    (matching TransferBookingFormModal). These mirror the bfm-*
    styles above so both naming schemes render correctly.
    ============================================================ */
+
+.tbfm-payment-section-wrapper {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.tbfm-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.tbfm-section-header-spaced {
+  margin-top: 8px;
+}
+
+.tbfm-section-icon {
+  color: #fc9c1b;
+  flex-shrink: 0;
+}
+
+.tbfm-section-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 10px 0;
+}
 
 .tbfm-restricted-payment-section {
   display: flex;

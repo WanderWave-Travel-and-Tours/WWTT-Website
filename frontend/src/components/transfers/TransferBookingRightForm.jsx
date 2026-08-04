@@ -272,8 +272,8 @@ const TransferBookingRightForm = ({
             <div className="brf-selected-date-display">
               <div className="brf-date-icon">📅</div>
               <div>
-                <div style={{ fontWeight: '600', color: '#1f2937' }}>{formatSelectedDate()}</div>
-                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '4px' }}>Travel Date Selected</div>
+                <div className="brf-selected-date-title">{formatSelectedDate()}</div>
+                <div className="brf-selected-date-subtitle">Travel Date Selected</div>
               </div>
             </div>
           )}
@@ -308,29 +308,27 @@ const TransferBookingRightForm = ({
         <div className="brf-quantity-item">
           <div>
             <span className="brf-quantity-label">Passengers</span>
-            <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
+            <div className="brf-pax-note-sm">
               {fixedPax ? `Fixed capacity: ${fixedPax} pax` : 'Number of passengers'}
             </div>
           </div>
           <div className="brf-quantity-controls">
             <button
               onClick={() => !fixedPax && setPassengerCount(prev => Math.max(1, prev - 1))}
-              className="brf-quantity-btn"
+              className={`brf-quantity-btn${(fixedPax || passengerCount <= 1) ? ' brf-quantity-btn-disabled' : ''}`}
               type="button"
               disabled={!!fixedPax || passengerCount <= 1}
-              style={(fixedPax || passengerCount <= 1) ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
             >
-              <Minus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+              <Minus size={18} color="#000000" strokeWidth={3} className="brf-qty-icon" />
             </button>
             <span className="brf-quantity-value">{passengerCount}</span>
             <button
               onClick={() => !fixedPax && setPassengerCount(prev => Math.min(20, prev + 1))}
-              className="brf-quantity-btn"
+              className={`brf-quantity-btn${fixedPax ? ' brf-quantity-btn-disabled' : ''}`}
               type="button"
               disabled={!!fixedPax}
-              style={fixedPax ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
             >
-              <Plus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+              <Plus size={18} color="#000000" strokeWidth={3} className="brf-qty-icon" />
             </button>
           </div>
         </div>
@@ -360,14 +358,14 @@ const TransferBookingRightForm = ({
               </button>
             </div>
             {promoError && (
-              <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '8px', padding: '10px 12px', backgroundColor: '#fee2e2', borderRadius: '8px', border: '1px solid #fecaca', lineHeight: '1.5' }}>
+              <div className="brf-promo-error-notice">
                 ❌ {promoError}
               </div>
             )}
           </>
         ) : (
           <div className="brf-promo-success-box">
-            <div style={{ flex: 1 }}>
+            <div className="brf-flex-1">
               <div className="brf-promo-code-text">{appliedPromo.code}</div>
               <div className="brf-promo-desc-text">
                 {appliedPromo.discountType === 'Percentage'
@@ -380,7 +378,7 @@ const TransferBookingRightForm = ({
           </div>
         )}
         {promoWarning && (
-          <div style={{ marginTop: '8px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '0.82rem', color: '#92400e' }}>
+          <div className="brf-promo-warning-notice">
             ⚠️ {promoWarning}
           </div>
         )}
@@ -391,11 +389,11 @@ const TransferBookingRightForm = ({
         <div className="brf-total-row">
           <span className="brf-total-label">
             Transfer Price
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '6px', fontWeight: '500' }}>
+            <span className="brf-transfer-type-label">
               ({transferType === 'roundtrip' ? 'Roundtrip' : 'One Way'})
             </span>
           </span>
-          <span className="brf-total-amount" style={{ color: '#10b981' }}>
+          <span className="brf-total-amount brf-total-amount-active">
             {currencySymbol}{convertedTotal.toLocaleString(undefined, {
               minimumFractionDigits: currency === 'USD' ? 2 : 0,
               maximumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -404,9 +402,9 @@ const TransferBookingRightForm = ({
         </div>
 
         {appliedPromo && (
-          <div className="brf-total-row" style={{ color: '#10b981', fontSize: '0.9rem' }}>
+          <div className="brf-total-row brf-discount-row">
             <span>- Promo Discount ({appliedPromo.code})</span>
-            <span style={{ fontWeight: '700' }}>
+            <span className="brf-fw-700">
               -{currencySymbol}{convertedDiscount.toLocaleString(undefined, {
                 minimumFractionDigits: currency === 'USD' ? 2 : 0,
                 maximumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -415,9 +413,9 @@ const TransferBookingRightForm = ({
           </div>
         )}
 
-        <div className="brf-total-row" style={{ borderTop: '2px solid #fc9c1b', paddingTop: '12px', marginTop: '8px', fontSize: '1.1rem', fontWeight: '800', color: '#1f2937' }}>
+        <div className="brf-total-row brf-grand-total-row">
           <span>TOTAL AMOUNT</span>
-          <span style={{ color: '#fc9c1b' }}>
+          <span className="brf-grand-total-value">
             {currencySymbol}{convertedFinal.toLocaleString(undefined, {
               minimumFractionDigits: currency === 'USD' ? 2 : 0,
               maximumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -430,11 +428,11 @@ const TransferBookingRightForm = ({
         </button>
 
         {!hasValidTotal && (
-          <div style={{ marginTop: '12px', padding: '16px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', color: '#92400e' }}>
-            <div style={{ fontSize: '24px' }}>⚠️</div>
+          <div className="brf-invalid-total-notice">
+            <div className="brf-invalid-total-icon">⚠️</div>
             <div>
-              <strong style={{ display: 'block', marginBottom: '4px' }}>Cannot proceed with booking</strong>
-              <span style={{ fontSize: '0.9rem' }}>Transfer price is zero. Please contact support.</span>
+              <strong className="brf-invalid-total-title">Cannot proceed with booking</strong>
+              <span className="brf-invalid-total-text">Transfer price is zero. Please contact support.</span>
             </div>
           </div>
         )}
@@ -443,7 +441,7 @@ const TransferBookingRightForm = ({
           <MessageCircle size={20} /> Contact Sales
         </button>
 
-        <p style={{ textAlign: 'center', fontSize: '0.8rem', color: '#9ca3af', marginTop: '12px' }}>
+        <p className="brf-no-payment-note">
           No payment required today.
         </p>
       </div>

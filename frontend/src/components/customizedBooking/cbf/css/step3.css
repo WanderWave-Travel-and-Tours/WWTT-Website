@@ -297,6 +297,14 @@
   border-left: 3px solid #f97316;
 }
 
+.cbf-bctx-section-label--gap-md {
+  margin-bottom: 6px;
+}
+
+.cbf-bctx-value--dim {
+  opacity: 0.4;
+}
+
 .cbf-bctx-card {
   display: flex;
   align-items: stretch;
@@ -393,6 +401,10 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 6px;
+}
+
+.cbf-info-card-grid--gap-lg {
+  margin-bottom: 10px;
 }
 
 .cbf-info-card {

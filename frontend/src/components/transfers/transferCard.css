@@ -66,6 +66,14 @@
   white-space: nowrap;
 }
 
+.transfer-badge-local {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.transfer-badge-intl {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
 /* ── Wishlist / Favorite Button ── */
 .transfer-favorite-button {
   position: absolute;

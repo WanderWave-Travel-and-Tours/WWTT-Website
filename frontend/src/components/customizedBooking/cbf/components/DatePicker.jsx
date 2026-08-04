@@ -191,8 +191,7 @@ export default function DatePicker({
         </span>
         <ChevronRight
           size={12}
-          className="cbf-dp-chevron"
-          style={{ transform: open ? 'rotate(90deg)' : 'none' }}
+          className={`cbf-dp-chevron ${open ? 'cbf-dp-chevron-open' : ''}`}
         />
       </div>
       {ReactDOM.createPortal(calendarModal, document.body)}

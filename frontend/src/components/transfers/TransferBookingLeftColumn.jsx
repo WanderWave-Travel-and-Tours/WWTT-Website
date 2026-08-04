@@ -106,7 +106,7 @@ const TransferTypeSelector = ({ transferType, onSelect, oneWayPrice, roundtripPr
               type="button"
               className={`blc-transfer-type-card${isActive ? ' active' : ''}`}
               onClick={() => onSelect(opt.key)}
-              style={{ backgroundImage: `url('${opt.bgImage}')` }}
+              style={{ '--blc-tt-bg-image': `url('${opt.bgImage}')` }}
             >
 
               {/* Dark overlay for readability */}
@@ -233,7 +233,7 @@ const TransferBookingLeftColumn = ({
             <h1 className="blc-title">{transfer.title || 'Transfer'}</h1>
 
             <div className="blc-price-section">
-              <span className="blc-price" style={{ color: '#f97316' }}>
+              <span className="blc-price">
                 {currencySymbol}{formatPrice(displayPrice)}
               </span>
               <span className="blc-price-pax">/transfer</span>

@@ -87,6 +87,20 @@
     transform: scale(1.05);
 }
 
+.ud-mobile-toggle-icon {
+    color: white;
+}
+
+.ud-brand-section--clickable {
+    cursor: pointer;
+}
+
+.ud-dropdown-caret {
+    font-size: 10px;
+    margin-left: 5px;
+    color: white;
+}
+
 /* Premium Avatar Design */
 .ud-user-avatar { 
     width: 44px; 

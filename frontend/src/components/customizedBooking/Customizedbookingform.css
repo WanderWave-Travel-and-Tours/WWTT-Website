@@ -12,6 +12,7 @@
    ─────────────────────────────────────────────────────────── */
 
 @import './cbf/css/base.css';
+@import './cbf/css/step1.css';
 @import './cbf/css/step2.css';
 @import './cbf/css/step3.css';
 @import './cbf/css/step4.css';

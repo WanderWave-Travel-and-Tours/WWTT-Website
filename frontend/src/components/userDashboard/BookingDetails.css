@@ -2473,3 +2473,79 @@
     margin: 10px 10px 12px;
   }
 }
+
+/* ── Converted inline styles (CSP: no unsafe-inline) ── */
+.bd-info-row-value--email {
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+
+.bd-info-row-icon--currency {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.bd-info-row-icon--booked-on {
+  background: #fdf4ff;
+  color: #9333ea;
+}
+
+.bd-info-row-icon--promo {
+  background: #fefce8;
+  color: #ca8a04;
+}
+
+.bd-info-row-value--promo {
+  color: #7c3aed;
+  font-weight: 800;
+}
+
+.bd-customized-block {
+  padding: 0 0 4px;
+}
+
+.bd-customized-section-label--flush {
+  margin-top: 0;
+}
+
+.bd-customized-message-box--notes {
+  background: #fefce8;
+  border-color: #fde68a;
+  color: #713f12;
+}
+
+.bd-section-icon--spaced {
+  margin-right: 5px;
+}
+
+.bd-meta-chip--capitalize {
+  text-transform: capitalize;
+}
+
+.bd-info-row-value--capitalize {
+  text-transform: capitalize;
+}
+
+.bd-info-rows--bordered-top {
+  border-top: 1px solid var(--bd-border, #e5e7eb);
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+.bd-toggle-chevron {
+  transition: transform 0.25s;
+}
+
+.bd-toggle-chevron--open {
+  transform: rotate(180deg);
+}
+
+.bd-toggle-chevron--closed {
+  transform: rotate(0deg);
+}
+
+.bd-inclusion-check-icon {
+  color: #10b981;
+  flex-shrink: 0;
+  margin-top: 2px;
+}

@@ -1,5 +1,14 @@
 /* src/components/PackageDeals/packageDeals.css */
 
+.error-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #ef4444;
+}
+
 .package-deals-page {
   min-height: 100vh;
   width: 100%;

@@ -372,11 +372,45 @@
   background: linear-gradient(135deg, var(--ticket-blue), var(--ticket-blue-dark));
   color: #fff;
   border-radius: 14px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   font-size: 32px;
   box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
+}
+
+.airline-logo-placeholder.visible {
+  display: flex;
+}
+
+/* No-flights / start-searching empty state */
+.no-flights-card {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  max-width: 560px;
+  margin: 80px auto 0;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f1f5f9;
+}
+
+.no-flights-emoji {
+  font-size: 78px;
+  margin-bottom: 20px;
+}
+
+.no-flights-title {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.no-flights-desc {
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.5;
 }
 
 .airline-name {

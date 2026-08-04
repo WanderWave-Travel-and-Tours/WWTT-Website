@@ -532,7 +532,7 @@ const PaymentSuccess = () => {
               <div className="info-grid">
                 <div className="info-item">
                   <span className="info-label">Reference ID</span>
-                  <strong className="info-value" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
+                  <strong className="info-value ps-info-value-reference">
                     {details.reference}
                   </strong>
                 </div>
@@ -608,7 +608,7 @@ const PaymentSuccess = () => {
           <div className="success-footer">
             <p>Need help? Contact us at <a href="mailto:support@wanderwave.com">support@wanderwave.com</a></p>
             <button className="btn-link" onClick={handleBackToHome}>
-              <Home size={16} style={{marginRight: '4px', display:'inline-block', verticalAlign:'text-bottom'}}/>
+              <Home size={16} className="ps-home-icon" />
               Back to Home
             </button>
           </div>

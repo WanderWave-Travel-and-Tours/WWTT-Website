@@ -74,7 +74,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
   if (loading) {
     return (
       <div className="cenomar-list-container">
-        <p style={{padding:'20px', textAlign:'center'}}>Loading CENOMAR Documents...</p>
+        <p className="cenomar-loading-text">Loading CENOMAR Documents...</p>
       </div>
     );
   }
@@ -96,7 +96,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
 
       <div className="cenomar-list-wrapper">
         {cenomarDocs.length === 0 ? (
-          <p style={{textAlign: 'center', padding: '20px', color: '#888'}}>
+          <p className="cenomar-empty-text">
             No CENOMAR documents available. (Check Admin Dashboard)
           </p>
         ) : (
@@ -168,7 +168,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
                               </div>
                             ))
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="cenomar-empty-subtext">
                               No specific requirements listed.
                             </p>
                           )}
@@ -224,7 +224,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
                               })}
                             </ul>
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="cenomar-empty-subtext">
                               No download forms available.
                             </p>
                           )}
@@ -262,7 +262,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
                               ))}
                             </ol>
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="cenomar-empty-subtext">
                               No process steps listed.
                             </p>
                           )}

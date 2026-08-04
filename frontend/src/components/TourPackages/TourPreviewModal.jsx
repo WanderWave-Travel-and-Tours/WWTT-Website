@@ -134,7 +134,7 @@ const TourPreviewModal = ({
 
         {/* ─── CLOSE ─── */}
         <button className="ppm-close-btn" onClick={onClose} aria-label="Close preview">
-          <X size={24} strokeWidth={3} style={{ width: 24, height: 24, minWidth: 24, flexShrink: 0 }} />
+          <X size={24} strokeWidth={3} />
         </button>
 
         {/* ─── HERO ─── */}
@@ -231,7 +231,7 @@ const TourPreviewModal = ({
               <Users size={12} />
               {paxCount ? `${paxCount} pax` : 'per pax'} · Taxes may apply
               {discountAmount > 0 && appliedPromo && (
-                <span style={{ marginLeft: '6px', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', borderRadius: '20px', padding: '1px 7px', fontWeight: '700', fontSize: '0.7rem' }}>
+                <span className="ppm-promo-applied-badge">
                   🏷️ Promo applied
                 </span>
               )}

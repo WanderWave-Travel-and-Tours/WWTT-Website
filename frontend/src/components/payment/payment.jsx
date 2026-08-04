@@ -59,9 +59,9 @@ const Payment = () => {
   const bgImage = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop'; 
 
   return (
-    <div 
+    <div
       className="payment-page-wrapper"
-      style={{ backgroundImage: `url(${bgImage})` }} 
+      style={{ '--payment-bg-image': `url(${bgImage})` }}
     >
       <Toaster position="top-center" reverseOrder={false} />
       
@@ -116,7 +116,7 @@ const Payment = () => {
             <div className="summary-footer">
                {isPartialPayment ? (
                  <>
-                   <div className="total-row" style={{fontSize: '0.9rem', color: '#6b7280', marginBottom: '8px'}}>
+                   <div className="total-row payment-total-row--sub">
                      <span>Total Package Price:</span>
                      <span>₱{bookingData.totalAmount.toLocaleString()}</span>
                    </div>
@@ -124,7 +124,7 @@ const Payment = () => {
                      <span className="total-label-lg">Amount Due Now ({bookingData.paymentType === 'partial' && bookingData.includesAirfare ? '85%' : '50%'})</span>
                      <span className="total-amount-lg">₱{paymentAmount.toLocaleString()}</span>
                    </div>
-                   <div className="total-row" style={{fontSize: '0.85rem', color: '#9ca3af', marginTop: '4px'}}>
+                   <div className="total-row payment-total-row--remaining">
                      <span>Remaining Balance:</span>
                      <span>₱{bookingData.remainingBalance.toLocaleString()}</span>
                    </div>
@@ -246,7 +246,7 @@ const Payment = () => {
           </button>
           
           {isPartialPayment && (
-            <p style={{textAlign: 'center', fontSize: '0.85rem', color: '#6b7280', marginTop: '12px'}}>
+            <p className="payment-remaining-note">
               Remaining balance of ₱{bookingData.remainingBalance.toLocaleString()} due before departure
             </p>
           )}

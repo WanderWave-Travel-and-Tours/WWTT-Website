@@ -425,10 +425,6 @@ const PackageCustomizer = ({
 
   return (
     <div className="pc-container">
-      <style>{`
-        @keyframes pc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
-        @keyframes pc-shimmer { 0%{background-position:-200px 0} 100%{background-position:200px 0} }
-      `}</style>
       <div className="pc-header">
         <div className="pc-title-row">
           <Package size={24} color="#f97316" />
@@ -442,15 +438,7 @@ const PackageCustomizer = ({
         </div>
 
         {matchedInclusionCount > 0 && (
-          <div style={{
-            marginTop: '12px',
-            padding: '8px 12px',
-            background: '#dbeafe',
-            border: '1px solid #93c5fd',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            color: '#1e40af',
-          }}>
+          <div className="pkgcz-matched-badge">
             ✅ {matchedInclusionCount} of {pkg.inclusions?.length || 0} inclusions have pricing data
           </div>
         )}
@@ -458,27 +446,13 @@ const PackageCustomizer = ({
 
       {/* Error / Warning Alert */}
       {error && (
-        <div className="pc-error-alert" style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-          padding: '16px',
-          marginBottom: '20px',
-          background: error.includes('⚠️') ? '#fef3c7' : '#fee2e2',
-          border: `2px solid ${error.includes('⚠️') ? '#f59e0b' : '#ef4444'}`,
-          borderRadius: '12px',
-          color: error.includes('⚠️') ? '#92400e' : '#991b1b',
-        }}>
-          <AlertCircle size={20} style={{
-            marginTop: '2px',
-            flexShrink: 0,
-            color: error.includes('⚠️') ? '#f59e0b' : '#ef4444',
-          }} />
-          <div style={{ flex: 1 }}>
-            <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.95rem' }}>
+        <div className={`pc-error-alert pkgcz-alert ${error.includes('⚠️') ? 'pkgcz-alert-warning' : 'pkgcz-alert-error'}`}>
+          <AlertCircle size={20} className={`pkgcz-alert-icon ${error.includes('⚠️') ? 'pkgcz-alert-icon-warning' : 'pkgcz-alert-icon-error'}`} />
+          <div className="pkgcz-alert-body">
+            <strong className="pkgcz-alert-title">
               {error.includes('⚠️') ? 'Validation Warning' : 'Error Loading Activities'}
             </strong>
-            <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
+            <p className="pkgcz-alert-message">
               {error}
             </p>
           </div>
@@ -488,7 +462,7 @@ const PackageCustomizer = ({
       {/* Current Inclusions */}
       <div className="pc-section">
         <div className="pc-section-header">
-          <h3 className="pc-section-title">Package Inclusions{isPricingLoading && <span style={{marginLeft:'8px',fontSize:'0.75rem',fontWeight:'400',color:'#f97316'}}><span style={{display:'inline-block',width:'8px',height:'8px',borderRadius:'50%',background:'#f97316',animation:'pc-pulse 1.2s ease-in-out infinite',marginRight:'4px'}}/>Fetching prices…</span>}</h3>
+          <h3 className="pc-section-title">Package Inclusions{isPricingLoading && <span className="pkgcz-loading-text"><span className="pkgcz-loading-dot" />Fetching prices…</span>}</h3>
           <button
             className="pc-reset-btn"
             onClick={resetCustomization}
@@ -524,15 +498,14 @@ const PackageCustomizer = ({
 
                       {isLastRemaining && (
                         <span
-                          className="pc-badge"
-                          style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', padding: '2px 6px' }}
+                          className="pc-badge pkgcz-badge-required"
                           title="At least one inclusion must remain in your package"
                         >
                           Required
                         </span>
                       )}
                       {!inclusion.isOriginal && (
-                        <span className="pc-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
+                        <span className="pc-badge pkgcz-badge-added">
                           Added
                         </span>
                       )}
@@ -543,12 +516,11 @@ const PackageCustomizer = ({
                 <div className="pc-inclusion-actions">
                   {inclusion.price > 0 && (
                     <span
-                      className="pc-inclusion-price"
-                      style={{
-                        color: inclusion.isOriginal
-                          ? (!inclusion.isChecked ? '#dc2626' : '#64748b')
-                          : '#059669',
-                      }}
+                      className={`pc-inclusion-price ${
+                        inclusion.isOriginal
+                          ? (!inclusion.isChecked ? 'pkgcz-price-deducted' : 'pkgcz-price-included')
+                          : 'pkgcz-price-added'
+                      }`}
                       title={
                         inclusion.isOriginal
                           ? (!inclusion.isChecked ? 'Will be deducted from package price' : 'Included in package')

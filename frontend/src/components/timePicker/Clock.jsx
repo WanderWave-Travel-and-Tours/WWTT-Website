@@ -215,7 +215,7 @@ const CustomTimePicker = ({ value, onChange, required, placeholder }) => {
                         fontSize="14"
                         fontWeight={isSelected ? '700' : '500'}
                         fill={isSelected ? 'white' : '#374151'}
-                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                        className="tbfm-analog-clickable-text"
                       >
                         {n}
                       </text>
@@ -243,7 +243,7 @@ const CustomTimePicker = ({ value, onChange, required, placeholder }) => {
                         fontSize="12"
                         fontWeight={isSelected ? '700' : '400'}
                         fill={isSelected ? 'white' : '#374151'}
-                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                        className="tbfm-analog-clickable-text"
                       >
                         {String(m).padStart(2, '0')}
                       </text>

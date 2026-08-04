@@ -74,7 +74,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
   if (loading) {
     return (
       <div className="psa-list-container">
-        <p style={{padding:'20px', textAlign:'center'}}>Loading PSA Documents...</p>
+        <p className="psa-loading-text">Loading PSA Documents...</p>
       </div>
     );
   }
@@ -97,7 +97,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
 
       <div className="psa-list-wrapper">
         {psaDocs.length === 0 ? (
-          <p style={{textAlign: 'center', padding: '20px', color: '#888'}}>
+          <p className="psa-empty-text">
             No PSA documents available. (Check Admin Dashboard)
           </p>
         ) : (
@@ -169,7 +169,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
                               </div>
                             ))
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="psa-empty-subtext">
                               No specific requirements listed.
                             </p>
                           )}
@@ -225,7 +225,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
                               })}
                             </ul>
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="psa-empty-subtext">
                               No download forms available.
                             </p>
                           )}
@@ -263,7 +263,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
                               ))}
                             </ol>
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="psa-empty-subtext">
                               No process steps listed.
                             </p>
                           )}

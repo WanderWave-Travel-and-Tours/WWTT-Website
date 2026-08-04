@@ -365,9 +365,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   padding: 0;
+  transform: scale(1);
 }
 
 .tour-wishlist-btn:hover {
@@ -381,6 +382,7 @@
   color: #e91e63;
   background: #fff;
   border-color: #fff;
+  transform: scale(1.1);
 }
 
 .tour-wishlist-btn.favorited:hover {

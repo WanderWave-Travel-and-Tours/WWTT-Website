@@ -40,9 +40,9 @@ const TopNavbar = ({ user, onLogout, onNavigateSettings, mobileMenuOpen, setMobi
         <header className="ud-navbar">
             <div className="ud-nav-left">
                 <button className="ud-mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                    <span style={{color: 'white'}}>☰</span>
+                    <span className="ud-mobile-toggle-icon">☰</span>
                 </button>
-                <div className="ud-brand-section" onClick={handleBrandClick} style={{cursor: 'pointer'}}>
+                <div className="ud-brand-section ud-brand-section--clickable" onClick={handleBrandClick}>
                     <img src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" alt="WanderWave" className="ud-brand-logo" />
                     <span className="ud-brand-name">WanderWave</span>
                 </div>
@@ -58,7 +58,7 @@ const TopNavbar = ({ user, onLogout, onNavigateSettings, mobileMenuOpen, setMobi
                             <span className="ud-user-name">{user?.fullName || 'User'}</span>
                             <span className="ud-user-email">{user?.email || 'guest@example.com'}</span>
                         </div>
-                        <span style={{fontSize: '10px', marginLeft: '5px', color: 'white'}}>{dropdownOpen ? '▲' : '▼'}</span>
+                        <span className="ud-dropdown-caret">{dropdownOpen ? '▲' : '▼'}</span>
                     </div>
 
                     {dropdownOpen && (

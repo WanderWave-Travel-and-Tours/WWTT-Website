@@ -12,93 +12,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import './LocationSelect.css';
 
 const RENDER_BASE = 'https://wanderwaveph.onrender.com';
 const DEBOUNCE_MS = 300;
 const MIN_CHARS   = 2;
-
-// ── Inline styles (no extra CSS file needed) ──────────────────────────────────
-const S = {
-  wrapper: {
-    position: 'relative',
-    width: '100%',
-  },
-  input: {
-    width: '100%',
-    minHeight: '45px',
-    padding: '0 40px 0 12px',
-    borderRadius: '8px',
-    border: '1px solid #e2e8f0',
-    fontSize: '0.9rem',
-    color: '#1f2937',
-    background: '#fff',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
-  },
-  inputFocus: {
-    border: '1px solid #3b82f6',
-  },
-  clearBtn: {
-    position: 'absolute',
-    right: '10px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#9ca3af',
-    fontSize: '16px',
-    lineHeight: 1,
-    padding: '2px',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 'calc(100% + 4px)',
-    left: 0,
-    right: 0,
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-    zIndex: 9999,
-    maxHeight: '220px',
-    overflowY: 'auto',
-    padding: '4px 0',
-  },
-  option: (isHighlighted) => ({
-    padding: '10px 14px',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-    color: '#374151',
-    background: isHighlighted ? '#eff6ff' : 'transparent',
-    borderBottom: '1px solid #f3f4f6',
-    lineHeight: 1.4,
-  }),
-  optionLast: {
-    borderBottom: 'none',
-  },
-  statusMsg: {
-    padding: '10px 14px',
-    fontSize: '0.85rem',
-    color: '#6b7280',
-    fontStyle: 'italic',
-  },
-  badge: {
-    display: 'inline-block',
-    fontSize: '0.7rem',
-    background: '#f0fdf4',
-    color: '#16a34a',
-    border: '1px solid #bbf7d0',
-    borderRadius: '4px',
-    padding: '1px 5px',
-    marginLeft: '6px',
-    verticalAlign: 'middle',
-    fontStyle: 'normal',
-  },
-};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 const LocationSelect = ({ value = '', onChange, placeholder = 'Search location...', source = 'transfer' }) => {
@@ -270,12 +188,12 @@ const LocationSelect = ({ value = '', onChange, placeholder = 'Search location..
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={S.wrapper} ref={wrapperRef}>
+    <div className="ls-wrapper" ref={wrapperRef}>
       {/* Text input */}
       <input
         ref={inputRef}
         type="text"
-        style={{ ...S.input, ...(isFocused ? S.inputFocus : {}) }}
+        className={`ls-input${isFocused ? ' ls-input--focus' : ''}`}
         value={inputValue}
         placeholder={placeholder}
         onChange={handleInputChange}
@@ -290,18 +208,18 @@ const LocationSelect = ({ value = '', onChange, placeholder = 'Search location..
 
       {/* Clear button */}
       {inputValue && (
-        <button type="button" style={S.clearBtn} onClick={handleClear} tabIndex={-1} aria-label="Clear">
+        <button type="button" className="ls-clear-btn" onClick={handleClear} tabIndex={-1} aria-label="Clear">
           ✕
         </button>
       )}
 
       {/* Dropdown */}
       {isOpen && (
-        <ul style={S.dropdown} role="listbox">
+        <ul className="ls-dropdown" role="listbox">
           {isLoading ? (
-            <li style={S.statusMsg}>Searching…</li>
+            <li className="ls-status-msg">Searching…</li>
           ) : options.length === 0 ? (
-            <li style={S.statusMsg}>
+            <li className="ls-status-msg">
               {inputValue.length < MIN_CHARS ? 'Type at least 2 characters…' : 'No locations found'}
             </li>
           ) : (
@@ -309,15 +227,12 @@ const LocationSelect = ({ value = '', onChange, placeholder = 'Search location..
               <li
                 key={`${opt.value}-${i}`}
                 role="option"
-                style={{
-                  ...S.option(i === highlighted),
-                  ...(i === options.length - 1 ? S.optionLast : {}),
-                }}
+                className={`ls-option${i === highlighted ? ' ls-option--highlighted' : ''}${i === options.length - 1 ? ' ls-option--last' : ''}`}
                 onMouseDown={() => selectOption(opt)}
                 onMouseEnter={() => setHighlighted(i)}
               >
                 {opt.label}
-                {opt.fromDB && <span style={S.badge}>Popular</span>}
+                {opt.fromDB && <span className="ls-badge">Popular</span>}
               </li>
             ))
           )}

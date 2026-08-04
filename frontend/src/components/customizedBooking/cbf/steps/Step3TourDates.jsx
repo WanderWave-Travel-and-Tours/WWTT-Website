@@ -139,8 +139,8 @@ export default function Step3TourDates({
         ) : (
           <div className="cbf-bctx-side cbf-bctx-side-right">
             <div className="cbf-bctx-side-label">TRIP END</div>
-            <div className="cbf-bctx-date-big" style={{ opacity: 0.4 }}>—</div>
-            <div className="cbf-bctx-day-name" style={{ opacity: 0.4 }}>Not set</div>
+            <div className="cbf-bctx-date-big cbf-bctx-value--dim">—</div>
+            <div className="cbf-bctx-day-name cbf-bctx-value--dim">Not set</div>
           </div>
         )}
       </div>

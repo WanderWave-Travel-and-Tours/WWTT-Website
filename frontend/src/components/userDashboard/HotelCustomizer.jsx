@@ -337,7 +337,7 @@ const HotelCustomizer = ({
       <div className="hc-container">
         <div className="hc-header">
           <span className="hc-header-accent" />
-          <Building2 size={22} color="#3b82f6" style={{ flexShrink: 0, marginRight: 8 }} />
+          <Building2 size={22} color="#3b82f6" className="hc-header-icon" />
           <h3 className="hc-header-title">HOTEL SELECTION</h3>
           {booking?.selectedRoomType && (
             <span className="hc-current-badge">
@@ -346,7 +346,7 @@ const HotelCustomizer = ({
           )}
         </div>
         {hasSavedHotel ? (
-          <div className="hc-selection-summary" style={{ margin: '12px' }}>
+          <div className="hc-selection-summary hc-selection-summary--static">
             {booking?.selectedRoomType && (
               <div className="hc-summary-row">
                 <span className="hc-summary-label">Selected Tier</span>
@@ -367,7 +367,7 @@ const HotelCustomizer = ({
                 </span>
               </div>
             )}
-            <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>
+            <p className="hc-static-note">
               Hotel selection editing is not available for this destination.
             </p>
           </div>
@@ -386,7 +386,7 @@ const HotelCustomizer = ({
       {/* ── Header ── */}
       <div className="hc-header">
         <span className="hc-header-accent" />
-        <Building2 size={22} color="#3b82f6" style={{ flexShrink: 0, marginRight: 8 }} />
+        <Building2 size={22} color="#3b82f6" className="hc-header-icon" />
         <h3 className="hc-header-title">HOTEL SELECTION</h3>
         {booking?.selectedRoomType && (
           <span className="hc-current-badge">
@@ -466,7 +466,7 @@ const HotelCustomizer = ({
               {getPerNightRate(normalizeRoomTypeKey(selectedRoomType.type)) > 0 && (
                 <div className="hc-summary-row">
                   <span className="hc-summary-label">Hotel Surcharge</span>
-                  <span className="hc-summary-value" style={{ color: '#b45309' }}>
+                  <span className="hc-summary-value hc-summary-value--surcharge">
                     +₱{(
                       getPerNightRate(normalizeRoomTypeKey(selectedRoomType.type)) *
                       Math.ceil(numberOfPax / (selectedRoomType.capacity || 2)) *

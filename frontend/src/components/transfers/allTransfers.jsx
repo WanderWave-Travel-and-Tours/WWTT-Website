@@ -225,8 +225,7 @@ function AllTransfers({
 
             {isMobileFilterOpen && isFilterActive && (
               <button
-                className="transfers-reset-btn"
-                style={{ background: '#0369a1', marginTop: '10px', width: '100%', padding: '12px' }}
+                className="transfers-reset-btn transfers-reset-btn-mobile"
                 onClick={clearSidebarFilters}
               >
                 Clear All Filters
@@ -283,7 +282,7 @@ function AllTransfers({
               ))
             ) : (
               <div className="transfers-no-results">
-                <XCircle size={64} color="#cbd5e1" strokeWidth={1.5} style={{ marginBottom: '24px' }} />
+                <XCircle size={64} color="#cbd5e1" strokeWidth={1.5} className="transfers-no-results-icon" />
                 <h3>No transfers found</h3>
                 <p>Try adjusting your filters or search terms.</p>
                 <button className="transfers-clear-btn" onClick={clearSidebarFilters}>

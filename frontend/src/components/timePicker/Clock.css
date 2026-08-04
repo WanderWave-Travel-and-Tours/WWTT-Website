@@ -151,6 +151,11 @@
   display: block;
 }
 
+.tbfm-analog-clickable-text {
+  cursor: pointer;
+  user-select: none;
+}
+
 /* Footer */
 .tbfm-analog-footer {
   display: flex;

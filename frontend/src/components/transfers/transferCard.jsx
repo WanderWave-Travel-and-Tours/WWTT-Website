@@ -7,12 +7,12 @@ const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1544620347-c4fd4a3d595
 
 // ── Category badge config ─────────────────────────────────────────────────────
 const CATEGORY_COLORS = {
-  'local transfer':         { bg: 'linear-gradient(135deg, #f97316, #ea580c)', label: 'Local Transfer' },
-  'international transfer': { bg: 'linear-gradient(135deg, #1d4ed8, #1e40af)', label: 'International' },
+  'local transfer':         { badgeClass: 'transfer-badge-local', label: 'Local Transfer' },
+  'international transfer': { badgeClass: 'transfer-badge-intl', label: 'International' },
 };
 
 const getCategoryStyle = (category = '') => {
-  return CATEGORY_COLORS[category.toLowerCase()] || { bg: 'linear-gradient(135deg, #f97316, #ea580c)', label: category || 'Transfer' };
+  return CATEGORY_COLORS[category.toLowerCase()] || { badgeClass: 'transfer-badge-local', label: category || 'Transfer' };
 };
 
 // ── Main TransferCard Component ───────────────────────────────────────────────
@@ -108,7 +108,7 @@ function TransferCard({
         {/* Category badge + Destination + pax pills — all on one row */}
         <div className="transfer-meta-pills">
           {/* Category badge — inline with other pills */}
-          <div className="transfer-body-category-badge" style={{ background: categoryStyle.bg }}>
+          <div className={`transfer-body-category-badge ${categoryStyle.badgeClass}`}>
             <ArrowLeftRight size={10} />
             {categoryStyle.label}
           </div>

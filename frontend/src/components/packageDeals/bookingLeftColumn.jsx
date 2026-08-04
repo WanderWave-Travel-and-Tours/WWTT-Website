@@ -469,7 +469,7 @@ const BookingLeftColumn = ({
                   })}
                 </span>
               )}
-              <span className="blc-price" style={{ color: !timerExpired ? '#f97316' : '#64748b' }}>
+              <span className={`blc-price ${!timerExpired ? 'blc-price--active' : 'blc-price--expired'}`}>
                 {currencySymbol}{convertedDisplayPrice.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -480,18 +480,7 @@ const BookingLeftColumn = ({
               </span>
 
               {hotelUpgradeCost > 0 && (
-                <span style={{
-                  fontSize: '0.78rem',
-                  color: '#0284c7',
-                  background: '#e0f2fe',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '5px',
-                  padding: '2px 8px',
-                  fontWeight: '600',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
+                <span className="blc-hotel-upgrade-badge">
                   🏨 +{currencySymbol}{convertPrice(hotelUpgradeCost).toLocaleString()} hotel
                 </span>
               )}
@@ -620,7 +609,7 @@ const BookingLeftColumn = ({
                       </div>
                       <div className="blc-incl-text-col">
                         <span className="blc-incl-category-label">{category}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <div className="blc-incl-title-row">
                           <span className="blc-incl-main-title">{cleanText}</span>
                           {guide && <span className="blc-incl-free-badge">FREE</span>}
                         </div>
@@ -651,7 +640,7 @@ const BookingLeftColumn = ({
       )}
 
       <div className="blc-itinerary-section">
-        <h3 className="blc-section-title" style={{ marginBottom: '24px' }}>
+        <h3 className="blc-section-title blc-itinerary-title">
           <CalendarDays size={20} color="#f97316" /> Tour Itinerary
         </h3>
         <div className="blc-timeline-container">
@@ -661,10 +650,10 @@ const BookingLeftColumn = ({
             return (
               <div key={idx} className="blc-timeline-item">
                 <div className={`blc-timeline-dot ${isOpen ? 'active' : ''}`}></div>
-                <div style={{ paddingLeft: '16px' }}>
+                <div className="blc-timeline-item-content">
                   <div className={`blc-day-card ${isOpen ? 'active' : ''}`} onClick={() => toggleDay(idx)}>
                     <h4 className="blc-day-title">
-                      Day {day.day}: <span style={{ color: '#f97316' }}>{(day.title || '').replace(/^Day \d+:\s*/i, '').trim()}</span>
+                      Day {day.day}: <span className="blc-day-title-accent">{(day.title || '').replace(/^Day \d+:\s*/i, '').trim()}</span>
                     </h4>
                     <div className={`blc-chevron ${isOpen ? 'rotated' : ''}`}>
                       <ChevronDown size={20} />
@@ -678,9 +667,9 @@ const BookingLeftColumn = ({
                           ? autoFill
                           : (day.activities || []).filter(a => a && a.trim());
                         return activitiesToShow.length > 0 ? (
-                          <ul style={{ paddingLeft: '20px', margin: 0, color: '#475569', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                          <ul className="blc-day-activities-list">
                             {activitiesToShow.map((act, i) => (
-                              <li key={i} style={{ marginBottom: '6px' }}>{act}</li>
+                              <li key={i} className="blc-day-activity-item">{act}</li>
                             ))}
                           </ul>
                         ) : null;
@@ -692,7 +681,7 @@ const BookingLeftColumn = ({
             );
           })}
           {(!itinerary || itinerary.length === 0) && (
-            <p style={{ color: '#999', paddingLeft: '20px', fontStyle: 'italic' }}>No itinerary available.</p>
+            <p className="blc-no-itinerary-msg">No itinerary available.</p>
           )}
         </div>
         {shouldShowButton && (

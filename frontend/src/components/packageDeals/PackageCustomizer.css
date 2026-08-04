@@ -579,3 +579,118 @@
     font-size: 1rem;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Converted inline styles (style={{}} → className)
+   Prefix: pkgcz- (pc- is already used above for this component's
+   own static classes, and elsewhere for BookingCustomizer)
+───────────────────────────────────────────────────────────────*/
+
+/* Matched-inclusion-count badge */
+.pkgcz-matched-badge {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1e40af;
+}
+
+/* Error / warning alert */
+.pkgcz-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+
+.pkgcz-alert-warning {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  color: #92400e;
+}
+
+.pkgcz-alert-error {
+  background: #fee2e2;
+  border: 2px solid #ef4444;
+  color: #991b1b;
+}
+
+.pkgcz-alert-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.pkgcz-alert-icon-warning {
+  color: #f59e0b;
+}
+
+.pkgcz-alert-icon-error {
+  color: #ef4444;
+}
+
+.pkgcz-alert-body {
+  flex: 1;
+}
+
+.pkgcz-alert-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.pkgcz-alert-message {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* "Fetching prices…" loading indicator next to section title */
+.pkgcz-loading-text {
+  margin-left: 8px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #f97316;
+}
+
+.pkgcz-loading-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f97316;
+  animation: pc-pulse 1.2s ease-in-out infinite;
+  margin-right: 4px;
+}
+
+/* Required / Added inclusion badges */
+.pkgcz-badge-required {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+}
+
+.pkgcz-badge-added {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Inclusion price color states */
+.pkgcz-price-deducted {
+  color: #dc2626;
+}
+
+.pkgcz-price-included {
+  color: #64748b;
+}
+
+.pkgcz-price-added {
+  color: #059669;
+}
+
+@keyframes pc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+@keyframes pc-shimmer { 0%{background-position:-200px 0} 100%{background-position:200px 0} }
