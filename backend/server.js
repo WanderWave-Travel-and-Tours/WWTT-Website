@@ -30,6 +30,8 @@ const dns = require('dns');
 const existingDnsServers = dns.getServers();
 dns.setServers([...new Set([...existingDnsServers, '8.8.8.8', '8.8.4.4', '1.1.1.1'])]);
 
+const crypto = require('crypto');
+
 const app = express();
 
 // Render (and most cloud hosts) sit behind a reverse proxy that sets X-Forwarded-For.
@@ -42,23 +44,30 @@ app.set('trust proxy', 1);
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
 // 2. Security headers — applied to every response before CORS and routing.
-// CSP allowlist mirrors the <meta> policy injected at build time in
-// frontend/vite.config.js (cspPlugin) — kept in sync manually since the
-// meta tag only covers the SPA's own HTML, not this server's other responses.
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'none'",
-  "script-src 'self' 'unsafe-inline' https://*.leadconnectorhq.com https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.google.com https://www.gstatic.com https://cdnjs.cloudflare.com",
-  "style-src-elem 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com https://fonts.bunny.net https://*.leadconnectorhq.com",
-  "style-src-attr 'unsafe-inline'",
-  "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://wanderwaveph.onrender.com https://api.ipify.org https://*.leadconnectorhq.com https://translate.googleapis.com https://fonts.googleapis.com https://services.msgsndr.com https://nominatim.openstreetmap.org",
-  "frame-src https://checkout.paymongo.com https://*.leadconnectorhq.com https://www.google.com",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self' https://checkout.paymongo.com",
-  "frame-ancestors 'none'",
-].join('; ');
+// script-src carries a fresh per-request nonce (res.locals.cspNonce) instead
+// of 'unsafe-inline' — the nonce is substituted into the frontend SPA's own
+// <script type="module"> tag by the frontend-serving handler further below
+// (see "SERVE MAIN FRONTEND SPA"). Google Translate's widget and GHL's
+// loader.js still self-inject their own inline <script> tags at runtime;
+// those won't carry our nonce and will be blocked — that's fine, they don't
+// need to run for the widgets' core (externally-sourced, domain-allowlisted)
+// functionality to work.
+function buildContentSecurityPolicy(nonce) {
+  return [
+    "default-src 'none'",
+    `script-src 'self' 'nonce-${nonce}' https://*.leadconnectorhq.com https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.google.com https://www.gstatic.com https://cdnjs.cloudflare.com`,
+    "style-src-elem 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com https://fonts.bunny.net https://*.leadconnectorhq.com",
+    "style-src-attr 'unsafe-inline'",
+    "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net",
+    "img-src 'self' data: blob: https:",
+    "connect-src 'self' https://wanderwaveph.onrender.com https://api.ipify.org https://*.leadconnectorhq.com https://translate.googleapis.com https://fonts.googleapis.com https://services.msgsndr.com https://nominatim.openstreetmap.org",
+    "frame-src https://checkout.paymongo.com https://*.leadconnectorhq.com https://www.google.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self' https://checkout.paymongo.com",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
 
 app.use((req, res, next) => {
   // Prevent browsers from MIME-sniffing the content type
@@ -73,8 +82,11 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   // Force HTTPS on all future requests
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Fresh nonce per request — stashed on res.locals so the frontend SPA
+  // handler can substitute it into the served HTML's <script> tag.
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
   // Allowlist of sources the browser may load scripts/styles/frames/etc. from
-  res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
+  res.setHeader('Content-Security-Policy', buildContentSecurityPolicy(res.locals.cspNonce));
   next();
 });
 
@@ -842,6 +854,64 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
   });
 });
 
+// Well-known probe paths that must never return an SPA shell. The
+// assessment fingerprinted the admin client by hitting /health, /swagger,
+// /graphql, /metrics, /openapi.json etc. and getting a 200 "WTT Admin Page"
+// response for each (F-04). Denying just these keeps each SPA's own routes
+// working — they live in separate repos and change often, so an allowlist
+// of routes would silently 404 real pages on the next deploy. Shared by
+// both the main frontend and admin dashboard blocks below.
+const PROBE_PATHS = new Set([
+  '/health', '/healthz', '/status', '/version',
+  '/docs', '/api-docs', '/swagger', '/swagger.json',
+  '/openapi.json', '/graphql', '/metrics',
+  '/.env', '/config.json', '/actuator',
+]);
+
+const RESERVED_PREFIXES = ['/api/', '/uploads', '/img', '/fb', '/ig', '/tiktok'];
+
+function isReservedOrProbePath(reqPath) {
+  return RESERVED_PREFIXES.some(prefix => reqPath.startsWith(prefix)) ||
+    PROBE_PATHS.has(reqPath.toLowerCase());
+}
+
+// ====================== SERVE MAIN FRONTEND SPA (wanderwaveph.com) ======================
+const FRONTEND_HOSTS = new Set(['wanderwaveph.com', 'www.wanderwaveph.com']);
+const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist');
+const frontendIndexPath = path.join(frontendDistPath, 'index.html');
+
+console.log('📁 Frontend dist path:', frontendDistPath);
+console.log('📁 Frontend dist exists?', fs.existsSync(frontendDistPath));
+console.log('📁 Frontend index.html exists?', fs.existsSync(frontendIndexPath));
+
+let frontendIndexHtmlTemplate = null;
+if (fs.existsSync(frontendDistPath) && fs.existsSync(frontendIndexPath)) {
+  console.log('✅ Frontend dist folder OK → Serving main SPA');
+  // Read once at startup — this file only changes on redeploy, and the
+  // per-request nonce is substituted into the in-memory copy below.
+  frontendIndexHtmlTemplate = fs.readFileSync(frontendIndexPath, 'utf8');
+
+  // Static assets (hashed JS/CSS/images under frontend/dist/assets/) don't
+  // need nonce treatment — only the HTML document's own <script> tag does.
+  app.use((req, res, next) => {
+    if (!FRONTEND_HOSTS.has(req.hostname)) return next();
+    express.static(frontendDistPath)(req, res, next);
+  });
+
+  app.get('/{*path}', (req, res, next) => {
+    if (!FRONTEND_HOSTS.has(req.hostname)) return next();
+
+    if (isReservedOrProbePath(req.path)) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    const html = frontendIndexHtmlTemplate.replaceAll('__CSP_NONCE__', res.locals.cspNonce);
+    res.type('html').send(html);
+  });
+} else {
+  console.error('❌ FRONTEND DIST FOLDER NOT FOUND!');
+}
+
 // ====================== SERVE REACT ADMIN DASHBOARD ======================
 const distPath = path.join(__dirname, 'dist');
 
@@ -853,33 +923,20 @@ console.log('📁 index.html exists?', fs.existsSync(path.join(distPath, 'index.
 if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'))) {
   console.log('✅ Dist folder OK → Serving Admin SPA');
 
-  app.use(express.static(distPath));
-
-  // Well-known probe paths that must never return the admin shell. The
-  // assessment fingerprinted the admin client by hitting /health, /swagger,
-  // /graphql, /metrics, /openapi.json etc. and getting a 200 "WTT Admin Page"
-  // response for each (F-04). Denying just these keeps the SPA's own routes
-  // working — they live in a separate repo and change often, so an allowlist
-  // of admin routes would silently 404 real pages on the next deploy.
-  const PROBE_PATHS = new Set([
-    '/health', '/healthz', '/status', '/version',
-    '/docs', '/api-docs', '/swagger', '/swagger.json',
-    '/openapi.json', '/graphql', '/metrics',
-    '/.env', '/config.json', '/actuator',
-  ]);
+  app.use((req, res, next) => {
+    if (FRONTEND_HOSTS.has(req.hostname)) return next();
+    express.static(distPath)(req, res, next);
+  });
 
   app.get('/{*path}', (req, res) => {
-    // Huwag i-serve ang index.html sa API, uploads, at social redirects
-    if (req.path.startsWith('/api/') ||
-        req.path.startsWith('/uploads') ||
-        req.path.startsWith('/img') ||
-        req.path.startsWith('/fb') ||      // social redirects
-        req.path.startsWith('/ig') ||
-        req.path.startsWith('/tiktok')) {
+    if (FRONTEND_HOSTS.has(req.hostname)) {
+      // Already handled by the main frontend block above; if we get here
+      // the frontend dist wasn't found — fall through to a 404 rather than
+      // serving the admin shell on the main site's domain.
       return res.status(404).json({ error: 'Not found' });
     }
 
-    if (PROBE_PATHS.has(req.path.toLowerCase())) {
+    if (isReservedOrProbePath(req.path)) {
       return res.status(404).json({ error: 'Not found' });
     }
 
