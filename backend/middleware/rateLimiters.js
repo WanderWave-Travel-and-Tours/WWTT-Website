@@ -47,23 +47,4 @@ const telemetryLimiter = rateLimit({
     },
 });
 
-// Feedback limiter — public, unauthenticated POST /api/feedback. Without a tight
-// cap a single IP (or bot) can flood the form, each submission triggering two DB
-// writes (Feedback + ActivityLog) and persisting a base64 screenshot. 5 submissions
-// per 10-minute window is generous for a human filling out a feedback form while
-// making bulk spam impractical.
-const feedbackLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 5,
-    standardHeaders: false,
-    legacyHeaders: false,
-    // Shared MongoDB counter so the cap of 5 holds across ALL server instances,
-    // not 5-per-instance like the default in-memory store would give on Render.
-    store: new MongoRateLimitStore(),
-    message: {
-        success: false,
-        message: 'Too many feedback submissions from this IP. Please try again later.',
-    },
-});
-
-module.exports = { authLimiter, apiLimiter, telemetryLimiter, feedbackLimiter };
+module.exports = { authLimiter, apiLimiter, telemetryLimiter };

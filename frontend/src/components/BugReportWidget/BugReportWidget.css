@@ -1,0 +1,264 @@
+/* ============================================
+   BUG REPORT WIDGET - PEEKING SIDE TAB (2-TAP MOBILE)
+   ============================================ */
+
+.bug-report-modal-content * {
+  box-sizing: border-box;
+}
+
+/* TRIGGER BUTTON (Side Tab) */
+.bug-report-trigger-btn {
+  position: fixed;
+  bottom: 50px;
+  right: 0;
+  border-radius: 30px 0 0 30px;
+  background: linear-gradient(135deg, #fc9c1b 0%, #e68a00 100%);
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  box-shadow: 4px 4px 15px rgba(252, 156, 27, 0.3);
+  z-index: 9999;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.trigger-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.trigger-text {
+  max-width: 0;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0;
+}
+
+.bug-report-trigger-btn:hover,
+.bug-report-trigger-btn.expanded {
+  padding-left: 18px;
+  padding-right: 20px;
+  box-shadow: 6px 6px 20px rgba(252, 156, 27, 0.4);
+  background: linear-gradient(135deg, #ff9d00 0%, #f08000 100%);
+  opacity: 1;
+  transform: translateX(-4px);
+}
+
+.bug-report-trigger-btn:hover .trigger-text,
+.bug-report-trigger-btn.expanded .trigger-text {
+  max-width: 140px;
+  opacity: 1;
+  margin-left: 10px;
+}
+
+.bug-report-trigger-btn:active {
+  transform: translateX(0);
+}
+
+@media (max-width: 640px) {
+  .bug-report-trigger-btn {
+    bottom: calc(40px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ============================================
+   CONFIRMATION MODAL
+   ============================================ */
+.bug-report-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  background: rgba(10, 25, 47, 0.75);
+  backdrop-filter: blur(5px);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  animation: bugReportFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bug-report-modal-content {
+  background: white;
+  width: 100%;
+  max-width: 440px;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: bugReportSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.bug-report-header {
+  background: linear-gradient(135deg, #0a192f 0%, #172a45 100%);
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.bug-report-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(252, 156, 27, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+}
+
+.header-content {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.header-content svg {
+  color: #fc9c1b;
+  flex-shrink: 0;
+}
+
+.bug-report-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.bug-report-header p {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.bug-report-body {
+  padding: 24px 28px;
+}
+
+.bug-report-body p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.bug-report-footer {
+  padding: 20px 28px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cancel-btn {
+  background: white;
+  color: #4b5563;
+  border: 2px solid #e5e7eb;
+  padding: 11px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  flex: 1;
+}
+
+.cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.confirm-btn {
+  background: linear-gradient(135deg, #fc9c1b 0%, #e68a00 100%);
+  color: white;
+  border: none;
+  padding: 11px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+  font-family: inherit;
+  flex: 1;
+}
+
+.confirm-btn:hover {
+  background: linear-gradient(135deg, #ff9d00 0%, #f08000 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(252, 156, 27, 0.4);
+}
+
+.confirm-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes bugReportFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bugReportSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (max-width: 480px) {
+  .bug-report-footer {
+    flex-direction: column;
+  }
+  .cancel-btn, .confirm-btn {
+    width: 100%;
+  }
+}

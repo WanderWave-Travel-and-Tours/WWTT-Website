@@ -11,7 +11,7 @@ import { ToastProvider } from './components/toast/ToastManager';
 // Always-visible layout pieces (small, needed on every page)
 import Footer from './components/footer/footer.jsx';
 import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
-import FeedbackWidget from './components/FeedbackWidget/FeedbackWidget.jsx';
+import BugReportWidget from './components/BugReportWidget/BugReportWidget.jsx';
 
 // --- ROUTE COMPONENTS — lazy-loaded so each route gets its own chunk ---
 const FlightSearch        = lazy(() => import('./components/flightSearch/flightSearch.jsx'));
@@ -755,8 +755,8 @@ function MainLayout() {
         </Suspense>
       </main>
 
-      {/* ⭐ FLOATING FEEDBACK BUTTON - ADDED HERE */}
-      <FeedbackWidget />
+      {/* ⭐ FLOATING BUG REPORT BUTTON */}
+      <BugReportWidget />
 
       {!isPaymentSuccessPage && !isDashboardPage && <Footer />}
     </div>
