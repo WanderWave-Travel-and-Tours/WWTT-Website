@@ -174,6 +174,53 @@
 .bfm-price { color: #10b981; font-size: 1rem; }
 .bfm-accent-color { color: #fc9c1b; }
 
+/* --- AppointmentModal-specific (am-) --- */
+.am-strikethrough-price {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-right: 8px;
+}
+
+.am-promo-applied-text {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.am-walkin-info-box {
+  background: rgba(239, 246, 255, 0.95);
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.am-contact-badge {
+  background: #3b82f6;
+}
+
+.am-label-icon {
+  display: inline;
+  margin-right: 4px;
+}
+
+.am-notes-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.am-appointment-submit-btn {
+  background: #3b82f6;
+  flex: 2;
+}
+
+.am-appointment-submit-btn.am-submit-loading {
+  background: #94a3b8;
+}
+
 .bfm-grand-total {
   background: #fff7ed;
   border: 1px solid #fc9c1b;
@@ -277,9 +324,22 @@
 
 .bfm-progress-bar-fill {
   height: 100%;
+  width: var(--progress-pct);
   background: linear-gradient(90deg, #fc9c1b, #f97316);
   transition: width 0.3s ease;
   border-radius: 4px;
+}
+
+.bfm-hidden-file-input {
+  display: none;
+}
+
+.bfm-submit-btn-flex-1 {
+  flex: 1;
+}
+
+.bfm-submit-btn-flex-2 {
+  flex: 2;
 }
 
 /* --- Form Inputs --- */

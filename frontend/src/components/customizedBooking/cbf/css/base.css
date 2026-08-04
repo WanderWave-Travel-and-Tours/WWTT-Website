@@ -232,6 +232,7 @@
 
 .cbf-progress-bar-fill {
   height: 100%;
+  width: var(--progress-pct);
   background: linear-gradient(90deg, #fc9c1b, #f97316);
   transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
   border-radius: 4px;

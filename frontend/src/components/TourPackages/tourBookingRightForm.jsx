@@ -719,8 +719,8 @@ const handleRemoveFlight = () => {
             <div className="brf-selected-date-display">
               <div className="brf-date-icon">📅</div>
               <div>
-                <div style={{ fontWeight: '600', color: '#1f2937' }}>{formatDateRangeDisplay()}</div>
-                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '4px' }}>
+                <div className="tbrf-selected-date-title">{formatDateRangeDisplay()}</div>
+                <div className="tbrf-selected-date-subtitle">
                   {durationDays} days · {durationNights} {durationNights === 1 ? 'night' : 'nights'}
                 </div>
               </div>
@@ -756,41 +756,42 @@ const handleRemoveFlight = () => {
         <div className="brf-quantity-section">
           <div className="brf-quantity-item">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="tbrf-row-flex-8">
                 <span className="brf-quantity-label">Standard Pax</span>
-                <span style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontSize: '0.75rem', fontWeight: '700', borderRadius: '999px', padding: '2px 10px' }}>Solo Package</span>
+                <span className="tbrf-badge-green">Solo Package</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>1 pax only · 3+ years old</div>
+              <div className="tbrf-pax-note">1 pax only · 3+ years old</div>
             </div>
-            <span style={{ fontWeight: '800', fontSize: '1.1rem', color: '#1f2937', minWidth: '32px', textAlign: 'center' }}>1</span>
+            <span className="tbrf-pax-solo-count">1</span>
           </div>
         </div>
       ) : (
         <div className="brf-quantity-section">
           <div className="brf-quantity-item">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="tbrf-row-flex-8-wrap">
                 <span className="brf-quantity-label">Standard Pax</span>
                 {isMinTwoPkg && (
-                  <span style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', fontSize: '0.75rem', fontWeight: '700', borderRadius: '999px', padding: '2px 10px' }}>min. 2 pax</span>
+                  <span className="tbrf-badge-blue">min. 2 pax</span>
                 )}
                 {isSoloJoiners && !isMinTwoPkg && (
-                  <span style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontSize: '0.75rem', fontWeight: '700', borderRadius: '999px', padding: '2px 10px' }}>Solo / Group</span>
+                  <span className="tbrf-badge-green">Solo / Group</span>
                 )}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>3+ years old</div>
+              <div className="tbrf-pax-note">3+ years old</div>
             </div>
             <div className="brf-quantity-controls">
               <button
-                onClick={() => handleQuantity('adult', -1)} className="brf-quantity-btn" type="button"
+                onClick={() => handleQuantity('adult', -1)}
+                className={`brf-quantity-btn${(appliedPromo ? quantities.adult <= 4 : isMinTwoPkg ? quantities.adult <= 2 : quantities.adult <= 1) ? ' tbrf-quantity-btn-disabled' : ''}`}
+                type="button"
                 disabled={appliedPromo ? quantities.adult <= 4 : isMinTwoPkg ? quantities.adult <= 2 : quantities.adult <= 1}
-                style={(appliedPromo ? quantities.adult <= 4 : isMinTwoPkg ? quantities.adult <= 2 : quantities.adult <= 1) ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
               >
-                <Minus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+                <Minus size={18} color="#000000" strokeWidth={3} className="tbrf-qty-icon" />
               </button>
               <span className="brf-quantity-value">{quantities.adult}</span>
               <button onClick={() => handleQuantity('adult', 1)} className="brf-quantity-btn" type="button">
-                <Plus size={18} color="#000000" strokeWidth={3} style={{ minWidth: '18px', minHeight: '18px', stroke: '#000000' }} />
+                <Plus size={18} color="#000000" strokeWidth={3} className="tbrf-qty-icon" />
               </button>
             </div>
           </div>
@@ -816,13 +817,8 @@ const handleRemoveFlight = () => {
 
       {/* ✅ "Prefer a specific hotel?" notice — same as bookingRightForm */}
       {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
-        <div style={{
-          background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px',
-          padding: '12px 16px', marginTop: '16px', marginBottom: '20px',
-          display: 'flex', alignItems: 'flex-start', gap: '10px',
-          fontSize: '0.875rem', color: '#166534', lineHeight: '1.5'
-        }}>
-          <span style={{ fontSize: '1.1rem', marginTop: '1px' }}>💬</span>
+        <div className="tbrf-hotel-preference-notice">
+          <span className="tbrf-hotel-preference-icon">💬</span>
           <span>
             <strong>Prefer a specific hotel?</strong> The accommodation listed above is our standard inclusion, but you're welcome to request your preferred hotel.{' '}
             Just <strong>contact us</strong> after booking and we'll do our best to arrange it for you.
@@ -832,19 +828,19 @@ const handleRemoveFlight = () => {
 
       {/* ── Selected Flight display ───────────────────────────────────────── */}
       {selectedFlight && (
-        <div style={{ background: '#fff7ed', border: '2px solid #fc9c1b', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="tbrf-flight-added-box">
+          <div className="tbrf-flight-added-header-row">
+            <div className="tbrf-row-flex-8">
               <Plane size={20} color="#fc9c1b" />
-              <strong style={{ color: '#1f2937', fontSize: '0.95rem' }}>Flight Added to Package</strong>
+              <strong className="tbrf-flight-added-title">Flight Added to Package</strong>
             </div>
-            <button onClick={handleRemoveFlight} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>Remove</button>
+            <button onClick={handleRemoveFlight} className="tbrf-flight-remove-btn">Remove</button>
           </div>
-          <div style={{ fontSize: '0.9rem', color: '#374151', lineHeight: '1.6' }}>
+          <div className="tbrf-flight-details">
             <div><strong>{selectedFlight.airline.name}</strong> · {selectedFlight.airline.flightNumber || 'Flight'}</div>
             <div>{selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}</div>
-            <div style={{ color: '#6b7280', fontSize: '0.85rem' }}>{selectedFlight.departure.displayTime} - {selectedFlight.arrival.displayTime}</div>
-            <div style={{ marginTop: '8px', fontWeight: '700', color: '#fc9c1b', fontSize: '1rem' }}>+{selectedFlight.price.formatted}</div>
+            <div className="tbrf-flight-time">{selectedFlight.departure.displayTime} - {selectedFlight.arrival.displayTime}</div>
+            <div className="tbrf-flight-price">+{selectedFlight.price.formatted}</div>
           </div>
         </div>
       )}
@@ -869,14 +865,14 @@ const handleRemoveFlight = () => {
               </button>
             </div>
             {promoError && (
-              <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '8px', padding: '10px 12px', backgroundColor: '#fee2e2', borderRadius: '8px', border: '1px solid #fecaca', lineHeight: '1.5' }}>
+              <div className="tbrf-promo-error-box">
                 ❌ {promoError}
               </div>
             )}
           </>
         ) : (
           <div className="brf-promo-success-box">
-            <div style={{ flex: 1 }}>
+            <div className="tbrf-promo-flex-1">
               <div className="brf-promo-code-text">{appliedPromo.code}</div>
               <div className="brf-promo-desc-text">
                 {appliedPromo.discountType === 'Percentage'
@@ -889,7 +885,7 @@ const handleRemoveFlight = () => {
           </div>
         )}
         {promoWarning && (
-          <div style={{ marginTop: '8px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '0.82rem', color: '#92400e' }}>
+          <div className="tbrf-promo-warning-box">
             ⚠️ {promoWarning}
           </div>
         )}
@@ -899,37 +895,37 @@ const handleRemoveFlight = () => {
 <div className="brf-booking-footer">
   <div className="brf-total-row">
     <span className="brf-total-label">Package Total</span>
-    <span className="brf-total-amount" style={{ color: '#10b981' }}>
+    <span className="brf-total-amount tbrf-total-amount-green">
       {currencySymbol}{convertedPackageTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
     </span>
   </div>
 
   {/* ✅ Hotel accommodation line item */}
   {selectedRoomType && hotelAccommodationTotal > 0 && (
-    <div className="brf-total-row" style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '4px' }}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+    <div className="brf-total-row tbrf-hotel-row">
+      <span className="tbrf-hotel-row-label">
         🏨 Hotel
-        <span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '5px', padding: '1px 7px', fontSize: '0.78rem', color: '#475569', fontWeight: '600' }}>
+        <span className="tbrf-hotel-room-badge">
           {selectedRoomType.type}
         </span>
         · {durationNights} night{durationNights !== 1 ? 's' : ''} × {numberOfRooms} room{numberOfRooms !== 1 ? 's' : ''}
       </span>
-      <span style={{ fontWeight: '600', color: '#f97316' }}>
+      <span className="tbrf-hotel-row-value">
         +{currencySymbol}{convertedHotelTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
       </span>
     </div>
   )}
   {selectedRoomType && hotelAccommodationTotal === 0 && (
-    <div className="brf-total-row" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+    <div className="brf-total-row tbrf-hotel-row-included-line">
       <span>🏨 Hotel ({selectedRoomType.type})</span>
-      <span style={{ fontWeight: '600', color: '#10b981' }}>Included</span>
+      <span className="tbrf-hotel-row-included">Included</span>
     </div>
   )}
 
   {appliedPromo && (
-    <div className="brf-total-row" style={{ color: '#10b981', fontSize: '0.9rem' }}>
+    <div className="brf-total-row tbrf-discount-row">
       <span>- Promo Discount ({appliedPromo.code})</span>
-      <span style={{ fontWeight: '700' }}>
+      <span className="tbrf-discount-amount">
         -{currencySymbol}{convertedDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
       </span>
     </div>
@@ -937,7 +933,7 @@ const handleRemoveFlight = () => {
 
   {selectedFlight && (
     <>
-      <div className="brf-total-row" style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+      <div className="brf-total-row tbrf-airfare-row">
         <span>+ Airfare</span>
         <span>{currencySymbol}{convertedAirfareTotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}</span>
       </div>
@@ -945,9 +941,9 @@ const handleRemoveFlight = () => {
   )}
 
   {/* ✅ FIX: Single TOTAL AMOUNT row — no duplicate */}
-  <div className="brf-total-row" style={{ borderTop: '2px solid #fc9c1b', paddingTop: '12px', marginTop: '8px', fontSize: '1.1rem', fontWeight: '800', color: '#1f2937' }}>
+  <div className="brf-total-row tbrf-grand-total-row">
     <span>TOTAL AMOUNT</span>
-    <span style={{ color: '#fc9c1b' }}>
+    <span className="tbrf-grand-total-value">
       {currencySymbol}{convertedFinalTotalAmount.toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}
     </span>
   </div>
@@ -959,19 +955,18 @@ const handleRemoveFlight = () => {
         </button>
 
         {!hasValidPackageTotal && (
-          <div style={{ marginTop: '12px', padding: '16px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', color: '#92400e' }}>
-            <div style={{ fontSize: '24px' }}>⚠️</div>
+          <div className="tbrf-invalid-total-notice">
+            <div className="tbrf-invalid-total-icon">⚠️</div>
             <div>
-              <strong style={{ display: 'block', marginBottom: '4px' }}>Cannot proceed with booking</strong>
-              <span style={{ fontSize: '0.9rem' }}>Package total is zero. Please contact support.</span>
+              <strong className="tbrf-invalid-total-title">Cannot proceed with booking</strong>
+              <span className="tbrf-invalid-total-text">Package total is zero. Please contact support.</span>
             </div>
           </div>
         )}
 
         {hasOTCAccess && (
           <button
-            className="brf-walk-in-btn" type="button"
-            style={{ width: '100%', backgroundColor: '#3b82f6', color: 'white', padding: '18px', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '1.1rem', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 4px 6px rgba(59,130,246,0.2)', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            className="brf-walk-in-btn tbrf-walk-in-btn-styled" type="button"
           >
             <UserCheck size={20} /> Pay Over the Counter
           </button>
@@ -986,7 +981,7 @@ const handleRemoveFlight = () => {
           <MessageCircle size={20} /> Contact Sales
         </button>
 
-        <p style={{ textAlign: 'center', fontSize: '0.8rem', color: '#9ca3af', marginTop: '12px' }}>
+        <p className="tbrf-no-payment-note">
           No payment required today.
         </p>
       </div>

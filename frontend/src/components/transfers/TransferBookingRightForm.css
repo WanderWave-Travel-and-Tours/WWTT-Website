@@ -1,3 +1,51 @@
+/* --- Inline style conversions (CSP: remove 'unsafe-inline' from style-src) --- */
+.brf-selected-date-title { font-weight: 600; color: #1f2937; }
+.brf-selected-date-subtitle { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
+.brf-pax-note-sm { font-size: 0.8rem; color: #6b7280; margin-top: 4px; }
+.brf-quantity-btn-disabled { opacity: 0.4; cursor: not-allowed; }
+.brf-qty-icon { min-width: 18px; min-height: 18px; stroke: #000000; }
+.brf-promo-error-notice {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background-color: #fee2e2;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  line-height: 1.5;
+}
+.brf-flex-1 { flex: 1; }
+.brf-promo-warning-notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #92400e;
+}
+.brf-transfer-type-label { font-size: 0.75rem; color: #94a3b8; margin-left: 6px; font-weight: 500; }
+.brf-total-amount-active { color: #10b981; }
+.brf-discount-row { color: #10b981; font-size: 0.9rem; }
+.brf-fw-700 { font-weight: 700; }
+.brf-grand-total-row { border-top: 2px solid #fc9c1b; padding-top: 12px; margin-top: 8px; font-size: 1.1rem; font-weight: 800; color: #1f2937; }
+.brf-grand-total-value { color: #fc9c1b; }
+.brf-invalid-total-notice {
+  margin-top: 12px;
+  padding: 16px;
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #92400e;
+}
+.brf-invalid-total-icon { font-size: 24px; }
+.brf-invalid-total-title { display: block; margin-bottom: 4px; }
+.brf-invalid-total-text { font-size: 0.9rem; }
+.brf-no-payment-note { text-align: center; font-size: 0.8rem; color: #9ca3af; margin-top: 12px; }
+
 /* --- Calendar Section - UPGRADED UI --- */
 
 .brf-disabled-date {

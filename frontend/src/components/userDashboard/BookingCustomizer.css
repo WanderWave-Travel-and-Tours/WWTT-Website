@@ -2075,3 +2075,210 @@
 .bc-right-panel .hc-selection-summary {
   display: none;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   INLINE STYLE → CLASS CONVERSIONS (CSP style-src hardening)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Package icon in header (Package size={22}) */
+.pc-title-icon {
+  flex-shrink: 0;
+}
+
+/* Pricing-data-matched notice banner */
+.pc-pricing-match-banner {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1e40af;
+}
+
+/* ── Error/Warning alert — two states picked by error.includes('⚠️') ── */
+.pc-alert-base {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+
+.pc-alert-warning {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  color: #92400e;
+}
+
+.pc-alert-error {
+  background: #fee2e2;
+  border: 2px solid #ef4444;
+  color: #991b1b;
+}
+
+.pc-alert-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.pc-alert-icon-warning { color: #f59e0b; }
+.pc-alert-icon-error   { color: #ef4444; }
+
+.pc-alert-body {
+  flex: 1;
+}
+
+.pc-alert-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.pc-alert-message {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Pricing loading indicator next to "Package Inclusions" heading */
+.pc-fetching-prices {
+  margin-left: 8px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #f97316;
+}
+
+.pc-fetching-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f97316;
+  animation: pc-pulse 1.2s ease-in-out infinite;
+  margin-right: 4px;
+}
+
+/* Checkbox cursor — toggles between pointer and not-allowed */
+.pc-checkbox-pointer      { cursor: pointer; }
+.pc-checkbox-not-allowed  { cursor: not-allowed; }
+
+/* "Required" badge on last-remaining inclusion */
+.pc-badge-required {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+}
+
+/* "Added" badge on non-original inclusions */
+.pc-badge-added {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* "Deselected" badge on unchecked inclusions */
+.pc-badge-deselected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Empty-state box when no inclusions are found yet */
+.pc-empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
+}
+
+.pc-empty-state-icon {
+  margin: 0 auto 16px;
+  color: #cbd5e1;
+}
+
+.pc-empty-state-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.pc-empty-state-subtitle {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+}
+
+/* Unsaved pill pushed to the right of a section label */
+.bc-unsaved-pill-right {
+  margin-left: auto;
+}
+
+/* Hide the redundant "Price Summary" label in the merged hotel-only card */
+.bc-merged-section-label-hidden {
+  display: none;
+}
+
+/* Bold value cells inside price rows */
+.bc-price-value-bold {
+  font-weight: 700;
+}
+
+/* Hotel overview row without a bottom border (last row) */
+.bc-hotel-overview-row-noborder {
+  border-bottom: none;
+}
+
+/* "unsaved" pill with extra left margin when inline next to a value */
+.bc-hotel-overview-unsaved-inset {
+  margin-left: 6px;
+}
+
+/* Spacing for hotel-info row that sits right above the divider */
+.bc-hotel-info-row-spaced {
+  margin-bottom: 8px;
+}
+
+/* Price count text nudged right (used next to "Hotel upgrade" label) */
+.bc-price-count-inset {
+  margin-left: 6px;
+}
+
+/* Updated Total value — color driven by whether the net change is positive or negative */
+.bc-price-total-up   { color: #b45309; }
+.bc-price-total-down { color: #047857; }
+.bc-price-total-flat { color: #047857; }
+
+/* Price delta text next to the updated total — same up/down coloring */
+.bc-price-delta-up   { color: #b45309; }
+.bc-price-delta-down { color: #059669; }
+
+/* Remaining Balance label */
+.bc-balance-label {
+  font-weight: 800;
+}
+
+/* Remaining Balance value */
+.bc-balance-value {
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.bc-balance-value-up    { color: #dc2626; }
+.bc-balance-value-down  { color: #059669; }
+.bc-balance-value-flat  { color: #1e293b; }
+
+/* "(was ₱x)" delta note next to the remaining balance */
+.bc-balance-delta {
+  font-size: 0.76rem;
+  margin-left: 6px;
+}
+
+.bc-balance-delta-up   { color: #dc2626; }
+.bc-balance-delta-down { color: #059669; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }

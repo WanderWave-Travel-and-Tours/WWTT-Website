@@ -86,9 +86,8 @@ const UserSignup = ({ setAuthPage }) => {
                             const isActive = index === currentSlide;
                             return (
                                 <div 
-                                    key={index} 
-                                    className={`slide-item ${isActive ? 'active' : ''}`}
-                                    style={{ backgroundImage: `url(${dest.image})` }}
+                                    key={index}
+                                    className={`slide-item slide-bg-${index} ${isActive ? 'active' : ''}`}
                                 >
                                     <div className="slide-content-overlay">
                                         <h2 className="slide-title">{dest.name}</h2>

@@ -182,6 +182,29 @@
   font-weight: 700;
 }
 
+/* ✅ Price color states — active (timer running) vs expired (was inline style) */
+.blc-price--active {
+  color: #f97316;
+}
+
+.blc-price--expired {
+  color: #64748b;
+}
+
+/* ✅ Hotel upgrade cost badge next to the price (was inline style) */
+.blc-hotel-upgrade-badge {
+  font-size: 0.78rem;
+  color: #0284c7;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* --- Meta and Other Sections --- */
 .blc-meta-row {
   display: flex;
@@ -242,6 +265,11 @@
 .blc-card-header:hover {
   background: #f1f5f9;
   border-color: #cbd5e1;
+}
+
+/* ✅ Itinerary section title spacing (was inline style) */
+.blc-itinerary-title {
+  margin-bottom: 24px;
 }
 
 .blc-section-title {
@@ -334,6 +362,11 @@
   box-shadow: 0 0 0 1px #f97316;
 }
 
+/* ✅ Wrapper for each timeline item's card content (was inline style) */
+.blc-timeline-item-content {
+  padding-left: 16px;
+}
+
 .blc-day-card {
   background: white;
   padding: 16px;
@@ -364,6 +397,31 @@
   font-size: 1rem;
   margin: 0;
   flex: 1;
+}
+
+/* ✅ Accent color for the day title's descriptive text (was inline style) */
+.blc-day-title-accent {
+  color: #f97316;
+}
+
+/* ✅ Activities list rendered inside each expanded day (was inline style) */
+.blc-day-activities-list {
+  padding-left: 20px;
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.blc-day-activity-item {
+  margin-bottom: 6px;
+}
+
+/* ✅ Empty-state message when no itinerary data exists (was inline style) */
+.blc-no-itinerary-msg {
+  color: #999;
+  padding-left: 20px;
+  font-style: italic;
 }
 
 .blc-day-content {
@@ -691,6 +749,14 @@
   color: #1e293b;
   line-height: 1.4;
   word-break: break-word;
+}
+
+/* ✅ Row wrapping the inclusion title + FREE badge (was inline style) */
+.blc-incl-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .blc-incl-free-badge {

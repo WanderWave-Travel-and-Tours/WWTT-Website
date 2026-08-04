@@ -166,6 +166,28 @@
   text-align: right;
 }
 
+.hc-summary-value--surcharge {
+  color: #b45309;
+}
+
+/* ── Header icon spacing ────────────────────────────────────── */
+.hc-header-icon {
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+/* ── No-hotel summary box (fixed destination, editing unavailable) ── */
+.hc-selection-summary--static {
+  margin: 12px;
+}
+
+.hc-static-note {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-style: italic;
+}
+
 /* ── Save / Discard bar ─────────────────────────────────────── */
 .hc-save-bar {
   display: flex;

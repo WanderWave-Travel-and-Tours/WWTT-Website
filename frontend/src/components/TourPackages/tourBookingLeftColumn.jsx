@@ -277,7 +277,7 @@ const TourBookingLeftColumn = ({
             {duration && <h1 className="blc-title">{restOfTitle || (pkg.title || pkg.name)}</h1>}
             {!duration && <h1 className="blc-title">{pkg.title || pkg.name}</h1>}
             <div className="blc-price-section">
-              <span className="blc-price" style={{ color: '#f97316' }}>
+              <span className="blc-price">
                 {currencySymbol}{convertedDisplayPrice.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -332,7 +332,7 @@ const TourBookingLeftColumn = ({
                   {/* Middle: category label + title */}
                   <div className="blc-incl-text-col">
                     <span className="blc-incl-category-label">{category}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div className="blc-incl-title-row">
                       <span className="blc-incl-main-title">{cleanText}</span>
                       {guide && (
                         <span className="blc-incl-free-badge">FREE</span>

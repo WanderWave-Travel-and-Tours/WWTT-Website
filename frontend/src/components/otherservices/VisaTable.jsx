@@ -93,7 +93,7 @@ const VisaTable = ({ onSelectVisa, onClose }) => {
   if (loading) {
     return (
       <div className="visa-list-container">
-        <p style={{padding:'20px', textAlign:'center'}}>Loading Visa Information...</p>
+        <p className="visa-loading-text">Loading Visa Information...</p>
       </div>
     );
   }
@@ -114,7 +114,7 @@ const VisaTable = ({ onSelectVisa, onClose }) => {
 
       <div className="visa-list-wrapper">
         {visas.length === 0 ? (
-          <p style={{textAlign: 'center', padding: '20px', color: '#888'}}>
+          <p className="visa-empty-text">
             No visa requirements found. (Check Admin Dashboard)
           </p>
         ) : (
@@ -194,7 +194,7 @@ const VisaTable = ({ onSelectVisa, onClose }) => {
                               </div>
                             ))
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="visa-empty-subtext">
                               No specific requirements listed.
                             </p>
                           )}
@@ -263,7 +263,7 @@ const VisaTable = ({ onSelectVisa, onClose }) => {
                               })}
                             </ul>
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="visa-empty-subtext">
                               No download forms available.
                             </p>
                           )}
@@ -301,7 +301,7 @@ const VisaTable = ({ onSelectVisa, onClose }) => {
                               ))}
                             </ol>
                           ) : (
-                            <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
+                            <p className="visa-empty-subtext">
                               No process steps listed.
                             </p>
                           )}

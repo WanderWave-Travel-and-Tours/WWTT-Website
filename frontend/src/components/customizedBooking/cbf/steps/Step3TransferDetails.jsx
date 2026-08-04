@@ -112,8 +112,8 @@ export default function Step3TransferDetails({
       </div>
 
       {/* ── Booking Context ── */}
-      <div className="cbf-bctx-section-label" style={{ marginBottom: '6px' }}>BOOKING CONTEXT</div>
-      <div className="cbf-info-card-grid" style={{ marginBottom: '10px' }}>
+      <div className="cbf-bctx-section-label cbf-bctx-section-label--gap-md">BOOKING CONTEXT</div>
+      <div className="cbf-info-card-grid cbf-info-card-grid--gap-lg">
         {info.travelDate && (
           <div className="cbf-info-card">
             <div className="cbf-ic-icon-wrap date"><Calendar size={13} /></div>

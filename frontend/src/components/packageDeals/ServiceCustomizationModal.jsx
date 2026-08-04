@@ -214,20 +214,15 @@ const ServiceCustomizationModal = ({
 
           {/* ── Header ── */}
           <div className="nbm-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: '12px',
-                background: 'linear-gradient(135deg, #f59e0b, #fc9c1b)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '20px', flexShrink: 0,
-              }}>
+            <div className="scm-header-flex">
+              <div className="scm-header-icon">
                 🎭
               </div>
               <div>
-                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+                <h2 className="scm-header-title">
                   Customize Services
                 </h2>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', marginTop: '2px' }}>
+                <p className="scm-header-subtitle">
                   Select optional tours and transfers
                   {destination ? ` for ${destination}` : ''}
                 </p>
@@ -235,11 +230,7 @@ const ServiceCustomizationModal = ({
             </div>
             <button
               onClick={onClose}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#94a3b8', fontSize: '28px', lineHeight: 1,
-                padding: '4px', borderRadius: '8px', transition: 'color 0.15s',
-              }}
+              className="scm-close-btn"
               onMouseEnter={e => (e.currentTarget.style.color = '#0f172a')}
               onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
             >
@@ -252,7 +243,7 @@ const ServiceCustomizationModal = ({
 
             {loadingAddOns ? (
               <div className="nbm-addon-loading">
-                <div style={{ fontSize: '36px', marginBottom: '10px' }}>⏳</div>
+                <div className="scm-loading-icon">⏳</div>
                 Loading available services{destination ? ` for ${destination}` : ''}…
               </div>
             ) : (
@@ -295,10 +286,7 @@ const ServiceCustomizationModal = ({
                                 {tour.destination && <span>📍 {tour.destination}</span>}
                                 {tour.category    && <span>🏷 {tour.category}</span>}
                                 {tour.tourType    && (
-                                  <span style={{
-                                    background: tour.tourType === 'joiners' ? '#eff6ff' : '#f0fdf4',
-                                    color:      tour.tourType === 'joiners' ? '#1d4ed8' : '#166534',
-                                  }}>
+                                  <span className={tour.tourType === 'joiners' ? 'scm-tourtype-badge-joiners' : 'scm-tourtype-badge-private'}>
                                     {tour.tourType === 'joiners'
                                       ? `👥 Joiners${tour.minPax ? ` (min ${tour.minPax})` : ''}`
                                       : '🔒 Private'}
@@ -392,21 +380,11 @@ const ServiceCustomizationModal = ({
 
                               {/* Details badge — shown when transfer is selected */}
                               {isSelected && hasDetails && (
-                                <div style={{
-                                  fontSize: '0.78rem', color: '#166534',
-                                  background: '#f0fdf4', border: '1px solid #bbf7d0',
-                                  borderRadius: '8px', padding: '5px 10px',
-                                  display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600,
-                                }}>
+                                <div className="scm-details-saved-badge">
                                   ✓ Details saved
                                   <button
                                     onClick={() => handleOpenTransferDetails(transfer)}
-                                    style={{
-                                      background: 'none', border: 'none',
-                                      color: '#16a34a', fontSize: '0.75rem',
-                                      fontWeight: 700, cursor: 'pointer',
-                                      padding: '0 0 0 4px', fontFamily: 'inherit',
-                                    }}
+                                    className="scm-details-edit-btn"
                                   >
                                     (edit)
                                   </button>
@@ -439,11 +417,11 @@ const ServiceCustomizationModal = ({
                 {/* ── Empty state ── */}
                 {availableTours.length === 0 && availableTransfers.length === 0 && (
                   <div className="nbm-addon-empty">
-                    <div style={{ fontSize: '44px', marginBottom: '14px' }}>🏖️</div>
-                    <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px', fontSize: '1.05rem' }}>
+                    <div className="scm-empty-icon">🏖️</div>
+                    <div className="scm-empty-title">
                       No Services Available
                     </div>
-                    <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                    <div className="scm-empty-subtext">
                       {destination
                         ? `No tours or transfers are currently listed for ${destination}.`
                         : 'No tours or transfers are currently available.'}
@@ -453,16 +431,13 @@ const ServiceCustomizationModal = ({
 
                 {/* ── Grand Total Summary ── */}
                 {(selectedTours.length > 0 || selectedTransfers.length > 0) && (
-                  <div className="nbm-total-box" style={{ marginTop: '24px' }}>
-                    <div style={{
-                      fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8',
-                      textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px',
-                    }}>
+                  <div className="nbm-total-box scm-total-box">
+                    <div className="scm-breakdown-label">
                       Selected Services Breakdown
                     </div>
 
                     {selectedTours.map(t => (
-                      <div key={t._id} className="nbm-total-row" style={{ fontSize: '0.95rem' }}>
+                      <div key={t._id} className="nbm-total-row scm-total-row">
                         <span>🗺️ {t.title} × {paxCount} pax</span>
                         <span>₱{((t.price || 0) * paxCount).toLocaleString()}</span>
                       </div>
@@ -472,7 +447,7 @@ const ServiceCustomizationModal = ({
                       const type  = transferTypes[t._id] || 'oneway';
                       const price = type === 'roundtrip' ? (t.roundtripPrice || 0) : (t.oneWayPrice || 0);
                       return (
-                        <div key={t._id} className="nbm-total-row" style={{ fontSize: '0.95rem' }}>
+                        <div key={t._id} className="nbm-total-row scm-total-row">
                           <span>🚐 {t.title} ({type === 'roundtrip' ? 'Roundtrip' : 'One Way'})</span>
                           <span>₱{price.toLocaleString()}</span>
                         </div>
@@ -523,11 +498,11 @@ const ServiceCustomizationModal = ({
 
               {/* Header */}
               <div className="nbm-tdm-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="scm-header-flex">
                   <div className="nbm-tdm-header-icon">🚐</div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>{t.title}</h3>
-                    <div style={{ fontSize: '0.82rem', opacity: 0.85, marginTop: '2px' }}>
+                    <h3 className="scm-tdm-title">{t.title}</h3>
+                    <div className="scm-tdm-subtitle">
                       Fill in scheduling details for this transfer
                     </div>
                   </div>
@@ -596,7 +571,7 @@ const ServiceCustomizationModal = ({
                   {/* Arrival Time */}
                   <div className="nbm-tdm-field">
                     <label>
-                      Arrival Time <span style={{ color: '#ef4444' }}>*</span>
+                      Arrival Time <span className="scm-required-asterisk">*</span>
                       <span className="nbm-tdm-field-hint"> When the customer arrives at the destination</span>
                     </label>
                     <input
@@ -610,7 +585,7 @@ const ServiceCustomizationModal = ({
                   {detailsIsRoundtrip && (
                     <div className="nbm-tdm-field">
                       <label>
-                        Departure Time <span style={{ color: '#ef4444' }}>*</span>
+                        Departure Time <span className="scm-required-asterisk">*</span>
                         {returnDate && (
                           <span className="nbm-tdm-field-hint"> Return departure on {returnDate}</span>
                         )}
@@ -626,7 +601,7 @@ const ServiceCustomizationModal = ({
                   {/* Pickup Location */}
                   <div className="nbm-tdm-field">
                     <label>
-                      Pickup Location <span style={{ color: '#ef4444' }}>*</span>
+                      Pickup Location <span className="scm-required-asterisk">*</span>
                     </label>
                     <input
                       type="text"
@@ -640,7 +615,7 @@ const ServiceCustomizationModal = ({
                   {detailsIsRoundtrip && (
                     <div className="nbm-tdm-field">
                       <label>
-                        Drop-off Location <span style={{ color: '#ef4444' }}>*</span>
+                        Drop-off Location <span className="scm-required-asterisk">*</span>
                         <span className="nbm-tdm-field-hint"> Where the customer returns to</span>
                       </label>
                       <input
@@ -673,8 +648,7 @@ const ServiceCustomizationModal = ({
               {/* Footer */}
               <div className="nbm-tdm-footer">
                 <button
-                  className="nbm-btn nbm-btn-back"
-                  style={{ flex: '0 0 auto', padding: '14px 28px' }}
+                  className="nbm-btn nbm-btn-back scm-tdm-cancel-btn"
                   onClick={() => setDetailsModalTransfer(null)}
                 >
                   Cancel

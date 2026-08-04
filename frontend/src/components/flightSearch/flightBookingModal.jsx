@@ -445,7 +445,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
 
               {/* Sliding track */}
               <div className="bm-slides-wrapper">
-                <div className="bm-slides-track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
+                <div className="bm-slides-track" style={{ '--slide-offset': `-${currentSlide * 100}%` }}>
 
                   {/* Slide 0 — Primary */}
                   <div className="bm-slide">

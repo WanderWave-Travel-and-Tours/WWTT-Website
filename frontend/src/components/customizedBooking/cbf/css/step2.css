@@ -118,6 +118,12 @@
 
 .cbf-s2-context strong { color: #1e3a5f; font-weight: 700; }
 
+.cbf-s2-context-icon {
+  color: #fc9c1b;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 /* Divider before SelectedPanel */
 .cbf-s2-panel-divider {
   display: flex;

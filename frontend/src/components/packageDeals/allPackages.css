@@ -938,6 +938,115 @@
   height: 100%;
 }
 
+/* --- CSP hardening: classes replacing inline style={{}} objects --- */
+
+.ap-promo-section-wrapper {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.ap-layout-relative {
+  position: relative;
+}
+
+.ap-mt-4 {
+  margin-top: 4px;
+}
+
+.ap-clear-filters-btn-mobile {
+  background: #FF8C00;
+  margin-top: 10px;
+  width: 100%;
+  padding: 12px;
+}
+
+.ap-login-required-message {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ap-login-required-emoji {
+  font-size: 80px;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 4px 8px rgba(255, 140, 0, 0.3));
+}
+
+.ap-login-required-title {
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.ap-login-required-text {
+  color: #6b7280;
+  margin: 0 0 32px 0;
+  font-size: 16px;
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+.ap-login-required-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background-color: #FF8C00;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+}
+
+.ap-no-results {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.ap-no-results-icon {
+  margin-bottom: 24px;
+}
+
+.ap-no-results-title {
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  font-size: 24px;
+}
+
+.ap-no-results-text {
+  color: #6b7280;
+  margin: 0 0 24px 0;
+  font-size: 15px;
+}
+
+.ap-clear-filters-btn {
+  padding: 12px 24px;
+  color: #FF8C00;
+  background: none;
+  border: 2px solid #FF8C00;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-animate-wrapper {
     animation: none;

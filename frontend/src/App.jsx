@@ -33,53 +33,17 @@ const CustomizedBookingForm = lazy(() => import('./components/customizedBooking/
 const NotFound = () => {
   const navigate = useNavigate();
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      minHeight: '70vh',
-      textAlign: 'center',
-      padding: '2rem',
-      backgroundColor: '#0a192f', // Dark Blue Background
-      color: '#fff',
-      width: '100%',
-      boxSizing: 'border-box'
-    }}>
-      <AlertCircle size={80} color="#fc9c1b" style={{ marginBottom: '1.5rem' }} />
-      <h1 style={{ 
-        fontSize: '3.5rem', 
-        fontWeight: 'bold', 
-        marginBottom: '0.5rem', 
-        color: '#fc9c1b' // WanderWave Orange
-      }}>
+    <div className="app-notfound-container">
+      <AlertCircle size={80} color="#fc9c1b" className="app-notfound-icon" />
+      <h1 className="app-notfound-title">
         404 - Page Not Found
       </h1>
-      <p style={{ 
-        color: '#e2e8f0', 
-        marginBottom: '2.5rem', 
-        maxWidth: '600px',
-        fontSize: '1.2rem',
-        lineHeight: '1.6'
-      }}>
+      <p className="app-notfound-description">
         Oops! The page you are looking for does not exist. It might have been moved or deleted.
       </p>
-      <button 
+      <button
         onClick={() => navigate('/')}
-        style={{
-          padding: '1rem 2.5rem',
-          background: '#fc9c1b',
-          color: 'white',
-          border: 'none',
-          borderRadius: '50px', // Rounded pill shape
-          cursor: 'pointer',
-          fontSize: '1.1rem',
-          fontWeight: 'bold',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          boxShadow: '0 4px 14px 0 rgba(252, 156, 27, 0.39)'
-        }}
-        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        className="app-404-cta-btn"
       >
         Go Back Home
       </button>
@@ -104,29 +68,12 @@ const PackageBookingWrapper = () => {
 
   if (!pkg) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '60vh',
-        fontSize: '1.2rem',
-        color: '#666',
-        gap: '1rem'
-      }}>
+      <div className="app-pkg-not-found-container">
         <p>Package data not found...</p>
-        <p style={{ fontSize: '0.9rem', color: '#999' }}>Redirecting to packages page...</p>
-        <button 
+        <p className="app-pkg-not-found-subtext">Redirecting to packages page...</p>
+        <button
           onClick={() => navigate('/packages')}
-          style={{
-            padding: '0.75rem 1.5rem',
-            background: '#fc9c1b',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '1rem'
-          }}
+          className="app-pkg-not-found-btn"
         >
           Go to Packages Now
         </button>
@@ -329,18 +276,8 @@ function MainLayout() {
       }
     };
 
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .goog-te-banner-frame.skiptranslate { display: none !important; }
-      body { top: 0 !important; position: static !important; }
-      #google_translate_element { display: none !important; }
-      .goog-te-gadget-icon { display: none !important; }
-      .goog-te-gadget-simple { background-color: transparent !important; border: none !important; }
-      .goog-logo-link { display: none !important; }
-      .goog-te-gadget { color: transparent !important; font-size: 0 !important; }
-      .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
-    `;
-    document.head.appendChild(style);
+    // Google Translate widget hiding rules live in App.css (already covers all
+    // selectors that were injected here dynamically) — no runtime <style> needed.
 
     let script;
     // Delay Google Translate by 5s — keeps the main thread clear during critical paint window
@@ -721,7 +658,7 @@ function MainLayout() {
       )}
 
       <main className="main-content">
-        <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="ww-route-spinner" /></div>}>
+        <Suspense fallback={<div className="app-route-spinner-wrapper"><div className="ww-route-spinner" /></div>}>
           <Routes>
             <Route path="/login" element={<div>Login</div>} />
             <Route path="/flights" element={<FlightSearch />} />
@@ -743,7 +680,7 @@ function MainLayout() {
                 currentUser ? (
                   <UserDashboard user={currentUser} onLogout={handleLogout} />
                 ) : (
-                  <div style={{ padding: '2rem', textAlign: 'center' }}>
+                  <div className="app-dashboard-login-required">
                     <h2>Please log in to access dashboard</h2>
                     <button onClick={() => navigate('/login')}>Login</button>
                   </div>

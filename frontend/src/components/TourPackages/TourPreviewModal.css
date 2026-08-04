@@ -76,6 +76,7 @@
   height: 24px !important;
   min-width: 24px !important;
   min-height: 24px !important;
+  flex-shrink: 0 !important;
   display: block !important;
   stroke-width: 3 !important;
   pointer-events: none;
@@ -343,6 +344,17 @@
   align-items: center;
   gap: 4px;
   margin-top: 2px;
+}
+
+.ppm-promo-applied-badge {
+  margin-left: 6px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-weight: 700;
+  font-size: 0.7rem;
 }
 
 .ppm-footer-actions {

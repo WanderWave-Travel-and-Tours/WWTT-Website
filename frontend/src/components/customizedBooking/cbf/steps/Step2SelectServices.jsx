@@ -45,7 +45,7 @@ export default function Step2SelectServices({
 
       {/* Destination context */}
       <div className="cbf-s2-context">
-        <MapPin size={14} style={{ color: '#fc9c1b', flexShrink: 0, marginTop: 1 }} />
+        <MapPin size={14} className="cbf-s2-context-icon" />
         <span>
           Pumili ng services para sa <strong>{info.destination}</strong>.
           Maaaring mag-add ng tours at transfers.

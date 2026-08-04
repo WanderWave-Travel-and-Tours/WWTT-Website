@@ -86,7 +86,7 @@ const BookingFormModal = ({
               <strong className="bfm-summary-value bfm-price">
                 {appliedPromo ? (
                   <>
-                    <span style={{textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem', marginRight: '8px'}}>
+                    <span className="am-strikethrough-price">
                       ₱{packageTotal.toLocaleString()}
                     </span>
                     ₱{finalPackageTotal.toLocaleString()}
@@ -96,7 +96,7 @@ const BookingFormModal = ({
                 )}
               </strong>
               {appliedPromo && (
-                <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
+                <span className="bfm-summary-subtext am-promo-applied-text">
                   🎉 {appliedPromo.code} applied (-₱{discountAmount.toLocaleString()})
                 </span>
               )}
@@ -106,7 +106,7 @@ const BookingFormModal = ({
               <>
                 <div className="bfm-summary-item">
                   <span className="bfm-summary-label">
-                    <Plane size={12} style={{display:'inline', marginRight:'4px'}}/>
+                    <Plane size={12} className="am-label-icon"/>
                     Airfare ({selectedFlight.airline.name})
                   </span>
                   <strong className="bfm-summary-value bfm-accent-color">
@@ -149,7 +149,7 @@ const BookingFormModal = ({
               <span className="bfm-progress-percent">{progressPercent}% Complete</span>
             </div>
             <div className="bfm-progress-bar-container">
-              <div className="bfm-progress-bar-fill" style={{width: `${progressPercent}%`}} />
+              <div className="bfm-progress-bar-fill" style={{ '--progress-pct': `${progressPercent}%` }} />
             </div>
           </div>
 
@@ -297,7 +297,7 @@ const BookingFormModal = ({
                         accept="image/*,.pdf"
                         onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)}
                         id={`id-upload-${passengerStep}`}
-                        style={{display: 'none'}}
+                        className="bfm-hidden-file-input"
                       />
                       <label htmlFor={`id-upload-${passengerStep}`} className="bfm-file-upload-label">
                         <span className="bfm-upload-icon"><Upload size={18}/></span>
@@ -340,7 +340,7 @@ const BookingFormModal = ({
                         accept="image/*,.pdf"
                         onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)}
                         id={`passport-upload-${passengerStep}`}
-                        style={{display: 'none'}}
+                        className="bfm-hidden-file-input"
                       />
                       <label htmlFor={`passport-upload-${passengerStep}`} className="bfm-file-upload-label">
                         <span className="bfm-upload-icon"><Upload size={18}/></span>
@@ -367,12 +367,9 @@ const BookingFormModal = ({
               )}
               
               <button 
-                type="submit" 
+                type="submit"
                 disabled={loading}
-                className="bfm-submit-btn"
-                style={{
-                  flex: passengerStep === 1 ? '1' : '2'
-                }}
+                className={`bfm-submit-btn ${passengerStep === 1 ? 'bfm-submit-btn-flex-1' : 'bfm-submit-btn-flex-2'}`}
               >
                 {loading ? 'PROCESSING...' : 
                  passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 

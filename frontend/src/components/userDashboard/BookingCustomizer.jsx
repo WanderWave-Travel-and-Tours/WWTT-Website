@@ -1141,7 +1141,7 @@ const BookingCustomizer = ({
       <div className="pc-header">
         <div className="pc-title-row">
           <span className="pc-title-accent" />
-          <Package size={22} color="#f97316" style={{ flexShrink: 0 }} />
+          <Package size={22} color="#f97316" className="pc-title-icon" />
           <h2 className="pc-title">Customize Your Package</h2>
         </div>
         <p className="pc-subtitle">
@@ -1152,15 +1152,7 @@ const BookingCustomizer = ({
         </div>
         
         {customizedInclusions.length > 0 && matchedInclusionCount > 0 && (
-          <div style={{
-            marginTop: '12px',
-            padding: '8px 12px',
-            background: '#dbeafe',
-            border: '1px solid #93c5fd',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            color: '#1e40af',
-          }}>
+          <div className="pc-pricing-match-banner">
             ✅ {matchedInclusionCount} of {customizedInclusions.length} inclusions have pricing data
           </div>
         )}
@@ -1168,27 +1160,16 @@ const BookingCustomizer = ({
 
       {/* Error/Warning Alert */}
       {error && (
-        <div className="pc-error-alert" style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-          padding: '16px',
-          marginBottom: '20px',
-          background: error.includes('⚠️') ? '#fef3c7' : '#fee2e2',
-          border: `2px solid ${error.includes('⚠️') ? '#f59e0b' : '#ef4444'}`,
-          borderRadius: '12px',
-          color: error.includes('⚠️') ? '#92400e' : '#991b1b',
-        }}>
-          <AlertCircle size={20} style={{ 
-            marginTop: '2px',
-            flexShrink: 0,
-            color: error.includes('⚠️') ? '#f59e0b' : '#ef4444',
-          }} />
-          <div style={{ flex: 1 }}>
-            <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.95rem' }}>
+        <div className={`pc-error-alert pc-alert-base ${error.includes('⚠️') ? 'pc-alert-warning' : 'pc-alert-error'}`}>
+          <AlertCircle
+            size={20}
+            className={`pc-alert-icon ${error.includes('⚠️') ? 'pc-alert-icon-warning' : 'pc-alert-icon-error'}`}
+          />
+          <div className="pc-alert-body">
+            <strong className="pc-alert-title">
               {error.includes('⚠️') ? 'Validation Warning' : 'Error'}
             </strong>
-            <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
+            <p className="pc-alert-message">
               {error}
             </p>
           </div>
@@ -1202,12 +1183,8 @@ const BookingCustomizer = ({
             <span className="pc-section-accent" />
             Package Inclusions
             {isPricingLoading && (
-              <span style={{ marginLeft: '8px', fontSize: '0.75rem', fontWeight: '400', color: '#f97316' }}>
-                <span style={{
-                  display: 'inline-block', width: '8px', height: '8px',
-                  borderRadius: '50%', background: '#f97316',
-                  animation: 'pc-pulse 1.2s ease-in-out infinite', marginRight: '4px',
-                }} />
+              <span className="pc-fetching-prices">
+                <span className="pc-fetching-dot" />
                 Fetching prices…
               </span>
             )}
@@ -1242,12 +1219,11 @@ const BookingCustomizer = ({
                     <div className="pc-inclusion-main">
                       <input
                         type="checkbox"
-                        className="pc-checkbox"
+                        className={`pc-checkbox ${isLastRemaining ? 'pc-checkbox-not-allowed' : 'pc-checkbox-pointer'}`}
                         checked={inclusion.isChecked}
                         onChange={() => toggleInclusion(inclusion.id)}
                         disabled={isLastRemaining}
                         title={isLastRemaining ? 'This is the last remaining inclusion and cannot be removed' : ''}
-                        style={{ cursor: isLastRemaining ? 'not-allowed' : 'pointer' }}
                       />
 
                       <div className="pc-inclusion-info">
@@ -1256,8 +1232,7 @@ const BookingCustomizer = ({
 
                           {isLastRemaining && (
                             <span
-                              className="pc-badge"
-                              style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', padding: '2px 6px' }}
+                              className="pc-badge pc-badge-required"
                               title="At least one inclusion must remain in your package"
                             >
                               Required
@@ -1265,13 +1240,13 @@ const BookingCustomizer = ({
                           )}
 
                           {!inclusion.isOriginal && (
-                            <span className="pc-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
+                            <span className="pc-badge pc-badge-added">
                               Added
                             </span>
                           )}
 
                           {!inclusion.isChecked && (
-                            <span className="pc-badge" style={{ background: '#fee2e2', color: '#991b1b' }}>
+                            <span className="pc-badge pc-badge-deselected">
                               Deselected
                             </span>
                           )}
@@ -1322,19 +1297,12 @@ const BookingCustomizer = ({
             )}
           </>
         ) : (
-          <div style={{
-            padding: '40px 20px',
-            textAlign: 'center',
-            color: '#64748b',
-            background: '#f8fafc',
-            borderRadius: '12px',
-            border: '2px dashed #cbd5e1',
-          }}>
-            <Package size={48} style={{ margin: '0 auto 16px', color: '#cbd5e1' }} />
-            <p style={{ margin: 0, fontSize: '1rem', fontWeight: '500' }}>
+          <div className="pc-empty-state">
+            <Package size={48} className="pc-empty-state-icon" />
+            <p className="pc-empty-state-title">
               No inclusions found for this booking
             </p>
-            <p style={{ margin: '8px 0 0', fontSize: '0.875rem' }}>
+            <p className="pc-empty-state-subtitle">
               Loading package details...
             </p>
           </div>
@@ -1437,13 +1405,6 @@ const BookingCustomizer = ({
         )}
       </div>
 
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
-      `}</style>
-
             </div>{/* end bc-left-content */}
           </div>
         )}{/* end isDestinationSupported */}
@@ -1516,7 +1477,7 @@ const BookingCustomizer = ({
                         <div className="bc-merged-hotel-section">
                           <div className="bc-merged-section-label">
                             <Building2 size={12} /> Hotel Selection
-                            {hasChanges && <span className="bc-unsaved-pill" style={{ marginLeft: 'auto' }}>UNSAVED</span>}
+                            {hasChanges && <span className="bc-unsaved-pill bc-unsaved-pill-right">UNSAVED</span>}
                           </div>
                           <div className="bc-hotel-overview-row">
                             <span className="bc-hotel-overview-label">Selected Tier</span>
@@ -1539,7 +1500,7 @@ const BookingCustomizer = ({
                               </span>
                             </div>
                           )}
-                          <div className="bc-hotel-overview-row" style={{ borderBottom: 'none' }}>
+                          <div className="bc-hotel-overview-row bc-hotel-overview-row-noborder">
                             <span className="bc-hotel-overview-label">Rooms Needed</span>
                             <span className="bc-hotel-overview-value">
                               {hotelPriceInfo.numberOfRooms} room{hotelPriceInfo.numberOfRooms > 1 ? 's' : ''}
@@ -1553,19 +1514,19 @@ const BookingCustomizer = ({
 
                       {/* ── Price Summary section ── */}
                       <div className="bc-merged-price-section">
-                        <div className="bc-merged-section-label" style={{ display: 'none' }}>
+                        <div className="bc-merged-section-label bc-merged-section-label-hidden">
                           <DollarSign size={12} /> Price Summary
-                          {hasChanges && <span className="bc-unsaved-pill" style={{ marginLeft: 'auto' }}>UNSAVED</span>}
+                          {hasChanges && <span className="bc-unsaved-pill bc-unsaved-pill-right">UNSAVED</span>}
                         </div>
                         <div className="bc-price-row">
                           <span>Base Package Price</span>
-                          <span style={{ fontWeight: 700 }}>₱{basePrice.toLocaleString()}</span>
+                          <span className="bc-price-value-bold">₱{basePrice.toLocaleString()}</span>
                         </div>
                         {hasChanges && hotelPriceInfo && (
                           <div className="bc-price-row highlight">
                             <span>
                               Hotel upgrade
-                              <span className="bc-price-count" style={{ marginLeft: 6 }}>
+                              <span className="bc-price-count bc-price-count-inset">
                                 ({hotelPriceInfo.selectedRoomType?.type} · {hotelPriceInfo.numberOfRooms} rm × {hotelPriceInfo.durationNights} nights)
                               </span>
                             </span>
@@ -1574,12 +1535,10 @@ const BookingCustomizer = ({
                         )}
                         <div className="bc-price-row total">
                           <span>Updated Total</span>
-                          <span className="bc-price-total" style={{
-                            color: netChange > 0 ? '#b45309' : '#047857'
-                          }}>
+                          <span className={`bc-price-total ${netChange > 0 ? 'bc-price-total-up' : 'bc-price-total-down'}`}>
                             ₱{newTotal.toLocaleString()}
                             {netChange !== 0 && (
-                              <span className="bc-price-delta" style={{ color: netChange > 0 ? '#b45309' : '#059669' }}>
+                              <span className={`bc-price-delta ${netChange > 0 ? 'bc-price-delta-up' : 'bc-price-delta-down'}`}>
                                 {netChange > 0 ? '+' : ''}₱{netChange.toLocaleString()}
                               </span>
                             )}
@@ -1587,21 +1546,15 @@ const BookingCustomizer = ({
                         </div>
                         {isPartial && (
                           <div className="bc-price-row bc-balance-row">
-                            <span style={{ fontWeight: 800 }}>Remaining Balance</span>
-                            <span style={{
-                              fontWeight: 900,
-                              fontSize: '1rem',
-                              color: hasChanges
-                                ? (newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b')
-                                : '#1e293b'
-                            }}>
+                            <span className="bc-balance-label">Remaining Balance</span>
+                            <span className={`bc-balance-value ${
+                              hasChanges
+                                ? (newBalance < currentBalance ? 'bc-balance-value-down' : newBalance > currentBalance ? 'bc-balance-value-up' : 'bc-balance-value-flat')
+                                : 'bc-balance-value-flat'
+                            }`}>
                               ₱{(hasChanges ? newBalance : currentBalance).toLocaleString()}
                               {hasChanges && newBalance !== currentBalance && (
-                                <span className="bc-price-delta" style={{
-                                  color: newBalance < currentBalance ? '#059669' : '#dc2626',
-                                  fontSize: '0.76rem',
-                                  marginLeft: '6px'
-                                }}>
+                                <span className={`bc-price-delta bc-balance-delta ${newBalance < currentBalance ? 'bc-balance-delta-down' : 'bc-balance-delta-up'}`}>
                                   (was ₱{currentBalance.toLocaleString()})
                                 </span>
                               )}
@@ -1759,26 +1712,26 @@ const BookingCustomizer = ({
                   <>
                     <div className="bc-price-row bc-hotel-info-row">
                       <span>Selected Tier</span>
-                      <span style={{ fontWeight: 700 }}>
+                      <span className="bc-price-value-bold">
                         {hotelPriceInfo.selectedRoomType.type
                           ? (hotelPriceInfo.selectedRoomType.type.toLowerCase().includes('budget')
                               ? 'Standard'
                               : hotelPriceInfo.selectedRoomType.type)
                           : '—'}
                         {hotelPriceInfo.isUnsaved && (
-                          <span className="bc-hotel-overview-unsaved" style={{ marginLeft: 6 }}>unsaved</span>
+                          <span className="bc-hotel-overview-unsaved bc-hotel-overview-unsaved-inset">unsaved</span>
                         )}
                       </span>
                     </div>
                     {hotelPriceInfo.selectedRoomType.hotelName && (
                       <div className="bc-price-row bc-hotel-info-row">
                         <span>Hotel</span>
-                        <span style={{ fontWeight: 700 }}>{hotelPriceInfo.selectedRoomType.hotelName}</span>
+                        <span className="bc-price-value-bold">{hotelPriceInfo.selectedRoomType.hotelName}</span>
                       </div>
                     )}
-                    <div className="bc-price-row bc-hotel-info-row" style={{ marginBottom: 8 }}>
+                    <div className="bc-price-row bc-hotel-info-row bc-hotel-info-row-spaced">
                       <span>Rooms Needed</span>
-                      <span style={{ fontWeight: 700 }}>
+                      <span className="bc-price-value-bold">
                         {hotelPriceInfo.numberOfRooms} room{hotelPriceInfo.numberOfRooms > 1 ? 's' : ''}
                       </span>
                     </div>
@@ -1788,7 +1741,7 @@ const BookingCustomizer = ({
 
                 <div className="bc-price-row">
                   <span>Base Package Price</span>
-                  <span style={{ fontWeight: 700 }}>₱{basePrice.toLocaleString()}</span>
+                  <span className="bc-price-value-bold">₱{basePrice.toLocaleString()}</span>
                 </div>
 
                 {deductions > 0 && (
@@ -1820,7 +1773,7 @@ const BookingCustomizer = ({
                   <div className="bc-price-row highlight">
                     <span>
                       Hotel upgrade
-                      <span className="bc-price-count" style={{ marginLeft: 6 }}>
+                      <span className="bc-price-count bc-price-count-inset">
                         ({hotelPriceInfo.selectedRoomType?.type} · {hotelPriceInfo.numberOfRooms} rm × {hotelPriceInfo.durationNights} nights)
                       </span>
                     </span>
@@ -1832,14 +1785,10 @@ const BookingCustomizer = ({
 
                 <div className="bc-price-row total">
                   <span>{hasChanges ? 'Updated Total' : 'Total'}</span>
-                  <span className="bc-price-total" style={{
-                    color: netChange > 0 ? '#b45309' : netChange < 0 ? '#059669' : '#047857'
-                  }}>
+                  <span className={`bc-price-total ${netChange > 0 ? 'bc-price-total-up' : netChange < 0 ? 'bc-price-total-down' : 'bc-price-total-flat'}`}>
                     ₱{newTotal.toLocaleString()}
                     {netChange !== 0 && (
-                      <span className="bc-price-delta" style={{
-                        color: netChange > 0 ? '#b45309' : '#059669'
-                      }}>
+                      <span className={`bc-price-delta ${netChange > 0 ? 'bc-price-delta-up' : 'bc-price-delta-down'}`}>
                         {netChange > 0 ? '+' : ''}₱{netChange.toLocaleString()}
                       </span>
                     )}
@@ -1848,21 +1797,15 @@ const BookingCustomizer = ({
 
                 {isPartial && (
                   <div className="bc-price-row bc-balance-row">
-                    <span style={{ fontWeight: 800 }}>Remaining Balance</span>
-                    <span style={{
-                      fontWeight: 900,
-                      fontSize: '1rem',
-                      color: hasChanges
-                        ? (newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b')
-                        : '#1e293b'
-                    }}>
+                    <span className="bc-balance-label">Remaining Balance</span>
+                    <span className={`bc-balance-value ${
+                      hasChanges
+                        ? (newBalance < currentBalance ? 'bc-balance-value-down' : newBalance > currentBalance ? 'bc-balance-value-up' : 'bc-balance-value-flat')
+                        : 'bc-balance-value-flat'
+                    }`}>
                       ₱{(hasChanges ? newBalance : currentBalance).toLocaleString()}
                       {hasChanges && newBalance !== currentBalance && (
-                        <span className="bc-price-delta" style={{
-                          color: newBalance < currentBalance ? '#059669' : '#dc2626',
-                          fontSize: '0.76rem',
-                          marginLeft: '6px'
-                        }}>
+                        <span className={`bc-price-delta bc-balance-delta ${newBalance < currentBalance ? 'bc-balance-delta-down' : 'bc-balance-delta-up'}`}>
                           (was ₱{currentBalance.toLocaleString()})
                         </span>
                       )}

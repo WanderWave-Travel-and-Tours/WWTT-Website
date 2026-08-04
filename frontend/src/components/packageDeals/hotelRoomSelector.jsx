@@ -112,7 +112,7 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
   };
 
   const renderAmenities = (amenitiesObj) => {
-    if (!amenitiesObj) return <span style={{fontSize:'0.85rem', color:'#64748b'}}>Standard amenities included</span>;
+    if (!amenitiesObj) return <span className="hrs-amenity-fallback">Standard amenities included</span>;
 
     const mapping = [
       { key: 'wifi', label: 'Free Wifi', icon: Wifi },
@@ -165,11 +165,11 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
             onClick={onClose}
             aria-label="Close Gallery"
           >
-            <X 
-              size={24} 
-              color="#ffffff" 
-              strokeWidth={3} 
-              style={{ display: 'block' }}
+            <X
+              size={24}
+              color="#ffffff"
+              strokeWidth={3}
+              className="hrs-close-icon"
             />
           </button>
         </div>
@@ -245,16 +245,9 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
                     </div>
                   </span>
                 </div>
-                <div className="hrs-info-item" style={{flexDirection: 'column', alignItems: 'flex-start', gap: '8px'}}>
+                <div className="hrs-info-item hrs-info-item--about">
                   <span className="hrs-info-label">About This Package</span>
-                  <span className="hrs-info-value" style={{
-                    fontSize: '0.9rem', 
-                    fontWeight: '500', 
-                    lineHeight:'1.5',
-                    maxWidth: '100%',
-                    textAlign: 'left',
-                    color: '#475569'
-                  }}>
+                  <span className="hrs-info-value hrs-info-value--about">
                     These are sample hotels that may be included in this package tier. The actual hotel assignment will be confirmed upon booking based on availability. All partner hotels in this category meet our quality standards and include the listed amenities.
                   </span>
                 </div>
@@ -265,7 +258,7 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
               <div className="hrs-info-header">
                 Typical Amenities & Facilities
               </div>
-              <div style={{display:'flex', flexWrap:'wrap'}}>
+              <div className="hrs-amenities-wrap">
                 {renderAmenities(roomType?.amenities)}
               </div>
             </div>

@@ -203,7 +203,6 @@ const FlightSearchForm = ({
             src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" 
             alt="WanderWave Travel and Tours" 
             className="hero-logo"
-            style={{ maxWidth: '180px', marginBottom: '10px' }}
           />
           <h1 className="retro-3d-title">FIND YOUR PERFECT FLIGHT</h1>
         </div>
@@ -453,10 +452,10 @@ const FlightSearchForm = ({
                     <div className="divider-vertical mini"></div>
                     <div className="sb-input-group cursor-pointer" onClick={() => calendarRef.current?.setOpen(true)}>
                         <label className="sb-label">Return</label>
-                        <div className="modern-date-input" style={{ paddingTop: '2px' }}>
-                            {roundTripData.returnDate 
-                                ? new Date(roundTripData.returnDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) 
-                                : <span style={{color: '#9ca3af', fontWeight: 500}}>Select Date</span>
+                        <div className="modern-date-input return-date-display">
+                            {roundTripData.returnDate
+                                ? new Date(roundTripData.returnDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                                : <span className="return-date-placeholder">Select Date</span>
                             }
                         </div>
                     </div>
@@ -532,7 +531,7 @@ const FlightSearchForm = ({
                                     onFocus={() => handleMultiCityAirportFocus(index, "origin")}
                                 />
                                 {activeMultiCityField && activeMultiCityField.legIndex === index && activeMultiCityField.field === "origin" && (
-                                    <div className="sb-dropdown" style={{ top: '100%', left: 0, width: '100%', zIndex: 100 }}>
+                                    <div className="sb-dropdown mc-suggestion-dropdown">
                                         <div className="dropdown-list custom-scrollbar">
                                             {airportSearchLoading ? <div className="dd-msg">Searching...</div> : 
                                             multiCitySuggestions.length > 0 ? multiCitySuggestions.map((airport, idx) => (
@@ -565,7 +564,7 @@ const FlightSearchForm = ({
                                     onFocus={() => handleMultiCityAirportFocus(index, "destination")} 
                                 />
                                 {activeMultiCityField && activeMultiCityField.legIndex === index && activeMultiCityField.field === "destination" && (
-                                    <div className="sb-dropdown" style={{ top: '100%', left: 0, width: '100%', zIndex: 100 }}>
+                                    <div className="sb-dropdown mc-suggestion-dropdown">
                                         <div className="dropdown-list custom-scrollbar">
                                             {airportSearchLoading ? <div className="dd-msg">Searching...</div> : 
                                             multiCitySuggestions.length > 0 ? multiCitySuggestions.map((airport, idx) => (

@@ -129,6 +129,13 @@
   color: #001b3e;
 }
 
+.tours-reset-btn--mobile-clear {
+  background: #FF8C00;
+  margin-top: 10px;
+  width: 100%;
+  padding: 12px;
+}
+
 .tours-side-filter-content {
   padding: 24px;
   display: flex;
@@ -363,7 +370,10 @@
   background: #fff;
   border-radius: 16px;
   border: 1px dashed #d1d5db;
-  color: #6b7280;
+}
+
+.tours-no-results-icon {
+  margin-bottom: 24px;
 }
 
 .tours-no-results h3 {

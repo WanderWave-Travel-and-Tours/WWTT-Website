@@ -1,0 +1,8 @@
+/* cbf/css/step1.css
+   Step 1 — Basic Info (destination, contact details, dates, pax).
+   ============================================================= */
+
+/* Destination field — anchors the autocomplete dropdown */
+.cbf-s1-dest-field {
+  position: relative;
+}

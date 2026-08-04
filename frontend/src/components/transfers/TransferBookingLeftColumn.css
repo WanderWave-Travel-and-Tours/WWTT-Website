@@ -168,6 +168,7 @@
 .blc-price {
   font-size: 1.6rem;
   font-weight: 700;
+  color: #f97316;
 }
 
 /* --- Meta Row --- */
@@ -492,6 +493,7 @@
   border-radius: 18px;
   border: 2px solid #e2e8f0;
   background-color: #1e293b; /* dark fallback if image fails */
+  background-image: var(--blc-tt-bg-image);
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;

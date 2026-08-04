@@ -51,7 +51,7 @@ export default function Step1BasicInfo({
       <div className="cbf-form-grid">
 
         {/* ── Destination ── */}
-        <div className="cbf-field cbf-full" style={{ position: 'relative' }}>
+        <div className="cbf-field cbf-full cbf-s1-dest-field">
           <label>Destination <span className="cbf-req">*</span></label>
           <div className="cbf-input-wrap">
             <MapPin size={14} className="cbf-input-icon" />

@@ -925,6 +925,25 @@
   }
 }
 
+/* Loading / empty state text */
+.visa-loading-text {
+  padding: 20px;
+  text-align: center;
+}
+
+.visa-empty-text {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+}
+
+.visa-empty-subtext {
+  font-size: 14px;
+  color: #888;
+  font-style: italic;
+  margin: 10px 0;
+}
+
 /* Download Link Style */
 .download-link {
   display: block;

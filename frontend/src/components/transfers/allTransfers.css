@@ -149,6 +149,13 @@
   color: #001b3e;
 }
 
+.transfers-reset-btn-mobile {
+  background: #0369a1;
+  margin-top: 10px;
+  width: 100%;
+  padding: 12px;
+}
+
 .transfers-side-filter-content {
   padding: 24px;
   display: flex;
@@ -424,6 +431,10 @@
 .transfers-no-results p {
   margin: 0 0 24px 0;
   font-size: 0.95rem;
+}
+
+.transfers-no-results-icon {
+  margin-bottom: 24px;
 }
 
 .transfers-clear-btn {

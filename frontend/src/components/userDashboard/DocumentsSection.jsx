@@ -256,9 +256,9 @@ const DocumentsSection = ({
             {/* Upload Progress */}
             {isUploading && (
                 <div className="ud-progress-container">
-                    <div 
-                        className="ud-progress-bar" 
-                        style={{ width: `${uploadProgress}%` }}
+                    <div
+                        className="ud-progress-bar"
+                        style={{ '--progress-pct': `${uploadProgress}%` }}
                     ></div>
                 </div>
             )}
@@ -313,7 +313,7 @@ const DocumentsSection = ({
                                                     e.target.nextSibling.style.display = 'flex';
                                                 }}
                                             />
-                                            <div className="ud-submitted-img-fallback" style={{ display: 'none' }}>
+                                            <div className="ud-submitted-img-fallback ud-submitted-img-fallback-hidden">
                                                 <Icons.File />
                                             </div>
                                             <div className="ud-submitted-img-overlay">

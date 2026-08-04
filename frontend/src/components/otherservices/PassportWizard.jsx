@@ -268,7 +268,7 @@ const PassportWizard = ({ onClose, onSubmit }) => {
         {/* STEP 1: SELECTION */}
         {step === 1 && (
           <div className="step-selection fade-in">
-            <h2 style={{textAlign:'center', color:'#0a203b'}}>Is this for an Individual or a Group?</h2>
+            <h2 className="pw-step-title">Is this for an Individual or a Group?</h2>
             
             <div className="type-cards">
               <div className={`type-card ${bookingType === 'INDIVIDUAL' ? 'active' : ''}`} onClick={() => handleTypeSelect('INDIVIDUAL')}>

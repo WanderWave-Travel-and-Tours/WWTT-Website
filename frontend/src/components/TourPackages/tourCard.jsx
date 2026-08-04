@@ -239,10 +239,6 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
           disabled={favoriteLoading}
           title={isFavorited ? 'Remove from wishlist' : 'Add to wishlist'}
           aria-label={isFavorited ? 'Remove from wishlist' : 'Add to wishlist'}
-          style={{
-            transition: 'all 0.3s ease',
-            transform: isFavorited ? 'scale(1.1)' : 'scale(1)'
-          }}
         >
           {favoriteLoading ? (
             <span className="tour-wishlist-spinner" />

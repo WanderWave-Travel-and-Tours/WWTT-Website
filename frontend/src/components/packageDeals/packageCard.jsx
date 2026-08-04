@@ -232,7 +232,7 @@ const InclusionsList = ({ inclusions }) => {
         ))}
       </ul>
       {remaining > 0 && (
-        <span className="inclusions-more" style={{ background: '#001b3e', color: '#fff' }}>+{remaining} more</span>
+        <span className="inclusions-more pcard-inclusions-more--dark">+{remaining} more</span>
       )}
     </div>
   );
@@ -409,15 +409,11 @@ function PackageCard({
 
   return (
     <div className="package-card">
-      <button 
-        className={`favorite-button ${isFavorite ? 'active' : ''}`}
+      <button
+        className={`favorite-button pcard-favorite-btn ${isFavorite ? 'active pcard-favorite-btn--active' : 'pcard-favorite-btn--inactive'}`}
         onClick={handleFavoriteClick}
         aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         title={isLoggedIn ? (isFavorite ? "Remove from wishlist" : "Add to wishlist") : "Login to add to wishlist"}
-        style={{
-          transition: 'all 0.3s ease',
-          transform: isFavorite ? 'scale(1.1)' : 'scale(1)'
-        }}
       >
         <Heart strokeWidth={2.5} fill={isFavorite ? 'currentColor' : 'none'} />
       </button>
@@ -445,22 +441,7 @@ function PackageCard({
 
         {/* ✅ LIMITED TIME OFFER BADGE — only shown when timer is NOT expired */}
         {timerReady && !timerExpired && discountPct > 0 && (
-          <div style={{
-            position: 'absolute',
-            bottom: '10px',
-            left: '10px',
-            background: '#001b3e',
-            color: '#fff',
-            fontSize: '0.7rem',
-            fontWeight: '800',
-            padding: '4px 10px',
-            borderRadius: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            boxShadow: '0 2px 8px rgba(0,27,62,0.5)',
-            letterSpacing: '0.3px',
-          }}>
+          <div className="pcard-limited-offer-badge">
             <Clock size={11} />
             LIMITED OFFER · SAVE {discountPct}%
           </div>
@@ -503,25 +484,14 @@ function PackageCard({
                 <span className="price-label">SOLO</span>
                 {/* Strikethrough original — only when timer is active (not expired) */}
                 {timerReady && !timerExpired && (
-                  <span style={{
-                    fontSize: '0.92rem',
-                    color: '#64748b',
-                    textDecoration: 'line-through',
-                    textDecorationColor: '#ef4444',
-                    textDecorationThickness: '1.5px',
-                    fontWeight: '700',
-                    display: 'block',
-                    lineHeight: 1,
-                    marginBottom: '2px',
-                  }}>
+                  <span className="pcard-price-strike">
                     {currencySymbol}{formatPrice(convertedSoloOriginal)}
                   </span>
                 )}
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
                   <span
-                    className="price-value"
-                    style={{ color: timerReady && !timerExpired ? '#f97316' : undefined }}
+                    className={`price-value ${timerReady && !timerExpired ? 'pcard-price-value--active' : 'pcard-price-value--default'}`}
                   >
                     {timerReady ? formatPrice(convertedSoloPrice) : '—'}
                   </span>
@@ -540,25 +510,14 @@ function PackageCard({
                 <span className="price-label">2 PAX ABOVE</span>
                 {/* Strikethrough original — only when timer is active */}
                 {timerReady && !timerExpired && (
-                  <span style={{
-                    fontSize: '0.92rem',
-                    color: '#64748b',
-                    textDecoration: 'line-through',
-                    textDecorationColor: '#ef4444',
-                    textDecorationThickness: '1.5px',
-                    fontWeight: '700',
-                    display: 'block',
-                    lineHeight: 1,
-                    marginBottom: '2px',
-                  }}>
+                  <span className="pcard-price-strike">
                     {currencySymbol}{formatPrice(convertedMultiOriginal)}
                   </span>
                 )}
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
                   <span
-                    className="price-value seller-rate"
-                    style={{ color: timerReady && !timerExpired ? '#f97316' : undefined }}
+                    className={`price-value seller-rate ${timerReady && !timerExpired ? 'pcard-price-value--active' : 'pcard-price-value--default'}`}
                   >
                     {timerReady ? formatPrice(convertedMultiplePaxPrice) : '—'}
                   </span>
@@ -571,25 +530,14 @@ function PackageCard({
               <div className="price-block">
                 {/* Strikethrough original — only when timer is active */}
                 {timerReady && !timerExpired && discountPct > 0 && (
-                  <span style={{
-                    fontSize: '0.92rem',
-                    color: '#64748b',
-                    textDecoration: 'line-through',
-                    textDecorationColor: '#ef4444',
-                    textDecorationThickness: '1.5px',
-                    fontWeight: '700',
-                    display: 'block',
-                    lineHeight: 1,
-                    marginBottom: '2px',
-                  }}>
+                  <span className="pcard-price-strike">
                     {currencySymbol}{formatPrice(originalPrice)}
                   </span>
                 )}
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
                   <span
-                    className="price-value"
-                    style={{ color: timerReady && !timerExpired ? '#f97316' : undefined }}
+                    className={`price-value ${timerReady && !timerExpired ? 'pcard-price-value--active' : 'pcard-price-value--default'}`}
                   >
                     {timerReady ? formatPrice(displayPrice) : '—'}
                   </span>

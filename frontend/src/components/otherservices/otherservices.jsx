@@ -180,9 +180,6 @@ const OtherServices = ({ setAuthPage }) => {
     "July", "August", "September", "October", "November", "December",
   ];
 
-  const backgroundImage =
-    "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop";
-
   useEffect(() => {
     fetchServices();
   }, []);
@@ -547,7 +544,7 @@ const OtherServices = ({ setAuthPage }) => {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
+    <div className="os-section">
       {/* ── WanderLoader overlay ─────────────────────────────────────────────── */}
       <WanderLoader loading={loading} text="LOADING SERVICES" subtitle="Please wait a moment" />
 
@@ -579,7 +576,7 @@ const OtherServices = ({ setAuthPage }) => {
                   >
                     <div
                       className="os-card-img"
-                      style={{ backgroundImage: `url(${item.img}), url(${FALLBACK_IMG})` }}
+                      style={{ '--os-card-img-url': `url(${item.img}), url(${FALLBACK_IMG})` }}
                     >
                       <div className="os-card-overlay"></div>
                       {item.isComingSoon && <span className="os-card-soon-tag">Coming Soon</span>}
@@ -620,11 +617,10 @@ const OtherServices = ({ setAuthPage }) => {
       {showModal && (
         <div className="modal-overlay">
           {isPassportService ? (
-            <div className="modal-card" style={{ maxWidth: '900px', height: '90vh', padding: '0', overflow: 'hidden' }}>
+            <div className="modal-card modal-card--passport-wizard">
               <button
-                className="modal-close-btn"
+                className="modal-close-btn modal-close-btn--above-wizard"
                 onClick={() => { setShowModal(false); setIsPassportService(false); }}
-                style={{ zIndex: 999 }}
               >
                 <X size={24} />
               </button>
@@ -669,7 +665,7 @@ const OtherServices = ({ setAuthPage }) => {
                   <div
                     className="modal-header-image"
                     style={{
-                      backgroundImage: `url(${
+                      '--modal-header-img-url': `url(${
                         services.find((s) => s.title === selectedPackage.title)?.img ||
                         "https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&auto=format&fit=crop&q=60"
                       })`,

@@ -1423,20 +1423,8 @@ const handleNextPassenger = async (e) => {
 
           {/* ✅ RESTRICTED BOOKING DAY NOTICE: Shown only for Solo/Joiners packages to restricted destinations */}
           {isRestrictedDestination && (
-            <div style={{
-              background: '#fff7ed',
-              border: '1px solid #fed7aa',
-              borderRadius: '8px',
-              padding: '10px 14px',
-              marginBottom: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '0.82rem',
-              color: '#92400e',
-              lineHeight: '1.4'
-            }}>
-              <span style={{fontSize: '1rem'}}>📅</span>
+            <div className="brf-restricted-day-notice">
+              <span className="brf-restricted-day-notice-icon">📅</span>
               <span>
                 <strong>Available start days:</strong>{' '}
                 {durationDays === 3 && durationNights === 2
@@ -1452,10 +1440,10 @@ const handleNextPassenger = async (e) => {
             <div className="brf-selected-date-display">
               <div className="brf-date-icon">📅</div>
               <div>
-                <div style={{fontWeight:'600', color:'#1f2937'}}>
+                <div className="brf-selected-date-title">
                   {formatDateRangeDisplay()}
                 </div>
-                <div style={{fontSize:'0.85rem', color:'#6b7280', marginTop:'4px'}}>
+                <div className="brf-selected-date-subtitle">
                   {durationDays} days • {durationNights} {durationNights === 1 ? 'night' : 'nights'}
                 </div>
               </div>
@@ -1515,60 +1503,34 @@ const handleNextPassenger = async (e) => {
         <div className="brf-quantity-section">
           <div className="brf-quantity-item">
             <div>
-              <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+              <div className="brf-row-flex-8">
                 <span className="brf-quantity-label">Standard Pax</span>
-                <span style={{
-                  background: '#f0fdf4', border: '1px solid #86efac',
-                  color: '#166534', fontSize: '0.75rem', fontWeight: '700',
-                  borderRadius: '999px', padding: '2px 10px'
-                }}>Solo Package</span>
+                <span className="brf-badge-green">Solo Package</span>
               </div>
-              <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>1 pax only · 3+ years old</div>
+              <div className="brf-pax-note">1 pax only · 3+ years old</div>
             </div>
-            <span style={{fontWeight:'800', fontSize:'1.1rem', color:'#1f2937', minWidth:'32px', textAlign:'center'}}>1</span>
+            <span className="brf-pax-solo-count">1</span>
           </div>
         </div>
       ) : (
         <div className="brf-quantity-section">
           <div className="brf-quantity-item">
             <div>
-              <div style={{display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap'}}>
+              <div className="brf-row-flex-8-wrap">
                 <span className="brf-quantity-label">Standard Pax</span>
                 {isMinTwoPkg && (
-                  <span style={{
-                    background: '#eff6ff', border: '1px solid #bfdbfe',
-                    color: '#1d4ed8', fontSize: '0.75rem', fontWeight: '700',
-                    borderRadius: '999px', padding: '2px 10px'
-                  }}>min. 2 pax</span>
+                  <span className="brf-badge-blue">min. 2 pax</span>
                 )}
                 {isSoloJoiners && !isMinTwoPkg && (
-                  <span style={{
-                    background: '#f0fdf4', border: '1px solid #86efac',
-                    color: '#166534', fontSize: '0.75rem', fontWeight: '700',
-                    borderRadius: '999px', padding: '2px 10px'
-                  }}>Solo / Group</span>
+                  <span className="brf-badge-green">Solo / Group</span>
                 )}
               </div>
-              <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
+              <div className="brf-pax-note">3+ years old</div>
 
               {/* ✅ MIN-2 PKG: Show automatic price for current pax selection */}
               {isMinTwoPkg && (
-                <div style={{
-                  marginTop: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  flexWrap: 'wrap'
-                }}>
-                  <span style={{
-                    background: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    color: '#1d4ed8',
-                    fontSize: '0.78rem',
-                    fontWeight: '700',
-                    borderRadius: '8px',
-                    padding: '3px 10px'
-                  }}>
+                <div className="brf-min2-price-row">
+                  <span className="brf-min2-price-badge">
                     {currencySymbol}{convertPrice(effectivePerPaxPrice * quantities.adult).toLocaleString(undefined, {
                       minimumFractionDigits: currency === 'USD' ? 2 : 0,
                       maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -1581,7 +1543,15 @@ const handleNextPassenger = async (e) => {
             <div className="brf-quantity-controls">
               <button
                 onClick={() => handleQuantity('adult', -1)}
-                className="brf-quantity-btn"
+                className={`brf-quantity-btn${
+                  (appliedPromo
+                    ? quantities.adult <= 4
+                    : isMinTwoPkg
+                      ? quantities.adult <= 2
+                      : quantities.adult <= 1)
+                    ? ' brf-quantity-btn-disabled'
+                    : ''
+                }`}
                 type="button"
                 disabled={
                   appliedPromo
@@ -1590,18 +1560,9 @@ const handleNextPassenger = async (e) => {
                       ? quantities.adult <= 2
                       : quantities.adult <= 1
                 }
-                style={
-                  (appliedPromo
-                    ? quantities.adult <= 4
-                    : isMinTwoPkg
-                      ? quantities.adult <= 2
-                      : quantities.adult <= 1)
-                    ? { opacity: 0.4, cursor: 'not-allowed' }
-                    : {}
-                }
               >
                 <Minus size={18} color="#000000" strokeWidth={3}
-                  style={{minWidth:'18px', minHeight:'18px', stroke:'#000000'}} />
+                  className="brf-qty-icon" />
               </button>
               <span className="brf-quantity-value">{quantities.adult}</span>
               <button
@@ -1610,7 +1571,7 @@ const handleNextPassenger = async (e) => {
                 type="button"
               >
                 <Plus size={18} color="#000000" strokeWidth={3}
-                  style={{minWidth:'18px', minHeight:'18px', stroke:'#000000'}} />
+                  className="brf-qty-icon" />
               </button>
             </div>
           </div>
@@ -1618,27 +1579,14 @@ const handleNextPassenger = async (e) => {
       )}
 
       {loadingHotelData && (
-        <div style={{padding:'1rem', background:'#fef3c7', borderRadius:'8px', marginBottom:'1rem'}}>
+        <div className="brf-hotel-loading">
           Loading hotel data...
         </div>
       )}
 
       {!loadingHotelData && (!hotelData || !hotelData.roomTypes || hotelData.roomTypes.length === 0) && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '12px 16px',
-          background: '#fffbeb',
-          border: '1px solid #fcd34d',
-          borderLeft: '4px solid #f59e0b',
-          borderRadius: '8px',
-          marginBottom: '1rem',
-          fontSize: '0.85rem',
-          color: '#92400e',
-          fontWeight: '500',
-        }}>
-          <span style={{fontSize:'1rem'}}>⚠️</span>
+        <div className="brf-no-hotel-notice">
+          <span className="brf-no-hotel-icon">⚠️</span>
           <span>No room types available for <strong>{pkg.destination || pkg.location || 'this destination'}</strong>. Hotel accommodation is not included in this package.</span>
         </div>
       )}
@@ -1656,21 +1604,8 @@ const handleNextPassenger = async (e) => {
       )}
 
       {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
-        <div style={{
-          background: '#f0fdf4',
-          border: '1px solid #86efac',
-          borderRadius: '10px',
-          padding: '12px 16px',
-          marginTop: '16px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '10px',
-          fontSize: '0.875rem',
-          color: '#166534',
-          lineHeight: '1.5'
-        }}>
-          <span style={{ fontSize: '1.1rem', marginTop: '1px' }}>💬</span>
+        <div className="brf-hotel-preference-notice">
+          <span className="brf-hotel-preference-icon">💬</span>
           <span>
             <strong>Prefer a specific hotel?</strong> The accommodation listed above is our standard inclusion, but you're welcome to request your preferred hotel. 
             Just <strong>contact us</strong> after booking and we'll do our best to arrange it for you.
@@ -1679,30 +1614,24 @@ const handleNextPassenger = async (e) => {
       )}
 
       {selectedFlight && (
-        <div style={{
-          background: '#fff7ed', border: '2px solid #fc9c1b', borderRadius: '12px',
-          padding: '16px', marginBottom: '20px'
-        }}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px'}}>
-            <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+        <div className="brf-flight-added-box">
+          <div className="brf-flight-added-header-row">
+            <div className="brf-row-flex-8">
               <Plane size={20} color="#fc9c1b"/>
-              <strong style={{color:'#1f2937', fontSize:'0.95rem'}}>Flight Added to Package</strong>
+              <strong className="brf-flight-added-title">Flight Added to Package</strong>
             </div>
-            <button 
+            <button
               onClick={handleRemoveFlight}
-              style={{
-                background:'none', border:'none', color:'#ef4444', 
-                cursor:'pointer', fontSize:'0.85rem', textDecoration:'underline'
-              }}
+              className="brf-flight-remove-btn"
             >
               Remove
             </button>
           </div>
-          <div style={{fontSize:'0.9rem', color:'#374151', lineHeight:'1.6'}}>
+          <div className="brf-flight-details">
             <div><strong>{selectedFlight.airline.name}</strong> • {selectedFlight.airline.flightNumber || 'Flight'}</div>
             <div>{selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}</div>
-            <div style={{color:'#6b7280', fontSize:'0.85rem'}}>{selectedFlight.departure.displayTime} - {selectedFlight.arrival.displayTime}</div>
-            <div style={{marginTop:'8px', fontWeight:'700', color:'#fc9c1b', fontSize:'1rem'}}>
+            <div className="brf-flight-time">{selectedFlight.departure.displayTime} - {selectedFlight.arrival.displayTime}</div>
+            <div className="brf-flight-price">
               +{selectedFlight.price.formatted}
             </div>
           </div>
@@ -1738,23 +1667,14 @@ const handleNextPassenger = async (e) => {
             </div>
             
             {promoError && (
-              <div style={{
-                color: '#ef4444',
-                fontSize: '0.85rem',
-                marginTop: '8px',
-                padding: '10px 12px',
-                backgroundColor: '#fee2e2',
-                borderRadius: '8px',
-                border: '1px solid #fecaca',
-                lineHeight: '1.5'
-              }}>
+              <div className="brf-promo-error-box">
                 ❌ {promoError}
               </div>
             )}
           </>
         ) : (
           <div className="brf-promo-success-box">
-            <div style={{ flex: 1 }}>
+            <div className="brf-promo-flex-1">
               <div className="brf-promo-code-text">
                 {appliedPromo.code}
               </div>
@@ -1795,7 +1715,7 @@ const handleNextPassenger = async (e) => {
                     <div className="brf-promo-desc-text">
                       {perPaxDiscount} × {coveredPax} pax
                       {(isLimitedByUsage || isLimitedByBooking) && (
-                        <span style={{ color: '#d97706', marginLeft: '6px', fontSize: '0.78rem', fontWeight: 600 }}>
+                        <span className="brf-promo-limited-note">
                           ({coveredPax} of {basePax} pax covered)
                         </span>
                       )}
@@ -1803,20 +1723,8 @@ const handleNextPassenger = async (e) => {
 
                     {/* Usage limit warning */}
                     {isLimitedByUsage && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '6px',
-                        marginTop: '6px',
-                        fontSize: '0.8rem',
-                        color: '#92400e',
-                        background: '#fef3c7',
-                        border: '1px solid #fde68a',
-                        borderRadius: '6px',
-                        padding: '6px 10px',
-                        lineHeight: '1.4'
-                      }}>
-                        <span style={{ marginTop: '1px' }}>⚠️</span>
+                      <div className="brf-promo-usage-warning">
+                        <span className="brf-promo-usage-warning-icon">⚠️</span>
                         <span>
                           Only <strong>{appliedPromo.remainingUses}</strong> use{appliedPromo.remainingUses > 1 ? 's' : ''} remaining
                           (used {appliedPromo.usedCount}/{appliedPromo.usageLimit}).
@@ -1828,19 +1736,7 @@ const handleNextPassenger = async (e) => {
 
                     {/* Per-booking pax cap warning (not usage-limited) */}
                     {!isLimitedByUsage && isLimitedByBooking && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '6px',
-                        marginTop: '6px',
-                        fontSize: '0.8rem',
-                        color: '#92400e',
-                        background: '#fef3c7',
-                        border: '1px solid #fde68a',
-                        borderRadius: '6px',
-                        padding: '6px 10px',
-                        lineHeight: '1.4'
-                      }}>
+                      <div className="brf-promo-usage-warning">
                         <span>⚠️</span>
                         <span>
                           This promo is limited to <strong>{appliedPromo.maxUsesPerBooking}</strong> pax per booking.
@@ -1867,22 +1763,16 @@ const handleNextPassenger = async (e) => {
           <span className="brf-total-label">
             Package Total
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="brf-total-flex-8">
             {!timerExpired && !(isSoloJoiners && totalPassengers === 1) && (
-              <span style={{
-                textDecoration: 'line-through',
-                color: '#9ca3af',
-                fontSize: '0.9rem'
-              }}>
+              <span className="brf-total-strikethrough">
                 {currencySymbol}{convertedOriginalPriceWithMarkup.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
                 })}
               </span>
             )}
-            <span className="brf-total-amount" style={{
-              color: !timerExpired ? '#10b981' : '#1f2937'
-            }}>
+            <span className={`brf-total-amount ${!timerExpired ? 'brf-total-amount-active' : 'brf-total-amount-inactive'}`}>
               {currencySymbol}{convertedPackageTotal.toLocaleString(undefined, {
                 minimumFractionDigits: currency === 'USD' ? 2 : 0,
                 maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -1893,19 +1783,15 @@ const handleNextPassenger = async (e) => {
 
         {/* ✅ Pax breakdown for min-2 packages */}
         {isMinTwoPkg && (
-          <div style={{
-            background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px',
-            padding: '10px 14px', marginTop: '4px', marginBottom: '8px',
-            fontSize: '0.82rem', color: '#1e40af', lineHeight: '1.6'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div className="brf-min2-breakdown">
+            <div className="brf-min2-breakdown-row">
               <span>
                 {currencySymbol}{convertPrice(effectivePerPaxPrice).toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
                 })} per pax × {totalPassengers} pax
               </span>
-              <span style={{ fontWeight: '700' }}>
+              <span className="brf-fw-700">
                 {currencySymbol}{convertPrice(effectivePerPaxPrice * totalPassengers).toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -1917,27 +1803,19 @@ const handleNextPassenger = async (e) => {
 
         {/* ✅ Hotel accommodation breakdown line */}
         {selectedRoomType && hotelAccommodationTotal > 0 && (
-          <div className="brf-total-row" style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '4px' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div className="brf-total-row brf-hotel-row">
+            <span className="brf-hotel-row-label">
               🏨 Hotel
-              <span style={{
-                background: '#f1f5f9',
-                border: '1px solid #e2e8f0',
-                borderRadius: '5px',
-                padding: '1px 7px',
-                fontSize: '0.78rem',
-                color: '#475569',
-                fontWeight: '600'
-              }}>
+              <span className="brf-hotel-room-badge">
                 {selectedRoomType.type}
               </span>
               · {durationNights} night{durationNights !== 1 ? 's' : ''} × {numberOfRooms} room{numberOfRooms !== 1 ? 's' : ''}
             </span>
-            <span style={{ fontWeight: '600', color: '#475569' }}>
+            <span className="brf-hotel-row-value">
               {currencySymbol}{convertPrice(hotelAccommodationTotal).toLocaleString(undefined, {
                 minimumFractionDigits: currency === 'USD' ? 2 : 0,
                 maximumFractionDigits: currency === 'USD' ? 2 : 0
-              })} <span style={{ fontWeight: '400', fontSize: '0.75rem' }}>incl.</span>
+              })} <span className="brf-hotel-row-incl">incl.</span>
             </span>
           </div>
         )}
@@ -1954,10 +1832,10 @@ const handleNextPassenger = async (e) => {
           const isPartial = coveredPax < basePax;
 
           return (
-            <div className="brf-total-row" style={{color: '#10b981', fontSize: '0.9rem'}}>
-              <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div className="brf-total-row brf-discount-row">
+              <span className="brf-discount-col">
                 <span>- Promo Discount ({appliedPromo.code})</span>
-                <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>
+                <span className="brf-discount-sub">
                   {(() => {
                     const promoDisplayVal = (() => {
                       const p = appliedPromo.pricing;
@@ -1974,18 +1852,18 @@ const handleNextPassenger = async (e) => {
                         })} × ${coveredPax} pax`;
                   })()}
                   {isPartial && (
-                    <span style={{ color: '#d97706', marginLeft: '4px' }}>
+                    <span className="brf-discount-partial-note">
                       ({coveredPax}/{basePax} pax)
                     </span>
                   )}
                 </span>
                 {appliedPromo.usageLimit && (
-                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                  <span className="brf-discount-usage-note">
                     Usage: {appliedPromo.usedCount}/{appliedPromo.usageLimit} uses
                   </span>
                 )}
               </span>
-              <span style={{fontWeight: '700'}}>
+              <span className="brf-fw-700">
                 -{currencySymbol}{convertedDiscountAmount.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -1996,9 +1874,9 @@ const handleNextPassenger = async (e) => {
         })()}
 
         {appliedPromo && (
-          <div className="brf-total-row" style={{fontSize: '0.95rem', color: '#374151'}}>
+          <div className="brf-total-row brf-discounted-total-row">
             <span>Discounted Package Total</span>
-            <span style={{fontWeight: '700', color: '#fc9c1b'}}>
+            <span className="brf-grand-total-value brf-fw-700">
               {currencySymbol}{convertedFinalPackageTotal.toLocaleString(undefined, {
                 minimumFractionDigits: currency === 'USD' ? 2 : 0,
                 maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -2009,22 +1887,15 @@ const handleNextPassenger = async (e) => {
         
         {selectedFlight && (
           <>
-            <div className="brf-total-row" style={{fontSize: '0.9rem', color: '#6b7280'}}>
+            <div className="brf-total-row brf-airfare-row">
               <span>+ Airfare</span>
               <span>{currencySymbol}{convertedAirfareTotal.toLocaleString(undefined, {
                 minimumFractionDigits: currency === 'USD' ? 2 : 0,
                 maximumFractionDigits: currency === 'USD' ? 2 : 0
               })}</span>
             </div>
-            <div className="brf-total-row" style={{
-              borderTop: '2px solid #fc9c1b',
-              paddingTop: '12px',
-              marginTop: '8px',
-              fontSize: '1.1rem',
-              fontWeight: '800',
-              color: '#1f2937'
-            }}>
-              <span style={{color: '#fc9c1b'}}>
+            <div className="brf-total-row brf-grand-total-row">
+              <span className="brf-grand-total-value">
                 {currencySymbol}{convertedFinalTotalAmount.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -2033,18 +1904,11 @@ const handleNextPassenger = async (e) => {
             </div>
           </>
         )}
-        
+
         {!selectedFlight && (
-          <div className="brf-total-row" style={{
-            borderTop: '2px solid #fc9c1b',
-            paddingTop: '12px',
-            marginTop: '8px',
-            fontSize: '1.1rem',
-            fontWeight: '800',
-            color: '#1f2937'
-          }}>
+          <div className="brf-total-row brf-grand-total-row">
             <span>TOTAL AMOUNT</span>
-            <span style={{color: '#fc9c1b'}}>
+            <span className="brf-grand-total-value">
               {currencySymbol}{convertedFinalPackageTotal.toLocaleString(undefined, {
                 minimumFractionDigits: currency === 'USD' ? 2 : 0,
                 maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -2062,48 +1926,20 @@ const handleNextPassenger = async (e) => {
         </button>
         
         {!hasValidPackageTotal && (
-          <div style={{
-            marginTop: '12px',
-            padding: '16px',
-            background: '#fef3c7',
-            border: '2px solid #f59e0b',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            color: '#92400e'
-          }}>
-            <div style={{fontSize: '24px'}}>⚠️</div>
+          <div className="brf-invalid-total-notice">
+            <div className="brf-invalid-total-icon">⚠️</div>
             <div>
-              <strong style={{display: 'block', marginBottom: '4px'}}>Cannot proceed with booking</strong>
-              <span style={{fontSize: '0.9rem'}}>You must have at least one inclusion selected. Please add inclusions to your package or reset customization.</span>
+              <strong className="brf-invalid-total-title">Cannot proceed with booking</strong>
+              <span className="brf-invalid-total-text">You must have at least one inclusion selected. Please add inclusions to your package or reset customization.</span>
             </div>
           </div>
         )}
 
         {hasOTCAccess && (
-          <button 
-          className="brf-walk-in-btn" 
+          <button
+          className="brf-walk-in-btn brf-walk-in-btn-styled"
           onClick={handleWalkInClick}
           disabled={!selectedRoomType}
-          style={{
-          width: '100%',
-          backgroundColor: '#3b82f6',
-          color: 'white',
-          padding: '18px',
-          border: 'none',
-          borderRadius: '12px',
-          fontWeight: '700',
-          fontSize: '1.1rem',
-          cursor: 'pointer',
-          transition: 'background 0.2s',
-          boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)',
-          marginBottom: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px'
-          }}
           >
           <UserCheck size={20} />
           Pay Over the Counter
@@ -2120,7 +1956,7 @@ const handleNextPassenger = async (e) => {
             Contact Sales
         </button>
 
-        <p style={{textAlign:'center', fontSize:'0.8rem', color:'#9ca3af', marginTop:'12px'}}>
+        <p className="brf-no-payment-note">
           No payment required today.
         </p>
       </div>
@@ -2223,13 +2059,6 @@ const handleNextPassenger = async (e) => {
         currencySymbol={currencySymbol}              
         convertPrice={convertPrice}
       />
-      
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.9; }
-        }
-      `}</style>
 
       {/* ✅ Custom Confirm Modal — replaces window.location.href direct redirect */}
       <CustomConfirmModal

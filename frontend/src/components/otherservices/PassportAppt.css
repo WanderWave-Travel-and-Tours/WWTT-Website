@@ -1,0 +1,229 @@
+/* ===== PassportAppt.jsx — extracted inline styles ===== */
+
+/* Header actions row */
+.passport-header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.passport-btn-initialize {
+  background: #10b981;
+}
+
+/* Requirements Summary Card */
+.passport-summary-card {
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.passport-summary-body {
+  width: 100%;
+}
+
+.passport-summary-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.passport-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.passport-summary-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.passport-summary-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 4px 0 0;
+}
+
+/* Table cells */
+.passport-th-right {
+  text-align: right;
+}
+
+.passport-td-bold {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.passport-td-time {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.passport-td-right {
+  text-align: right;
+}
+
+.passport-status-badge {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Modal overlay + content */
+.passport-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.passport-modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 32px;
+}
+
+.passport-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.passport-modal-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.passport-modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+/* Form fields */
+.passport-field-group {
+  margin-bottom: 24px;
+}
+
+.passport-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.passport-field-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Section header row (label + add button) */
+.passport-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.passport-section-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.passport-add-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* List item row (input + remove button) */
+.passport-list-item-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.passport-list-item-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.passport-remove-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.passport-step-number {
+  padding: 10px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* Modal action buttons */
+.passport-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+}
+
+.passport-cancel-btn {
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.passport-save-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

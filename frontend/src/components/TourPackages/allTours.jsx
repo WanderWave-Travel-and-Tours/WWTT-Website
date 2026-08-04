@@ -241,8 +241,7 @@ function AllTours({
 
             {isMobileFilterOpen && isFilterActive && (
               <button
-                className="tours-reset-btn"
-                style={{ background: '#FF8C00', marginTop: '10px', width: '100%', padding: '12px' }}
+                className="tours-reset-btn tours-reset-btn--mobile-clear"
                 onClick={clearSidebarFilters}
               >
                 Clear All Filters
@@ -316,7 +315,7 @@ function AllTours({
               ))
             ) : (
               <div className="tours-no-results">
-                <XCircle size={64} color="#cbd5e1" strokeWidth={1.5} style={{ marginBottom: '24px' }} />
+                <XCircle size={64} color="#cbd5e1" strokeWidth={1.5} className="tours-no-results-icon" />
                 <h3>No tours found</h3>
                 <p>Try adjusting your filters or search terms.</p>
                 <button className="tours-clear-btn" onClick={clearSidebarFilters}>

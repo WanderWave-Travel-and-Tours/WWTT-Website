@@ -307,8 +307,9 @@
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.ud-progress-bar { 
+.ud-progress-bar {
     height: 100%;
+    width: var(--progress-pct);
     background: linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fbbf24 100%);
     transition: width 0.3s ease;
     border-radius: 100px;
@@ -567,6 +568,10 @@
     justify-content: center;
     color: #94a3b8;
     background: #f1f5f9;
+}
+
+.ud-submitted-img-fallback-hidden {
+    display: none;
 }
 
 /* Hover overlay on image */

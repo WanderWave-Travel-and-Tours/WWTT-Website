@@ -79,6 +79,16 @@
     z-index: 1;
 }
 
+/* Per-destination slide background images (indices match the `destinations` array in userSignup.jsx) */
+.slide-bg-0 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg'); }
+.slide-bg-1 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114e5dd1ba9573b1e7c604.jpg'); }
+.slide-bg-2 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114ddbc3a1eac0761c08f1.jpg'); }
+.slide-bg-3 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eedd1ba955b9ee7d600.jpg'); }
+.slide-bg-4 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691186866f24d9c79e6027a0.jpg'); }
+.slide-bg-5 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69171615ac7fad32f8341f78.jpg'); }
+.slide-bg-6 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6917166d01e5bcc9cd11a103.jpg'); }
+.slide-bg-7 { background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911855175ec1e9b374b5977.jpg'); }
+
 .slide-item.active {
     opacity: 1;
     z-index: 2;

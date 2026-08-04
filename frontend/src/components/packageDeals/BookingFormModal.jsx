@@ -249,15 +249,15 @@ const BookingCompletedModal = ({ isOpen, onClose, packageName }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="bfm-overlay" style={{ zIndex: 10001 }}>
-      <div className="bfm-modal-card" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ marginBottom: '1.5rem' }}>
+    <div className="bfm-overlay bfm-overlay-completed">
+      <div className="bfm-modal-card bfm-modal-card-completed">
+        <div className="bfm-completed-icon-wrap">
           <CheckCircle size={64} color="#22c55e" strokeWidth={2} />
         </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+        <h2 className="bfm-completed-title">
           Booking Completed
         </h2>
-        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
+        <p className="bfm-completed-subtext">
           Your booking has been successfully confirmed!
         </p>
       </div>
@@ -728,7 +728,7 @@ const BookingFormModal = ({
               <strong className="bfm-summary-value bfm-price">
                 {appliedPromo ? (
                   <>
-                    <span style={{textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem', marginRight: '8px'}}>
+                    <span className="bfm-original-price-strike">
                       {currencySymbol}{formatCurrency(packageTotal)}
                     </span>
                     {currencySymbol}{formatCurrency(finalPackageTotal)}
@@ -738,7 +738,7 @@ const BookingFormModal = ({
                 )}
               </strong>
               {appliedPromo && (
-                <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
+                <span className="bfm-summary-subtext bfm-promo-applied-subtext">
                   {appliedPromo.code} applied (-{currencySymbol}{formatCurrency(discountAmount)})
                 </span>
               )}
@@ -748,7 +748,7 @@ const BookingFormModal = ({
               <>
                 <div className="bfm-summary-item">
                   <span className="bfm-summary-label">
-                    <Plane size={12} style={{display:'inline', marginRight:'4px'}}/>
+                    <Plane size={12} className="bfm-inline-plane-icon"/>
                     Airfare ({selectedFlight.airline.name})
                   </span>
                   <strong className="bfm-summary-value bfm-accent-color">
@@ -791,7 +791,7 @@ const BookingFormModal = ({
               <span className="bfm-progress-percent">{progressPercent}% Complete</span>
             </div>
             <div className="bfm-progress-bar-container">
-              <div className="bfm-progress-bar-fill" style={{width: `${progressPercent}%`}} />
+              <div className="bfm-progress-bar-fill" style={{ '--progress-pct': `${progressPercent}%` }} />
             </div>
           </div>
 
@@ -883,7 +883,7 @@ const BookingFormModal = ({
                   min="0"
                   max="120"
                   readOnly
-                  style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                  className="bfm-age-input-readonly"
                 />
               </div>
 
@@ -963,7 +963,7 @@ const BookingFormModal = ({
                           }
                         }}
                         id={`id-upload-${passengerStep}`}
-                        style={{display: 'none'}}
+                        className="bfm-hidden-file-input"
                       />
                       <label htmlFor={`id-upload-${passengerStep}`} className="bfm-file-upload-label">
                         <span className="bfm-upload-icon"><Upload size={18}/></span>
@@ -1015,7 +1015,7 @@ const BookingFormModal = ({
                           }
                         }}
                         id={`passport-upload-${passengerStep}`}
-                        style={{display: 'none'}}
+                        className="bfm-hidden-file-input"
                       />
                       <label htmlFor={`passport-upload-${passengerStep}`} className="bfm-file-upload-label">
                         <span className="bfm-upload-icon"><Upload size={18}/></span>
@@ -1031,9 +1031,9 @@ const BookingFormModal = ({
 
             {/* ✅ PAYMENT OPTIONS - Show only on last passenger */}
             {isLastPassenger && (
-              <div className="tbfm-payment-section-wrapper" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '2px solid #e2e8f0' }}>
+              <div className="tbfm-payment-section-wrapper">
 
-                <div className="tbfm-section-header" style={{ marginTop: '8px' }}>
+                <div className="tbfm-section-header tbfm-section-header-spaced">
                   <CreditCard size={16} className="tbfm-section-icon" />
                   <span>Payment Option</span>
                 </div>
@@ -1182,8 +1182,7 @@ const BookingFormModal = ({
               <button
                 type="submit"
                 disabled={localLoading || loading}
-                className="bfm-submit-btn"
-                style={{ flex: 1 }}
+                className="bfm-submit-btn bfm-submit-btn-flex-equal"
               >
                 {localLoading || loading ? 'PROCESSING...' :
                  passengerStep === totalPassengers ? 'CONFIRM BOOKING' :

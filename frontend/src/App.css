@@ -965,3 +965,103 @@ body.translated-rtl {
     display: none;
   }
 }
+
+/* ============================================================
+   404 / NotFound page
+   ============================================================ */
+.app-notfound-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+  padding: 2rem;
+  background-color: #0a192f;
+  color: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.app-notfound-icon {
+  margin-bottom: 1.5rem;
+}
+
+.app-notfound-title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #fc9c1b;
+}
+
+.app-notfound-description {
+  color: #e2e8f0;
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.app-404-cta-btn {
+  padding: 1rem 2.5rem;
+  background: #fc9c1b;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px 0 rgba(252, 156, 27, 0.39);
+}
+
+.app-404-cta-btn:hover {
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   PackageBookingWrapper - package not found fallback
+   ============================================================ */
+.app-pkg-not-found-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  font-size: 1.2rem;
+  color: #666;
+  gap: 1rem;
+}
+
+.app-pkg-not-found-subtext {
+  font-size: 0.9rem;
+  color: #999;
+}
+
+.app-pkg-not-found-btn {
+  padding: 0.75rem 1.5rem;
+  background: #fc9c1b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* ============================================================
+   Suspense fallback spinner wrapper
+   ============================================================ */
+.app-route-spinner-wrapper {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   Dashboard - login required fallback
+   ============================================================ */
+.app-dashboard-login-required {
+  padding: 2rem;
+  text-align: center;
+}

@@ -1375,3 +1375,38 @@
     padding: 16px;
   }
 }
+
+/* --- CSP hardening: classes replacing inline style={{}} objects --- */
+
+.tbfm-overlay-top { z-index: 10001; }
+
+.tbfm-booking-completed-card {
+  max-width: 400px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.tbfm-booking-completed-icon-wrap { margin-bottom: 1.5rem; }
+
+.tbfm-booking-completed-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.tbfm-booking-completed-text {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.tbfm-age-warning {
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+
+.tbfm-section-header-spaced { margin-top: 8px; }

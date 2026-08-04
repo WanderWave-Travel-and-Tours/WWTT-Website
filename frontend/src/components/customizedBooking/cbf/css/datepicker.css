@@ -38,7 +38,8 @@
 
 .cbf-dp-display     { flex: 1; font-size: 0.85rem; color: #334155; }
 .cbf-dp-placeholder { color: #94a3b8; }
-.cbf-dp-chevron     { color: #94a3b8; flex-shrink: 0; transition: transform 0.2s ease; }
+.cbf-dp-chevron      { color: #94a3b8; flex-shrink: 0; transform: none; transition: transform 0.2s ease; }
+.cbf-dp-chevron-open { transform: rotate(90deg); }
 
 /* Floating modal backdrop */
 .cbf-dp-modal-backdrop {

@@ -13,6 +13,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 40px;
+  background-image: var(--payment-bg-image);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -121,6 +122,9 @@ body {
 .total-row { display: flex; justify-content: space-between; align-items: center; }
 .total-label-lg { font-size: 14px; font-weight: 600; color: #475569; text-transform: uppercase; }
 .total-amount-lg { font-size: 32px; font-weight: 800; color: #0f172a; }
+.payment-total-row--sub { font-size: 0.9rem; color: #6b7280; margin-bottom: 8px; }
+.payment-total-row--remaining { font-size: 0.85rem; color: #9ca3af; margin-top: 4px; }
+.payment-remaining-note { text-align: center; font-size: 0.85rem; color: #6b7280; margin-top: 12px; }
 
 /* --- Right Column: Payment Form --- */
 .payment-form-section {

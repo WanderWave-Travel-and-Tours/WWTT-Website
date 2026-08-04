@@ -609,9 +609,38 @@
   font-size: 0.9rem; padding: 12px 0; border-bottom: 1px solid #f1f5f9;
 }
 
+.hrs-info-item--about {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .hrs-info-label { color: #475569; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
 .hrs-info-value { color: #0f172a; font-weight: 700; text-align: right; max-width: 60%; }
 .hrs-info-value.hrs-price-highlight { font-size: 1.3rem; color: #1e3a5f; }
+
+.hrs-info-value--about {
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+  max-width: 100%;
+  text-align: left;
+  color: #475569;
+}
+
+.hrs-amenities-wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.hrs-amenity-fallback {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.hrs-close-icon {
+  display: block;
+}
 
 .hrs-amenity {
   display: inline-flex; align-items: center; gap: 8px;

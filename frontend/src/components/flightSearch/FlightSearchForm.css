@@ -69,6 +69,24 @@
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
+/* Return-date display (inside modern-date-input) needs extra top padding */
+.modern-date-input.return-date-display {
+  padding-top: 2px;
+}
+
+.return-date-placeholder {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Multi-city airport suggestion dropdown position override */
+.mc-suggestion-dropdown {
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+}
+
 .retro-3d-title {
   font-family: 'Inter', sans-serif;
   font-weight: 900;

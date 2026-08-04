@@ -164,15 +164,15 @@ const BookingCompletedModal = ({ isOpen, onClose, activityName }) => {
 
   if (!isOpen) return null;
   return (
-    <div className="tbfm-overlay" style={{ zIndex: 10001 }}>
-      <div className="tbfm-modal-card" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ marginBottom: '1.5rem' }}>
+    <div className="tbfm-overlay tbfm-overlay-top">
+      <div className="tbfm-modal-card tbfm-booking-completed-card">
+        <div className="tbfm-booking-completed-icon-wrap">
           <CheckCircle size={64} color="#22c55e" strokeWidth={2} />
         </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+        <h2 className="tbfm-booking-completed-title">
           Booking Confirmed!
         </h2>
-        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
+        <p className="tbfm-booking-completed-text">
           Your transfer booking for <strong>{activityName}</strong> has been submitted successfully.
         </p>
       </div>
@@ -523,14 +523,14 @@ const TransferBookingFormModal = ({
                   if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
                   if (age < 18) {
                     return (
-                      <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+                      <span className="tbfm-age-warning">
                         ⚠ Lead contact must be at least 18 years old.
                       </span>
                     );
                   }
                   if (age > 100) {
                     return (
-                      <span style={{ color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+                      <span className="tbfm-age-warning">
                         ⚠ Lead contact age cannot exceed 100 years.
                       </span>
                     );
@@ -616,7 +616,7 @@ const TransferBookingFormModal = ({
             </div>
 
             {/* ── PAYMENT OPTION ── */}
-            <div className="tbfm-section-header" style={{ marginTop: '8px' }}>
+            <div className="tbfm-section-header tbfm-section-header-spaced">
               <CreditCard size={16} className="tbfm-section-icon" />
               <span>Payment Option</span>
             </div>

@@ -34,7 +34,7 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading })
                     Please enter the code to complete registration.
                 </p>
                 <form onSubmit={handleSubmit} className="otp-form">
-                    <div className="input-group" style={{ marginBottom: '10px' }}>
+                    <div className="input-group ul-otp-input-group">
                         <label className="input-label">OTP Code</label>
                         <input
                             type="text"
@@ -42,10 +42,9 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading })
                             value={otpCode}
                             onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
                             maxLength="6"
-                            className="input-field"
+                            className="input-field ul-otp-input-field"
                             required
                             disabled={isLoading}
-                            style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem' }}
                         />
                     </div>
                     
@@ -59,19 +58,17 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading })
                         </button>
                         <button
                             type="button"
-                            className="switch-page-link"
+                            className="switch-page-link ul-resend-otp-btn"
                             onClick={onResend}
                             disabled={isLoading}
-                            style={{marginTop: '10px', width: '100%', border: 'none', background: 'none', textDecoration: 'underline'}}
                         >
                             Resend OTP
                         </button>
                         <button
                             type="button"
-                            className="login-button"
+                            className="login-button ul-cancel-signup-btn"
                             onClick={() => onCancel()}
                             disabled={isLoading}
-                            style={{marginTop: '10px', background: '#e0e0e0', color: '#333', boxShadow: 'none'}}
                         >
                             Cancel Signup
                         </button>
@@ -606,7 +603,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                 <div
                                     key={index}
                                     className={`slide-item ${isActive ? 'active' : ''}`}
-                                    style={{ backgroundImage: `url(${dest.image})` }}
+                                    style={{ '--ul-slide-bg': `url(${dest.image})` }}
                                 >
                                     <div className="slide-content-overlay">
                                         <h2 className="slide-title">{dest.name}</h2>
@@ -667,7 +664,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                         <div
                             key={index}
                             className={`mobile-slide-item ${index === currentSlide ? 'active' : ''}`}
-                            style={{ backgroundImage: `url(${dest.image})` }}
+                            style={{ '--ul-slide-bg': `url(${dest.image})` }}
                         />
                     ))}
 
@@ -727,7 +724,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                             <div
                                 key={index}
                                 className={`mobile-form-strip-slide ${index === currentSlide ? 'active' : ''}`}
-                                style={{ backgroundImage: `url(${dest.image})` }}
+                                style={{ '--ul-slide-bg': `url(${dest.image})` }}
                             />
                         ))}
                         <div className="mobile-form-strip-overlay" />
