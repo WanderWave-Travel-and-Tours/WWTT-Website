@@ -40,9 +40,6 @@ const activityLogSchema = new mongoose.Schema({
             'CENOMAR',
             'General Inquiries',
             
-            // ✅ ADDED: Feedback Module
-            'Feedback',
-
             // ✅ ADDED: Destinations Module
             'Destinations',
 

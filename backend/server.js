@@ -309,7 +309,6 @@ const transferBookingOrderRoute = require('./routes/transferBookingOrderRoute');
 const customizedBookingRoute    = require('./routes/Customizedbookingroute');    // ✅ ADDED: Customized booking wizard
 const locationRoute             = require('./routes/locationRoute');           // ← ADD
 const activityLogRoutes         = require('./routes/activityLogRoute');
-const feedbackRoutes            = require('./routes/feedbackRoutes');
 const favoriteRoutes            = require('./routes/favoriteRoute');
 
 const uploadDir = path.join(__dirname, 'uploads');
@@ -493,7 +492,6 @@ app.use('/api/transfer-bookings', transferBookingOrderRoute); // Customer transf
 app.use('/api/locations',         locationRoute);                              // ← ADD
 app.use('/api/customized-bookings', customizedBookingRoute); // ✅ ADDED: Customized booking wizard
 app.use('/api/activity-logs', activityLogRoutes);
-app.use('/api/feedback', feedbackRoutes);
 app.use('/api/favorites', favoriteRoutes);
 // ✅ Single mount — transferBookingRoute duplicate removed
 

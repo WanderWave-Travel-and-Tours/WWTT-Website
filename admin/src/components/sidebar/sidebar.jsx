@@ -39,7 +39,6 @@ import {
   Activity,
   DollarSign,
   UserCog,
-  MessageSquare,
   BarChart2,
   Car,
   Megaphone,
@@ -508,16 +507,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 isActive={location.pathname === '/activity-logs'}
                 onClick={() => navigate('/activity-logs')}
             />
-            <MenuItem 
-                path="/feedback" 
-                icon={MessageSquare} 
-                label="User Feedback" 
-                isCollapsed={isCollapsed}
-                isActive={location.pathname === '/feedback'}
-                onClick={() => navigate('/feedback')}
-            />
-            <MenuItem 
-                path="/settings" 
+            <MenuItem
+                path="/settings"
                 icon={Settings} 
                 label="Settings" 
                 isCollapsed={isCollapsed}

@@ -21,13 +21,27 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     </noscript>
 
-    <!-- Font Awesome — non-blocking -->
+    <!-- Font Awesome — non-blocking. SRI hash is cdnjs's official published
+         hash for this pinned version (via api.cdnjs.com), safe to pin since
+         the file is versioned and cdnjs never mutates a released version's
+         content. -->
     <link rel="preload" as="style" id="fontawesome-preload"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA=="
+      crossorigin="anonymous" />
     <noscript>
       <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA=="
+        crossorigin="anonymous" />
     </noscript>
+
+    <!-- Google Fonts CSS and the GHL loader.js below intentionally have no
+         integrity attribute: Google Fonts serves different font-format CSS
+         per User-Agent (a fixed hash would break loading in some browsers),
+         and loader.js is third-party code LeadConnector updates server-side
+         without notice (a pinned hash would break the chat widget on their
+         next deploy). -->
 
     <!-- Swap the two preloads above to stylesheets once loaded — external file
          so it runs without needing 'unsafe-inline' in script-src. -->
