@@ -21,7 +21,7 @@ import react from '@vitejs/plugin-react'
 // ---------------------------------------------------------------------------
 const cspPlugin = () => {
   const csp = [
-    "default-src 'self'",
+    "default-src 'none'",
     "script-src 'self' 'unsafe-inline' https://*.leadconnectorhq.com https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.google.com https://www.gstatic.com https://cdnjs.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com https://fonts.bunny.net https://*.leadconnectorhq.com",
     "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net",
