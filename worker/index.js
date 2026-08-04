@@ -38,8 +38,24 @@ function buildCsp(nonce) {
 
 export default {
   async fetch(request, env, ctx) {
-    // env.ASSETS serves the static build configured via wrangler.jsonc's
-    // "assets" binding (frontend/dist, SPA fallback to index.html).
+    const url = new URL(request.url);
+
+    // The site root ("/") is a separate GHL/LeadConnector-hosted landing
+    // page, not part of this React app's build — it's DNS-routed to a
+    // different origin entirely. This Worker's route (wanderwaveph.com/*)
+    // intercepts that request too, so pass it straight through to
+    // whatever origin the zone's DNS record points at, completely
+    // unmodified (no CSP rewriting — that page has its own inline
+    // scripts/styles we don't control and can't safely restrict).
+    // fetch(request) from inside a routed Worker forwards to the zone's
+    // DNS-configured origin rather than re-triggering this Worker.
+    if (url.pathname === '/') {
+      return fetch(request);
+    }
+
+    // Everything else is the React SPA. env.ASSETS serves the static build
+    // configured via wrangler.jsonc's "assets" binding (frontend/dist, SPA
+    // fallback to index.html).
     const response = await env.ASSETS.fetch(request);
 
     const contentType = response.headers.get('content-type') || '';
