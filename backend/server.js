@@ -857,10 +857,9 @@ Object.entries(CUSTOM_URLS).forEach(([path, { platform, campaignType }]) => {
 // Well-known probe paths that must never return an SPA shell. The
 // assessment fingerprinted the admin client by hitting /health, /swagger,
 // /graphql, /metrics, /openapi.json etc. and getting a 200 "WTT Admin Page"
-// response for each (F-04). Denying just these keeps each SPA's own routes
-// working — they live in separate repos and change often, so an allowlist
-// of routes would silently 404 real pages on the next deploy. Shared by
-// both the main frontend and admin dashboard blocks below.
+// response for each (F-04). Denying just these keeps the SPA's own routes
+// working — they live in a separate repo and change often, so an allowlist
+// of admin routes would silently 404 real pages on the next deploy.
 const PROBE_PATHS = new Set([
   '/health', '/healthz', '/status', '/version',
   '/docs', '/api-docs', '/swagger', '/swagger.json',
@@ -868,51 +867,11 @@ const PROBE_PATHS = new Set([
   '/.env', '/config.json', '/actuator',
 ]);
 
-const RESERVED_PREFIXES = ['/api/', '/uploads', '/img', '/fb', '/ig', '/tiktok'];
-
-function isReservedOrProbePath(reqPath) {
-  return RESERVED_PREFIXES.some(prefix => reqPath.startsWith(prefix)) ||
-    PROBE_PATHS.has(reqPath.toLowerCase());
-}
-
-// ====================== SERVE MAIN FRONTEND SPA (wanderwaveph.com) ======================
-const FRONTEND_HOSTS = new Set(['wanderwaveph.com', 'www.wanderwaveph.com']);
-const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist');
-const frontendIndexPath = path.join(frontendDistPath, 'index.html');
-
-console.log('📁 Frontend dist path:', frontendDistPath);
-console.log('📁 Frontend dist exists?', fs.existsSync(frontendDistPath));
-console.log('📁 Frontend index.html exists?', fs.existsSync(frontendIndexPath));
-
-let frontendIndexHtmlTemplate = null;
-if (fs.existsSync(frontendDistPath) && fs.existsSync(frontendIndexPath)) {
-  console.log('✅ Frontend dist folder OK → Serving main SPA');
-  // Read once at startup — this file only changes on redeploy, and the
-  // per-request nonce is substituted into the in-memory copy below.
-  frontendIndexHtmlTemplate = fs.readFileSync(frontendIndexPath, 'utf8');
-
-  // Static assets (hashed JS/CSS/images under frontend/dist/assets/) don't
-  // need nonce treatment — only the HTML document's own <script> tag does.
-  app.use((req, res, next) => {
-    if (!FRONTEND_HOSTS.has(req.hostname)) return next();
-    express.static(frontendDistPath)(req, res, next);
-  });
-
-  app.get('/{*path}', (req, res, next) => {
-    if (!FRONTEND_HOSTS.has(req.hostname)) return next();
-
-    if (isReservedOrProbePath(req.path)) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-
-    const html = frontendIndexHtmlTemplate.replaceAll('__CSP_NONCE__', res.locals.cspNonce);
-    res.type('html').send(html);
-  });
-} else {
-  console.error('❌ FRONTEND DIST FOLDER NOT FOUND!');
-}
-
 // ====================== SERVE REACT ADMIN DASHBOARD ======================
+// NOTE: wanderwaveph.com (the main site) is served by a Cloudflare Worker
+// (see wrangler.jsonc + worker/index.js at repo root) and a separate
+// GHL-hosted landing page, NOT by this Express app — this backend only
+// serves the admin dashboard (backend/dist) and the API.
 const distPath = path.join(__dirname, 'dist');
 
 console.log('🚀 NODE_ENV:', process.env.NODE_ENV);
@@ -923,20 +882,20 @@ console.log('📁 index.html exists?', fs.existsSync(path.join(distPath, 'index.
 if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'))) {
   console.log('✅ Dist folder OK → Serving Admin SPA');
 
-  app.use((req, res, next) => {
-    if (FRONTEND_HOSTS.has(req.hostname)) return next();
-    express.static(distPath)(req, res, next);
-  });
+  app.use(express.static(distPath));
 
   app.get('/{*path}', (req, res) => {
-    if (FRONTEND_HOSTS.has(req.hostname)) {
-      // Already handled by the main frontend block above; if we get here
-      // the frontend dist wasn't found — fall through to a 404 rather than
-      // serving the admin shell on the main site's domain.
+    // Huwag i-serve ang index.html sa API, uploads, at social redirects
+    if (req.path.startsWith('/api/') ||
+        req.path.startsWith('/uploads') ||
+        req.path.startsWith('/img') ||
+        req.path.startsWith('/fb') ||      // social redirects
+        req.path.startsWith('/ig') ||
+        req.path.startsWith('/tiktok')) {
       return res.status(404).json({ error: 'Not found' });
     }
 
-    if (isReservedOrProbePath(req.path)) {
+    if (PROBE_PATHS.has(req.path.toLowerCase())) {
       return res.status(404).json({ error: 'Not found' });
     }
 
