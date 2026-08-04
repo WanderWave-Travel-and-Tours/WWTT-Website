@@ -292,7 +292,6 @@ function MainLayout() {
     return () => {
       clearTimeout(timer);
       if (script?.parentNode) script.parentNode.removeChild(script);
-      if (style.parentNode) style.parentNode.removeChild(style);
     };
   }, []);
 
