@@ -124,31 +124,45 @@
     if (window.ChatWidget && window.ChatWidget.open) { window.ChatWidget.open(); return; }
   };
 
+  function tryLockOntoLauncher() {
+    var chatEl = document.querySelector('chat-widget');
+    if (!chatEl) return false;
+    if (isHiddenRoute()) {
+      hideChatWidget();
+      return true;
+    }
+
+    chatEl.style.setProperty('position', 'fixed', 'important');
+    chatEl.style.setProperty('z-index', '2147483647', 'important');
+    chatEl.style.setProperty('bottom', '-40px', 'important');
+    chatEl.style.setProperty('right', '-20px', 'important');
+
+    var btn = findLauncherBtn(chatEl);
+    if (!btn) return false;
+
+    _launcherBtn = btn;
+    hideLauncherBtn(btn);
+    hideTooltipSiblings(btn);
+    return true;
+  }
+
+  // Fast poll for the first ~10s (covers the common case), then fall back
+  // to a body-level MutationObserver so a slow/late GHL widget load still
+  // gets caught and hidden, no matter how long it takes to appear.
   var attempts = 0;
   var interval = setInterval(function () {
     attempts++;
-    var chatEl = document.querySelector('chat-widget');
-    if (chatEl) {
-      if (isHiddenRoute()) {
-        hideChatWidget();
-        clearInterval(interval);
-        return;
-      }
-
-      chatEl.style.setProperty('position', 'fixed', 'important');
-      chatEl.style.setProperty('z-index', '2147483647', 'important');
-      chatEl.style.setProperty('bottom', '-40px', 'important');
-      chatEl.style.setProperty('right', '-20px', 'important');
-
-      var btn = findLauncherBtn(chatEl);
-      if (btn) {
-        _launcherBtn = btn;
-        hideLauncherBtn(btn);
-        hideTooltipSiblings(btn);
-        clearInterval(interval);
-        return;
-      }
-    }
-    if (attempts > 100) clearInterval(interval);
+    if (tryLockOntoLauncher() || attempts > 100) clearInterval(interval);
   }, 100);
+
+  var _bodyObserver = new MutationObserver(function () {
+    if (tryLockOntoLauncher()) { _bodyObserver.disconnect(); }
+  });
+  if (document.body) {
+    _bodyObserver.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', function () {
+      _bodyObserver.observe(document.body, { childList: true, subtree: true });
+    });
+  }
 })();
