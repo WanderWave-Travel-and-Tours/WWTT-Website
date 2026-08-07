@@ -2,18 +2,18 @@
 /* MODERN, CLEAN, PREMIUM DESIGN */
 
 .ud-navbar {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
+    position: fixed;
+    top: 0;
+    left: 0;
     right: 0;
-    height: 70px; 
+    height: 70px;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
     border-bottom: 2px solid rgba(249, 115, 22, 0.2);
-    display: flex; 
-    align-items: center; 
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    padding: 0 36px; 
-    z-index: 100; 
+    padding: 0 36px;
+    z-index: 100;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(10px);
 }
@@ -28,12 +28,12 @@
     background: linear-gradient(90deg, transparent 0%, #f97316 50%, transparent 100%);
 }
 
-.ud-nav-left, 
-.ud-nav-right, 
-.ud-brand-section, 
-.ud-user-info { 
-    display: flex; 
-    align-items: center; 
+.ud-nav-left,
+.ud-nav-right,
+.ud-brand-section,
+.ud-user-info {
+    display: flex;
+    align-items: center;
 }
 
 .ud-nav-left { gap: 24px; }
@@ -49,10 +49,10 @@
     transform: translateY(-2px);
 }
 
-.ud-brand-logo { 
-    height: 44px; 
-    width: auto; 
-    object-fit: contain; 
+.ud-brand-logo {
+    height: 44px;
+    width: auto;
+    object-fit: contain;
     filter: brightness(1.2) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
     transition: transform 0.3s ease;
 }
@@ -61,20 +61,20 @@
     transform: scale(1.05);
 }
 
-.ud-brand-name { 
-    font-size: 1.6rem; 
-    font-weight: 900; 
+.ud-brand-name {
+    font-size: 1.6rem;
+    font-weight: 900;
     color: #ffffff;
     letter-spacing: -0.5px;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-} 
+}
 
-.ud-mobile-toggle { 
-    display: none; 
-    background: rgba(255, 255, 255, 0.08); 
+.ud-mobile-toggle {
+    display: none;
+    background: rgba(255, 255, 255, 0.08);
     border: 2px solid rgba(255, 255, 255, 0.15);
-    padding: 10px; 
-    cursor: pointer; 
+    padding: 10px;
+    cursor: pointer;
     color: #ffffff;
     border-radius: 10px;
     transition: all 0.3s ease;
@@ -102,16 +102,16 @@
 }
 
 /* Premium Avatar Design */
-.ud-user-avatar { 
-    width: 44px; 
-    height: 44px; 
+.ud-user-avatar {
+    width: 44px;
+    height: 44px;
     background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-    color: white; 
-    border-radius: 50%; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-weight: 900; 
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
     font-size: 1rem;
     border: 3px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4);
@@ -123,20 +123,20 @@
     box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
 }
 
-.ud-user-details { 
-    display: flex; 
-    flex-direction: column; 
+.ud-user-details {
+    display: flex;
+    flex-direction: column;
 }
 
-.ud-user-name { 
-    font-weight: 700; 
-    font-size: 0.95rem; 
+.ud-user-name {
+    font-weight: 700;
+    font-size: 0.95rem;
     color: #ffffff;
     letter-spacing: 0.2px;
 }
 
-.ud-user-email { 
-    font-size: 0.8rem; 
+.ud-user-email {
+    font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
 }
@@ -181,13 +181,13 @@
 }
 
 @keyframes fadeInDown {
-    from { 
-        opacity: 0; 
-        transform: translateY(-12px); 
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
     }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -229,24 +229,24 @@
 /* Responsive Design */
 @media (max-width: 768px) {
     .ud-mobile-toggle { display: block; }
-    
+
     .ud-navbar { padding: 0 20px; }
-    
+
     .ud-user-details { display: none; }
-    
+
     .ud-brand-name { font-size: 1.3rem; }
-    
+
     .ud-brand-logo { height: 38px; }
 }
 
 @media (max-width: 480px) {
     .ud-navbar { padding: 0 16px; }
-    
+
     .ud-brand-name { font-size: 1.1rem; }
-    
-    .ud-user-avatar { 
-        width: 38px; 
-        height: 38px; 
+
+    .ud-user-avatar {
+        width: 38px;
+        height: 38px;
         font-size: 0.9rem;
     }
 }

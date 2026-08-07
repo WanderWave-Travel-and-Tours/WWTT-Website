@@ -213,23 +213,24 @@ body.translated-rtl {
 }
 
 .top-bar-content {
-  max-width: 1400px;
+  max-width: 1200px;
   height: 100%;
   margin: 0 auto;
-  padding: 0 30px;
+  padding: 0 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 15px;
+  gap: 30px;
 }
 
 .top-bar-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   color: var(--white);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .top-bar-item svg {
@@ -242,21 +243,24 @@ body.translated-rtl {
   left: 0;
   right: 0;
   width: 100%;
+  min-height: var(--navbar-height);
   height: var(--navbar-height);
   background-color: var(--white);
-  box-shadow: 0 2px 10px rgba(0, 27, 62, 0.1);
   z-index: 1000;
   border-bottom: 1px solid #f0f0f0;
+  font-family: 'Poppins', sans-serif;
+  contain: layout style;
 }
 
 .navbar-content {
   max-width: 1400px;
   height: 100%;
   margin: 0 auto;
-  padding: 0 30px;
+  padding: 15px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .brand {
@@ -288,24 +292,25 @@ body.translated-rtl {
   display: flex;
   align-items: center;
   gap: 15px;
+  flex-wrap: nowrap;
 }
 
 .nav-links {
   display: flex;
-  gap: 2px;
+  gap: 40px;
   align-items: center;
 }
 
 .nav-btn {
-  padding: 15px 20px;
+  padding: 15px 0;
   border: none;
   background-color: transparent;
   color: var(--primary-navy);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   border-radius: 0;
-  transition: all 0.3s ease;
+  transition: color 0.2s ease;
   position: relative;
   white-space: nowrap;
   letter-spacing: 0.3px;
@@ -329,36 +334,28 @@ body.translated-rtl {
 
 .nav-btn.active {
   color: var(--primary-orange);
-  font-weight: 500;
-}
-
-.nav-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: 10px;
-  left: 20px;
-  right: 20px;
-  height: 3px;
-  background-color: var(--primary-orange);
 }
 
 .nav-actions {
   display: flex;
   gap: 12px;
   align-items: center;
+  margin-left: 30px;
+  flex-shrink: 0;
 }
 
 .translate-wrapper {
   position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .translate-button {
   background-color: var(--primary-blue);
   border: none;
   color: var(--white);
-  padding: 7px 11px;
+  padding: 6px 10px;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -367,10 +364,10 @@ body.translated-rtl {
   gap: 6px;
   font-weight: 600;
   font-size: 12px;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
   white-space: nowrap;
   min-width: 65px;
-  height: 34px;
+  height: 32px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   font-family: 'Poppins', sans-serif;
@@ -466,19 +463,19 @@ body.translated-rtl {
 .book-now-btn {
   padding: 8px 20px;
   border: none;
-  background-color: var(--primary-blue);
+  background-color: var(--primary-navy);
   color: var(--white);
-  font-size: 13px;
-  font-weight: 400;
+  font-size: 16px;
+  font-weight: 700;
   letter-spacing: 0.3px;
   cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+  border-radius: 10px;
+  transition: all 0.2s ease;
   white-space: nowrap;
   text-transform: capitalize;
   font-family: 'Poppins', sans-serif;
   -webkit-tap-highlight-color: transparent;
-  height: 38px;
+  box-shadow: 0 4px 15px rgba(0, 27, 62, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -486,13 +483,14 @@ body.translated-rtl {
 
 .book-now-btn:focus,
 .book-now-btn:focus-visible {
-  outline: none; 
-  box-shadow: none; 
+  outline: none;
+  box-shadow: 0 4px 15px rgba(0, 27, 62, 0.3);
 }
 
 .book-now-btn:hover {
-  background-color: #3d4e60;
-  transform: translateY(-1px);
+  background-color: #002a52;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 27, 62, 0.4);
 }
 
 .mobile-menu-btn {
@@ -533,18 +531,18 @@ body.translated-rtl {
 }
 
 .mobile-menu-header {
-  height: var(--navbar-height);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  padding: 16px 20px;
   background-color: var(--primary-navy);
   flex-shrink: 0;
 }
 
 .mobile-menu-header .brand-logo-mobile {
   display: block;
-  height: 60px; 
+  height: 40px;
+  width: auto;
 }
 
 .mobile-close-btn {
@@ -573,10 +571,10 @@ body.translated-rtl {
 
 .mobile-nav-links .nav-btn {
   text-align: left;
-  padding: 18px 25px;
+  padding: 15px 25px;
   width: 100%;
   border-radius: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   text-transform: uppercase;
   border-bottom: 1px solid #f0f0f0;
@@ -588,14 +586,8 @@ body.translated-rtl {
 
 .mobile-nav-links .nav-btn.active {
   background-color: var(--orange-light-bg);
-  color: var(--primary-orange); 
+  color: var(--primary-orange);
   font-weight: 700;
-  border-left: 4px solid var(--primary-orange);
-  padding-left: 21px; 
-}
-
-.mobile-nav-links .nav-btn.active::after {
-  display: none;
 }
 
 .mobile-translate-wrapper {
@@ -622,15 +614,27 @@ body.translated-rtl {
 }
 
 .mobile-nav-menu .book-now-btn {
-  margin: 25px 25px 30px; 
+  margin: 12px auto max(30px, env(safe-area-inset-bottom, 30px));
   text-align: center;
   flex-shrink: 0;
-  width: calc(100% - 50px);
-  padding: 16px;
-  font-size: 15px;
-  height: 50px;
-  background-color: var(--primary-blue);
-  font-weight: 400;
+  width: calc(100% - 40px);
+  max-width: 300px;
+  padding: 12px 15px;
+  font-size: 16px;
+  font-weight: 700;
+  background-color: var(--primary-navy);
+  border-radius: 10px;
+}
+
+.mobile-nav-menu .user-profile-btn {
+  margin: 12px auto max(30px, env(safe-area-inset-bottom, 30px));
+  width: calc(100% - 40px);
+  max-width: 300px;
+  padding: 12px 15px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 10px;
+  flex-shrink: 0;
 }
 
 .main-content {
@@ -666,26 +670,28 @@ body.translated-rtl {
 }
 
 .user-profile-btn {
-  padding: 0.5rem 1.5rem;
-  background: #fc9c1b;
+  padding: 8px 20px;
+  background-color: var(--primary-orange);
   color: #ffffff;
-  border: 2px solid white;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.95rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 16px;
+  font-family: 'Poppins', sans-serif;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
+  box-shadow: 0 4px 15px rgba(252, 156, 27, 0.4);
 }
 
 .user-profile-btn:hover {
-  background: transparent;
-  color: orange;
+  background-color: #e68a00;
+  color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(252, 156, 27, 0.5);
 }
 
 .main-content:has(.user-dashboard) {
@@ -734,16 +740,16 @@ body.translated-rtl {
   }
 
   .nav-links {
-    gap: 0px;
+    gap: 22px;
   }
 
   .nav-btn {
-    padding: 12px 16px;
+    padding: 15px 0;
     font-size: 13px;
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .top-bar {
     display: none;
   }
@@ -786,16 +792,44 @@ body.translated-rtl {
   }
 }
 
+/* Mid-size mobile — slimmer navbar */
 @media (max-width: 768px) {
-  .user-profile-btn {
-    width: 100%;
-    margin-top: 1rem;
-    padding: 0.75rem 1.5rem;
-    max-width: none;
+  :root {
+    --navbar-height: 64px;
+    --total-header-height: 64px;
+  }
+
+  .navbar-content {
+    padding: 8px 18px;
+  }
+
+  .brand-logo-mobile-nav {
+    height: 50px;
+  }
+
+  .mobile-nav-menu .user-profile-btn {
+    width: calc(100% - 40px);
+    max-width: 300px;
+    margin: 12px auto max(30px, env(safe-area-inset-bottom, 30px));
+    padding: 12px 15px;
   }
 }
 
+/* Small phones */
 @media (max-width: 480px) {
+  :root {
+    --navbar-height: 56px;
+    --total-header-height: 56px;
+  }
+
+  .navbar-content {
+    padding: 7px 15px;
+  }
+
+  .brand-logo-mobile-nav {
+    height: 43px;
+  }
+
   .page-title {
     font-size: 1.8rem;
   }
@@ -918,7 +952,7 @@ body.translated-rtl {
 }
 
 /* Responsive adjustments */
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .wishlist-button {
     display: none;
   }
@@ -960,7 +994,7 @@ body.translated-rtl {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .brand-toright-gif {
     display: none;
   }
