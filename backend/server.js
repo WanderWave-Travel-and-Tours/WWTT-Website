@@ -248,6 +248,12 @@ app.use('/api/', (req, res, next) => {
   apiLimiter(req, res, next);
 });
 
+// Require proof the request came via the Cloudflare Worker. Mounted AFTER the
+// rate limiter so flood traffic is still throttled even while this is in
+// warn-only mode. No-ops entirely until ORIGIN_SHARED_SECRET is set on Render.
+const requireOriginSecret = require('./middleware/requireOriginSecret');
+app.use('/api/', requireOriginSecret);
+
 // Rewrite Cloudinary URLs in every JSON response so browsers never see the cloud name.
 function _replaceCloudinaryUrls(obj, proxyBase) {
   if (typeof obj === 'string') {
