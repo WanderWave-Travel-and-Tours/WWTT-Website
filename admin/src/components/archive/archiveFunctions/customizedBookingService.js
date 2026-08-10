@@ -3,7 +3,7 @@
 // Fetch and restore archived Customized Bookings for the Archive page.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const API_BASE = 'https://wanderwaveph.onrender.com';
+const API_BASE = '';
 
 /**
  * Fetch all customized bookings where isArchive === 'Yes'.

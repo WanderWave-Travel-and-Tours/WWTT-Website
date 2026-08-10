@@ -38,7 +38,7 @@ const Users = () => {
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
 
-    const API_URL = 'https://wanderwaveph.onrender.com/api/users';
+    const API_URL = '/api/users';
 
     // Function para i-trigger ang confirmation modal
     const askConfirmation = (title, message, onConfirm, type = "primary") => {

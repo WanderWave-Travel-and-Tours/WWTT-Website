@@ -171,7 +171,7 @@ export const AppointmentViewModal = ({
                         </span>
                       </div>
                       <a 
-                        href={`https://wanderwaveph.onrender.com${doc.fileUrl}`} 
+                        href={`${doc.fileUrl}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="ppt-btn ppt-btn-ghost ppt-btn-sm" 
@@ -302,7 +302,7 @@ export const AppointmentViewModal = ({
                       <span className="ppt-doc-name">{doc.originalName}</span>
                       <span className="ppt-doc-meta">{formatFileSize(doc.fileSize)} • Uploaded {formatDate(doc.uploadedAt)}</span>
                     </div>
-                    <a href={`https://wanderwaveph.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="ppt-btn ppt-btn-ghost ppt-btn-sm">
+                    <a href={`${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="ppt-btn ppt-btn-ghost ppt-btn-sm">
                       <TrendingUp size={14} /> View
                     </a>
                   </div>

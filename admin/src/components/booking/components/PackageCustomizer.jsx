@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, XCircle, RotateCcw, AlertCircle, Search } from 'lucide-react';
 import { destinationsMatch, matchInclusionsWithPrices } from '../utils/inclusionMatcher';
 
-const API_BASE = 'https://wanderwaveph.onrender.com';
+const API_BASE = '';
 
 const DEST_API_TOKENS = [
   'siargao', 'siquijor', 'bohol', 'cebu',

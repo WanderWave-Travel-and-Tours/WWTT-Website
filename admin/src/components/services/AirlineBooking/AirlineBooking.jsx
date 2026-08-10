@@ -90,7 +90,7 @@ const AirlineBooking = () => {
     const fetchFlightBookings = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get('https://wanderwaveph.onrender.com/api/inquiries?isArchive=No');
+            const response = await axios.get('/api/inquiries?isArchive=No');
             if (response.data.success) {
                 const filtered = response.data.data.filter(inq => 
                     inq.inquiryType === 'FLIGHT_BOOKING' && inq.isArchive === 'No'
@@ -163,7 +163,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.put(
-                        `https://wanderwaveph.onrender.com/api/inquiries/${id}/status`,
+                        `/api/inquiries/${id}/status`,
                         { 
                             status: newStatus,
                             userEmail,
@@ -199,7 +199,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.post(
-                        `https://wanderwaveph.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`,
+                        `/api/inquiries/${selectedBooking._id}/request-payment`,
                         { userEmail, adminId }
                     );
                     
@@ -227,7 +227,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.put(
-                        `https://wanderwaveph.onrender.com/api/inquiries/${id}/archive`, 
+                        `/api/inquiries/${id}/archive`, 
                         { 
                             isArchive: 'Yes',
                             userEmail,
@@ -266,7 +266,7 @@ const AirlineBooking = () => {
             if (contactEvidence) formData.append('evidence', contactEvidence);
 
             const response = await axios.put(
-                `https://wanderwaveph.onrender.com/api/inquiries/${selectedBooking._id}/status`,
+                `/api/inquiries/${selectedBooking._id}/status`,
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );

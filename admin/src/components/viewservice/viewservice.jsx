@@ -12,7 +12,7 @@ import {
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
-const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/services';
+const API_BASE_URL = '/api/services';
 const ADMIN_FETCH_URL = `${API_BASE_URL}/admin/all`;
 
 const ViewServices = () => {
@@ -235,7 +235,7 @@ const ViewServices = () => {
                                         <img 
                                             src={service.image.startsWith('http') 
                                                 ? service.image 
-                                                : `https://wanderwaveph.onrender.com/uploads/${service.image}`
+                                                : `/uploads/${service.image}`
                                             } 
                                             alt={service.title} 
                                         />

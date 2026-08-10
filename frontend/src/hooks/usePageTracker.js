@@ -18,7 +18,7 @@
 
 import { useEffect, useRef } from 'react';
 
-const API_BASE = 'https://wanderwaveph.onrender.com/api/page-views';
+const API_BASE = '/api/page-views';
 
 // ── IP cache — fetched once per app session (stored in sessionStorage) ──
 async function getPublicIp() {

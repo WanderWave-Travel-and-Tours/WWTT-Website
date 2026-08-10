@@ -99,7 +99,7 @@ const ViewImage = () => {
     const fetchImages = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://wanderwaveph.onrender.com/api/images');
+            const response = await fetch('/api/images');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
             
@@ -128,7 +128,7 @@ const ViewImage = () => {
     const handleArchive = (id, imageName) => {
         askConfirmation("Archive Image", `Are you sure you want to archive "${imageName}"?`, async () => {
             try {
-                const response = await fetch(`https://wanderwaveph.onrender.com/api/images/${id}`, {
+                const response = await fetch(`/api/images/${id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ isArchive: 'Yes' })

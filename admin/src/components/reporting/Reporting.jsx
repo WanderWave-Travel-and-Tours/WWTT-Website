@@ -228,7 +228,7 @@ const EngagementRing = ({ rate, color }) => {
 // on Render/Vercel/etc. where there is no proxy.  We resolve the backend URL
 // from the Vite env variable VITE_API_BASE_URL if it is set; otherwise we fall
 // back to the Render backend URL so the deployed build always hits the right server.
-const API_BASE = (import.meta.env?.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com').replace(/\/$/, '');
+const API_BASE = (import.meta.env?.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 const Reporting = () => {

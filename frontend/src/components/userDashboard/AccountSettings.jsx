@@ -93,7 +93,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         }
 
         try {
-            const response = await fetch('https://wanderwaveph.onrender.com/api/users/update-profile', {
+            const response = await fetch('/api/users/update-profile', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
 
         try {
             // FIX 1: Static route — no :id in URL. Identity comes from server-verified JWT.
-            const response = await fetch('https://wanderwaveph.onrender.com/api/users/update-password', {
+            const response = await fetch('/api/users/update-password', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

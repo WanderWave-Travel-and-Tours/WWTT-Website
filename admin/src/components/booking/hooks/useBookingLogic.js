@@ -14,7 +14,7 @@ import {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const API_BASE = 'https://wanderwaveph.onrender.com';
+const API_BASE = '';
 const getAdminHeaders = () => ({});
 
 export const useBookingLogic = (isOpen, onClose, bookingMode = 'assist') => {

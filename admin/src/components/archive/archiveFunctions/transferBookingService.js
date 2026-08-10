@@ -4,7 +4,7 @@
 // isArchive === 'Yes' → archived; patch to 'No' to restore.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BASE_URL = 'https://wanderwaveph.onrender.com';
+const BASE_URL = '';
 
 /**
  * Fetch all transfer bookings where isArchive === 'Yes'.

@@ -219,7 +219,7 @@ function MainLayout() {
         const token = localStorage.getItem('wanderwave_token');
         if (!token) { setWishlistCount(0); return; }
 
-        const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
+        const response = await fetch('/api/favorites', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

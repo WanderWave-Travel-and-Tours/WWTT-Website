@@ -82,9 +82,9 @@ const [createdByFilter, setCreatedByFilter] = useState('ALL');
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      let res = await fetch('https://wanderwaveph.onrender.com/api/bookings/active');
+      let res = await fetch('/api/bookings/active');
       if (!res.ok) {
-        res = await fetch('https://wanderwaveph.onrender.com/api/bookings');
+        res = await fetch('/api/bookings');
       }
 
       if (!res.ok) throw new Error('Failed to fetch bookings');
@@ -214,7 +214,7 @@ if (createdByFilter !== 'ALL') {
     console.log('Full booking object:', booking);
     console.log('mongoId value:', booking?.mongoId);
     console.log('mongoId type:', typeof booking?.mongoId);
-    const url = `https://wanderwaveph.onrender.com/api/bookings/${booking?.mongoId}/confirm`;
+    const url = `/api/bookings/${booking?.mongoId}/confirm`;
     console.log('Request URL:', url);
     console.log('Method: PUT');
     // =================
@@ -273,7 +273,7 @@ if (createdByFilter !== 'ALL') {
   const executeCancel = async (booking) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
+      const res = await fetch(`/api/bookings/${booking.mongoId}/cancel`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -313,7 +313,7 @@ if (createdByFilter !== 'ALL') {
   const executeArchive = async (booking, action) => {
     setActionLoading(true);
     try {
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/archive`, {
+        const res = await fetch(`/api/bookings/${booking.mongoId}/archive`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action })
@@ -402,7 +402,7 @@ if (createdByFilter !== 'ALL') {
           // Process all archives in parallel (mas mabilis)
           await Promise.all(
             selectedBookings.map(async (booking) => {
-              const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/archive`, {
+              const res = await fetch(`/api/bookings/${booking.mongoId}/archive`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'archive' })

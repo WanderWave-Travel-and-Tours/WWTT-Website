@@ -1,4 +1,4 @@
-const API_URL = 'https://wanderwaveph.onrender.com/api/testimonials';
+const API_URL = '/api/testimonials';
 
 /**
  * Kunin lahat ng testimonials na naka-archive (isArchive: "Yes")

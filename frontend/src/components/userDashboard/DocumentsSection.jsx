@@ -298,7 +298,7 @@ const DocumentsSection = ({
                         {uploadedDocuments.map((doc, idx) => {
                             const isImage = doc.mimetype?.startsWith('image/') || 
                                             /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.filename || doc.originalName || '');
-                            const fileUrl = doc.url || `https://wanderwaveph.onrender.com/uploads/documents/${doc.filename}`;
+                            const fileUrl = doc.url || `/uploads/documents/${doc.filename}`;
 
                             return (
                                 <div key={doc._id || idx} className="ud-submitted-card">

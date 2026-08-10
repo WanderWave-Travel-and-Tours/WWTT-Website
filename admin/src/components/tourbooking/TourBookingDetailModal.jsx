@@ -82,7 +82,7 @@ const TourBookingDetailModal = ({
     setPackageImageFailed(false);
     const fetchPackageImage = async () => {
       try {
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${selectedBooking.mongoId}`);
+        const res = await fetch(`/api/tour-bookings/${selectedBooking.mongoId}`);
         const data = await res.json();
         const booking = data?.data || data;
         const image = booking?.packageId?.image || null;
@@ -105,7 +105,7 @@ const TourBookingDetailModal = ({
     const fetchDocs = async () => {
       setIsLoadingDocs(true);
       try {
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${selectedBooking.mongoId}`);
+        const res = await fetch(`/api/documents/inquiry/${selectedBooking.mongoId}`);
         const data = await res.json();
         setSubmittedDocs(data.success ? (data.documents || []) : []);
       } catch (err) {
@@ -162,7 +162,7 @@ const TourBookingDetailModal = ({
   const generateVoucherData = async () => {
     setIsGeneratingVoucher(true);
     try {
-      const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${b.mongoId}`);
+      const res = await fetch(`/api/tour-bookings/${b.mongoId}`);
       if (!res.ok) throw new Error(`Failed to fetch booking: ${res.status}`);
       const json = await res.json();
       const fullBooking = json.data || json;

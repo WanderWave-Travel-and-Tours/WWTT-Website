@@ -141,7 +141,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
 
 
     try {
-      const res = await axios.post('https://wanderwaveph.onrender.com/api/inquiries', bookingData, {
+      const res = await axios.post('/api/inquiries', bookingData, {
         headers: { 'Content-Type': 'application/json' }
       });
       if (res.data.success) {

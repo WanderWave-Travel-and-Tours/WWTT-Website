@@ -130,7 +130,7 @@ function PackageDealsContent() {
         const token = localStorage.getItem('wanderwave_token');
         if (!token) { setFavorites([]); return; }
 
-        const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
+        const response = await fetch('/api/favorites', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -306,7 +306,7 @@ function PackageDealsContent() {
       // Package not in current list — fetch it directly by ID from the API
       const fetchAndOpenPackage = async () => {
         try {
-          const res = await fetch(`https://wanderwaveph.onrender.com/api/packages/${pendingBookId}`);
+          const res = await fetch(`/api/packages/${pendingBookId}`);
           if (!res.ok) throw new Error(`Status ${res.status}`);
           const json = await res.json();
           if (json.status === 'ok' && json.data) {
@@ -779,7 +779,7 @@ function PackageDealsContent() {
           : [...prev, packageId]
       );
 
-      const response = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
+      const response = await fetch('/api/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

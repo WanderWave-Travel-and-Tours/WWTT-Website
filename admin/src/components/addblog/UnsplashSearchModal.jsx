@@ -23,7 +23,7 @@ const UnsplashSearchModal = ({ isOpen, onClose, onSelectImage }) => {
   const [showCurated, setShowCurated] = useState(true);
   
   const scrollContainerRef = useRef(null);
-  const API_BASE_URL = "https://wanderwaveph.onrender.com";
+  const API_BASE_URL = "";
 
   // Load curated images on mount
   useEffect(() => {

@@ -16,7 +16,7 @@ import {
 import './VisitorJourney.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────
-const API_STATS    = 'https://wanderwaveph.onrender.com/api/page-views/stats';
+const API_STATS    = '/api/page-views/stats';
 const AUTO_MS      = 30_000;
 const DISPLAY_LIMIT = 7;   // max visitor cards shown
 

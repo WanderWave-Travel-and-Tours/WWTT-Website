@@ -30,7 +30,7 @@ const Payment = () => {
 
     try {
       
-      const response = await fetch('https://wanderwaveph.onrender.com/api/payment/create-intent', {
+      const response = await fetch('/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

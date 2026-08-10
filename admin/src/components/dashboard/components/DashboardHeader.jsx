@@ -37,7 +37,7 @@ const DashboardHeader = ({
   const intervalRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  const API_BASE_URL = 'https://wanderwaveph.onrender.com';
+  const API_BASE_URL = '';
   const BASE_POLL_INTERVAL = 10000;   // 10 s when healthy
   const MAX_FAILURES = 5;             // stop polling after 5 consecutive failures
   const BACKOFF_MULTIPLIER = 2;       // double the interval each failure (unused in setInterval but used to gate restarts)

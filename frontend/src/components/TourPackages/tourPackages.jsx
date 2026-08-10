@@ -100,7 +100,7 @@ function TourPackagesContent({ currentUser: propCurrentUser = null }) {
     const fetchTours = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://wanderwaveph.onrender.com/api/tours/all');
+        const response = await fetch('/api/tours/all');
         const data = await response.json();
 
         if (data.status === 'ok' && data.data) {

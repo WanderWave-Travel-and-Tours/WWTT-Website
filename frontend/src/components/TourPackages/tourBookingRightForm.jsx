@@ -110,7 +110,7 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
 
   // ── OTC access check ─────────────────────────────────────────────────────
   useEffect(() => {
-    axios.get('https://wanderwaveph.onrender.com/api/ip/check-otc-access')
+    axios.get('/api/ip/check-otc-access')
       .then(r => { setHasOTCAccess(r.data.hasOTCAccess || false); setCheckingOTCAccess(false); })
       .catch(() => { setHasOTCAccess(false); setCheckingOTCAccess(false); });
   }, []);
@@ -145,7 +145,7 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
 
         if (data.success && data.data && data.data.length > 0) {
@@ -401,12 +401,12 @@ const [selectedRoomType,      setSelectedRoomType]     = useState(null);
           }
         } catch (_) {}
         try {
-          const r = await fetch(`https://wanderwaveph.onrender.com/api/bookings/check-voucher-usage?email=${encodeURIComponent(loggedInUserEmail)}&promoCode=${encodeURIComponent(promoCode.trim().toUpperCase())}`);
+          const r = await fetch(`/api/bookings/check-voucher-usage?email=${encodeURIComponent(loggedInUserEmail)}&promoCode=${encodeURIComponent(promoCode.trim().toUpperCase())}`);
           const d = await r.json();
           if (d.success && d.hasUsed) { setPromoError('You have already used this voucher.'); setAppliedPromo(null); toast.error('You have already used this voucher.'); setIsCheckingPromo(false); return; }
         } catch (_) {}
       }
-      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.trim().toUpperCase()}?packageId=${packageId}${loggedInUserEmail ? `&userEmail=${encodeURIComponent(loggedInUserEmail)}` : ''}`;
+      const url = `/api/promos/validate/${promoCode.trim().toUpperCase()}?packageId=${packageId}${loggedInUserEmail ? `&userEmail=${encodeURIComponent(loggedInUserEmail)}` : ''}`;
       const response = await fetch(url);
       const data     = await response.json();
       if (response.ok && data.valid) {
@@ -631,7 +631,7 @@ const handleRemoveFlight = () => {
         if (p.passportFile) formData.append(`passportFile_${idx}`, p.passportFile);
       });
 
-      const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+      const RENDER_BASE = '';
       try { await axios.get(RENDER_BASE, { timeout: 25000 }); } catch (_) {}
 
       const postBooking = () => axios.post(`${RENDER_BASE}/api/tour-bookings`, formData, {

@@ -1,6 +1,6 @@
 // cbf/utils.js — shared helpers & constants for CustomizedBookingForm
 
-export const API_BASE = 'https://wanderwaveph.onrender.com';
+export const API_BASE = '';
 
 export const NIGHT_SURCHARGE_AMOUNT = 500;
 

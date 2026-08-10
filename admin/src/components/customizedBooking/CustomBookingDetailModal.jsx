@@ -59,7 +59,7 @@ const CustomBookingDetailModal = ({
   useEffect(() => {
     if (!showModal || !selectedBooking?.mongoId) { setSubmittedDocs([]); return; }
     setIsLoadingDocs(true);
-    fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${selectedBooking.mongoId}`)
+    fetch(`/api/documents/inquiry/${selectedBooking.mongoId}`)
       .then(r => r.json())
       .then(data => { setSubmittedDocs(data.success ? (data.documents || []) : []); })
       .catch(() => setSubmittedDocs([]))

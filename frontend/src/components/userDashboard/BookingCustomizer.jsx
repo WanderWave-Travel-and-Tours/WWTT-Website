@@ -178,7 +178,7 @@ const BookingCustomizer = ({
   ]);
 
   // ✅ API Configuration
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
   // ─────────────────────────────────────────────────────────────
   // DESTINATION → API SEARCH TERM NORMALIZER

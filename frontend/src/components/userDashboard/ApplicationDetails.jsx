@@ -6,7 +6,7 @@ import './ApplicationDetails.css';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const ApplicationDetails = ({ 
     inquiry, 

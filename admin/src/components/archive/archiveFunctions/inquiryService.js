@@ -2,7 +2,7 @@
 // src/components/archive/archiveFunctions/inquiryService.js
 import axios from 'axios';
 
-const API_URL = 'https://wanderwaveph.onrender.com/api/inquiries'; // Siguraduhing tama ang port mo
+const API_URL = '/api/inquiries'; // Siguraduhing tama ang port mo
 
 export const fetchArchivedInquiries = async () => {
   try {

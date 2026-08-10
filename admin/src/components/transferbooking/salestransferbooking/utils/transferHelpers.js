@@ -22,4 +22,4 @@ export const isTodayOrTomorrow = (dateStr) => {
   return selected.getTime() === today.getTime() || selected.getTime() === tomorrow.getTime();
 };
 
-export const BASE_URL = 'https://wanderwaveph.onrender.com';
+export const BASE_URL = '';

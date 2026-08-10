@@ -20,7 +20,7 @@ import '../booking/BookingTable.css';
 import '../booking/BookingCards.css';
 import './transferBooking.css';
 
-const BASE_URL = 'https://wanderwaveph.onrender.com';
+const BASE_URL = '';
 
 const STAT_IMAGES = {
   TOTAL:   'https://picsum.photos/seed/transfer1/800/600',

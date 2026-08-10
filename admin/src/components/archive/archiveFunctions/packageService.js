@@ -1,4 +1,4 @@
-const API_URL = 'https://wanderwaveph.onrender.com/api/packages';
+const API_URL = '/api/packages';
 
 const getAdminHeaders = () => ({});
 

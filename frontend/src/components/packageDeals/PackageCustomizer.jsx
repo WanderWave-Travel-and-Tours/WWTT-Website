@@ -173,8 +173,8 @@ const PackageCustomizer = ({
 
         const encodedDest = encodeURIComponent(apiDest);
         const fetchUrl = useBroadFetch
-          ? `https://wanderwaveph.onrender.com/api/seller-rates?status=active`
-          : `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}&status=active`;
+          ? `/api/seller-rates?status=active`
+          : `/api/seller-rates?destination=${encodedDest}&status=active`;
 
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error('Failed to fetch seller rates');

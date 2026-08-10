@@ -298,7 +298,7 @@ const TransferBookingFormModal = ({
     setShowConfirmModal(false);
     setLocalLoading(true);
     try {
-      const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+      const RENDER_BASE = '';
 
       const bookingData = {
         bookingType:     'transfer',

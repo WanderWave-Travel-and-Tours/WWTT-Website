@@ -623,7 +623,7 @@ const AddPackage = () => {
         formData.append("adminId", activeId); 
 
         try {
-            const response = await fetch("https://wanderwaveph.onrender.com/api/packages/add", {
+            const response = await fetch("/api/packages/add", {
                 method: "POST",
                 body: formData,
             });

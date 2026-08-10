@@ -88,7 +88,7 @@ const ViewAdmin = () => {
   const fetchAdmins = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('https://wanderwaveph.onrender.com/api/admin/list', {
+      const response = await fetch('/api/admin/list', {
         headers: { 'Content-Type': 'application/json' }
       });
 
@@ -112,7 +112,7 @@ const ViewAdmin = () => {
   // Actual logic for deleting/archiving an admin
   const performDeleteAdmin = async (adminId, adminEmail) => {
     try {
-      const response = await fetch(`https://wanderwaveph.onrender.com/api/admin/delete/${adminId}`, {
+      const response = await fetch(`/api/admin/delete/${adminId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });

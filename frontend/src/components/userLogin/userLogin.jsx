@@ -9,7 +9,7 @@ import { useToast } from '../toast/ToastManager';
 // Import WanderLoader
 import WanderLoader from '../loading/WanderLoader';
 
-const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/auth'; 
+const API_BASE_URL = '/api/auth'; 
 
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading }) => {
@@ -361,7 +361,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setIsLoading(true);
         
         try {
-            const res = await fetch(`https://wanderwaveph.onrender.com/api/auth/login`, {
+            const res = await fetch(`/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
