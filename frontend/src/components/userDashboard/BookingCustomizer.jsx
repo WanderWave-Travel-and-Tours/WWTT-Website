@@ -4,6 +4,7 @@ import {
   Package, RotateCcw, AlertCircle, DollarSign, Building2
 } from 'lucide-react';
 import './BookingCustomizer.css';
+import { API_BASE_URL } from '../../config/apiBase';
 import {
   destinationsMatch,
   matchInclusionsWithPrices,
@@ -177,8 +178,9 @@ const BookingCustomizer = ({
     onLiveBalanceChange,
   ]);
 
-  // ✅ API Configuration
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+  // ✅ API Configuration — see src/config/apiBase.js. Sanitised there so a
+  // stale absolute URL in the hosting dashboard cannot produce a cross-origin
+  // call that bypasses the Cloudflare Worker.
 
   // ─────────────────────────────────────────────────────────────
   // DESTINATION → API SEARCH TERM NORMALIZER

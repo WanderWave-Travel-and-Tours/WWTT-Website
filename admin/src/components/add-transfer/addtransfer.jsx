@@ -17,7 +17,7 @@ import CustomConfirmModal from "../../components/confirmationModal/CustomConfirm
 //         e.g. VITE_API_URL = "/api"
 //         → API_BASE = "/api"
 //         → fetch(`${API_BASE}/transfers`) = ".../api/transfers"  ✅
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '/api';
+import { API_ROOT as API_BASE } from '../../config/apiBase';
 
 const AddTransfer = () => {
     // --- SIDEBAR TOGGLE ---
