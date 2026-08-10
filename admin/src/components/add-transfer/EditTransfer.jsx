@@ -11,9 +11,7 @@ import TransferPreview from "./TransferPreview";
 import { useToast } from "../toast/ToastManager";
 import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
-const API_BASE =
-    import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-    "/api";
+import { API_ROOT as API_BASE } from '../../config/apiBase';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EditTransfer

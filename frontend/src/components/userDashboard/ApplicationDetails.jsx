@@ -6,7 +6,7 @@ import './ApplicationDetails.css';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+import { API_BASE_URL } from '../../config/apiBase';
 
 const ApplicationDetails = ({ 
     inquiry, 

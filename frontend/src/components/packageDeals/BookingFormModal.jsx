@@ -4,6 +4,7 @@ import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as Calendar
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import ImageCropperModal from './ImageCropperModal';
+import { API_ROOT } from '../../config/apiBase';
 // Import the new CSS file
 import './BookingFormModal.css';
 
@@ -590,9 +591,7 @@ const BookingFormModal = ({
         }
       });
 
-      const API_BASE = import.meta.env.VITE_API_URL ||
-        (import.meta.env.DEV ? '' : '');
-      const baseUrl = API_BASE.replace(/\/+$/, '');
+      const baseUrl = API_ROOT;
 
       const bookingUrl = baseUrl.endsWith("/api") ? `${baseUrl}/bookings` : `${baseUrl}/api/bookings`;
       const paymentUrl = baseUrl.endsWith("/api") ? `${baseUrl}/payment/create-intent` : `${baseUrl}/api/payment/create-intent`;

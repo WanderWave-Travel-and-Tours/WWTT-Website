@@ -3,6 +3,7 @@ import axios from '../../lib/axiosInstance';
 import { X, Plane, CheckCircle, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
+import { API_ROOT } from '../../config/apiBase';
 // Import the same CSS files as BookingFormModal
 import './TourBookingFormModal.css';
 
@@ -443,9 +444,7 @@ const TourBookingFormModal = ({
         }
       });
 
-      const API_BASE = import.meta.env.VITE_API_URL ||
-        (import.meta.env.DEV ? '' : '');
-      const baseUrl = API_BASE.replace(/\/+$/, '');
+      const baseUrl = API_ROOT;
 
       // ✅ Tour-specific endpoints
       const bookingUrl  = baseUrl.endsWith('/api') ? `${baseUrl}/tour-bookings`           : `${baseUrl}/api/tour-bookings`;
