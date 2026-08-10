@@ -70,7 +70,7 @@ export const TourModal = ({
   const generateVoucherData = async () => {
     setIsGeneratingVoucher(true);
     try {
-      const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${tour.mongoId}`);
+      const res = await fetch(`/api/tour-bookings/${tour.mongoId}`);
       if (!res.ok) throw new Error(`Failed to fetch tour booking: ${res.status}`);
       const data = await res.json();
       const fullBooking = data.data || data;

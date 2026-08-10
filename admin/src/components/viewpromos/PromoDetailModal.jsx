@@ -57,7 +57,7 @@ const PromoDetailModal = ({
     const imageUrl = selectedPromo.image 
         ? (selectedPromo.image.startsWith('http') 
             ? selectedPromo.image 
-            : `https://wanderwaveph.onrender.com/uploads/${selectedPromo.image}`)
+            : `/uploads/${selectedPromo.image}`)
         : null;
 
     return (

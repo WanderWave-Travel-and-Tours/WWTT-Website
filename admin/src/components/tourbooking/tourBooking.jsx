@@ -21,7 +21,7 @@ import '../booking/BookingTable.css';
 import '../booking/BookingCards.css';
 import './tourBooking.css';
 
-const BASE_URL = 'https://wanderwaveph.onrender.com';
+const BASE_URL = '';
 
 const STAT_IMAGES = {
   TOTAL:    'https://picsum.photos/seed/tourbeach/800/600',

@@ -135,7 +135,7 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
         const token = localStorage.getItem('wanderwave_token');
         if (!token) return;
         const res = await fetch(
-          `https://wanderwaveph.onrender.com/api/favorites/check/${tour._id}`,
+          `/api/favorites/check/${tour._id}`,
           {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             signal: controller.signal,
@@ -165,7 +165,7 @@ function TourCard({ tour, onBookNow, currency = 'PHP', exchangeRate = 58, curren
     setFavoriteLoading(true);
     try {
       const token = localStorage.getItem('wanderwave_token');
-      const res = await fetch('https://wanderwaveph.onrender.com/api/favorites', {
+      const res = await fetch('/api/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

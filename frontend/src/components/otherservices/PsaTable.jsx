@@ -202,7 +202,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
                               {psa.downloadForms.map((form, index) => {
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
-                                const finalUrl = formUrl && formUrl.startsWith('http') ? formUrl : `https://wanderwaveph.onrender.com${formUrl}`;
+                                const finalUrl = formUrl && formUrl.startsWith('http') ? formUrl : `${formUrl}`;
 
                                 return (
                                   <li key={index} className="psa-download-item">

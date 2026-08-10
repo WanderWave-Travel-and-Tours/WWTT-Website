@@ -7,7 +7,7 @@ import {
   getAllowedDayLabel,
 } from '../utils/bookingUtils';
 
-const API_BASE = 'https://wanderwaveph.onrender.com';
+const API_BASE = '';
 
 const blankPassenger = () => ({
   firstName: '', lastName: '', email: '', phone: '',

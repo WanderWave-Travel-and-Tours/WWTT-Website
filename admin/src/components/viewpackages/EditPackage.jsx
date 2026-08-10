@@ -141,7 +141,7 @@ const EditPackage = () => {
   const [isOtherTourType, setIsOtherTourType] = useState(false);
   const [otherTourTypeValue, setOtherTourTypeValue] = useState('');
 
-  const API_BASE_URL = "https://wanderwaveph.onrender.com/api/packages";
+  const API_BASE_URL = "/api/packages";
   const getAdminHeaders = () => ({});
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -391,7 +391,7 @@ const EditPackage = () => {
           setItinerary(currentItinerary);
 
           if (pkg.image) {
-            const imgUrl = pkg.image.startsWith('http') ? pkg.image : `https://wanderwaveph.onrender.com/uploads/${pkg.image}`;
+            const imgUrl = pkg.image.startsWith('http') ? pkg.image : `/uploads/${pkg.image}`;
             setImagePreview(imgUrl);
           }
         } else {

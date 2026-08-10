@@ -83,7 +83,7 @@ const AddPromo = () => {
 
         setIsSearching(true);
         try {
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
+            const response = await fetch(`/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
             if (response.ok) {
                 const data = await response.json();
                 // Filter out already selected packages
@@ -422,7 +422,7 @@ const AddPromo = () => {
                 formData.append('adminId', adminData.id || '');
             }
 
-            const response = await fetch('https://wanderwaveph.onrender.com/api/promos/add', {
+            const response = await fetch('/api/promos/add', {
                 method: 'POST',
                 body: formData
             });

@@ -132,7 +132,7 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
       const searchDestination = async () => {
         try {
           const response = await axios.get(
-            "https://wanderwaveph.onrender.com/api/flights/airports",
+            "/api/flights/airports",
             { params: { search: destination } }
           );
           if (response.data.success && response.data.data && response.data.data.length > 0) {
@@ -166,7 +166,7 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
     setAirportSearchLoading(true);
     try {
       const response = await axios.get(
-        "https://wanderwaveph.onrender.com/api/flights/airports",
+        "/api/flights/airports",
         { params: { search: searchTerm } }
       );
       if (response.data.success && response.data.data) {
@@ -332,7 +332,7 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("https://wanderwaveph.onrender.com/api/flights/search-domestic", {
+      const res = await axios.get("/api/flights/search-domestic", {
         params: {
           origin: roundTripData.destination,
           destination: roundTripData.origin,
@@ -486,7 +486,7 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
     }
 
     try {
-      const response = await axios.get("https://wanderwaveph.onrender.com/api/flights/search-domestic", {
+      const response = await axios.get("/api/flights/search-domestic", {
         params: { 
           ...searchData, 
           adults: searchParams.adults, 

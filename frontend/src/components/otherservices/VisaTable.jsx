@@ -227,7 +227,7 @@ const VisaTable = ({ onSelectVisa, onClose }) => {
                               {visa.downloadForms.map((form, index) => {
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
-                                const fullUrl = formUrl ? `https://wanderwaveph.onrender.com${formUrl}` : null;
+                                const fullUrl = formUrl ? `${formUrl}` : null;
                                 const shortLabel = truncateFilename(formLabel);
 
                                 return (

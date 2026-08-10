@@ -63,7 +63,7 @@ const AddDeals = () => {
         }
 
         setIsSubmitting(true);
-        // const API_BASE_URL = 'https://wanderwaveph.onrender.com'; 
+        // const API_BASE_URL = ''; 
 
         try {
             const formData = new FormData();

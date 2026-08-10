@@ -238,7 +238,7 @@ const EditPoster = () => {
     useEffect(() => {
         const fetchPoster = async () => {
             try {
-                const response = await axios.get(`https://wanderwaveph.onrender.com/api/posters/${id}`);
+                const response = await axios.get(`/api/posters/${id}`);
                 const poster = response.data;
 
                 setFormData({
@@ -258,7 +258,7 @@ const EditPoster = () => {
                 });
 
                 if (poster.imageUrl) {
-                    setImagePreview(`https://wanderwaveph.onrender.com/${poster.imageUrl}`);
+                    setImagePreview(`/${poster.imageUrl}`);
                 }
 
                 setIsLoading(false);
@@ -345,7 +345,7 @@ const EditPoster = () => {
                 formDataToSend.append('imageUrl', imageFile);
             }
 
-            await axios.put(`https://wanderwaveph.onrender.com/api/posters/update/${id}`, formDataToSend);
+            await axios.put(`/api/posters/update/${id}`, formDataToSend);
 
             toast.success('Poster updated successfully!');
             await clearDraft();

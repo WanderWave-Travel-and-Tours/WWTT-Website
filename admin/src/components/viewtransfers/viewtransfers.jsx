@@ -9,7 +9,7 @@ import './viewtransfers.css';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../toast/ToastManager';
 
-const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/transfers';
+const API_BASE_URL = '/api/transfers';
 
 // --- CONFIRMATION MODAL ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {

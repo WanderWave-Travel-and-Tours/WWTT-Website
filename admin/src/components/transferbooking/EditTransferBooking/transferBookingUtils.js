@@ -3,8 +3,8 @@
 // Shared constants, helpers, and dropdown styles for EditTransferBooking
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const API_BASE_URL  = "https://wanderwaveph.onrender.com/api/transfer-bookings";
-export const TRANSFERS_API = "https://wanderwaveph.onrender.com/api/transfers";
+export const API_BASE_URL  = "/api/transfer-bookings";
+export const TRANSFERS_API = "/api/transfers";
 
 export const LATE_NIGHT_CHARGE = 500;
 

@@ -109,7 +109,7 @@ const Dashboard = () => {
     try {
       // FIX #3: Fire all 7 requests in parallel with Promise.allSettled so a single
       // failure doesn't block the rest and total wait time = slowest request (not sum).
-      const API = "https://wanderwaveph.onrender.com";
+      const API = "";
       const [
         bookingsResult,
         packagesResult,
@@ -687,7 +687,7 @@ const Dashboard = () => {
 
   const handleResetViewToBookRate = async () => {
     try {
-      const res = await fetch("https://wanderwaveph.onrender.com/api/page-views/booking-counts/reset", {
+      const res = await fetch("/api/page-views/booking-counts/reset", {
         method: "DELETE",
       });
       const data = await res.json();
@@ -772,7 +772,7 @@ const Dashboard = () => {
             }
         };
 
-        await fetch('https://wanderwaveph.onrender.com/api/activity-logs', {
+        await fetch('/api/activity-logs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(activityLogData)

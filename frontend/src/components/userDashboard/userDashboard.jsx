@@ -93,11 +93,11 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 transferBookingsRes,
                 customizedBookingsRes,
             ] = await Promise.allSettled([
-                fetch(`https://wanderwaveph.onrender.com/api/inquiries/email/${user.email}`).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/bookings/user/${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/tour-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/transfer-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
-                fetch(`https://wanderwaveph.onrender.com/api/customized-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
+                fetch(`/api/inquiries/email/${user.email}`).then(r => r.json()),
+                fetch(`/api/bookings/user/${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
+                fetch(`/api/tour-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
+                fetch(`/api/transfer-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
+                fetch(`/api/customized-bookings?email=${user.email}`, { headers: getAuthHeaders() }).then(r => r.json()),
             ]);
 
             // Safely unwrap — a rejected/failed call returns null so it's skipped below
@@ -191,7 +191,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
 
         try {
             setIsLoadingDocuments(true);
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${inquiryId}`);
+            const response = await fetch(`/api/documents/inquiry/${inquiryId}`);
             const data = await response.json();
             
             if (data.success) {
@@ -230,7 +230,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
             const verifyPayment = async () => {
                 try {
                     setIsLoading(true);
-                    await axios.put(`https://wanderwaveph.onrender.com/api/inquiries/${inquiryId}/pay`);
+                    await axios.put(`/api/inquiries/${inquiryId}/pay`);
                     toast.success('Your payment has been received and your status has been updated.', 'Payment Successful!');
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await fetchUserData();
@@ -247,7 +247,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
         const fetchVisaDetails = async () => {
             if (selectedInquiry?.visaId) {
                 try {
-                    const response = await axios.get(`https://wanderwaveph.onrender.com/api/visas/${selectedInquiry.visaId}`);
+                    const response = await axios.get(`/api/visas/${selectedInquiry.visaId}`);
                     if (response.data) setVisaDetails(response.data);
                 } catch (error) {
                     setVisaDetails(null);
@@ -299,7 +299,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
                 closeConfirm();
                 try {
                     setIsLoading(true);
-                    const response = await fetch('https://wanderwaveph.onrender.com/api/payment/create-inquiry-checkout', {
+                    const response = await fetch('/api/payment/create-inquiry-checkout', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ inquiryId: selectedInquiry._id })
@@ -394,7 +394,7 @@ const UserDashboardInner = ({ user, onLogout }) => {
         setIsUploading(true);
         setUploadProgress(0);
 
-        const response = await fetch('https://wanderwaveph.onrender.com/api/documents/upload', {
+        const response = await fetch('/api/documents/upload', {
             method: 'POST',
             body: formData,
             // NO Content-Type header!

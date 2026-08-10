@@ -184,7 +184,7 @@ const BookingRightForm = ({
   useEffect(() => {
     const checkOTCAccess = async () => {
   try {
-    const response = await axios.get('https://wanderwaveph.onrender.com/api/ip/check-otc-access');
+    const response = await axios.get('/api/ip/check-otc-access');
     
     setHasOTCAccess(response.data.hasOTCAccess || false);
     setCheckingOTCAccess(false);
@@ -429,7 +429,7 @@ if (savedState.formData.appliedPromo) {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -751,7 +751,7 @@ const handleApplyPromo = async () => {
       if (loggedInUserEmail) {
         try {
           const usageRes = await fetch(
-            `https://wanderwaveph.onrender.com/api/bookings/check-voucher-usage?email=${encodeURIComponent(loggedInUserEmail)}&promoCode=${encodeURIComponent(promoCode.trim().toUpperCase())}`
+            `/api/bookings/check-voucher-usage?email=${encodeURIComponent(loggedInUserEmail)}&promoCode=${encodeURIComponent(promoCode.trim().toUpperCase())}`
           );
           const usageData = await usageRes.json();
           if (usageData.success && usageData.hasUsed) {
@@ -767,7 +767,7 @@ const handleApplyPromo = async () => {
       }
 
       // ── LAYER 3: Promo validate endpoint (final backend defense) ─────────
-      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.trim().toUpperCase()}?packageId=${packageId}${loggedInUserEmail ? `&userEmail=${encodeURIComponent(loggedInUserEmail)}` : ''}`;
+      const url = `/api/promos/validate/${promoCode.trim().toUpperCase()}?packageId=${packageId}${loggedInUserEmail ? `&userEmail=${encodeURIComponent(loggedInUserEmail)}` : ''}`;
       
       const response = await fetch(url);
       
@@ -1280,7 +1280,7 @@ const handleNextPassenger = async (e) => {
       }
     });
 
-    const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+    const RENDER_BASE = '';
 
     // ✅ Wake up Render server before booking (free tier sleeps after inactivity)
     try { await axios.get(RENDER_BASE, { timeout: 25000 }); } catch (_) {}
@@ -1313,7 +1313,7 @@ const handleNextPassenger = async (e) => {
 
       // ── Record booking count for View-to-Book Rate tracking ──────
       // Fire-and-forget: non-blocking, failure won't affect booking flow
-      fetch('https://wanderwaveph.onrender.com/api/page-views/booking-count', {
+      fetch('/api/page-views/booking-count', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

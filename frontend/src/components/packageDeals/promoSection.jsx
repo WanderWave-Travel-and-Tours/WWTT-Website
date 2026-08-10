@@ -55,7 +55,7 @@ function PromoSection({ onBookNow }) {
   useEffect(() => {
     (async () => {
       try {
-        const res  = await fetch('https://wanderwaveph.onrender.com/api/promos');
+        const res  = await fetch('/api/promos');
         const data = await res.json();
         if (Array.isArray(data)) {
           const today  = new Date();
@@ -73,7 +73,7 @@ function PromoSection({ onBookNow }) {
             description: p.description,
             validUntil: new Date(p.validUntil),
             image: p.image
-              ? (p.image.startsWith('http') ? p.image : `https://wanderwaveph.onrender.com/uploads/${p.image}`)
+              ? (p.image.startsWith('http') ? p.image : `/uploads/${p.image}`)
               : fallbackImg(p.durationType),
           }));
           setPromos([...mapped, COMING_SOON_PROMO]);

@@ -18,7 +18,7 @@ const TourPaymentSuccess = () => {
     // ✅ Safety-net: confirm booking on page load (fallback when webhook doesn't fire)
     const confirmBookingByID = async (id) => {
       try {
-        await fetch(`https://wanderwaveph.onrender.com/api/payment/confirm-by-booking/${id}`, {
+        await fetch(`/api/payment/confirm-by-booking/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -53,7 +53,7 @@ const TourPaymentSuccess = () => {
 
   const triggerOnboarding = (id) => {
     if (!id) return;
-    fetch(`https://wanderwaveph.onrender.com/api/payment/trigger-onboarding/${id}`, {
+    fetch(`/api/payment/trigger-onboarding/${id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }).catch(() => {});
@@ -65,7 +65,7 @@ const TourPaymentSuccess = () => {
 
     const tryFetch = async (attempt = 1) => {
       try {
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${id}`);
+        const res = await fetch(`/api/tour-bookings/${id}`);
         const data = await res.json();
 
         if (res.ok && data.success && data.data) {

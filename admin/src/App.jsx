@@ -489,7 +489,7 @@ const ProtectedRoute = ({ children }) => {
 
         let response;
         try {
-          response = await fetch('https://wanderwaveph.onrender.com/api/admin/verify', {
+          response = await fetch('/api/admin/verify', {
             method: 'GET',
             signal: controller.signal,
           });

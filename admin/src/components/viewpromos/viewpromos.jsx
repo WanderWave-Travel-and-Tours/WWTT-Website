@@ -50,7 +50,7 @@ const ViewPromos = () => {
         setLoading(true);
         try {
             // ✅ FIXED: Use /all to include vouchers (GET / excludes vouchers for public carousel only)
-            const response = await fetch('https://wanderwaveph.onrender.com/api/promos/all');
+            const response = await fetch('/api/promos/all');
             if (!response.ok) {
                 throw new Error('Failed to fetch promos');
             }
@@ -91,7 +91,7 @@ const ViewPromos = () => {
             // ✅ FIXED: Use dedicated archive toggle endpoint instead of PUT
             // PUT route does NOT handle isArchive — it rebuilds updateData from specific fields only
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}/archive`, {
+            const response = await fetch(`/api/promos/${id}/archive`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

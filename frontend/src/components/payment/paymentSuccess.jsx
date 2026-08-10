@@ -20,7 +20,7 @@ const PaymentSuccess = () => {
     // ✅ Safety-net: confirm booking on page load (fallback when webhook doesn't fire)
     const confirmBookingByID = async (id) => {
       try {
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/payment/confirm-by-booking/${id}`, {
+        const res = await fetch(`/api/payment/confirm-by-booking/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -71,7 +71,7 @@ const PaymentSuccess = () => {
     const tryFetch = async (attempt = 1) => {
       try {
         // 1. Try regular Booking first
-        let res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${id}`);
+        let res = await fetch(`/api/bookings/${id}`);
         let data = await res.json();
 
         if (res.ok && (data._id || (data.success && data.data))) {
@@ -80,7 +80,7 @@ const PaymentSuccess = () => {
         }
 
         // 2. Try TourBooking
-        res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${id}`);
+        res = await fetch(`/api/tour-bookings/${id}`);
         data = await res.json();
 
         if (res.ok && data.success && data.data) {
@@ -178,7 +178,7 @@ const PaymentSuccess = () => {
   // ============================================
   const fetchInquiryDetails = async (id) => {
     try {
-      const response = await fetch(`https://wanderwaveph.onrender.com/api/inquiries/${id}`);
+      const response = await fetch(`/api/inquiries/${id}`);
       const data = await response.json();
 
       if (data.success) {
@@ -230,7 +230,7 @@ const PaymentSuccess = () => {
       if (details.id && type === 'booking') {
         try {
           const destRes = await fetch(
-            `https://wanderwaveph.onrender.com/api/bookings/${details.id}/destination-payload`
+            `/api/bookings/${details.id}/destination-payload`
           );
           const destData = await destRes.json();
           if (destData.success && destData.payload) {

@@ -136,8 +136,8 @@ const EditVisa = () => {
   const [existingFiles, setExistingFiles] = useState({});
   const [deletedFiles, setDeletedFiles] = useState(new Set());
 
-  const API_BASE_URL = "https://wanderwaveph.onrender.com/api/inquiries"; 
-  const FILE_BASE_URL = "https://wanderwaveph.onrender.com";
+  const API_BASE_URL = "/api/inquiries"; 
+  const FILE_BASE_URL = "";
 
   const todayObj = new Date();
   const tomorrowObj = new Date(todayObj);

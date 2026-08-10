@@ -115,7 +115,7 @@ export const BookingDetailModal = ({
         setPackageImageFailed(false);
         const fetchPackageImage = async () => {
             try {
-                const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${selectedBooking.mongoId}`);
+                const res = await fetch(`/api/bookings/${selectedBooking.mongoId}`);
                 const data = await res.json();
                 const image = data?.packageId?.image || null;
                 if (!cancelled) setPackageImage(image);
@@ -137,7 +137,7 @@ export const BookingDetailModal = ({
         const fetchDocs = async () => {
             setIsLoadingDocs(true);
             try {
-                const res = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${selectedBooking.mongoId}`);
+                const res = await fetch(`/api/documents/inquiry/${selectedBooking.mongoId}`);
                 const data = await res.json();
                 if (data.success) {
                     setSubmittedDocs(data.documents || []);
@@ -220,7 +220,7 @@ const generateVoucherData = async (booking) => {
     setIsGeneratingVoucher(true);
     try {
         // 1. Fetch full booking details
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}`);
+        const res = await fetch(`/api/bookings/${booking.mongoId}`);
         if (!res.ok) throw new Error(`Failed to fetch booking: ${res.status}`);
         const fullBooking = await res.json();
 
@@ -230,7 +230,7 @@ const generateVoucherData = async (booking) => {
 
         if (packageId) {
             try {
-                const pkgRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/admin/${packageId}`, { headers: getAdminHeaders() });
+                const pkgRes = await fetch(`/api/packages/admin/${packageId}`, { headers: getAdminHeaders() });
                 if (pkgRes.ok) {
                     const pkgJson = await pkgRes.json();
                     packageData = pkgJson.data || pkgJson;
@@ -241,7 +241,7 @@ const generateVoucherData = async (booking) => {
         // Fallback: search by packageName if needed
         if (!packageData && fullBooking.packageName) {
             try {
-                const allRes = await fetch(`https://wanderwaveph.onrender.com/api/packages/admin/all`, { headers: getAdminHeaders() });
+                const allRes = await fetch(`/api/packages/admin/all`, { headers: getAdminHeaders() });
                 if (allRes.ok) {
                     const allPkgs = await allRes.json();
                     const found = (allPkgs.data || allPkgs).find(p => 

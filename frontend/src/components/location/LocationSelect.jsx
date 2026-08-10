@@ -14,7 +14,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import './LocationSelect.css';
 
-const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+const RENDER_BASE = '';
 const DEBOUNCE_MS = 300;
 const MIN_CHARS   = 2;
 

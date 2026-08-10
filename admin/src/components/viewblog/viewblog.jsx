@@ -80,7 +80,7 @@ const ViewBlog = () => {
         isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
     });
     
-    const API_BASE_URL = 'https://wanderwaveph.onrender.com';
+    const API_BASE_URL = '';
 
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({

@@ -90,7 +90,7 @@ const [formData, setFormData] = useState({
   cabinClass: "Economy"
 });
 
-  const API_BASE_URL = "https://wanderwaveph.onrender.com/api/inquiries"; 
+  const API_BASE_URL = "/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 

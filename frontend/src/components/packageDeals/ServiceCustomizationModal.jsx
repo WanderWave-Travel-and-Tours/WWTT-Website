@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './newBookingModal.css';
 
-const API_BASE = 'https://wanderwaveph.onrender.com';
+const API_BASE = '';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ServiceCustomizationModal

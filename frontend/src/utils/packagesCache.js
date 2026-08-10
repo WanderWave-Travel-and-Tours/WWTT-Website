@@ -17,7 +17,7 @@ async function fetchWithRetry(url, retries = 3, delayMs = 2000) {
 
 export function preFetchPackages() {
   if (!_promise) {
-    _promise = fetchWithRetry('https://wanderwaveph.onrender.com/api/packages/with-tours')
+    _promise = fetchWithRetry('/api/packages/with-tours')
       .then(result => {
         // Don't cache failures — allow retry on next call
         if (!result) _promise = null;

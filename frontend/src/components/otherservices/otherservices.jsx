@@ -203,7 +203,7 @@ const OtherServices = ({ setAuthPage }) => {
           const img = rawImg
             ? rawImg.startsWith('http')
               ? rawImg
-              : `https://wanderwaveph.onrender.com/uploads/${rawImg}`
+              : `/uploads/${rawImg}`
             : FALLBACK_IMG;
 
           return {

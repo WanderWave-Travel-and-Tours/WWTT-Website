@@ -141,7 +141,7 @@ const AppointmentModal = ({
       };
 
 
-      const response = await axios.post('https://wanderwaveph.onrender.com/api/bookings', {
+      const response = await axios.post('/api/bookings', {
         bookingData: JSON.stringify(bookingData)
       }, {
         headers: { 'Content-Type': 'application/json' }

@@ -113,7 +113,7 @@ const UploadedDocumentsView = ({ documents, isLoading, booking }) => {
             setLoadingUrls(prev => ({ ...prev, [documentId]: true }));
             
             const endpoint = type === 'download' ? 'download' : 'view';
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/documents/${documentId}/${endpoint}`);
+            const response = await fetch(`/api/documents/${documentId}/${endpoint}`);
             
             if (!response.ok) {
                 throw new Error('Failed to get signed URL');

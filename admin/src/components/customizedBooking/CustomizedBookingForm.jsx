@@ -25,7 +25,7 @@ import './Customizedbookingform.css';
 import CustomTimePicker from '../timePicker/Clock';
 import LocationSelect   from '../location/LocationSelect';
 
-const API_BASE = 'https://wanderwaveph.onrender.com';
+const API_BASE = '';
 const CLOSE_DURATION = 200; // ms — must match .cbf-overlay-closing transition below
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────

@@ -591,7 +591,7 @@ const BookingFormModal = ({
       });
 
       const API_BASE = import.meta.env.VITE_API_URL ||
-        (import.meta.env.DEV ? 'https://wanderwaveph.onrender.com' : 'https://wanderwaveph.onrender.com');
+        (import.meta.env.DEV ? '' : '');
       const baseUrl = API_BASE.replace(/\/+$/, '');
 
       const bookingUrl = baseUrl.endsWith("/api") ? `${baseUrl}/bookings` : `${baseUrl}/api/bookings`;

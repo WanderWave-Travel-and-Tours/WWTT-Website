@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 
-const RENDER_BASE = 'https://wanderwaveph.onrender.com';
+const RENDER_BASE = '';
 const DEBOUNCE_MS = 300;
 const MIN_CHARS   = 2;
 

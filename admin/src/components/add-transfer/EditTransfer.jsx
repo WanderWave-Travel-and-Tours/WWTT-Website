@@ -13,7 +13,7 @@ import CustomConfirmModal from "../../components/confirmationModal/CustomConfirm
 
 const API_BASE =
     import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-    "https://wanderwaveph.onrender.com/api";
+    "/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EditTransfer

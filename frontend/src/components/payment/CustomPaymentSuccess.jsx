@@ -17,7 +17,7 @@ const CustomPaymentSuccess = () => {
 
     const confirmBookingByID = async (id) => {
       try {
-        await fetch(`https://wanderwaveph.onrender.com/api/payment/confirm-by-booking/${id}`, {
+        await fetch(`/api/payment/confirm-by-booking/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -52,7 +52,7 @@ const CustomPaymentSuccess = () => {
 
   const triggerOnboarding = (id) => {
     if (!id) return;
-    fetch(`https://wanderwaveph.onrender.com/api/payment/trigger-onboarding/${id}`, {
+    fetch(`/api/payment/trigger-onboarding/${id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }).catch(() => {});
@@ -64,7 +64,7 @@ const CustomPaymentSuccess = () => {
 
     const tryFetch = async (attempt = 1) => {
       try {
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/customized-bookings/${id}`);
+        const res = await fetch(`/api/customized-bookings/${id}`);
         const data = await res.json();
 
         if (res.ok && data.success && data.data) {

@@ -110,7 +110,7 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServic
         data.append(key, formData.files[key]);
       });
 
-      const response = await axios.post('https://wanderwaveph.onrender.com/api/inquiries/upload-application', data, {
+      const response = await axios.post('/api/inquiries/upload-application', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

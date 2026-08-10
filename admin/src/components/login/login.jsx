@@ -80,7 +80,7 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('https://wanderwaveph.onrender.com/api/admin/login', {
+            const response = await fetch('/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

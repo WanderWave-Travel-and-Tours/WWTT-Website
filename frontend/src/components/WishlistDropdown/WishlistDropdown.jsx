@@ -8,7 +8,7 @@ const getImageUrl = (image) => {
   if (image.startsWith('http://') || image.startsWith('https://')) {
     return image;
   }
-  return `https://wanderwaveph.onrender.com${image.startsWith('/') ? '' : '/'}${image}`;
+  return `${image.startsWith('/') ? '' : '/'}${image}`;
 };
 
 function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishlistUpdate }) {
@@ -33,7 +33,7 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
         const token = localStorage.getItem('wanderwave_token');
         if (!token) { setLoading(false); return; }
 
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
+        const response = await fetch(`/api/favorites`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           cache: 'no-store',
@@ -84,7 +84,7 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
     try {
       const token = localStorage.getItem('wanderwave_token');
 
-      const response = await fetch(`https://wanderwaveph.onrender.com/api/favorites`, {
+      const response = await fetch(`/api/favorites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

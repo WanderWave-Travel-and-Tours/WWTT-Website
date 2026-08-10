@@ -128,8 +128,8 @@ const EditCenomar = () => {
   const [existingFiles, setExistingFiles] = useState({});
   const [originalData, setOriginalData] = useState(null); 
 
-  const API_BASE_URL = "https://wanderwaveph.onrender.com/api/inquiries"; 
-  const FILE_BASE_URL = "https://wanderwaveph.onrender.com";
+  const API_BASE_URL = "/api/inquiries"; 
+  const FILE_BASE_URL = "";
 
   const cenomarOptions = [
     { label: "CENOMAR - ₱150", value: "CENOMAR - ₱150", price: 150 },

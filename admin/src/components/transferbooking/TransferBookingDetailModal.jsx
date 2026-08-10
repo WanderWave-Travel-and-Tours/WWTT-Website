@@ -70,7 +70,7 @@ const TransferBookingDetailModal = ({
     const fetchDocs = async () => {
       setIsLoadingDocs(true);
       try {
-        const res = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${mongoId}`);
+        const res = await fetch(`/api/documents/inquiry/${mongoId}`);
         const data = await res.json();
         setSubmittedDocs(data.success ? (data.documents || []) : []);
       } catch (err) {

@@ -151,7 +151,7 @@ const TransferBookingRightForm = ({
         } catch (_) {}
         try {
           const r = await fetch(
-            `https://wanderwaveph.onrender.com/api/bookings/check-voucher-usage?email=${encodeURIComponent(loggedInUserEmail)}&promoCode=${encodeURIComponent(promoCode.trim().toUpperCase())}`
+            `/api/bookings/check-voucher-usage?email=${encodeURIComponent(loggedInUserEmail)}&promoCode=${encodeURIComponent(promoCode.trim().toUpperCase())}`
           );
           const d = await r.json();
           if (d.success && d.hasUsed) {
@@ -164,7 +164,7 @@ const TransferBookingRightForm = ({
         } catch (_) {}
       }
 
-      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.trim().toUpperCase()}?packageId=${transferId}${loggedInUserEmail ? `&userEmail=${encodeURIComponent(loggedInUserEmail)}` : ''}`;
+      const url = `/api/promos/validate/${promoCode.trim().toUpperCase()}?packageId=${transferId}${loggedInUserEmail ? `&userEmail=${encodeURIComponent(loggedInUserEmail)}` : ''}`;
       const response = await fetch(url);
       const data     = await response.json();
 

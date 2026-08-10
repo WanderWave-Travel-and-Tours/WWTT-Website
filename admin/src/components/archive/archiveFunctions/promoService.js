@@ -1,4 +1,4 @@
-const API_URL = 'https://wanderwaveph.onrender.com/api/promos';
+const API_URL = '/api/promos';
 
 export const fetchArchivedPromos = async () => {
     try {
@@ -28,7 +28,7 @@ export const fetchArchivedPromos = async () => {
 
 export const restorePromo = async (id) => {
     try {
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}/archive`, {
+        const response = await fetch(`/api/promos/${id}/archive`, {
             method: 'POST', // Dapat POST dahil ito ang nasa route mo
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

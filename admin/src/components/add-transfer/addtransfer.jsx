@@ -14,10 +14,10 @@ import CustomConfirmModal from "../../components/confirmationModal/CustomConfirm
 
 // ✅ FIX: Strip trailing slash so VITE_API_URL (which already includes /api)
 //         doesn't produce a double /api/api prefix when appending paths.
-//         e.g. VITE_API_URL = "https://wanderwaveph.onrender.com/api"
-//         → API_BASE = "https://wanderwaveph.onrender.com/api"
+//         e.g. VITE_API_URL = "/api"
+//         → API_BASE = "/api"
 //         → fetch(`${API_BASE}/transfers`) = ".../api/transfers"  ✅
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'https://wanderwaveph.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '/api';
 
 const AddTransfer = () => {
     // --- SIDEBAR TOGGLE ---

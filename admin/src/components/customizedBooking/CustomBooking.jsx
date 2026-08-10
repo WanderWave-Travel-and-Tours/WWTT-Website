@@ -62,7 +62,7 @@ import CustomBookingForm from './CustomizedBookingForm';
 import BookingChoiceModal from '../booking/BookingChoiceModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
-const API = 'https://wanderwaveph.onrender.com';
+const API = '';
 const ITEMS_PER_PAGE = 10;
 
 const DESTINATION_IMAGES = {

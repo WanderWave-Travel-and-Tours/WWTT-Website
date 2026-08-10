@@ -81,7 +81,7 @@ const AirlineApplicationModal = ({ isOpen, onClose, refreshData }) => {
     };
 
     try {
-      const res = await axios.post('https://wanderwaveph.onrender.com/api/inquiries', payload);
+      const res = await axios.post('/api/inquiries', payload);
       if (res.data.success) {
         setStep(2);
         if (refreshData) refreshData();

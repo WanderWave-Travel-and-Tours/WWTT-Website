@@ -49,7 +49,7 @@ export const TourApplicationModal = ({ isOpen, onClose, refreshData }) => {
         message: formData.specialRequests || '',
       };
 
-      const res = await fetch('https://wanderwaveph.onrender.com/api/tour-bookings', {
+      const res = await fetch('/api/tour-bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

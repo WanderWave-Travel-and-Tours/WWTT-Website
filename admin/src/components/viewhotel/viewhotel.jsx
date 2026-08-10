@@ -9,7 +9,7 @@ import { useToast } from '../toast/ToastManager';
 import './viewhotel.css'; // ✅ Imported updated CSS
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'https://wanderwaveph.onrender.com';
+const API_BASE_URL = '';
 
 // Custom Confirmation Modal
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {

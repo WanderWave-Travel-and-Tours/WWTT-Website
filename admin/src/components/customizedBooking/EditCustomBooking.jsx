@@ -25,7 +25,7 @@ import "./EditCustomBooking.css";
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
-const API_BASE = "https://wanderwaveph.onrender.com/api/customized-bookings";
+const API_BASE = "/api/customized-bookings";
 
 const NIGHT_SURCHARGE = 500; // ₱500 surcharge for 12am–5am picks
 
@@ -265,7 +265,7 @@ const EditCustomBooking = () => {
 
   // ── Fetch available tours & transfers for Change pickers ──────────────────
   useEffect(() => {
-    fetch("https://wanderwaveph.onrender.com/api/tours/all")
+    fetch("/api/tours/all")
       .then((r) => r.json())
       .then((data) => {
         const arr = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
@@ -273,7 +273,7 @@ const EditCustomBooking = () => {
       })
       .catch((err) => console.error("Failed to load available tours:", err));
 
-    fetch("https://wanderwaveph.onrender.com/api/transfers?all=true&limit=500")
+    fetch("/api/transfers?all=true&limit=500")
       .then((r) => r.json())
       .then((data) => {
         const arr = Array.isArray(data.data) ? data.data : [];

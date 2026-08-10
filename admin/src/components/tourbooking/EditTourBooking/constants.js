@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // API endpoints
 // ─────────────────────────────────────────────────────────────────────────────
-export const API_BASE_URL = "https://wanderwaveph.onrender.com/api/tour-bookings";
-export const TOURS_API    = "https://wanderwaveph.onrender.com/api/tours";
+export const API_BASE_URL = "/api/tour-bookings";
+export const TOURS_API    = "/api/tours";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline styles for searchable dropdowns

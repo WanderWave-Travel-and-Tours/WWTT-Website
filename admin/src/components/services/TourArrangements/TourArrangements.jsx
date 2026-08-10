@@ -231,7 +231,7 @@ const TourArrangements = () => {
     const fetchTours = async () => {
         try {
             setIsLoading(true);
-            const res = await fetch('https://wanderwaveph.onrender.com/api/tour-bookings');
+            const res = await fetch('/api/tour-bookings');
             if (!res.ok) throw new Error('Failed to fetch tours');
 
             const data = await res.json();
@@ -329,7 +329,7 @@ const TourArrangements = () => {
     const handleConfirmTour = async () => {
         if (!selectedTour) return;
         try {
-            const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${selectedTour.mongoId}/status`, {
+            const res = await fetch(`/api/tour-bookings/${selectedTour.mongoId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'confirmed' })
@@ -353,7 +353,7 @@ const TourArrangements = () => {
         if (!window.confirm(`Cancel tour for ${selectedTour.client}?`)) return;
 
         try {
-            const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/${selectedTour.mongoId}/status`, {
+            const res = await fetch(`/api/tour-bookings/${selectedTour.mongoId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'cancelled' })
@@ -377,7 +377,7 @@ const TourArrangements = () => {
         if (!window.confirm("Are you sure you want to archive this tour booking?")) return;
         
         try {
-            const res = await fetch(`https://wanderwaveph.onrender.com/api/tour-bookings/archive/${id}`, {
+            const res = await fetch(`/api/tour-bookings/archive/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' }
             });
