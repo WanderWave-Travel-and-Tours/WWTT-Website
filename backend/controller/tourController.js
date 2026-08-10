@@ -170,10 +170,19 @@ exports.createTour = async (req, res) => {
   }
 };
 
+// Fields that must NEVER reach an unauthenticated caller.
+// price is derived as sellerPrice + markup (see models/tour.js), so returning
+// either component publishes our exact cost basis and margin. The public site
+// only renders `price`. Admins get the full document via req.isAdmin.
+// Mirrors PUBLIC_SELECT in routes/packageRoute.js and transferBookingRoute.js.
+const TOUR_PUBLIC_SELECT = '-sellerPrice -markup -imagePublicId -__v';
+
 // Get all tours
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find().sort({ createdAt: -1 });
+    const tours = await Tour.find()
+      .select(req.isAdmin ? '' : TOUR_PUBLIC_SELECT)
+      .sort({ createdAt: -1 });
     
     res.status(200).json({ 
       status: 'ok', 
@@ -192,8 +201,9 @@ exports.getAllTours = async (req, res) => {
 // Get single tour by ID
 exports.getTourById = async (req, res) => {
   try {
-    const tour = await Tour.findById(req.params.id);
-    
+    const tour = await Tour.findById(req.params.id)
+      .select(req.isAdmin ? '' : TOUR_PUBLIC_SELECT);
+
     if (!tour) {
       return res.status(404).json({ 
         status: 'error',

@@ -4,6 +4,18 @@ const router   = express.Router();
 const multer   = require('multer');
 const Transfer = require('../models/transfer');
 const authMiddleware = require('../middleware/auth');
+const optionalAdmin = require('../middleware/optionalAdmin');
+
+// Fields that must NEVER reach an unauthenticated caller.
+// *SupplierRate is what we pay the supplier and *MarkupValue/*MarkupType is our
+// margin — publishing them tells competitors and customers our exact cost basis.
+// The public site only needs oneWayPrice / roundtripPrice (the selling price it
+// already displays), so omitting these breaks nothing. Mirrors PUBLIC_SELECT in
+// packageRoute.js. Admins keep the full document via optionalAdmin → req.isAdmin.
+const PUBLIC_SELECT =
+  '-oneWaySupplierRate -oneWayMarkupValue -oneWayMarkupType ' +
+  '-roundtripSupplierRate -roundtripMarkupValue -roundtripMarkupType ' +
+  '-imagePublicId -isArchive -__v';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cloudinary – loaded lazily so a missing config does NOT crash the route file.
@@ -180,7 +192,7 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
 // List all non-archived transfer listings
 // Query params: category, page, limit, all
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/', async (req, res) => {
+router.get('/', optionalAdmin, async (req, res) => {
   try {
     const { category, page = 1, limit = 50, all } = req.query;
 
@@ -195,7 +207,7 @@ router.get('/', async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
-      .select('-__v');
+      .select(req.isAdmin ? '-__v' : PUBLIC_SELECT);
 
     return res.status(200).json({
       success: true,
@@ -214,9 +226,10 @@ router.get('/', async (req, res) => {
 // GET /api/transfers/:id
 // Get a single transfer listing
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAdmin, async (req, res) => {
   try {
-    const transfer = await Transfer.findById(req.params.id).select('-__v');
+    const transfer = await Transfer.findById(req.params.id)
+      .select(req.isAdmin ? '-__v' : PUBLIC_SELECT);
     if (!transfer) {
       return res.status(404).json({ success: false, message: 'Transfer not found.' });
     }
