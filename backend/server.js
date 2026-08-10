@@ -91,18 +91,63 @@ app.use((req, res, next) => {
 });
 
 // CORS — after webhook so it doesn't interfere with PayMongo's raw requests
+// Exact-match origins. The `cors` package compares these as plain strings when
+// given an array — it does NOT expand glob patterns, so an entry like
+// 'https://*.gohighlevel.com' silently matches nothing. Subdomain matching is
+// handled by ALLOWED_ORIGIN_SUFFIXES + the origin callback below instead.
+const ALLOWED_ORIGINS = new Set([
+  'https://wanderwaveph.com',
+  'https://www.wanderwaveph.com',
+  'https://app.gohighlevel.com',
+  'https://checkout.paymongo.com',
+]);
+
+// Suffix-matched origins, for partners that use per-tenant subdomains.
+// Matching requires a literal '.' before the suffix so 'evilgohighlevel.com'
+// cannot pass as a match for 'gohighlevel.com'.
+const ALLOWED_ORIGIN_SUFFIXES = ['.gohighlevel.com', '.leadconnectorhq.com'];
+
+// Local development origins are allowlisted only outside production, so a
+// production deployment never trusts a localhost Origin header.
+const DEV_ORIGINS = new Set([
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+]);
+
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+// NOTE ON SCOPE: CORS is enforced by the *browser*, not the server. It stops a
+// third-party site from reading our API using a visitor's credentials; it does
+// nothing against curl/Postman, which ignore the headers entirely. The Render
+// origin is deliberately NOT allowlisted here — it was previously present with
+// the comment "so direct API calls don't get blocked", which made the API
+// self-authorizing for exactly the direct access we want to discourage.
+function isAllowedOrigin(origin) {
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  if (!IS_PRODUCTION && DEV_ORIGINS.has(origin)) return true;
+
+  try {
+    const { protocol, hostname } = new URL(origin);
+    if (protocol !== 'https:') return false;
+    return ALLOWED_ORIGIN_SUFFIXES.some(suffix => hostname.endsWith(suffix));
+  } catch {
+    return false; // Malformed Origin header
+  }
+}
+
 const corsOptions = {
-  origin: [
-    'https://wanderwaveph.com',
-    'https://www.wanderwaveph.com',
-    'https://wanderwaveph.onrender.com', // ✅ FIX: Added Render URL so direct API calls don't get blocked
-    'https://app.gohighlevel.com',
-    'https://*.gohighlevel.com',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'https://checkout.paymongo.com',
-  ],
+  origin(origin, callback) {
+    // No Origin header: same-origin navigations, curl, server-to-server calls.
+    // Allowed through so non-browser clients and our own SPA still work — those
+    // requests carry no cross-site credential risk for CORS to mitigate.
+    if (!origin) return callback(null, true);
+    if (isAllowedOrigin(origin)) return callback(null, true);
+    // Reject without throwing: omitting the CORS headers is enough for the
+    // browser to block the read. Throwing here surfaces a 500 instead.
+    return callback(null, false);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -134,9 +179,14 @@ app.use((req, res, next) => {
   console.log(`   Origin: ${req.headers.origin || 'N/A'}`);
   console.log(`   Content-Type: ${req.headers['content-type'] || 'N/A'}`);
 
-  // Log request body for POST/PUT/PATCH (but skip file uploads)
+  // Request bodies are NOT logged. They routinely carry passwords, JWTs, OTPs,
+  // payment details and passenger PII, and Render's log stream is retained and
+  // readable by anyone with dashboard access — a durable copy of credentials
+  // outside the database. Log only the shape of the body (top-level key names),
+  // which is what's actually useful for debugging a malformed request.
   if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.headers['content-type']?.includes('application/json')) {
-    console.log(`   Body: ${JSON.stringify(req.body)}`);
+    const keys = req.body && typeof req.body === 'object' ? Object.keys(req.body) : [];
+    console.log(`   Body keys: [${keys.join(', ')}]`);
   }
 
   // Log response when it finishes
@@ -517,7 +567,7 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
             category, inclusions, itinerary 
         } = req.body;
 
-        console.log('Received data:', req.body); 
+        console.log('Received data:', redactBody(req.body));
         
         const imageFilename = req.file ? req.file.filename : null;
         const parsedInclusions = inclusions ? JSON.parse(inclusions) : [];

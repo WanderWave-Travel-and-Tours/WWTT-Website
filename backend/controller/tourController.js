@@ -1,11 +1,12 @@
 const Tour = require('../models/tour');
 const ActivityLog = require('../models/ActivityLog'); // IMPORT ACTIVITY LOG MODEL
+const { redactBody } = require('../utils/safeLog');
 
 // Create a new tour
 exports.createTour = async (req, res) => {
   try {
-    console.log('Received body:', req.body);
-    console.log('Received file:', req.file);
+    console.log('Received body:', redactBody(req.body));
+    console.log('Received file:', req.file?.originalname || null);
 
     const { 
       title, 
@@ -247,7 +248,7 @@ exports.updateTour = async (req, res) => {
       changes
     } = req.body;
 
-    console.log('Update tour request:', { id, body: req.body, file: req.file });
+    console.log('Update tour request:', { id, body: redactBody(req.body), file: req.file?.originalname || null });
 
     const existingTour = await Tour.findById(id);
     if (!existingTour) {

@@ -4,15 +4,24 @@ const MongoRateLimitStore = require('./MongoRateLimitStore');
 const AUTH_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const AUTH_MAX_ATTEMPTS = 5;
 
+// Generic 429 body shared by every limiter.
+// Deliberately states no window length, no attempt count and no reset time:
+// naming the window ("try again after 15 minutes") tells an attacker exactly
+// how to pace a brute-force run so it never trips the throttle. The matching
+// RateLimit-*/Retry-After headers stay suppressed via standardHeaders/
+// legacyHeaders: false below for the same reason.
+const GENERIC_LIMIT_MESSAGE = {
+    success: false,
+    message: 'Too many requests. Please try again later.',
+};
+
 const authLimiter = rateLimit({
     windowMs: AUTH_WINDOW_MS,
     max: AUTH_MAX_ATTEMPTS,
     standardHeaders: false,
     legacyHeaders: false,
-    message: {
-        success: false,
-        message: 'Too many attempts from this IP. Please try again after 15 minutes.',
-    },
+    store: new MongoRateLimitStore(),
+    message: GENERIC_LIMIT_MESSAGE,
 });
 
 // Global limiter applied to all /api/ routes — 600 requests per 15-minute window per IP.
@@ -25,10 +34,8 @@ const apiLimiter = rateLimit({
     max: 600,
     standardHeaders: false,
     legacyHeaders: false,
-    message: {
-        success: false,
-        message: 'Too many requests from this IP. Please try again after 15 minutes.',
-    },
+    store: new MongoRateLimitStore(),
+    message: GENERIC_LIMIT_MESSAGE,
 });
 
 // Telemetry limiter — stricter quota for open, high-frequency beacon endpoints
@@ -41,10 +48,8 @@ const telemetryLimiter = rateLimit({
     max: 50,
     standardHeaders: false,
     legacyHeaders: false,
-    message: {
-        success: false,
-        message: 'Too many requests from this IP. Please try again after 15 minutes.',
-    },
+    store: new MongoRateLimitStore(),
+    message: GENERIC_LIMIT_MESSAGE,
 });
 
 module.exports = { authLimiter, apiLimiter, telemetryLimiter };

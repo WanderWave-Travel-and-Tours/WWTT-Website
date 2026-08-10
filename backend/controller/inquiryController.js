@@ -7,6 +7,7 @@ const Visa = require('../models/visa');
 const PSA = require('../models/psa');
 const ActivityLog = require('../models/ActivityLog'); // ✅ ACTIVITY LOG IMPORT
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
+const { redactBody } = require('../utils/safeLog');
 const mongoose = require('mongoose');
   
 const generateTempPassword = () => {
@@ -90,7 +91,7 @@ const resolveAuthoritativeInquiryPrice = async ({ serviceId, visaId, psaId, ceno
 
 const createInquiry = async (req, res) => {
   try {
-    console.log('🔥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
+    console.log('🔥 RAW REQUEST BODY:', JSON.stringify(redactBody(req.body), null, 2));
  
     let {
       serviceId,
