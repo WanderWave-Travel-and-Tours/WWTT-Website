@@ -6,6 +6,7 @@ const TourBooking = require('../models/tourBooking'); // ✅ FIX: needed for tou
 const TransferBooking = require('../models/transferBooking'); // ✅ needed for transfer payment lookup
 const CustomizedBooking = require('../models/Customizedbooking'); // ✅ needed for customized booking payment lookup
 const { createGHLInvoice } = require('../utils/ghlApiService'); // ✅ Import for GHL Invoice
+const { redactBody } = require('../utils/safeLog');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
@@ -26,7 +27,7 @@ const getSuccessPath = (bookingType) => {
 const createInquiryCheckoutSession = async (req, res) => {
   try {
     console.log('=== INQUIRY PAYMENT START ===');
-    console.log('Request Body:', req.body);
+    console.log('Request Body:', redactBody(req.body));
     
     const { inquiryId } = req.body;
     
@@ -141,7 +142,7 @@ const createBookingPaymentIntent = async (req, res) => {
     console.log('=======================================');
     console.log('BOOKING PAYMENT CHECKOUT SESSION START');
     console.log('=======================================');
-    console.log('Request Body:', req.body);
+    console.log('Request Body:', redactBody(req.body));
 
     const { bookingId, paymentType, paymentAmount, method } = req.body;
 

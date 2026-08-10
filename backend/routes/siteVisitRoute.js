@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const SiteVisit = require('../models/siteVisit');
+const { redactBody } = require('../utils/safeLog');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/site-visits/log-visit
@@ -14,7 +15,7 @@ const SiteVisit = require('../models/siteVisit');
 router.post('/log-visit', async (req, res) => {
   try {
     // ✅ FIX: Always log incoming payload for easy Render Logs debugging
-    console.log('📥 Site Visit Payload Received:', req.body);
+    console.log('📥 Site Visit Payload Received:', redactBody(req.body));
 
     const { platform, campaignType, fullPath, referrer } = req.body || {};
 

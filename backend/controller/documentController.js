@@ -1,12 +1,13 @@
 const Document = require('../models/document');
 const { cloudinary } = require('../config/cloudinary');
+const { redactBody } = require('../utils/safeLog');
 
 // ✅ UPLOAD DOCUMENTS FUNCTION
 // ✅ FIXED uploadDocuments function
 const uploadDocuments = async (req, res) => {
   try {
     console.log('🔥 UPLOAD REQUEST START');
-    console.log('📋 Body:', req.body);
+    console.log('📋 Body:', redactBody(req.body));
     console.log('📁 Files received:', req.files ? req.files.length : 0);
     console.log('=== UPLOAD REQUEST ===');
 console.log('inquiryId:', req.body.inquiryId);

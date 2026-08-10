@@ -6,6 +6,7 @@ const path       = require('path');
 const fs         = require('fs');
 const axios      = require('axios');
 const TourBooking = require('../models/tourBooking');
+const { redactBody } = require('../utils/safeLog');
 const Package     = require('../models/package');
 const Tour        = require('../models/tour');
 const authMiddleware = require('../middleware/auth');
@@ -463,7 +464,7 @@ router.patch('/:id/status', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.patch('/:id/payment', authMiddleware, async (req, res) => {
   console.log(`\n🟡 [PATCH /api/tour-bookings/${req.params.id}/payment] Payment update`);
-  console.log('   Payload:', req.body);
+  console.log('   Payload:', redactBody(req.body));
   try {
     const { paymentStatus, paymentIntentId, checkoutUrl, paidAt } = req.body;
 
