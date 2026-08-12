@@ -27,7 +27,9 @@ function buildCsp(nonce) {
     "style-src-attr 'unsafe-inline'",
     "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://wanderwaveph.onrender.com https://api.ipify.org https://*.leadconnectorhq.com https://translate.googleapis.com https://fonts.googleapis.com https://services.msgsndr.com https://nominatim.openstreetmap.org",
+    // Render origin deliberately absent — API calls go same-origin through this
+    // Worker so it can inject X-Origin-Secret. See frontend/src/config/apiBase.js.
+    "connect-src 'self' https://api.ipify.org https://*.leadconnectorhq.com https://translate.googleapis.com https://fonts.googleapis.com https://services.msgsndr.com https://nominatim.openstreetmap.org https://www.google.com",
     "frame-src https://checkout.paymongo.com https://*.leadconnectorhq.com https://www.google.com",
     "object-src 'none'",
     "base-uri 'self'",
