@@ -11,10 +11,12 @@
 }
 
 .icm-card {
+  position: relative;
   background: #fff;
   border-radius: 16px;
   width: 92%;
   max-width: 520px;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -25,8 +27,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: 0 0 auto;
   padding: 16px 20px;
   border-bottom: 1px solid #e2e8f0;
+  background: #fff;
 }
 
 .icm-header-title {
@@ -55,12 +59,26 @@
   position: relative;
   width: 100%;
   height: 320px;
+  min-height: 180px;
+  flex: 1 1 auto;
+  overflow: hidden;
   background: #0f172a;
 }
 
+/* Keep the cropper (and its 9999em dimming shadow) inside the crop area
+   so it can never paint over the controls below. */
+.icm-crop-area .reactEasyCrop_Container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 .icm-controls {
+  position: relative;
+  z-index: 1;
   padding: 16px 20px;
   border-top: 1px solid #e2e8f0;
+  background: #fff;
 }
 
 .icm-zoom-row {
