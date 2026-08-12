@@ -24,7 +24,10 @@ test('429 body leaks no window length, attempt count or reset time', async () =>
   const app = express();
   app.set('trust proxy', 1);
   app.use('/api/login', authLimiter);
-  app.post('/api/login', (_q, r) => r.json({ ok: true }));
+  // Must answer 401, not 200: authLimiter uses skipSuccessfulRequests, so only
+  // failed attempts count toward the cap. A 200 stub would be refunded every
+  // time and never trip the throttle.
+  app.post('/api/login', (_q, r) => r.status(401).json({ ok: false }));
 
   let limited;
   for (let i = 0; i < 8; i++) {

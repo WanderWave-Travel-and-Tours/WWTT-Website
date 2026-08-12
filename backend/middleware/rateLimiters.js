@@ -22,6 +22,10 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
     store: new MongoRateLimitStore(),
     message: GENERIC_LIMIT_MESSAGE,
+    // Only failed attempts count against the quota. A correct password refunds
+    // its own hit, so an admin logging in normally can never throttle themselves
+    // out — the cap applies purely to guessing.
+    skipSuccessfulRequests: true,
 });
 
 // Global limiter applied to all /api/ routes — 600 requests per 15-minute window per IP.

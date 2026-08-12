@@ -16,7 +16,12 @@ const cspPlugin = () => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://wanderwaveph.onrender.com https://api.ipify.org https://*.leadconnectorhq.com https://nominatim.openstreetmap.org",
+    // No Render origin here on purpose: every API call must be same-origin
+    // ('/api/...') so it routes through the Cloudflare Worker, which injects the
+    // X-Origin-Secret the backend verifies. See src/config/apiBase.js. Keeping
+    // the Render host allowlisted here would let a stray hardcoded URL bypass
+    // the Worker silently — this CSP is the net that catches that.
+    "connect-src 'self' https://api.ipify.org https://*.leadconnectorhq.com https://nominatim.openstreetmap.org https://www.google.com",
     "frame-src https://www.google.com https://checkout.paymongo.com https://*.leadconnectorhq.com",
     "object-src 'none'",
     "base-uri 'self'",
