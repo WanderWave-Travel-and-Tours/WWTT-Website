@@ -1014,7 +1014,8 @@ const deleteInquiry = async (req, res) => {
  
 const getInquiriesByEmail = async (req, res) => {
   try {
-    const inquiries = await Inquiry.find({ email: req.params.email }).sort({ createdAt: -1 });
+    // Archived inquiries are hidden from the customer's dashboard
+    const inquiries = await Inquiry.find({ email: req.params.email, isArchive: { $ne: 'Yes' } }).sort({ createdAt: -1 });
     res.json({ success: true, count: inquiries.length, data: inquiries });
   } catch (error) {
     res.status(500).json({ success: false });

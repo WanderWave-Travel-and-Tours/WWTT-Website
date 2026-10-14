@@ -76,6 +76,31 @@ html {
   background-color: transparent;
 }
 
+/* Page scrollbar: themed navy track + orange thumb so no white strip appears
+   along the right edge while scrolling. Scoped to the root so element-level
+   scrollbars (modals, dropdowns) keep their own styles. */
+html::-webkit-scrollbar {
+  width: 12px;
+}
+html::-webkit-scrollbar-track {
+  background: #001b3e;
+}
+html::-webkit-scrollbar-thumb {
+  background: #fc9c1b;
+  border-radius: 6px;
+  border: 2px solid #001b3e;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: #e08a10;
+}
+/* Firefox (and any browser without ::-webkit-scrollbar support) */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-color: #fc9c1b #001b3e;
+    scrollbar-width: thin;
+  }
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
