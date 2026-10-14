@@ -226,157 +226,176 @@ async function resumeView(req, res) {
 // ===================================================================
 router.get('/stats', async (req, res) => {
   try {
-    // ── Page view totals per page ────────────────────────────────────
-    const totalViews        = await PageView.countDocuments();
-    const packagesPageViews = await PageView.countDocuments({ page: 'packages' });
-    const bookingPageViews  = await PageView.countDocuments({ page: 'booking' });
-    const flightsPageViews  = await PageView.countDocuments({ page: 'flights' });
-    const servicesPageViews = await PageView.countDocuments({ page: 'services' });
-    const toursPageViews    = await PageView.countDocuments({ page: 'tours' });
-
-    // ── Top viewed packages (booking page views only) ────────────────
-    const topViewedPackages = await PageView.aggregate([
-      { $match: { page: 'booking', packageName: { $ne: null } } },
-      {
-        $group: {
-          _id:       '$packageName',
-          views:     { $sum: 1 },
-          packageId: { $first: '$packageId' },
-        },
-      },
-      { $sort: { views: -1 } },
-      { $limit: 10 },
-      {
-        $project: {
-          _id:       0,
-          packageName: '$_id',
-          packageId:   1,
-          views:       1,
-        },
-      },
-    ]);
-
-    // ── Recent page views ────────────────────────────────────────────
-    // NOW includes visitorId + email so VisitorJourney can group by
-    // visitor and reconstruct each person's full page history.
-    // stoppedHere / stoppedAt so the frontend can show "last page" badge.
-    const recentViews = await PageView.find()
-      .sort({ createdAt: -1 })
-      .limit(5000)
-      .select(
-        'page path label packageName packageId createdAt stage ' +
-        'visitorId email sessionId stoppedHere stoppedAt timeOnPageSeconds'
-      )
-      .lean();
-
-    // ── Daily page view breakdown — last 30 days ─────────────────────
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const dailyBreakdown = await PageView.aggregate([
-      { $match: { createdAt: { $gte: thirtyDaysAgo } } },
-      {
-        $group: {
-          _id: {
-            year:  { $year:  '$createdAt' },
-            month: { $month: '$createdAt' },
-            day:   { $dayOfMonth: '$createdAt' },
-          },
-          views: { $sum: 1 },
-        },
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
-    ]);
-
-    // ── Unique visitors per journey stage ────────────────────────────
-    const stageStats = await PageView.aggregate([
-      {
-        $group: {
-          _id:            '$stage',
-          uniqueVisitors: { $addToSet: '$visitorId' },
-        },
-      },
-      {
-        $project: {
-          stage:          '$_id',
-          _id:            0,
-          uniqueVisitors: { $size: '$uniqueVisitors' },
-        },
-      },
-      { $sort: { uniqueVisitors: -1 } },
-    ]);
-
-    // ── Visitor journey summary ──────────────────────────────────────
-    // Groups all views by visitorId so the dashboard can show a
-    // "per visitor" breakdown: total pages, last page, highest stage.
-    const visitorSummaries = await PageView.aggregate([
-      {
-        $sort: { createdAt: -1 },
-      },
-      {
-        $group: {
-          _id:         '$visitorId',
-          email:       { $first: '$email' },
-          totalPages:  { $sum: 1 },
-          lastPage:    { $first: '$page' },
-          lastPath:    { $first: '$path' },
-          lastSeen:    { $first: '$createdAt' },
-          firstSeen:   { $last:  '$createdAt' },
-          stoppedHere: { $first: '$stoppedHere' },
-          stoppedAt:   { $first: '$stoppedAt' },
-          stages:      { $addToSet: '$stage' },
-        },
-      },
-      { $sort: { lastSeen: -1 } },
-      { $limit: 500 },
-    ]);
-
-    // ── Active session count ─────────────────────────────────────────
-    // Counts distinct sessionIds with any page view activity in the last
-    // 10 minutes. This correctly counts multiple open browser tabs from
-    // the same device as separate active sessions (unlike visitorId which
-    // is IP-based and collapses all tabs into one).
     const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
-    const activeSessionIds = await PageView.distinct('sessionId', {
-      createdAt:  { $gte: tenMinsAgo },
-      sessionId:  { $ne: null },
-      stoppedHere: false,
-    });
-    const activeSessionCount = activeSessionIds.length;
-
-    // ── Booking data (ground truth from Booking model) ───────────────
     const activeBookingFilter = { isArchive: { $ne: 'Yes' } };
 
-    const totalBookingCounts = await Booking.countDocuments(activeBookingFilter);
+    // All of the below are independent reads — run them concurrently
+    // instead of one at a time so total latency is the slowest query,
+    // not the sum of all of them.
+    const [
+      totalViews,
+      packagesPageViews,
+      bookingPageViews,
+      flightsPageViews,
+      servicesPageViews,
+      toursPageViews,
+      topViewedPackages,
+      recentViews,
+      dailyBreakdown,
+      stageStats,
+      visitorSummaries,
+      activeSessionIds,
+      totalBookingCounts,
+      topBookedPackages,
+      recentBookingCounts,
+    ] = await Promise.all([
+      // ── Page view totals per page ────────────────────────────────
+      PageView.countDocuments(),
+      PageView.countDocuments({ page: 'packages' }),
+      PageView.countDocuments({ page: 'booking' }),
+      PageView.countDocuments({ page: 'flights' }),
+      PageView.countDocuments({ page: 'services' }),
+      PageView.countDocuments({ page: 'tours' }),
 
-    const topBookedPackages = await Booking.aggregate([
-      { $match: { ...activeBookingFilter, packageName: { $ne: null } } },
-      {
-        $group: {
-          _id:          '$packageName',
-          bookingCounts: { $sum: 1 },
-          packageId:    { $first: '$packageId' },
-          totalRevenue: { $sum: '$totalAmount' },
+      // ── Top viewed packages (booking page views only) ─────────────
+      PageView.aggregate([
+        { $match: { page: 'booking', packageName: { $ne: null } } },
+        {
+          $group: {
+            _id:       '$packageName',
+            views:     { $sum: 1 },
+            packageId: { $first: '$packageId' },
+          },
         },
-      },
-      { $sort: { bookingCounts: -1 } },
-      { $limit: 10 },
-      {
-        $project: {
-          _id:           0,
-          packageName:   '$_id',
-          packageId:     1,
-          bookingCounts: 1,
-          totalRevenue:  1,
+        { $sort: { views: -1 } },
+        { $limit: 10 },
+        {
+          $project: {
+            _id:       0,
+            packageName: '$_id',
+            packageId:   1,
+            views:       1,
+          },
         },
-      },
+      ]),
+
+      // ── Recent page views ──────────────────────────────────────────
+      // Includes visitorId + email so VisitorJourney can group by
+      // visitor and reconstruct each person's full page history.
+      // stoppedHere / stoppedAt so the frontend can show "last page" badge.
+      PageView.find()
+        .sort({ createdAt: -1 })
+        .limit(5000)
+        .select(
+          'page path label packageName packageId createdAt stage ' +
+          'visitorId email sessionId stoppedHere stoppedAt timeOnPageSeconds'
+        )
+        .lean(),
+
+      // ── Daily page view breakdown — last 30 days ───────────────────
+      PageView.aggregate([
+        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        {
+          $group: {
+            _id: {
+              year:  { $year:  '$createdAt' },
+              month: { $month: '$createdAt' },
+              day:   { $dayOfMonth: '$createdAt' },
+            },
+            views: { $sum: 1 },
+          },
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+      ]),
+
+      // ── Unique visitors per journey stage ──────────────────────────
+      PageView.aggregate([
+        {
+          $group: {
+            _id:            '$stage',
+            uniqueVisitors: { $addToSet: '$visitorId' },
+          },
+        },
+        {
+          $project: {
+            stage:          '$_id',
+            _id:            0,
+            uniqueVisitors: { $size: '$uniqueVisitors' },
+          },
+        },
+        { $sort: { uniqueVisitors: -1 } },
+      ]),
+
+      // ── Visitor journey summary ─────────────────────────────────────
+      // Groups all views by visitorId so the dashboard can show a
+      // "per visitor" breakdown: total pages, last page, highest stage.
+      PageView.aggregate([
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id:         '$visitorId',
+            email:       { $first: '$email' },
+            totalPages:  { $sum: 1 },
+            lastPage:    { $first: '$page' },
+            lastPath:    { $first: '$path' },
+            lastSeen:    { $first: '$createdAt' },
+            firstSeen:   { $last:  '$createdAt' },
+            stoppedHere: { $first: '$stoppedHere' },
+            stoppedAt:   { $first: '$stoppedAt' },
+            stages:      { $addToSet: '$stage' },
+          },
+        },
+        { $sort: { lastSeen: -1 } },
+        { $limit: 500 },
+      ]),
+
+      // ── Active session count ────────────────────────────────────────
+      // Counts distinct sessionIds with any page view activity in the
+      // last 10 minutes. Correctly counts multiple open browser tabs
+      // from the same device as separate active sessions (unlike
+      // visitorId which is IP-based and collapses all tabs into one).
+      PageView.distinct('sessionId', {
+        createdAt:  { $gte: tenMinsAgo },
+        sessionId:  { $ne: null },
+        stoppedHere: false,
+      }),
+
+      // ── Booking data (ground truth from Booking model) ─────────────
+      Booking.countDocuments(activeBookingFilter),
+
+      Booking.aggregate([
+        { $match: { ...activeBookingFilter, packageName: { $ne: null } } },
+        {
+          $group: {
+            _id:          '$packageName',
+            bookingCounts: { $sum: 1 },
+            packageId:    { $first: '$packageId' },
+            totalRevenue: { $sum: '$totalAmount' },
+          },
+        },
+        { $sort: { bookingCounts: -1 } },
+        { $limit: 10 },
+        {
+          $project: {
+            _id:           0,
+            packageName:   '$_id',
+            packageId:     1,
+            bookingCounts: 1,
+            totalRevenue:  1,
+          },
+        },
+      ]),
+
+      Booking.find(activeBookingFilter)
+        .sort({ createdAt: -1 })
+        .limit(5000)
+        .select('packageName packageId pax paymentType totalAmount createdAt')
+        .lean(),
     ]);
 
-    const recentBookingCounts = await Booking.find(activeBookingFilter)
-      .sort({ createdAt: -1 })
-      .limit(5000)
-      .select('packageName packageId pax paymentType totalAmount createdAt')
-      .lean();
+    const activeSessionCount = activeSessionIds.length;
 
     return res.status(200).json({
       status: 'ok',

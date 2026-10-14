@@ -308,7 +308,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     } finally {
       localStorage.removeItem('adminData');
       setIsLoggingOut(false);
-      navigate('/admin');
+      navigate('/');
     }
   };
 

@@ -48,7 +48,9 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'https://wanderwaveph.onrender.com',
+        // Through the Worker, which injects X-Origin-Secret. The Render origin
+        // 403s any request without it.
+        target: 'https://wanderwaveph.com',
         changeOrigin: true,
         secure: true
       }

@@ -49,9 +49,9 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        // Local backend. The Render origin 403s anything lacking the Worker's
-        // X-Origin-Secret, so the dev proxy must not point there.
-        target: 'https://wanderwaveph.onrender.com',
+        // Through the Worker, which injects X-Origin-Secret. The Render origin
+        // 403s anything lacking it, so the dev proxy must not point there.
+        target: 'https://wanderwaveph.com',
         changeOrigin: true
       }
     }
