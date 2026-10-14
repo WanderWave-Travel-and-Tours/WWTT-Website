@@ -28,7 +28,11 @@ const RateLimitHit =
   mongoose.models.RateLimitHit || mongoose.model('RateLimitHit', rateLimitSchema);
 
 class MongoRateLimitStore {
-  constructor() {
+  // `prefix` namespaces the keys. Every limiter keys on the client IP, so without
+  // it they all share ONE document per IP and e.g. page-view beacons burn the
+  // login limiter's quota (instant 429 on the first login try).
+  constructor(prefix = '') {
+    this.prefix = prefix;
     this.windowMs = 60 * 1000;
   }
 
@@ -37,7 +41,8 @@ class MongoRateLimitStore {
     this.windowMs = options.windowMs;
   }
 
-  async increment(key) {
+  async increment(rawKey) {
+    const key = this.prefix + rawKey;
     const now = Date.now();
 
     // Fast path: an active (non-expired) window exists → just bump the count atomically.
@@ -62,17 +67,17 @@ class MongoRateLimitStore {
 
   async decrement(key) {
     await RateLimitHit.findOneAndUpdate(
-      { _id: key, expiresAt: { $gt: new Date() } },
+      { _id: this.prefix + key, expiresAt: { $gt: new Date() } },
       { $inc: { count: -1 } }
     );
   }
 
   async resetKey(key) {
-    await RateLimitHit.deleteOne({ _id: key });
+    await RateLimitHit.deleteOne({ _id: this.prefix + key });
   }
 
   async resetAll() {
-    await RateLimitHit.deleteMany({});
+    await RateLimitHit.deleteMany({ _id: { $regex: '^' + this.prefix } });
   }
 }
 

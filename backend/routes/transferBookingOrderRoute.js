@@ -263,6 +263,8 @@ router.get('/', verifyAdminOrUser, async (req, res) => {
     // filter they pass and pin it to the authenticated account's email.
     if (req.authType === 'user') {
       filter.email = req.user.email;
+      // Archived bookings are hidden from the customer's dashboard
+      filter.isArchive = { $ne: 'Yes' };
     } else if (email) {
       filter.email = { $regex: email, $options: 'i' };
     }

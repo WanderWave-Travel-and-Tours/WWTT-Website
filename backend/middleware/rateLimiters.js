@@ -20,7 +20,7 @@ const authLimiter = rateLimit({
     max: AUTH_MAX_ATTEMPTS,
     standardHeaders: false,
     legacyHeaders: false,
-    store: new MongoRateLimitStore(),
+    store: new MongoRateLimitStore('auth:'),
     message: GENERIC_LIMIT_MESSAGE,
     // Only failed attempts count against the quota. A correct password refunds
     // its own hit, so an admin logging in normally can never throttle themselves
@@ -38,7 +38,7 @@ const apiLimiter = rateLimit({
     max: 600,
     standardHeaders: false,
     legacyHeaders: false,
-    store: new MongoRateLimitStore(),
+    store: new MongoRateLimitStore('api:'),
     message: GENERIC_LIMIT_MESSAGE,
 });
 
@@ -52,7 +52,7 @@ const telemetryLimiter = rateLimit({
     max: 50,
     standardHeaders: false,
     legacyHeaders: false,
-    store: new MongoRateLimitStore(),
+    store: new MongoRateLimitStore('telemetry:'),
     message: GENERIC_LIMIT_MESSAGE,
 });
 

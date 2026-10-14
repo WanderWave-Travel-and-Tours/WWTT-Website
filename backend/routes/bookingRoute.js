@@ -134,7 +134,8 @@ router.get('/user/:email', verifyUserJWT, async (req, res) => {
   }
   try {
     const { email } = req.params;
-    const bookings = await Booking.find({ email: email })
+    // Archived bookings are hidden from the customer's dashboard
+    const bookings = await Booking.find({ email: email, isArchive: { $ne: 'Yes' } })
       .populate('packageId')
       .sort({ createdAt: -1 })
       .lean();
