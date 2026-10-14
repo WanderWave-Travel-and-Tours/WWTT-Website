@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../../../assets/Logo.png';
+import { bookingsPaid, inquiriesPaid } from './revenue';
 
 export const exportMonthlyToPDF = (stats, monthlyData = [], topPackages = [], selectedMonth = "", allPackages = []) => {
     try {
@@ -261,7 +262,7 @@ export const exportMonthlyToPDF = (stats, monthlyData = [], topPackages = [], se
         let xPos = 14;
 
         // Card 1: Combined Revenue (Bookings + Services)
-        const totalMonthRevenue = totalBookingsRevenue + totalServicesRevenue;
+        const totalMonthRevenue = bookingsPaid(rawBookings, monthStart, monthEnd) + inquiriesPaid(rawInquiries, monthStart, monthEnd);
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
         doc.rect(xPos, yPos, bw, 20);
@@ -335,7 +336,7 @@ export const exportMonthlyToPDF = (stats, monthlyData = [], topPackages = [], se
         doc.text('2. REVENUE BREAKDOWN', 20, yPos + 5.5);
         yPos += 12;
         
-        const totalCombined = totalMonthRevenue;
+        const totalCombined = totalGrossSales + servicesRevenue;
         const safeTotal = totalCombined === 0 ? 1 : totalCombined;
         const bookingsShare = totalCombined === 0 ? 0 : (totalGrossSales / safeTotal * 100).toFixed(1);
         const servicesShare = totalCombined === 0 ? 0 : (servicesRevenue / safeTotal * 100).toFixed(1);

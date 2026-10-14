@@ -62,7 +62,9 @@ const DashboardHeader = ({
     abortControllerRef.current = controller;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/activity-logs?limit=1000`, {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const response = await fetch(`${API_BASE_URL}/api/activity-logs?startDate=${encodeURIComponent(todayStart.toISOString())}`, {
         signal: controller.signal,
       });
 

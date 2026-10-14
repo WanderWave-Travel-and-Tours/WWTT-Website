@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../../../assets/Logo.png';
+import { bookingsPaid, inquiriesPaid } from './revenue';
 
 export const exportCustomToPDF = (stats, customData = [], topPackages = [], customRange = { start: "", end: "" }, allPackages = []) => {
     try {
@@ -134,7 +135,7 @@ export const exportCustomToPDF = (stats, customData = [], topPackages = [], cust
         const bookingsRevenue = rangeConfirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
         const servicesRevenue = rangeCompletedInquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
         const totalGrossSales = bookingsRevenue;
-        const totalCombinedRevenue = bookingsRevenue + servicesRevenue;
+        const totalCombinedRevenue = bookingsPaid(rawBookings, rangeStart, rangeEnd) + inquiriesPaid(rawInquiries, rangeStart, rangeEnd);
 
         let totalSellerCost = 0;
         let totalMarkupProfit = 0;
@@ -299,7 +300,7 @@ export const exportCustomToPDF = (stats, customData = [], topPackages = [], cust
         doc.text('2. REVENUE BREAKDOWN', 20, yPos + 5.5);
         yPos += 12;
         
-        const totalCombined = totalCombinedRevenue;
+        const totalCombined = totalGrossSales + servicesRevenue;
         const safeTotal = totalCombined === 0 ? 1 : totalCombined;
         const bookingsShare = totalCombined === 0 ? 0 : (totalGrossSales / safeTotal * 100).toFixed(1);
         const servicesShare = totalCombined === 0 ? 0 : (servicesRevenue / safeTotal * 100).toFixed(1);

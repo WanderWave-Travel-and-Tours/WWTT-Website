@@ -19,6 +19,7 @@ import { exportWeeklyToPDF } from "./utils/weeklyPdfExport";
 import { exportCustomToPDF } from "./utils/customPdfExport";
 import { exportDailyToPDF } from "./utils/dailyPdfExport";
 import { exportMonthlyToPDF } from "./utils/monthlyPdfExport";
+import { bookingsPaid, inquiriesPaid } from "./utils/revenue";
 
 import "./dashboard.css";
 
@@ -36,7 +37,7 @@ const Dashboard = () => {
     totalRevenue: 0, totalPackages: 0, totalBlogs: 0, totalPromos: 0,
     totalTestimonials: 0, totalSellerCost: 0, totalMarkup: 0, totalSales: 0,
     profitMargin: 0, totalInquiriesRevenue: 0, completedInquiries: 0,
-    pendingInquiries: 0, combinedTotalRevenue: 0, todayRevenue: 0, thisMonthRevenue: 0,
+    pendingInquiries: 0, combinedTotalRevenue: 0, expectedRevenue: 0, todayRevenue: 0, thisMonthRevenue: 0,
   });
 
   const [recentBookings, setRecentBookings] = useState([]);
@@ -206,39 +207,22 @@ const Dashboard = () => {
       const pendingInquiriesCount = inquiries.filter((i) => i.status !== "COMPLETED").length;
       const inquiriesRevenue = completedInquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
 
-      const combinedRevenue = bookingsRevenue + inquiriesRevenue;
+      // Expected = value of confirmed bookings + completed services, paid or not.
+      const expectedRevenue = bookingsRevenue + inquiriesRevenue;
+      const paidBookingsRevenue = bookingsPaid(bookings);
+      const paidInquiriesRevenue = inquiriesPaid(inquiries);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const endOfToday = new Date(today);
+      endOfToday.setHours(23, 59, 59, 999);
 
-      const todayBookingsRevenue = confirmedBookings.filter((b) => {
-          const created = new Date(b.createdAt);
-          return created >= today && created < tomorrow;
-        }).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-
-      const todayInquiriesRevenue = completedInquiries.filter((i) => {
-          const updated = new Date(i.updatedAt);
-          return updated >= today && updated < tomorrow;
-        }).reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
-
-      const todayTotalRevenue = todayBookingsRevenue + todayInquiriesRevenue;
+      const todayTotalRevenue = bookingsPaid(bookings, today, endOfToday) + inquiriesPaid(inquiries, today, endOfToday);
 
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const monthBookingsRevenue = confirmedBookings.filter((b) => {
-          const created = new Date(b.createdAt);
-          return created >= startOfMonth && created <= endOfMonth;
-        }).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-
-      const monthInquiriesRevenue = completedInquiries.filter((i) => {
-          const updated = new Date(i.updatedAt);
-          return updated >= startOfMonth && updated <= endOfMonth;
-        }).reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
-
-      const monthTotalRevenue = monthBookingsRevenue + monthInquiriesRevenue;
+      const monthTotalRevenue = bookingsPaid(bookings, startOfMonth, endOfMonth) + inquiriesPaid(inquiries, startOfMonth, endOfMonth);
 
       const profitMargin = financialStats.totalSales > 0
           ? ((financialStats.totalMarkup / financialStats.totalSales) * 100).toFixed(1) : 0;
@@ -248,7 +232,7 @@ const Dashboard = () => {
         confirmedBookings: confirmed,
         pendingBookings: pending,
         cancelledBookings: cancelled,
-        totalRevenue: bookingsRevenue,
+        totalRevenue: paidBookingsRevenue,
         totalPackages: Array.isArray(packages) ? packages.length : 0,
         totalBlogs: Array.isArray(blogs) ? blogs.length : 0,
         totalPromos: Array.isArray(promos) ? promos.length : 0,
@@ -257,10 +241,11 @@ const Dashboard = () => {
         totalMarkup: financialStats.totalMarkup,
         totalSales: financialStats.totalSales,
         profitMargin: profitMargin,
-        totalInquiriesRevenue: inquiriesRevenue,
+        totalInquiriesRevenue: paidInquiriesRevenue,
         completedInquiries: completedInquiries.length,
         pendingInquiries: pendingInquiriesCount,
-        combinedTotalRevenue: combinedRevenue,
+        combinedTotalRevenue: paidBookingsRevenue + paidInquiriesRevenue,
+        expectedRevenue,
         todayRevenue: todayTotalRevenue,
         thisMonthRevenue: monthTotalRevenue,
       });
@@ -283,8 +268,8 @@ const Dashboard = () => {
           return i.status === "COMPLETED" && updated >= start && updated <= end;
         });
 
-        const bRev = confirmedThisMonth.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-        const iRev = completedInquiriesThisMonth.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+        const bRev = bookingsPaid(bookings, start, end);
+        const iRev = inquiriesPaid(inquiries, start, end);
 
         trendDataTemp.push({
           month: monthName,
@@ -305,15 +290,9 @@ const Dashboard = () => {
         const nextDay = new Date(date);
         nextDay.setDate(nextDay.getDate() + 1);
 
-        const dBookings = confirmedBookings.filter((b) => {
-            const created = new Date(b.createdAt);
-            return created >= date && created < nextDay;
-          }).reduce((s, b) => s + (b.totalAmount || 0), 0);
-
-        const dInquiries = completedInquiries.filter((i) => {
-            const updated = new Date(i.updatedAt);
-            return updated >= date && updated < nextDay;
-          }).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+        const dayEnd = new Date(nextDay.getTime() - 1);
+        const dBookings = bookingsPaid(bookings, date, dayEnd);
+        const dInquiries = inquiriesPaid(inquiries, date, dayEnd);
 
         dailyBreakdown.push({
           date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -393,17 +372,8 @@ const Dashboard = () => {
     const dayEnd = new Date(targetDate);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const bRev = rawBookings.filter(b => 
-      b.status === "confirmed" && 
-      new Date(b.createdAt) >= targetDate && 
-      new Date(b.createdAt) <= dayEnd
-    ).reduce((s, b) => s + (b.totalAmount || 0), 0);
-
-    const iRev = rawInquiries.filter(i => 
-      i.status === "COMPLETED" && 
-      new Date(i.updatedAt) >= targetDate && 
-      new Date(i.updatedAt) <= dayEnd
-    ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+    const bRev = bookingsPaid(rawBookings, targetDate, dayEnd);
+    const iRev = inquiriesPaid(rawInquiries, targetDate, dayEnd);
 
     return [{
       date: targetDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
@@ -443,17 +413,8 @@ const Dashboard = () => {
         const compareEnd = new Date(actualWeekEnd);
         compareEnd.setHours(23,59,59,999);
 
-        const bRev = rawBookings.filter(b => 
-            b.status === "confirmed" && 
-            new Date(b.createdAt) >= weekStart && 
-            new Date(b.createdAt) <= compareEnd
-        ).reduce((s, b) => s + (b.totalAmount || 0), 0);
-
-        const iRev = rawInquiries.filter(i => 
-            i.status === "COMPLETED" && 
-            new Date(i.updatedAt) >= weekStart && 
-            new Date(i.updatedAt) <= compareEnd
-        ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+        const bRev = bookingsPaid(rawBookings, weekStart, compareEnd);
+        const iRev = inquiriesPaid(rawInquiries, weekStart, compareEnd);
 
         const label = `${weekStart.getDate()}-${compareEnd.getDate()} ${weekStart.toLocaleString('default', { month: 'short' })}`;
 
@@ -497,17 +458,8 @@ const Dashboard = () => {
       const dayEnd = new Date(current);
       dayEnd.setHours(23, 59, 59, 999);
       
-      const dBookings = rawBookings.filter((b) => 
-        b.status === "confirmed" && 
-        new Date(b.createdAt) >= current && 
-        new Date(b.createdAt) <= dayEnd
-      ).reduce((s, b) => s + (b.totalAmount || 0), 0);
-
-      const dInquiries = rawInquiries.filter((i) => 
-        i.status === "COMPLETED" && 
-        new Date(i.updatedAt) >= current && 
-        new Date(i.updatedAt) <= dayEnd
-      ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+      const dBookings = bookingsPaid(rawBookings, current, dayEnd);
+      const dInquiries = inquiriesPaid(rawInquiries, current, dayEnd);
 
       results.push({
         date: current.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -541,8 +493,10 @@ const Dashboard = () => {
         weekEnd.setDate(current.getDate() + 6);
         const actualEnd = weekEnd > end ? new Date(end) : weekEnd;
         const label = `${current.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${actualEnd.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-        const bRev = rawBookings.filter(b => b.status === "confirmed" && new Date(b.createdAt) >= current && new Date(b.createdAt) <= actualEnd).reduce((s, b) => s + (b.totalAmount || 0), 0);
-        const iRev = rawInquiries.filter(i => i.status === "COMPLETED" && new Date(i.updatedAt) >= current && new Date(i.updatedAt) <= actualEnd).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+        const weekEndOfDay = new Date(actualEnd);
+        weekEndOfDay.setHours(23, 59, 59, 999);
+        const bRev = bookingsPaid(rawBookings, current, weekEndOfDay);
+        const iRev = inquiriesPaid(rawInquiries, current, weekEndOfDay);
         results.push({ date: label, bookingsRevenue: bRev, inquiriesRevenue: iRev, totalRevenue: bRev + iRev });
         current.setDate(current.getDate() + 7);
       }
@@ -551,8 +505,8 @@ const Dashboard = () => {
         const dStr = current.toLocaleDateString("en-US", { month: "short", day: "numeric" });
         const dayEnd = new Date(current);
         dayEnd.setHours(23, 59, 59, 999);
-        const bRev = rawBookings.filter(b => b.status === "confirmed" && new Date(b.createdAt) >= current && new Date(b.createdAt) <= dayEnd).reduce((s, b) => s + (b.totalAmount || 0), 0);
-        const iRev = rawInquiries.filter(i => i.status === "COMPLETED" && new Date(i.updatedAt) >= current && new Date(i.updatedAt) <= dayEnd).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+        const bRev = bookingsPaid(rawBookings, current, dayEnd);
+        const iRev = inquiriesPaid(rawInquiries, current, dayEnd);
         results.push({ date: dStr, bookingsRevenue: bRev, inquiriesRevenue: iRev, totalRevenue: bRev + iRev });
         current.setDate(current.getDate() + 1);
       }

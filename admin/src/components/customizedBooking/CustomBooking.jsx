@@ -503,7 +503,7 @@ const CustomBooking = () => {
         image: DESTINATION_IMAGES.CONFIRMED,
       },
       {
-        label: 'Revenue (Confirmed)',
+        label: 'Expected Revenue',
         value: `₱${confirmedRevenue.toLocaleString()}`,
         icon: <CreditCard size={24} />,
         variant: 'revenue',

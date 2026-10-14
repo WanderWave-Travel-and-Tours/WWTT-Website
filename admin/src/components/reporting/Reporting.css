@@ -155,7 +155,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
 .rp-stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   width: 100%;
 }
@@ -1281,18 +1281,10 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   .rp-main--collapsed {
     padding: 30px 40px;
   }
-
-  .rp-stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* Laptop / Tablet Landscape */
 @media (max-width: 1200px) {
-  .rp-stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
   .rp-platform-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1344,10 +1336,6 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     align-items: flex-start;
   }
 
-  .rp-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .rp-platform-grid {
     grid-template-columns: 1fr;
   }
@@ -1375,7 +1363,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   }
 
   .rp-stats-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 

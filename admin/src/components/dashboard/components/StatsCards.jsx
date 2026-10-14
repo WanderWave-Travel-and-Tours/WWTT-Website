@@ -26,9 +26,9 @@ const StatsCards = ({ stats }) => {
     {
       icon: PhilippinePeso,
       color: "green",
-      label: "Combined Revenue",
+      label: "Total Revenue",
       value: `₱${(safeStats.combinedTotalRevenue / 1000000).toFixed(2)}M`,
-      trend: safeStats.combinedTotalRevenue > 0 ? "+Active" : null,
+      trend: safeStats.expectedRevenue > 0 ? `₱${(safeStats.expectedRevenue / 1000).toFixed(1)}k expected` : null,
       bgImage: CARD_BACKGROUNDS.revenue
     },
     {
