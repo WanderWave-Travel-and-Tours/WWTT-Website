@@ -11,7 +11,6 @@ import CurrencyModal from './CurrencyModal';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
-import { usePageTracker } from '../../hooks/usePageTracker';
 import WanderLoader from '../loading/WanderLoader';
 import { preFetchPackages } from '../../utils/packagesCache.js';
 
@@ -55,7 +54,6 @@ function PackageDealsContent() {
 
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
-  usePageTracker({ page: 'packages', path: '/packages', label: 'Package Deals Page' });
 
 
   // 2705 Holds raw URL destination param until packages are loaded

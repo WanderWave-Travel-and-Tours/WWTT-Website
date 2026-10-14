@@ -6,7 +6,6 @@ import TransferBooking from './TransferBooking';
 import './transferPackages.css';
 import { ToastProvider, useToast } from '../toast/ToastManager';
 import MascotGif from '../MascotGif/MascotGif';
-import { usePageTracker } from '../../hooks/usePageTracker';
 import WanderLoader from '../loading/WanderLoader';
 
 // ============================================================
@@ -192,7 +191,6 @@ function TransferPackagesContent({ currentUser: currentUserProp }) {
   }, [currentUser]);
 
   // ── Page View Tracker ────────────────────────────────────────────
-  usePageTracker({ page: 'transfers', path: '/transfers', label: 'Tourist Transfers Page' });
 
   // ============================================================
   // TOGGLE FAVORITE FOR A TRANSFER

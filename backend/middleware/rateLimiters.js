@@ -30,7 +30,7 @@ const authLimiter = rateLimit({
 
 // Global limiter applied to all /api/ routes — 600 requests per 15-minute window per IP.
 // A single page load fans out many calls (packages, promos, tours, images, session-hint,
-// page-view beacons, etc.), and shared IPs (offices, campuses) multiply that further.
+// etc.), and shared IPs (offices, campuses) multiply that further.
 // 100 was exhausted by normal browsing within minutes; 600 gives real headroom while
 // still bounding abusive traffic.
 const apiLimiter = rateLimit({
@@ -42,18 +42,4 @@ const apiLimiter = rateLimit({
     message: GENERIC_LIMIT_MESSAGE,
 });
 
-// Telemetry limiter — stricter quota for open, high-frequency beacon endpoints
-// (POST /api/page-views, /:id/stop, /:id/resume, /booking-count).
-// These routes are unauthenticated and fire automatically in the browser, making
-// them the most attractive target for volumetric flood attacks. The tighter cap
-// prevents resource exhaustion without blocking legitimate browsing sessions.
-const telemetryLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 50,
-    standardHeaders: false,
-    legacyHeaders: false,
-    store: new MongoRateLimitStore('telemetry:'),
-    message: GENERIC_LIMIT_MESSAGE,
-});
-
-module.exports = { authLimiter, apiLimiter, telemetryLimiter };
+module.exports = { authLimiter, apiLimiter };

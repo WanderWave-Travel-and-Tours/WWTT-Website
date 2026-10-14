@@ -35,7 +35,6 @@ import PassportWizard from "./PassportWizard";
 import { useToast } from "../toast/ToastManager";
 // Import the Custom Confirm Modal
 import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
-import { usePageTracker } from '../../hooks/usePageTracker';
 import WanderLoader from '../loading/WanderLoader';
 
 const UniversalInquiryForm = ({
@@ -186,7 +185,6 @@ const OtherServices = ({ setAuthPage }) => {
 
   // ── Page View Tracker ────────────────────────────────────────────
   // Fires once on mount — permanent dedup per visitor IP.
-  usePageTracker({ page: 'services', path: '/services', label: 'Other Services Page' });
 
   
 

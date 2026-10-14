@@ -3,7 +3,6 @@ import TourBookingLeftColumn from './tourBookingLeftColumn';
 import TourBookingRightForm from './tourBookingRightForm';
 
 import './tourBooking.css';
-import { usePageTracker } from '../../hooks/usePageTracker';
 
 function TourBooking({
   pkg,
@@ -25,18 +24,6 @@ function TourBooking({
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
-
-  // Page tracker
-  const packageId   = pkg._id || pkg.id;
-  const packageName = pkg.name || pkg.title || 'Unknown Tour';
-
-  usePageTracker({
-    page:        'tour-booking',
-    path:        `/tour-booking/${packageId}`,
-    label:       `Tour Booking Page: ${packageName}`,
-    packageId,
-    packageName,
-  });
 
   if (!pkg) return null;
 

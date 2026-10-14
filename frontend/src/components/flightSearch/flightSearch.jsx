@@ -8,7 +8,6 @@ import FlightSearchResults from "./FlightSearchResults";
 import FlightBookingModal from "./flightBookingModal";
 import { ChevronLeft } from 'lucide-react';
 import { BookingStateManager } from '../../utils/bookingStateManager';
-import { usePageTracker } from '../../hooks/usePageTracker';
 import WanderLoader from '../loading/WanderLoader';
 
 function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestination, prefilledPassengers }) {
@@ -26,7 +25,6 @@ const isFromTour    = location.state?.isTour || false;   // ← bagong flag
   }, [isFromBooking, packageData]);
 
   // ── Page View Tracker ────────────────────────────────────────────
-  usePageTracker({ page: 'flights', path: '/flights', label: 'Flight Search Page' });
 
   
 

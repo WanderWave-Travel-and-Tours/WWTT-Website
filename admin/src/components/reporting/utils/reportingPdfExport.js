@@ -26,9 +26,6 @@ const sanitize = (str) =>
  * @param {Array}  params.quickStats            - Quick stat cards (label, value, change, positive, sub)
  * @param {Array}  params.platformSummary       - Platform cards (platform, followers, reach, engagement, rate, color)
  * @param {Array}  params.chartData             - Monthly reach rows (month, Facebook, Instagram, TikTok)
- * @param {Object} params.filteredPageViewStats - { totalViews, packagesPageViews, bookingPageViews, flightsPageViews, servicesPageViews }
- * @param {Object} params.filteredBookingCounts - { totalConfirmedBookings }
- * @param {string} params.viewToBookRate        - e.g. "4.2"
  * @param {string} params.activePeriod          - e.g. "weekly"
  * @param {string} params.periodLabel           - Human-readable label e.g. "Weekly: Mar 22 – Mar 28"
  */
@@ -36,9 +33,6 @@ export const exportReportingToPDF = ({
     quickStats            = [],
     platformSummary       = [],
     chartData             = [],
-    filteredPageViewStats = {},
-    filteredBookingCounts = {},
-    viewToBookRate        = '0.0',
     activePeriod          = 'weekly',
     periodLabel           = 'All Time',
     svPieData             = [],
@@ -116,114 +110,10 @@ export const exportReportingToPDF = ({
         };
 
         // ══════════════════════════════════════════════════════════════════
-        // 1. PAGE VIEW ANALYTICS
-        // ══════════════════════════════════════════════════════════════════
-        drawSectionHeader(1, 'PAGE VIEW ANALYTICS', yPos);
-        yPos += 12;
-
-        const pv            = filteredPageViewStats;
-        const pvTotal       = pv.totalViews        || 0;
-        const pvPackages    = pv.packagesPageViews  || 0;
-        const pvBooking     = pv.bookingPageViews   || 0;
-        const pvFlights     = pv.flightsPageViews   || 0;
-        const pvServices    = pv.servicesPageViews  || 0;
-        const pvTours       = pv.toursPageViews     || 0;
-
-        const shareOf = (n) => pvTotal > 0 ? ((n / pvTotal) * 100).toFixed(1) + '%' : '0.0%';
-
-        autoTable(doc, {
-            startY:   yPos,
-            head:     [['Page', 'Views', 'Share of Total']],
-            body: [
-                ['Package Deals (/packages)',  String(pvPackages), shareOf(pvPackages)],
-                ['Booking Page (/booking)',     String(pvBooking),  shareOf(pvBooking) ],
-                ['Flight Search (/flights)',    String(pvFlights),  shareOf(pvFlights) ],
-                ['Other Services (/services)', String(pvServices), shareOf(pvServices)],
-                ['Tour Packages (/tours)',      String(pvTours),    shareOf(pvTours)   ],
-                ['TOTAL ALL PAGES',            String(pvTotal),    '100%'             ],
-            ],
-            theme:  'plain',
-            margin: { left: 14, right: 14 },
-            headStyles: {
-                fillColor: [0, 31, 63],
-                textColor: [255, 255, 255],
-                fontSize:  10,
-                fontStyle: 'bold',
-            },
-            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
-            alternateRowStyles: { fillColor: [250, 250, 250] },
-            columnStyles: {
-                0: { cellWidth: 'auto' },
-                1: { halign: 'center', cellWidth: 25, fontStyle: 'bold' },
-                2: { halign: 'center', cellWidth: 35 },
-            },
-            didParseCell: (data) => {
-                if (data.section === 'body' && data.row.index === 5) {
-                    data.cell.styles.fillColor  = [245, 247, 250];
-                    data.cell.styles.fontStyle  = 'bold';
-                    if (data.column.index === 1) {
-                        data.cell.styles.textColor = [139, 92, 246];
-                    }
-                }
-            },
-        });
-
-        yPos = doc.lastAutoTable.finalY + 10;
-
-        // View-to-Book rate line
-        const confirmedBookings = filteredBookingCounts.totalConfirmedBookings || 0;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(60, 60, 60);
-        doc.text('View-to-Book Rate (Confirmed Bookings / Booking Page Views):', 14, yPos);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(139, 92, 246);
-        doc.text(viewToBookRate + '%', 133, yPos);
-        yPos += 7;
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text(confirmedBookings + ' confirmed booking(s) out of ' + pvBooking + ' Booking Page Views.', 14, yPos);
-        yPos += 14;
-
-        // Most Viewed Packages
-        if (pv.topViewedPackages && pv.topViewedPackages.length > 0) {
-            checkPageBreak(60);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 31, 63);
-            doc.text('Most Viewed Packages', 14, yPos);
-            yPos += 6;
-
-            const pkgBody = pv.topViewedPackages.slice(0, 5).map((pkg, i) => [
-                '#' + (i + 1),
-                sanitize(pkg.displayName || pkg.packageName || 'Unknown'),
-                String(pkg.views || 0),
-            ]);
-
-            autoTable(doc, {
-                startY:   yPos,
-                head:     [['Rank', 'Package Name', 'Views']],
-                body:     pkgBody,
-                theme:    'plain',
-                margin:   { left: 14, right: 14 },
-                headStyles: { fillColor: [0, 31, 63], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
-                bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
-                alternateRowStyles: { fillColor: [250, 250, 250] },
-                columnStyles: {
-                    0: { cellWidth: 15, halign: 'center', fontStyle: 'bold', textColor: [0, 31, 63] },
-                    1: { cellWidth: 'auto' },
-                    2: { cellWidth: 25, halign: 'center', fontStyle: 'bold', textColor: [99, 102, 241] },
-                },
-            });
-            yPos = doc.lastAutoTable.finalY + 15;
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // 2. SITE VISIT OVERVIEW (Pie Chart Data — Overall)
+        // 1. SITE VISIT OVERVIEW (Pie Chart Data — Overall)
         // ══════════════════════════════════════════════════════════════════
         checkPageBreak(80);
-        drawSectionHeader(2, 'SITE VISIT OVERVIEW — Social Referral Traffic', yPos);
+        drawSectionHeader(1, 'SITE VISIT OVERVIEW — Social Referral Traffic', yPos);
         yPos += 12;
 
         const svTotal = svPieData.reduce((a, b) => a + (b.value || 0), 0);
@@ -266,10 +156,10 @@ export const exportReportingToPDF = ({
         yPos = doc.lastAutoTable.finalY + 15;
 
         // ══════════════════════════════════════════════════════════════════
-        // 3. ORGANIC vs PAID ADS BREAKDOWN — Per Platform
+        // 2. ORGANIC vs PAID ADS BREAKDOWN — Per Platform
         // ══════════════════════════════════════════════════════════════════
         checkPageBreak(80);
-        drawSectionHeader(3, 'ORGANIC vs PAID ADS BREAKDOWN — Per Platform', yPos);
+        drawSectionHeader(2, 'ORGANIC vs PAID ADS BREAKDOWN — Per Platform', yPos);
         yPos += 12;
 
         const PLATFORM_PDF_COLORS = {
