@@ -2,12 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Sidebar from '../sidebar/sidebar.jsx';
 import {
   BarChart2,
-  Globe,
   Facebook,
   Instagram,
   ArrowUpRight,
   ArrowDownRight,
-  MousePointerClick,
   Download,
   ChevronDown,
   Clock,
@@ -16,13 +14,8 @@ import {
   SlidersHorizontal,
   CalendarDays,
   Users,
-  Eye,
   Heart,
   Zap,
-  ShoppingBag,
-  Package,
-  Map,
-  Activity,
   Sprout,
   Megaphone,
   Layers,
@@ -98,11 +91,9 @@ const ALL_MONTHLY_FOLLOWERS = [
 ];
 
 const STAT_IMAGES = {
-  websiteVisits:   'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=600&q=80',
   facebook:        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80',
   instagram:       'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&q=80',
   tiktok:          'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&q=80',
-  pageToBooking:   'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=80',
 };
 
 // Mock referral data — replace with real social analytics API
@@ -294,22 +285,6 @@ const Reporting = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ── Page View API state ───────────────────────────────────────────────────
-  const [pageViewStats, setPageViewStats] = useState({
-    recentViews:         [],
-    totalViews:          0,
-    packagesPageViews:   0,
-    bookingPageViews:    0,
-    flightsPageViews:    0,
-    servicesPageViews:   0,
-    topViewedPackages:   [],
-  });
-  // ── Active bookings — sourced directly from the Booking model ──────────
-  // recentActiveBookings mirrors exactly what the admin sees in the Bookings
-  // table (isArchive !== 'Yes'), so the count is always the ground truth.
-  const [recentActiveBookings, setRecentActiveBookings] = useState([]);
-  const [pvLoading, setPvLoading] = useState(true);
-
   // ── Site visit (social referral) state ────────────────────────────────────
   const [siteVisitStats, setSiteVisitStats] = useState({
     recentVisits: [],
@@ -386,7 +361,6 @@ const Reporting = () => {
   // ── Fetch stats — placed after svDateWindow so the dep array is valid ─────
   useEffect(() => {
     const fetchStats = async () => {
-      setPvLoading(true);
       setSvLoading(true);
       try {
         // Build query params for site-visits only (date-aware)
@@ -399,34 +373,8 @@ const Reporting = () => {
           ? `/api/site-visits/stats?${svParams.toString()}`
           : '/api/site-visits/stats';
 
-        const [pvRes, bookRes, svRes] = await Promise.all([
-          fetch(`${API_BASE}/api/page-views/stats`),
-          fetch(`${API_BASE}/api/bookings/active`),
-          fetch(`${API_BASE}${svUrl}`),
-        ]);
-
-        const [pvJson, bookJson, svJson] = await Promise.all([
-          pvRes.json(),
-          bookRes.json(),
-          svRes.json(),
-        ]);
-
-        if (pvJson.status === 'ok') {
-          const d = pvJson.data;
-          setPageViewStats({
-            recentViews:       d.recentViews      || [],
-            totalViews:        d.totalViews        || 0,
-            packagesPageViews: d.packagesPageViews || 0,
-            bookingPageViews:  d.bookingPageViews  || 0,
-            flightsPageViews:  d.flightsPageViews  || 0,
-            servicesPageViews: d.servicesPageViews || 0,
-            topViewedPackages: d.topViewedPackages || [],
-          });
-        }
-
-        if (bookJson.success) {
-          setRecentActiveBookings(bookJson.bookings || []);
-        }
+        const svRes  = await fetch(`${API_BASE}${svUrl}`);
+        const svJson = await svRes.json();
 
         // ── SITE VISIT STATS (now date-aware + detailed breakdown) ──
         if (svJson.status === 'ok') {
@@ -441,70 +389,12 @@ const Reporting = () => {
       } catch (err) {
         console.error('Failed to fetch reporting stats:', err);
       } finally {
-        setPvLoading(false);
         setSvLoading(false);
       }
     };
 
     fetchStats();
   }, [svDateWindow]);   // ← important: refetches when period changes
-
-  // ── Filtered page view stats — driven by the shared sv date toggle ────────
-  const filteredPageViewStats = useMemo(() => {
-    const allViews = pageViewStats.recentViews || [];
-    const { start, end } = svDateWindow;
-
-    const filtered = allViews.filter(v => {
-      const d = new Date(v.createdAt);
-      return d >= start && d <= end;
-    });
-
-    // Stage breakdown
-    const stageOrder = ['awareness', 'interest', 'consideration', 'intent', 'conversion'];
-    const stageCounts = {};
-    stageOrder.forEach(s => { stageCounts[s] = 0; });
-    filtered.forEach(v => {
-      if (v.stage && stageCounts[v.stage] !== undefined) stageCounts[v.stage]++;
-    });
-    const stageBreakdown = stageOrder.map(stage => ({ stage, count: stageCounts[stage] }));
-
-    // Top viewed packages
-    const pkgCounts = {};
-    filtered.filter(v => v.page === 'booking' && v.packageName).forEach(v => {
-      const key = v.packageName;
-      if (!pkgCounts[key]) pkgCounts[key] = { count: 0 };
-      pkgCounts[key].count += 1;
-    });
-    const topViewedPackages = Object.entries(pkgCounts)
-      .map(([packageName, data]) => ({ packageName, views: data.count, displayName: packageName }))
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 5);
-
-    return {
-      totalViews:        filtered.length,
-      packagesPageViews: filtered.filter(v => v.page === 'packages').length,
-      bookingPageViews:  filtered.filter(v => v.page === 'booking').length,
-      flightsPageViews:  filtered.filter(v => v.page === 'flights').length,
-      servicesPageViews: filtered.filter(v => v.page === 'services').length,
-      toursPageViews:    filtered.filter(v => v.page === 'tours').length,
-      stageBreakdown,
-      topViewedPackages,
-    };
-  }, [svDateWindow, pageViewStats.recentViews]);
-
-  // Filtered booking counts — sourced from actual Booking records.
-  // recentActiveBookings comes from /api/bookings/active (isArchive !== 'Yes'),
-  // so this always matches exactly what the admin sees in the Bookings table.
-  const filteredBookingCounts = useMemo(() => {
-    const { start, end } = svDateWindow;
-
-    const filtered = recentActiveBookings.filter(b => {
-      const d = new Date(b.createdAt);
-      return d >= start && d <= end;
-    });
-
-    return { totalConfirmedBookings: filtered.length };
-  }, [recentActiveBookings, svDateWindow]);
 
   // ── Platform + Campaign Type Breakdown (Organic vs Ads) ─────────────────────
   const platformBreakdown = useMemo(() => {
@@ -703,24 +593,8 @@ const Reporting = () => {
     return days;
   }, [siteVisitStats.recentVisits, svLineWindow, svLineCampaignFilter]);
 
-  const viewToBookRate = useMemo(() => {
-    const { bookingPageViews } = filteredPageViewStats;
-    const { totalConfirmedBookings } = filteredBookingCounts;
-    if (!bookingPageViews) return '0.0';
-    return ((totalConfirmedBookings / bookingPageViews) * 100).toFixed(1);
-  }, [filteredPageViewStats, filteredBookingCounts]);
-
   // ── Quick stats built from live data ─────────────────────────────────────
   const quickStats = [
-    {
-      label:    'Website Visits',
-      value:    pvLoading ? '…' : formatCount(filteredPageViewStats.totalViews),
-      change:   null,
-      positive: true,
-      icon:     Globe,
-      image:    STAT_IMAGES.websiteVisits,
-      sub:      pvLoading ? 'Loading…' : `${filteredPageViewStats.totalViews.toLocaleString()} total views`,
-    },
     {
       label:    'Facebook → Website',
       value:    svLoading ? '…' : formatCount(filteredSocialVisits.facebook),
@@ -744,17 +618,6 @@ const Reporting = () => {
       positive: true,
       icon:     null,
       image:    STAT_IMAGES.tiktok,
-    },
-    {
-      label:    'Page Views → Booking',
-      value:    pvLoading ? '…' : `${viewToBookRate}%`,
-      change:   null,
-      positive: true,
-      icon:     MousePointerClick,
-      image:    STAT_IMAGES.pageToBooking,
-      sub:      pvLoading
-        ? 'Loading…'
-        : `${filteredBookingCounts.totalConfirmedBookings} Booked out of ${filteredPageViewStats.bookingPageViews} Booking Page Views`,
     },
   ];
 
@@ -815,9 +678,6 @@ const Reporting = () => {
       quickStats,
       platformSummary:      PLATFORM_SUMMARY,
       chartData:            getChartData(),
-      filteredPageViewStats,
-      filteredBookingCounts,
-      viewToBookRate,
       activePeriod,
       periodLabel,
       svPieData,
@@ -1333,120 +1193,6 @@ const Reporting = () => {
         </section>
 
 
-        {/* ── PAGE VIEW ANALYTICS ── */}
-        <section className="rp-section">
-          <div className="rp-pv-section">
-            <div className="rp-pv-header">
-              <div className="rp-pv-title-wrap">
-                <Eye size={18} className="rp-pv-icon" />
-                <h3 className="rp-pv-title">
-                  PAGE VIEW ANALYTICS
-                  <span className="rp-pv-period"> — {periodLabel}</span>
-                </h3>
-              </div>
-              <span className="rp-pv-live-badge">● LIVE TRACKING</span>
-            </div>
-
-            {/* Stat cards grid */}
-            <div className="rp-pv-grid">
-              <div className="rp-pv-card">
-                <div className="rp-pv-card-icon-wrap rp-pv-icon--total"><BarChart2 size={20} /></div>
-                <div className="rp-pv-card-body">
-                  <span className="rp-pv-card-label">TOTAL PAGE VIEWS</span>
-                  <span className="rp-pv-card-value">{(filteredPageViewStats.totalViews || 0).toLocaleString()}</span>
-                  <span className="rp-pv-card-sub">All pages combined</span>
-                </div>
-              </div>
-
-              <div className="rp-pv-card">
-                <div className="rp-pv-card-icon-wrap rp-pv-icon--packages"><ShoppingBag size={20} /></div>
-                <div className="rp-pv-card-body">
-                  <span className="rp-pv-card-label">PACKAGE DEALS PAGE</span>
-                  <span className="rp-pv-card-value">{(filteredPageViewStats.packagesPageViews || 0).toLocaleString()}</span>
-                  <span className="rp-pv-card-sub">Packages Visits</span>
-                </div>
-              </div>
-
-              <div className="rp-pv-card">
-                <div className="rp-pv-card-icon-wrap rp-pv-icon--booking"><Package size={20} /></div>
-                <div className="rp-pv-card-body">
-                  <span className="rp-pv-card-label">BOOKING PAGE</span>
-                  <span className="rp-pv-card-value">{(filteredPageViewStats.bookingPageViews || 0).toLocaleString()}</span>
-                  <span className="rp-pv-card-sub">Package Booking Views</span>
-                </div>
-              </div>
-
-              <div className="rp-pv-card">
-                <div className="rp-pv-card-icon-wrap rp-pv-icon--flights"><Eye size={20} /></div>
-                <div className="rp-pv-card-body">
-                  <span className="rp-pv-card-label">FLIGHT SEARCH</span>
-                  <span className="rp-pv-card-value">{(filteredPageViewStats.flightsPageViews || 0).toLocaleString()}</span>
-                  <span className="rp-pv-card-sub">Flights Visits</span>
-                </div>
-              </div>
-
-              <div className="rp-pv-card">
-                <div className="rp-pv-card-icon-wrap rp-pv-icon--services"><Activity size={20} /></div>
-                <div className="rp-pv-card-body">
-                  <span className="rp-pv-card-label">OTHER SERVICES</span>
-                  <span className="rp-pv-card-value">{(filteredPageViewStats.servicesPageViews || 0).toLocaleString()}</span>
-                  <span className="rp-pv-card-sub">Other Services Visits</span>
-                </div>
-              </div>
-
-              <div className="rp-pv-card rp-pv-card--tours-highlight">
-                <div className="rp-pv-card-icon-wrap rp-pv-icon--tours"><Map size={20} /></div>
-                <div className="rp-pv-card-body">
-                  <span className="rp-pv-card-label">TOUR PACKAGES</span>
-                  <span className="rp-pv-card-value">{(filteredPageViewStats.toursPageViews || 0).toLocaleString()}</span>
-                  <span className="rp-pv-card-sub">Tour Page Visits</span>
-                </div>
-              </div>
-
-              <div className="rp-pv-card">
-                <div className="rp-pv-card-icon-wrap rp-pv-icon--rate"><TrendingUp size={20} /></div>
-                <div className="rp-pv-card-body">
-                  <span className="rp-pv-card-label">VIEW-TO-BOOK RATE</span>
-                  <span className="rp-pv-card-value rp-pv-rate-value">
-                    {filteredPageViewStats.bookingPageViews > 0
-                      ? ((filteredBookingCounts.totalConfirmedBookings / filteredPageViewStats.bookingPageViews) * 100).toFixed(1)
-                      : '0.0'}%
-                  </span>
-                  <span className="rp-pv-card-sub">
-                    {filteredBookingCounts.totalConfirmedBookings} Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Top Viewed Packages */}
-            {filteredPageViewStats.topViewedPackages && filteredPageViewStats.topViewedPackages.length > 0 && (
-              <div className="rp-pv-top-packages">
-                <h4 className="rp-pv-sub-title">
-                  <Eye size={14} /> MOST VIEWED PACKAGES
-                </h4>
-                <div className="rp-pv-pkg-list">
-                  {filteredPageViewStats.topViewedPackages.slice(0, 5).map((pkg, idx) => {
-                    const maxViews = filteredPageViewStats.topViewedPackages[0]?.views || 1;
-                    const barWidth = Math.max(8, Math.round((pkg.views / maxViews) * 100));
-                    return (
-                      <div key={idx} className="rp-pv-pkg-row">
-                        <span className="rp-pv-pkg-rank">#{idx + 1}</span>
-                        <div className="rp-pv-pkg-info">
-                          <span className="rp-pv-pkg-name">{pkg.displayName || pkg.packageName || 'Unknown'}</span>
-                          <div className="rp-pv-pkg-bar-wrap">
-                            <div className="rp-pv-pkg-bar" style={{ width: `${barWidth}%` }} />
-                          </div>
-                        </div>
-                        <span className="rp-pv-pkg-count">{(pkg.views || 0).toLocaleString()} views</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
 
 
 

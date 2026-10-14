@@ -648,15 +648,6 @@ const handleRemoveFlight = () => {
 
       if (bookingResponse.data.success) {
         const bookingId = bookingResponse.data.bookingId;
-        fetch(`${RENDER_BASE}/api/page-views/booking-count`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId: bookingId?.toString() || null,
-            packageId: (pkg._id || pkg.id || null)?.toString() || null,
-            packageName: pkg.title || pkg.name || null,
-            paxCount: quantities.adult || 1, paymentType: paymentType || 'full', totalAmount: finalTotalAmount || 0,
-          })
-        }).catch(() => {});
 
         toast.success('Booking saved! Preparing payment link...');
         const paymentResponse = await axios.post(`${RENDER_BASE}/api/payment/create-intent`, {

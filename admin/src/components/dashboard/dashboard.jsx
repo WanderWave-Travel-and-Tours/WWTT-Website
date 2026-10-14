@@ -30,7 +30,6 @@ const Dashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedSection, setSelectedSection] = useState('all');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isResetRateModalOpen, setIsResetRateModalOpen] = useState(false);
 
   const [stats, setStats] = useState({
     totalBookings: 0, confirmedBookings: 0, pendingBookings: 0, cancelledBookings: 0,
@@ -49,22 +48,6 @@ const Dashboard = () => {
   
   const [rawBookings, setRawBookings] = useState([]);
   const [rawInquiries, setRawInquiries] = useState([]);
-  const [pageViewStats, setPageViewStats] = useState({
-    totalViews: 0,
-    packagesPageViews: 0,
-    bookingPageViews: 0,
-    flightsPageViews: 0,
-    servicesPageViews: 0,
-    topViewedPackages: [],
-    recentViews: [],
-    dailyViewsData: [],
-  });
-
-  const [bookingCountStats, setBookingCountStats] = useState({
-    totalBookingCounts: 0,
-    topBookedPackages: [],
-    recentBookingCounts: [],
-  });
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [revenueViewMode, setRevenueViewMode] = useState("weekly");
   
@@ -107,7 +90,7 @@ const Dashboard = () => {
     let bookings = [], packages = [], blogs = [], promos = [], testimonials = [], inquiries = [];
 
     try {
-      // FIX #3: Fire all 7 requests in parallel with Promise.allSettled so a single
+      // Fire all requests in parallel with Promise.allSettled so a single
       // failure doesn't block the rest and total wait time = slowest request (not sum).
       const API = "";
       const [
@@ -117,7 +100,6 @@ const Dashboard = () => {
         promosResult,
         testimonialsResult,
         inquiriesResult,
-        pageViewsResult,
       ] = await Promise.allSettled([
         fetch(`${API}/api/admin/bookings`),
         fetch(`${API}/api/packages/admin/all`),
@@ -125,7 +107,6 @@ const Dashboard = () => {
         fetch(`${API}/api/promos`),
         fetch(`${API}/api/testimonials`),
         fetch(`${API}/api/inquiries`),
-        fetch(`${API}/api/page-views/stats`),
       ]);
 
       // ── Bookings ──────────────────────────────────────────────────────────────
@@ -171,112 +152,6 @@ const Dashboard = () => {
         inquiries = inquiriesData.data || inquiriesData || [];
       }
 
-      // ============================================================
-      // PAGE VIEWS + BOOKING COUNTS (already fetched in parallel above)
-      // ============================================================
-      try {
-        if (pageViewsResult.status === 'fulfilled' && pageViewsResult.value.ok) {
-          // Re-use the already-settled response directly.
-          const pageViewsRes = pageViewsResult.value;
-          const pvData = await pageViewsRes.json();
-          const pvStats = pvData.data || pvData || {};
-
-          // Build daily views chart data (last 7 days)
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const allViews = pvStats.recentViews || [];
-          const dailyViewsData = [];
-          for (let i = 6; i >= 0; i--) {
-            const day = new Date(today);
-            day.setDate(day.getDate() - i);
-            const dayEnd = new Date(day);
-            dayEnd.setHours(23, 59, 59, 999);
-            const count = allViews.filter(v => {
-              const d = new Date(v.createdAt);
-              return d >= day && d <= dayEnd;
-            }).length;
-            dailyViewsData.push({
-              date: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-              views: count,
-            });
-          }
-
-          // Enrich topViewedPackages with full title, destination, duration from allPackages.
-          // Priority: match by packageId first (most reliable), then by exact title,
-          // then by title-contains for incomplete stored names like "Solo", "min. of 2 pax", "solo/ joiners"
-          const pkgLookupById   = packages.reduce((acc, pkg) => { if (pkg._id) acc[String(pkg._id)] = pkg; return acc; }, {});
-          const pkgLookupByName = packages.reduce((acc, pkg) => { if (pkg.title) acc[pkg.title] = pkg; return acc; }, {});
-
-          const findPkgMatch = (storedName, storedId) => {
-            if (storedId && pkgLookupById[String(storedId)]) return pkgLookupById[String(storedId)];
-            if (storedName && pkgLookupByName[storedName])   return pkgLookupByName[storedName];
-            // title-contains fallback: find package whose title includes the stored partial name
-            if (storedName) {
-              const lower = storedName.toLowerCase().trim();
-              return packages.find(p => p.title && p.title.toLowerCase().includes(lower)) || null;
-            }
-            return null;
-          };
-
-          const buildDisplayName = (storedName, match) => {
-            if (!match) return storedName;
-            // If the stored name already contains the duration or destination, it's already complete
-            const lower = storedName.toLowerCase();
-            const hasDuration    = match.duration    && lower.includes(match.duration.toLowerCase());
-            const hasDestination = match.destination && lower.includes(match.destination.toLowerCase());
-            if (hasDuration || hasDestination) return storedName;
-            // Reconstruct: Duration + Destination + stored partial name
-            const parts = [match.duration, match.destination, storedName].filter(Boolean);
-            return parts.join(' ');
-          };
-
-          const enrichedTopViewedPackages = (pvStats.topViewedPackages || []).map(pkg => {
-            const match = findPkgMatch(pkg.packageName, pkg.packageId);
-            return {
-              ...pkg,
-              displayName: buildDisplayName(pkg.packageName, match),
-              destination: match?.destination || null,
-              duration:    match?.duration    || null,
-            };
-          });
-
-          setPageViewStats({
-            totalViews:        pvStats.totalViews        || 0,
-            packagesPageViews: pvStats.packagesPageViews || 0,
-            bookingPageViews:  pvStats.bookingPageViews  || 0,
-            flightsPageViews:  pvStats.flightsPageViews  || 0,
-            servicesPageViews: pvStats.servicesPageViews || 0,
-            topViewedPackages: enrichedTopViewedPackages,
-            recentViews:       allViews,
-            dailyViewsData,
-          });
-
-          // ── View-to-Book Rate numerator: total bookings where isArchive = "No" ──
-          // Directly filter the already-fetched bookings array.
-          // Archived bookings (isArchive = "Yes") are excluded so the rate
-          // goes down automatically whenever a booking is archived.
-          const nonArchivedBookings = bookings.filter(b => b.isArchive !== 'Yes');
-
-          const recentBookingCountsFromBookings = nonArchivedBookings.map(b => ({
-            bookingId:   String(b._id),
-            packageId:   b.packageId ? String(b.packageId) : null,
-            packageName: b.packageName || null,
-            paxCount:    (b.pax?.adult || 0) + (b.pax?.children || 0) + (b.pax?.infants || 0) || 1,
-            paymentType: b.paymentType || 'full',
-            totalAmount: b.totalAmount || 0,
-            createdAt:   b.createdAt,
-          }));
-
-          setBookingCountStats({
-            totalBookingCounts:  recentBookingCountsFromBookings.length,
-            topBookedPackages:   pvStats.topBookedPackages || [],
-            recentBookingCounts: recentBookingCountsFromBookings,
-          });
-        }
-      } catch (pvErr) {
-        console.warn('⚠️ Page views / booking counts fetch failed:', pvErr);
-      }
-      
       setRawBookings(bookings);
       setRawInquiries(inquiries);
 
@@ -685,31 +560,6 @@ const Dashboard = () => {
     return results;
   }, [customRange, rawBookings, rawInquiries]);
 
-  const handleResetViewToBookRate = async () => {
-    try {
-      const res = await fetch("/api/page-views/booking-counts/reset", {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message || "View-to-Book Rate has been reset.", "Reset Successful");
-        // Refresh stats so the rate card updates immediately
-        setBookingCountStats({
-          totalBookingCounts: 0,
-          topBookedPackages: [],
-          recentBookingCounts: [],
-        });
-      } else {
-        toast.error(data.message || "Failed to reset.", "Reset Failed");
-      }
-    } catch (err) {
-      console.error("❌ Reset View-to-Book Rate error:", err);
-      toast.error("Something went wrong. Please try again.", "Reset Failed");
-    } finally {
-      setIsResetRateModalOpen(false);
-    }
-  };
-
   const handleExportPDF = async () => {
     try {
         
@@ -733,15 +583,15 @@ const Dashboard = () => {
         };
         
         if (revenueViewMode === "daily") {
-            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages, pageViewStats, bookingCountStats);
+            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages);
         } else if (revenueViewMode === "weekly") {
-            exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages, pageViewStats, bookingCountStats);
+            exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages);
         } else if (revenueViewMode === "specificMonth") {
-            exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages, pageViewStats, bookingCountStats);
+            exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages);
         } else if (revenueViewMode === "custom") {
-            exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages, pageViewStats, bookingCountStats);
+            exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages);
         } else {
-            exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages, pageViewStats, bookingCountStats);
+            exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages);
         }
         
         toast.success("Dashboard report has been exported successfully.", "Export Success");
@@ -837,10 +687,6 @@ const Dashboard = () => {
               customData={customAnalyticsData}
               dailyData={dailyAnalyticsData}
               weeklyData={weeklyAnalyticsData}
-              pageViewStats={pageViewStats}
-              bookingCountStats={bookingCountStats}
-              allPackages={allPackages}
-              onResetViewToBookRate={() => setIsResetRateModalOpen(true)}
             />
           )}
 
@@ -878,15 +724,6 @@ const Dashboard = () => {
         onConfirm={handleExportPDF}
         onCancel={() => setIsExportModalOpen(false)}
         type="primary"
-      />
-
-      <CustomConfirmModal
-        isOpen={isResetRateModalOpen}
-        title="Reset View-to-Book Rate"
-        message="This will permanently clear all booking count records. Page view stats will not be affected. Are you sure?"
-        onConfirm={handleResetViewToBookRate}
-        onCancel={() => setIsResetRateModalOpen(false)}
-        type="danger"
       />
     </div>
   );

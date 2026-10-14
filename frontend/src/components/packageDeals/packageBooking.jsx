@@ -3,7 +3,6 @@ import BookingLeftColumn from './bookingLeftColumn';
 import BookingRightForm from './bookingRightForm';
 
 import './packageBooking.css';
-import { usePageTracker } from '../../hooks/usePageTracker';
 
 function PackageBooking({ 
   pkg, 
@@ -28,24 +27,6 @@ function PackageBooking({
   const isMounted = useRef(true);
 
   if (!pkg) return null;
-
-  // ============================================================
-  // PAGE VIEW TRACKER — fires once per package booking page view.
-  // Uses the shared hook so stop signals (tab close/navigate away)
-  // are automatically sent via sendBeacon.
-  // ============================================================
-  const packageId   = pkg._id || pkg.id;
-  const packageName = pkg.name || pkg.title || 'Unknown Package';
-
-  usePageTracker({
-    page:        'booking',
-    path:        `/booking/${packageId}`,
-    label:       `Booking Page: ${packageName}`,
-    packageId,
-    packageName,
-  });
-
- 
 
   // ============================================
   // PREVENT BACK NAVIGATION FROM BOOKING PAGE

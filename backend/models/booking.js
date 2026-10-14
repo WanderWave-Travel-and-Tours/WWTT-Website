@@ -345,9 +345,6 @@ bookingSchema.methods.getCustomizationSummary = function() {
   };
 };
 
-// Backs admin dashboard queries: Booking.find().sort({createdAt:-1}) and
-// every isArchive-filtered find/aggregate sorted by createdAt (see
-// server.js /api/admin/bookings and pageViewRoute.js /stats).
 bookingSchema.index({ isArchive: 1, createdAt: -1 });
 
 const Booking = mongoose.model('Booking', bookingSchema, 'bookings');

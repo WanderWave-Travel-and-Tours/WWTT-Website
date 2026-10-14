@@ -1311,22 +1311,6 @@ const handleNextPassenger = async (e) => {
     if (bookingResponse.data.success) {
       const bookingId = bookingResponse.data.bookingId;
 
-      // ── Record booking count for View-to-Book Rate tracking ──────
-      // Fire-and-forget: non-blocking, failure won't affect booking flow
-      fetch('/api/page-views/booking-count', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId:   bookingId ? bookingId.toString() : null,
-          packageId:   (pkg._id || pkg.id || null)?.toString() || null,
-          packageName: pkg.title || pkg.name || null,
-          paxCount:    quantities.adult || 1,
-          paymentType: paymentType || 'full',
-          totalAmount: finalTotalAmount || 0,
-        }),
-      }).catch(() => {});
-      // ─────────────────────────────────────────────────────────────
-
       toast.success('Booking saved! Preparing payment link...');
       
       const paymentResponse = await axios.post(`${RENDER_BASE}/api/payment/create-intent`, {

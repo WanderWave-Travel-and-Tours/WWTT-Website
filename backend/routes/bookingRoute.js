@@ -10,7 +10,6 @@ const Promo = require('../models/promo');
 const Package = require('../models/package');
 const Destination = require('../models/destination');
 const ActivityLog = require('../models/ActivityLog');
-const { BookingCount } = require('../models/PageView');
 const { sendNewUserToGHL, sendBookingConfirmationToGHL, sendPackageBookingToGHL, sendBookingInternalNotificationToGHL } = require('../utils/ghlService');
 const { validatePrimaryPassengerAge, validatePassengersAge } = require('../utils/ageUtils');
 const authMiddleware = require('../middleware/auth');
@@ -386,29 +385,6 @@ router.post('/:id/archive', authMiddleware, async (req, res) => {
         const newStatus = booking.isArchive === 'Yes' ? 'No' : 'Yes';
         booking.isArchive = newStatus;
         await booking.save();
-
-        try {
-            if (newStatus === 'Yes') {
-                const deleted = await BookingCount.deleteOne({ bookingId: booking._id });
-                console.log(`📊 BookingCount removed on archive (deleted: ${deleted.deletedCount})`);
-            } else {
-                const exists = await BookingCount.findOne({ bookingId: booking._id });
-                if (!exists) {
-                    const totalPax = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
-                    await BookingCount.create({
-                        bookingId:   booking._id,
-                        packageId:   booking.packageId   || null,
-                        packageName: booking.packageName || null,
-                        paxCount:    totalPax || 1,
-                        paymentType: booking.paymentType || 'unknown',
-                        totalAmount: booking.totalAmount || 0,
-                    });
-                    console.log(`📊 BookingCount restored for booking: ${booking.packageName}`);
-                }
-            }
-        } catch (syncErr) {
-            console.error('⚠️ BookingCount sync failed (non-fatal):', syncErr.message);
-        }
 
         try {
             const { userEmail, adminId } = req.body;
