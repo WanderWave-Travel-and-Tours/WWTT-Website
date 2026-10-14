@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../../../assets/Logo.png';
+import { bookingsPaid, inquiriesPaid } from './revenue';
 
 export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], selectedDate = "", allPackages = []) => {
     try {
@@ -469,17 +470,8 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
             const dayEnd = new Date(dayDate);
             dayEnd.setHours(23, 59, 59, 999);
             
-            const bRev = rawBookings.filter(b =>
-                b.status === "confirmed" &&
-                new Date(b.createdAt) >= dayDate &&
-                new Date(b.createdAt) <= dayEnd
-            ).reduce((s, b) => s + (b.totalAmount || 0), 0);
-
-            const iRev = rawInquiries.filter(i =>
-                i.status === "COMPLETED" &&
-                new Date(i.updatedAt) >= dayDate &&
-                new Date(i.updatedAt) <= dayEnd
-            ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+            const bRev = bookingsPaid(rawBookings, dayDate, dayEnd);
+            const iRev = inquiriesPaid(rawInquiries, dayDate, dayEnd);
             
             const dateStr = dayDate.toISOString().split('T')[0];
             const dayLabel = dayNames[dayDate.getDay()];

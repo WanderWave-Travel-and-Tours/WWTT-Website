@@ -23,8 +23,12 @@ module.exports = async (req, res, next) => {
     // ✅ VERIFY TOKEN
     const decoded = jwt.verify(token, JWT_SECRET);
 
+    const [isRevoked, admin] = await Promise.all([
+      TokenBlacklist.exists({ token }),
+      Admin.findById(decoded.id).select('-password'),
+    ]);
+
     // ✅ REJECT REVOKED TOKENS (logout blacklist)
-    const isRevoked = await TokenBlacklist.exists({ token });
     if (isRevoked) {
       return res.status(401).json({
         success: false,
@@ -33,9 +37,6 @@ module.exports = async (req, res, next) => {
       });
     }
 
-    // ✅ FIND ADMIN
-    const admin = await Admin.findById(decoded.id).select('-password');
-    
     if (!admin) {
       return res.status(401).json({ 
         success: false,

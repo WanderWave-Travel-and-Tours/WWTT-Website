@@ -371,11 +371,11 @@ const RevenueAnalytics = ({
             <PhilippinePeso size={24} />
           </div>
           <div className="rev-card-content">
-            <span className="rev-card-label">Total Revenue</span>
+            <span className="rev-card-label">Expected Revenue</span>
             <h3 className="rev-card-value">
-              ₱{stats.combinedTotalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ₱{(stats.expectedRevenue || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </h3>
-            <span className="rev-card-sublabel">All-time combined</span>
+            <span className="rev-card-sublabel">Confirmed bookings + completed services, paid or not</span>
           </div>
         </div>
       </div>

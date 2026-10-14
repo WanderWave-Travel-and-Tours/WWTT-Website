@@ -678,9 +678,12 @@ app.post('/api/bookings', async (req, res) => {
 // handler is live and must be gated.
 app.get('/api/admin/bookings', authMiddleware, async (req, res) => {
   try {
+    // Only the fields the admin dashboard reads — passengers, itinerary,
+    // inclusions etc. made this payload several times larger.
     const bookings = await Booking.find()
-      .sort({ createdAt: -1 }) 
-      .select('-__v'); 
+      .sort({ createdAt: -1 })
+      .select('packageName destination sellerPrice markup startDate duration pax hotelName totalAmount fullName email message status createdAt updatedAt isArchive paidAt initialPaymentPaid initialPaymentAmount initialPaymentPaidAt balancePaidAmount balancePaymentPaidAt balancePaidAt')
+      .lean();
 
     res.status(200).json(bookings);
   } catch (error) {

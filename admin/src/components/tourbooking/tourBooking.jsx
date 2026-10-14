@@ -236,7 +236,7 @@ const TourBookingDashboard = () => {
       { label: 'Total Tour Bookings',   value: bookings.length,                                    icon: <FileText size={24} />,   image: STAT_IMAGES.TOTAL   },
       { label: 'Pending Balance',       value: pendingBal.length,                                  icon: <Wallet   size={24} />,   image: STAT_IMAGES.PENDING, subtext: `₱${totalBal.toLocaleString()} total` },
       { label: 'Confirmed',             value: confirmed.length,                                    icon: <CheckCircle size={24} />,image: STAT_IMAGES.CONFIRM  },
-      { label: 'Revenue (Confirmed)',   value: `₱${revenue.toLocaleString()}`,                     icon: <CreditCard  size={24} />,image: STAT_IMAGES.REVENUE  },
+      { label: 'Expected Revenue',   value: `₱${revenue.toLocaleString()}`,                     icon: <CreditCard  size={24} />,image: STAT_IMAGES.REVENUE  },
     ];
   }, [bookings]);
 
